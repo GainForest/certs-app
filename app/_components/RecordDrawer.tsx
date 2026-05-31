@@ -6,7 +6,13 @@ import Link from "next/link";
 import type { ExplorerRecord } from "../_lib/indexer";
 import { formatDate, formatNumber, countryFlag } from "../_lib/format";
 import { AuthorChip } from "./AuthorChip";
-import { BUMICERTS_URL, GLOBE_URL, accountHref, bumicertHref } from "../_lib/urls";
+import {
+  BUMICERTS_URL,
+  GLOBE_URL,
+  accountHref,
+  bumicertHref,
+  hyperscanRecordHref,
+} from "../_lib/urls";
 
 // Right-side detail sheet for any explorer record. Slides in over a dimmed
 // scrim; Escape or a scrim click closes it. Shows the record image, the
@@ -123,12 +129,19 @@ export function RecordDrawer({
             ))}
           </dl>
 
-          {/* AT URI */}
+          {/* AT URI → opens the raw record JSON on Hyperscan's Data Explorer */}
           <div className="mt-6 border-t border-border-soft pt-5">
-            <div className="text-[11px] font-medium uppercase tracking-[0.1em] text-foreground/45">
-              AT Protocol URI
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-foreground/45">
+                AT Protocol URI
+              </span>
+              {hyperscanRecordHref(record.atUri) && (
+                <span className="text-[10px] uppercase tracking-[0.08em] text-foreground/40">
+                  Raw data on Hyperscan ↗
+                </span>
+              )}
             </div>
-            <CopyableUri uri={record.atUri} />
+            <UriRow uri={record.atUri} href={hyperscanRecordHref(record.atUri)} />
           </div>
 
           {/* Links */}
@@ -154,28 +167,53 @@ export function RecordDrawer({
   );
 }
 
-function CopyableUri({ uri }: { uri: string }) {
+// The URI itself links to Hyperscan's raw record view; a separate button
+// copies the at:// string (a link can't also be a copy-to-clipboard action).
+function UriRow({ uri, href }: { uri: string; href: string | null }) {
   const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(uri);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+  const uriClasses =
+    "flex min-w-0 flex-1 items-start gap-2 rounded-lg border border-border-soft bg-surface-sunken px-3 py-2 text-left font-mono text-[11.5px] leading-[1.4] text-primary transition-colors hover:border-primary/40 hover:bg-surface";
   return (
-    <button
-      type="button"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(uri);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1400);
-        } catch {
-          /* clipboard unavailable */
-        }
-      }}
-      className="mt-1.5 flex w-full items-start gap-2 rounded-lg border border-border-soft bg-surface-sunken px-3 py-2 text-left font-mono text-[11.5px] leading-[1.4] text-primary transition-colors hover:border-primary/40"
-      title="Copy AT URI"
-    >
-      <span className="min-w-0 flex-1 break-all">{uri}</span>
-      <span className="shrink-0 text-[10px] uppercase tracking-[0.08em] text-foreground/45">
+    <div className="mt-1.5 flex items-stretch gap-1.5">
+      {href ? (
+        <Link
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          className={`group ${uriClasses}`}
+          title="View the raw record on Hyperscan"
+        >
+          <span className="min-w-0 flex-1 break-all">{uri}</span>
+          <span
+            aria-hidden
+            className="shrink-0 text-foreground/35 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+          >
+            ↗
+          </span>
+        </Link>
+      ) : (
+        <span className={uriClasses}>
+          <span className="min-w-0 flex-1 break-all">{uri}</span>
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={copy}
+        title="Copy AT URI"
+        className="shrink-0 self-stretch rounded-lg border border-border-soft bg-surface-sunken px-2.5 text-[10px] font-medium uppercase tracking-[0.08em] text-foreground/45 transition-colors hover:border-primary/40 hover:text-foreground"
+      >
         {copied ? "Copied" : "Copy"}
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
 
