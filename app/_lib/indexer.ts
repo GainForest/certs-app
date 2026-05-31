@@ -14,7 +14,7 @@
 
 import { INDEXER_URL } from "./urls";
 import { resolveBlobUrl, normaliseRef } from "./pds";
-import { asNumber } from "./format";
+import { asNumber, formatNumber, formatDate } from "./format";
 
 // ── Generic GraphQL helper ────────────────────────────────────────────────
 
@@ -654,5 +654,342 @@ export async function fetchRecordByUri(
     return rec;
   }
 
+  return null;
+}
+
+// ── Rich record detail (drawer) ────────────────────────────────────────────
+//
+// The list queries stay lean (1000 records load fast). When the visitor opens
+// a record we fetch its FULL field set by AT-URI and shape it into elegant,
+// grouped sections + status badges. Darwin Core occurrences carry deep
+// taxonomy/ecology/provenance; bumicerts carry work scope/period + a long
+// description; org records carry a profile. Everything is best-effort: null
+// fields are dropped so a sparse record stays clean.
+
+export type DetailField = { label: string; value: string; wide?: boolean };
+export type DetailSection = { title: string | null; fields: DetailField[] };
+export type DetailBadge = { label: string; tone: "ok" | "warn" | "down" | "info" };
+export type DetailLink = { label: string; href: string };
+export type RecordDetail = {
+  /** Long-form text shown under the header (full description / field notes). */
+  blurb?: string | null;
+  /** Small status pills under the title (IUCN status, work scope, …). */
+  badges: DetailBadge[];
+  /** Grouped key/value sections. */
+  sections: DetailSection[];
+  /** Extra outbound links (GBIF, website, socials). */
+  links: DetailLink[];
+};
+
+const sv = (v: unknown): string | null => {
+  if (typeof v === "string") return v.trim() || null;
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  return null;
+};
+const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+const section = (title: string | null, fields: Array<DetailField | null>): DetailSection => ({
+  title,
+  fields: fields.filter((f): f is DetailField => Boolean(f)),
+});
+const field = (label: string, value: string | null | undefined, wide = false): DetailField | null =>
+  value ? { label, value, wide } : null;
+
+function iucnTone(category: string): DetailBadge["tone"] {
+  const c = category.toUpperCase();
+  if (/^(EX|EW|CR|EN)\b/.test(c) || /CRITIC|ENDANGER|EXTINCT/.test(c)) return "down";
+  if (/^(VU|NT)\b/.test(c) || /VULNERAB|NEAR/.test(c)) return "warn";
+  if (/^LC\b/.test(c) || /LEAST/.test(c)) return "ok";
+  return "info";
+}
+
+// ── Occurrence detail ──────────────────────────────────────────────────────
+
+type OccDetailNode = {
+  [k: string]: unknown;
+  conservationStatus?: {
+    iucnCategory?: string | null;
+    nativeStatus?: string | null;
+    citesAppendix?: string | null;
+    iucnAssessmentDate?: string | null;
+    nationalStatus?: string | null;
+  } | null;
+};
+
+const OCCURRENCE_DETAIL_FIELDS = `
+  did scientificName scientificNameAuthorship vernacularName taxonRank taxonomicStatus
+  kingdom phylum class order family genus specificEpithet infraspecificEpithet higherClassification gbifTaxonKey
+  basisOfRecord occurrenceStatus individualCount organismQuantity organismQuantityType lifeStage sex reproductiveCondition behavior
+  country countryCode stateProvince county municipality locality verbatimLocality
+  decimalLatitude decimalLongitude coordinateUncertaintyInMeters geodeticDatum minimumElevationInMeters maximumElevationInMeters habitat
+  eventDate eventTime recordedBy identifiedBy dateIdentified identificationRemarks
+  datasetName institutionCode collectionCode samplingProtocol license rightsHolder references occurrenceID
+  occurrenceRemarks fieldNotes
+  conservationStatus { iucnCategory nativeStatus citesAppendix iucnAssessmentDate nationalStatus }
+`;
+const OCCURRENCE_DETAIL_QUERY = `
+  query OccurrenceDetail($uri: String!) {
+    appGainforestDwcOccurrenceByUri(uri: $uri) { ${OCCURRENCE_DETAIL_FIELDS} }
+  }
+`;
+
+function buildOccurrenceDetail(n: OccDetailNode): RecordDetail {
+  const f = (k: string) => sv(n[k]);
+  const num = (k: string) => (typeof n[k] === "number" ? (n[k] as number) : null);
+
+  const lineage = ["kingdom", "phylum", "class", "order", "family", "genus"]
+    .map((k) => f(k))
+    .filter(Boolean)
+    .join(" › ");
+  const sciName = [f("scientificName"), f("scientificNameAuthorship")].filter(Boolean).join(" ");
+
+  const badges: DetailBadge[] = [];
+  const cs = n.conservationStatus;
+  if (cs?.iucnCategory) badges.push({ label: `IUCN ${cs.iucnCategory}`, tone: iucnTone(cs.iucnCategory) });
+  if (cs?.nativeStatus) badges.push({ label: cap(cs.nativeStatus), tone: "info" });
+  if (cs?.citesAppendix) badges.push({ label: `CITES ${cs.citesAppendix}`, tone: "warn" });
+  const status = f("occurrenceStatus");
+  if (status) badges.push({ label: cap(status), tone: "info" });
+
+  const individuals =
+    num("individualCount") != null
+      ? formatNumber(num("individualCount"))
+      : [f("organismQuantity"), f("organismQuantityType")].filter(Boolean).join(" ") || null;
+
+  const coords = (() => {
+    const la = asNumber(f("decimalLatitude"));
+    const lo = asNumber(f("decimalLongitude"));
+    if (la == null || lo == null) return null;
+    const unc = num("coordinateUncertaintyInMeters");
+    return `${la.toFixed(4)}, ${lo.toFixed(4)}${unc ? ` ±${formatNumber(unc)} m` : ""}`;
+  })();
+  const elevation = (() => {
+    const lo = num("minimumElevationInMeters");
+    const hi = num("maximumElevationInMeters");
+    if (lo == null && hi == null) return null;
+    if (lo != null && hi != null && lo !== hi) return `${formatNumber(lo)}–${formatNumber(hi)} m`;
+    return `${formatNumber(hi ?? lo)} m`;
+  })();
+  const eventWhen = [f("eventDate"), f("eventTime")].filter(Boolean).join(" ");
+
+  const sections = [
+    section("Taxonomy", [
+      field("Scientific name", sciName || null, true),
+      field("Common name", f("vernacularName")),
+      field("Rank", f("taxonRank") ? cap(f("taxonRank")!) : null),
+      field("Lineage", lineage || null, true),
+    ]),
+    section("Occurrence", [
+      field("Basis of record", f("basisOfRecord")),
+      field("Individuals", individuals),
+      field("Life stage", f("lifeStage") ? cap(f("lifeStage")!) : null),
+      field("Sex", f("sex") ? cap(f("sex")!) : null),
+      field("Reproductive", f("reproductiveCondition")),
+      field("Behavior", f("behavior")),
+    ]),
+    section("Location", [
+      field("Locality", f("locality") ?? f("verbatimLocality"), true),
+      field("Municipality", f("municipality")),
+      field("County", f("county")),
+      field("State / province", f("stateProvince")),
+      field("Country", [countryFlagSafe(f("countryCode")), f("country")].filter(Boolean).join(" ") || null),
+      field("Coordinates", coords, true),
+      field("Elevation", elevation),
+      field("Habitat", f("habitat"), true),
+    ]),
+    section("Record", [
+      field("Recorded by", f("recordedBy")),
+      field("Observed", eventWhen || null),
+      field("Identified by", f("identifiedBy")),
+      field("Date identified", f("dateIdentified")),
+    ]),
+    section("Provenance", [
+      field("Dataset", f("datasetName")),
+      field("Institution", f("institutionCode")),
+      field("Collection", f("collectionCode")),
+      field("Sampling protocol", f("samplingProtocol")),
+      field("License", f("license")),
+      field("Rights holder", f("rightsHolder")),
+      field("Occurrence ID", f("occurrenceID"), true),
+    ]),
+  ].filter((s) => s.fields.length > 0);
+
+  const links: DetailLink[] = [];
+  const gbif = f("gbifTaxonKey");
+  if (gbif) links.push({ label: "View taxon on GBIF", href: `https://www.gbif.org/species/${gbif}` });
+  const ref = f("references");
+  if (ref && /^https?:\/\//.test(ref)) links.push({ label: "Reference", href: ref });
+
+  return {
+    blurb: f("occurrenceRemarks") ?? f("fieldNotes") ?? f("identificationRemarks"),
+    badges,
+    sections,
+    links,
+  };
+}
+
+// `countryFlag` lives in format.ts but importing it here would be circular for
+// some bundlers; inline a tiny safe version for the detail builder only.
+function countryFlagSafe(code: string | null): string {
+  if (!code || code.length !== 2 || !/^[A-Za-z]{2}$/.test(code)) return "";
+  return String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
+}
+
+// ── Bumicert detail ────────────────────────────────────────────────────────
+
+type BumiDetailNode = {
+  [k: string]: unknown;
+  description?: { __typename?: string; value?: string | null } | null;
+  workScope?: { __typename?: string; scope?: string | null } | null;
+  contributors?: unknown[] | null;
+  locations?: unknown[] | null;
+};
+
+const ACTIVITY_DETAIL_QUERY = `
+  query ActivityDetail($uri: String!) {
+    orgHypercertsClaimActivityByUri(uri: $uri) {
+      title shortDescription startDate endDate createdAt
+      description { __typename ... on OrgHypercertsDefsDescriptionString { value } }
+      workScope { __typename ... on OrgHypercertsClaimActivityWorkScopeString { scope } }
+      contributors { __typename }
+      locations { uri }
+    }
+  }
+`;
+
+function buildBumicertDetail(n: BumiDetailNode): RecordDetail {
+  const desc =
+    n.description?.__typename === "OrgHypercertsDefsDescriptionString" ? sv(n.description.value) : null;
+  const scope =
+    n.workScope?.__typename === "OrgHypercertsClaimActivityWorkScopeString" ? sv(n.workScope.scope) : null;
+  const contributors = Array.isArray(n.contributors) ? n.contributors.length : 0;
+  const sites = Array.isArray(n.locations) ? n.locations.length : 0;
+
+  const badges: DetailBadge[] = [];
+  if (scope)
+    scope
+      .split(/[,;]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 6)
+      .forEach((s) => badges.push({ label: s, tone: "info" }));
+
+  const start = sv(n.startDate);
+  const end = sv(n.endDate);
+  const period = start || end ? `${start ? formatDate(start) : "—"} → ${end ? formatDate(end) : "—"}` : null;
+
+  const sections = [
+    section("Claim", [
+      field("Work period", period, true),
+      field("Contributors", contributors ? formatNumber(contributors) : null),
+      field("Certified sites", sites ? formatNumber(sites) : null),
+      field("Registered", sv(n.createdAt) ? formatDate(n.createdAt as string) : null),
+    ]),
+  ].filter((s) => s.fields.length > 0);
+
+  return { blurb: desc, badges, sections, links: [] };
+}
+
+// ── Org / site detail ──────────────────────────────────────────────────────
+
+type OrgDetailNode = {
+  [k: string]: unknown;
+  shortDescription?: { text?: string | null } | null;
+  socialLinks?: Array<{ platform?: string | null; url?: string | null }> | null;
+  ecosystemTypes?: string[] | null;
+  focusSpeciesGroups?: string[] | null;
+};
+
+const ORG_DETAIL_QUERY = `
+  query OrgDetail($uri: String!) {
+    appGainforestOrganizationInfoByUri(uri: $uri) {
+      displayName country createdAt startDate foundedYear teamSize
+      website email visibility dataLicense dataDownloadUrl fundingSourcesDescription
+      shortDescription { text }
+      ecosystemTypes focusSpeciesGroups
+      socialLinks { platform url }
+    }
+  }
+`;
+
+function buildOrgDetail(n: OrgDetailNode): RecordDetail {
+  const f = (k: string) => sv(n[k]);
+  const num = (k: string) => (typeof n[k] === "number" ? (n[k] as number) : null);
+  const list = (v: unknown): string | null =>
+    Array.isArray(v) ? v.map((x) => sv(x)).filter(Boolean).join(", ") || null : null;
+
+  const sections = [
+    section("Organization", [
+      field("Founded", num("foundedYear") != null ? String(num("foundedYear")) : null),
+      field("Team size", num("teamSize") != null ? formatNumber(num("teamSize")) : null),
+      field("Country", [countryFlagSafe(f("country")), f("country")].filter(Boolean).join(" ") || null),
+      field("Active since", f("startDate") ? formatDate(f("startDate")!) : null),
+    ]),
+    section("Focus", [
+      field("Ecosystems", list(n.ecosystemTypes), true),
+      field("Focus species", list(n.focusSpeciesGroups), true),
+    ]),
+    section("Data", [
+      field("Data license", f("dataLicense")),
+      field("Funding", f("fundingSourcesDescription"), true),
+    ]),
+  ].filter((s) => s.fields.length > 0);
+
+  const links: DetailLink[] = [];
+  const web = f("website");
+  if (web && /^https?:\/\//.test(web)) {
+    try {
+      links.push({ label: new URL(web).hostname.replace(/^www\./, ""), href: web });
+    } catch {
+      /* skip malformed */
+    }
+  }
+  for (const s of n.socialLinks ?? []) {
+    const url = sv(s?.url);
+    if (url) links.push({ label: cap(sv(s?.platform) ?? "Link"), href: url });
+  }
+  const dl = f("dataDownloadUrl");
+  if (dl && /^https?:\/\//.test(dl)) links.push({ label: "Download data", href: dl });
+  const email = f("email");
+  if (email) links.push({ label: email, href: `mailto:${email}` });
+
+  return { blurb: n.shortDescription?.text ? sv(n.shortDescription.text) : null, badges: [], sections, links };
+}
+
+/** Fetch the full, drawer-ready detail for a record by its AT-URI. */
+export async function fetchRecordDetail(
+  atUri: string,
+  signal?: AbortSignal,
+): Promise<RecordDetail | null> {
+  const m = atUri.match(/^at:\/\/([^/]+)\/([^/]+)\/(.+)$/);
+  if (!m) return null;
+  const collection = m[2];
+
+  if (collection === "app.gainforest.dwc.occurrence") {
+    const data = await indexerQuery<{ appGainforestDwcOccurrenceByUri?: OccDetailNode | null }>(
+      OCCURRENCE_DETAIL_QUERY,
+      { uri: atUri },
+      signal,
+    );
+    const n = data?.appGainforestDwcOccurrenceByUri;
+    return n ? buildOccurrenceDetail(n) : null;
+  }
+  if (collection === "org.hypercerts.claim.activity") {
+    const data = await indexerQuery<{ orgHypercertsClaimActivityByUri?: BumiDetailNode | null }>(
+      ACTIVITY_DETAIL_QUERY,
+      { uri: atUri },
+      signal,
+    );
+    const n = data?.orgHypercertsClaimActivityByUri;
+    return n ? buildBumicertDetail(n) : null;
+  }
+  if (collection === "app.gainforest.organization.info") {
+    const data = await indexerQuery<{ appGainforestOrganizationInfoByUri?: OrgDetailNode | null }>(
+      ORG_DETAIL_QUERY,
+      { uri: atUri },
+      signal,
+    );
+    const n = data?.appGainforestOrganizationInfoByUri;
+    return n ? buildOrgDetail(n) : null;
+  }
   return null;
 }

@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { ExplorerRecord } from "../_lib/indexer";
+import {
+  fetchRecordDetail,
+  type ExplorerRecord,
+  type RecordDetail,
+  type DetailSection,
+  type DetailBadge,
+} from "../_lib/indexer";
 import { formatDate, formatNumber, countryFlag } from "../_lib/format";
 import { AuthorChip } from "./AuthorChip";
 import { isPdsBlobUrl } from "../_lib/pds";
@@ -29,6 +35,7 @@ export function RecordDrawer({
   onClose: () => void;
 }) {
   const [imgError, setImgError] = useState(false);
+  const [detail, setDetail] = useState<RecordDetail | null>(null);
   useEffect(() => {
     setImgError(false);
   }, [record]);
@@ -46,6 +53,18 @@ export function RecordDrawer({
     };
   }, [record, onClose]);
 
+  // Fetch the full, drawer-ready detail for the opened record. The list query
+  // stays lean (1000 records); the deep field set is pulled per record here.
+  useEffect(() => {
+    setDetail(null);
+    if (!record) return;
+    const ctrl = new AbortController();
+    fetchRecordDetail(record.atUri, ctrl.signal)
+      .then((d) => setDetail(d))
+      .catch(() => {});
+    return () => ctrl.abort();
+  }, [record]);
+
   if (!record) return null;
 
   const title =
@@ -55,8 +74,15 @@ export function RecordDrawer({
         ? record.title
         : record.name;
 
-  const fields = buildFields(record);
-  const links = buildLinks(record);
+  const sections: DetailSection[] = detail
+    ? detail.sections
+    : [{ title: null, fields: buildFields(record) }];
+  const mediaBadges: DetailBadge[] =
+    record.kind === "occurrence"
+      ? record.media.map((m) => ({ label: mediaLabel(m), tone: "info" }))
+      : [];
+  const badges = [...(detail?.badges ?? []), ...mediaBadges];
+  const links = dedupeLinks([...buildLinks(record), ...(detail?.links ?? [])]);
 
   return (
     <div
@@ -118,17 +144,44 @@ export function RecordDrawer({
             />
           </div>
 
-          {/* Field grid */}
-          <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-border-soft pt-5">
-            {fields.map((f) => (
-              <div key={f.label} className={f.wide ? "col-span-2" : ""}>
-                <dt className="text-[11px] font-medium uppercase tracking-[0.1em] text-foreground/45">
-                  {f.label}
-                </dt>
-                <dd className="mt-1 text-[14px] leading-[1.4] text-foreground">{f.value}</dd>
+          {/* Full description / field notes */}
+          {detail?.blurb && (
+            <p className="mt-5 whitespace-pre-line text-[14px] leading-[1.6] text-foreground/75">
+              {detail.blurb}
+            </p>
+          )}
+
+          {/* Status + media badges */}
+          {badges.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {badges.map((b, i) => (
+                <Badge key={`${b.label}-${i}`} badge={b} />
+              ))}
+            </div>
+          )}
+
+          {/* Grouped detail sections — rich once loaded, base fields meanwhile */}
+          {sections.map((s, i) =>
+            s.fields.length === 0 ? null : (
+              <div key={s.title ?? i} className="mt-5 border-t border-border-soft pt-4">
+                {s.title && (
+                  <div className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.12em] text-foreground/45">
+                    {s.title}
+                  </div>
+                )}
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-3.5">
+                  {s.fields.map((f) => (
+                    <div key={f.label} className={f.wide ? "col-span-2" : ""}>
+                      <dt className="text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/45">
+                        {f.label}
+                      </dt>
+                      <dd className="mt-0.5 text-[14px] leading-[1.45] text-foreground">{f.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
-            ))}
-          </dl>
+            ),
+          )}
 
           {/* AT URI → opens the raw record JSON on Hyperscan's Data Explorer */}
           <div className="mt-6 border-t border-border-soft pt-5">
@@ -228,6 +281,43 @@ function UriRow({ uri, href }: { uri: string; href: string | null }) {
       </button>
     </div>
   );
+}
+
+const BADGE_TONE: Record<DetailBadge["tone"], string> = {
+  ok: "bg-ok/15 text-ok",
+  warn: "bg-warn/15 text-warn",
+  down: "bg-down/15 text-down",
+  info: "bg-foreground/[0.06] text-foreground/70",
+};
+
+function Badge({ badge }: { badge: DetailBadge }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11.5px] font-medium ${BADGE_TONE[badge.tone]}`}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
+function mediaLabel(kind: string): string {
+  switch (kind) {
+    case "image":
+      return "Photo";
+    case "audio":
+      return "Audio";
+    case "video":
+      return "Video";
+    case "spectrogram":
+      return "Spectrogram";
+    default:
+      return kind;
+  }
+}
+
+function dedupeLinks<T extends { href: string }>(links: T[]): T[] {
+  const seen = new Set<string>();
+  return links.filter((l) => (seen.has(l.href) ? false : (seen.add(l.href), true)));
 }
 
 function KindBadge({ kind }: { kind: ExplorerRecord["kind"] }) {
