@@ -112,6 +112,41 @@ export function AuthorInline({
   );
 }
 
+/** Floating owner badge for the top-left of a card cover (Bumicerts-card
+ *  style): the avatar is always shown; the @handle appears once resolved. The
+ *  did:plc + created date live in the card footer, so the badge stays compact. */
+export function OwnerBadge({
+  did,
+  avatarOverride,
+}: {
+  did: string;
+  avatarOverride?: string | null;
+}) {
+  const [profile, setProfile] = useState<DidProfile | null>(() => getCachedProfile(did) ?? null);
+  useEffect(() => {
+    let active = true;
+    setProfile(getCachedProfile(did) ?? null);
+    resolveDidProfile(did).then((p) => {
+      if (active) setProfile(p);
+    });
+    return () => {
+      active = false;
+    };
+  }, [did]);
+
+  const handle = profile?.handle ?? null;
+  const avatar = avatarOverride ?? profile?.avatar ?? null;
+
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1.5" title={handle ? `@${handle}` : did}>
+      <Avatar did={did} handle={handle} avatar={avatar} className="h-6 w-6 text-[10px]" />
+      {handle ? (
+        <span className="truncate text-[11.5px] font-medium text-foreground">@{handle}</span>
+      ) : null}
+    </span>
+  );
+}
+
 function Avatar({
   did,
   handle,

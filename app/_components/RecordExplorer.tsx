@@ -16,8 +16,8 @@ import {
 } from "../_lib/indexer";
 import { RecordDrawer } from "./RecordDrawer";
 import { BrushedText } from "./BrushedText";
-import { AuthorChip } from "./AuthorChip";
-import { formatNumber, countryFlag } from "../_lib/format";
+import { OwnerBadge } from "./AuthorChip";
+import { formatNumber, countryFlag, shortDid, formatDate } from "../_lib/format";
 
 // Single-stream record explorer. One of the three GainForest record types
 // (Darwin Core occurrences, project sites, Bumicerts) paged straight from
@@ -60,7 +60,8 @@ const KIND_META: Record<RecordKind, KindMeta> = {
 };
 
 // One grid for all three streams so the explorer reads as a consistent
-// catalog; every card carries an owner (did:plc → handle/avatar) + date footer.
+// catalog; compact but kept readable (4-up at most). Every card carries an
+// owner (did:plc → handle/avatar) + created date.
 const GRID_CLS =
   "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
@@ -340,11 +341,13 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
   );
 }
 
-// ── Card (one layout for all three streams) ─────────────────────────────────
+// ── Card (Bumicerts-style, compact) ─────────────────────────────────────────
 //
-// Every record renders the same way: image (or a typed placeholder) on top,
-// then title / subtitle / meta, then a shared owner footer — the did:plc
-// resolved to handle + avatar via <AuthorChip> — with the created date.
+// Mirrors the marketplace BumicertCard: a 4:3 cover with a subtle reverse-zoom
+// on hover, the content overlapping the image bottom behind a gradient fade, an
+// Instrument-Serif italic title, a floating owner badge (avatar + @handle), and
+// small pill tags. The did:plc + created date sit in the footer so the owner is
+// always identifiable. Kept compact so many records fit on screen.
 
 const clamp = (n: number) =>
   ({
@@ -357,10 +360,10 @@ const clamp = (n: number) =>
 type CardView = {
   alt: string;
   title: ReactNode;
-  titleCls: string;
   subtitle?: ReactNode;
-  meta?: ReactNode;
-  topBadges?: ReactNode;
+  pills?: ReactNode;
+  /** Floating type badge for the top-right of the cover. */
+  badge?: ReactNode;
   placeholder: ReactNode;
   /** A better avatar the card already has (e.g. an org logo). */
   avatarOverride?: string | null;
@@ -375,7 +378,7 @@ function RecordCard({ record, onOpen }: { record: ExplorerRecord; onOpen: () => 
     <button
       type="button"
       onClick={onOpen}
-      className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border-soft bg-surface text-left shadow-[0_8px_26px_-20px_rgba(20,30,15,0.3)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_-22px_rgba(20,30,15,0.4)]"
+      className="group relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border-soft bg-surface text-left transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-[0_18px_40px_-24px_rgba(20,30,15,0.45)]"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-surface-sunken">
         {hasImage ? (
@@ -383,43 +386,63 @@ function RecordCard({ record, onOpen }: { record: ExplorerRecord; onOpen: () => 
             src={record.imageUrl!}
             alt={v.alt}
             fill
-            sizes="(max-width:640px) 100vw, (max-width:1280px) 33vw, 340px"
+            sizes="(max-width:640px) 50vw, (max-width:1280px) 25vw, 240px"
             unoptimized={record.imageUrl!.startsWith("/")}
             onError={() => setImgError(true)}
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            className="scale-[1.08] object-cover transition-transform duration-500 group-hover:scale-100"
           />
         ) : (
           v.placeholder
         )}
-        {v.topBadges}
-      </div>
-      <div className="flex flex-1 flex-col gap-1.5 px-4 pb-3.5 pt-3">
-        <div className={v.titleCls} style={clamp(2)}>
-          {v.title}
+
+        {/* Owner badge: avatar always, @handle once resolved. */}
+        <div className="absolute left-1.5 top-1.5 z-10 inline-flex max-w-[calc(100%-0.75rem)] items-center rounded-full bg-background/75 py-0.5 pl-0.5 pr-2 shadow-sm backdrop-blur-md">
+          <OwnerBadge did={record.did} avatarOverride={v.avatarOverride} />
         </div>
-        {v.subtitle ? (
-          <div
-            className="font-instrument text-[12.5px] italic leading-[1.4] text-foreground/65"
+
+        {v.badge ? <div className="absolute right-1.5 top-1.5 z-10">{v.badge}</div> : null}
+      </div>
+
+      {/* Content on the solid card surface for legibility. */}
+      <div className="flex flex-1 flex-col px-4 pb-3 pt-3">
+        <div>
+          <h3
+            className="font-instrument text-[19px] italic leading-tight text-foreground"
             style={clamp(2)}
           >
-            {v.subtitle}
-          </div>
-        ) : null}
-        {v.meta ? (
-          <div className="flex items-center gap-2 font-mono text-[11px] text-foreground/55">
-            {v.meta}
-          </div>
-        ) : null}
-        <div className="mt-auto border-t border-border-soft pt-2.5">
-          <AuthorChip
-            did={record.did}
-            createdAt={record.createdAt}
-            avatarOverride={v.avatarOverride}
-            size="sm"
-          />
+            {v.title}
+          </h3>
+          {v.subtitle ? (
+            <p className="mt-1 text-[13px] leading-snug text-foreground/65" style={clamp(1)}>
+              {v.subtitle}
+            </p>
+          ) : null}
+          {v.pills ? (
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">{v.pills}</div>
+          ) : null}
+        </div>
+
+        {/* did:plc + created date — always shown. */}
+        <div className="mt-3.5 flex items-center justify-between gap-2 border-t border-border-soft pt-2.5 font-mono text-[11px] text-foreground/50">
+          <span className="truncate" title={record.did}>
+            {shortDid(record.did)}
+          </span>
+          {record.createdAt ? <span className="shrink-0">{formatDate(record.createdAt)}</span> : null}
         </div>
       </div>
     </button>
+  );
+}
+
+function Pill({ children, accent }: { children: ReactNode; accent?: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium ${
+        accent ? "bg-brand/12 text-brand-dark" : "bg-surface-sunken text-foreground/65"
+      }`}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -432,27 +455,26 @@ function cardView(record: ExplorerRecord): CardView {
     return {
       alt: name,
       title: name,
-      titleCls: "font-garamond text-[16px] italic leading-[1.2] text-foreground",
       subtitle:
         record.scientificName && record.vernacularName ? record.vernacularName : undefined,
-      meta: (
+      pills: (
         <>
-          <span>{taxon || record.basisOfRecord?.replace(/_/g, " ") || "Observation"}</span>
+          {taxon ? <Pill>{taxon}</Pill> : null}
           {cc ? (
-            <span className="ml-auto text-primary-dark">
+            <Pill>
               {countryFlag(record.countryCode)} {cc}
-            </span>
+            </Pill>
           ) : null}
         </>
       ),
-      topBadges:
+      badge:
         record.media.length > 0 ? (
-          <div className="absolute right-2 top-2 z-10 flex gap-1">
+          <div className="flex gap-1">
             {record.media.map((m) => (
               <span
                 key={m}
                 title={m}
-                className="grid h-5 w-5 place-items-center rounded-full bg-background/90 text-foreground/70"
+                className="grid h-5 w-5 place-items-center rounded-full bg-background/85 text-foreground/70 backdrop-blur-md"
               >
                 <MediaIcon kind={m} />
               </span>
@@ -461,14 +483,14 @@ function cardView(record: ExplorerRecord): CardView {
         ) : null,
       placeholder: (
         <div
-          className="flex h-full w-full items-center justify-center p-4 text-center"
+          className="flex h-full w-full items-end p-3"
           style={{
             background:
               "radial-gradient(120% 90% at 80% 0%, color-mix(in srgb, var(--primary) 10%, transparent), transparent), var(--surface)",
           }}
         >
           <span
-            className="font-garamond text-[18px] italic leading-[1.15] text-foreground/55"
+            className="font-garamond text-[15px] italic leading-tight text-foreground/45"
             style={clamp(3)}
           >
             {name}
@@ -482,19 +504,13 @@ function cardView(record: ExplorerRecord): CardView {
     return {
       alt: record.name,
       title: record.name,
-      titleCls: "font-garamond text-[18px] leading-[1.2] text-foreground",
-      meta: record.country ? (
-        <span>
+      pills: record.country ? (
+        <Pill>
           {countryFlag(record.country)} {record.country}
-        </span>
+        </Pill>
       ) : undefined,
-      topBadges: record.country ? (
-        <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[11px] font-medium text-foreground/70">
-          {countryFlag(record.country)} {record.country}
-        </span>
-      ) : null,
       placeholder: (
-        <div className="flex h-full w-full items-center justify-center font-garamond text-[40px] text-foreground/15">
+        <div className="flex h-full w-full items-center justify-center font-garamond text-[34px] text-foreground/15">
           {countryFlag(record.country) || "\u25F0"}
         </div>
       ),
@@ -507,25 +523,28 @@ function cardView(record: ExplorerRecord): CardView {
   return {
     alt: record.title,
     title: record.title,
-    titleCls: "font-garamond text-[17px] leading-[1.2] text-foreground",
     subtitle: record.shortDescription ?? undefined,
-    meta: (
-      <span>
-        {formatNumber(record.contributorCount)} contributor
-        {record.contributorCount === 1 ? "" : "s"}
-        {record.locationCount > 0
-          ? ` \u00B7 ${formatNumber(record.locationCount)} site${record.locationCount === 1 ? "" : "s"}`
-          : ""}
-      </span>
+    pills: (
+      <>
+        <Pill accent>
+          {formatNumber(record.contributorCount)} contributor
+          {record.contributorCount === 1 ? "" : "s"}
+        </Pill>
+        {record.locationCount > 0 ? (
+          <Pill>
+            {formatNumber(record.locationCount)} site{record.locationCount === 1 ? "" : "s"}
+          </Pill>
+        ) : null}
+      </>
     ),
-    topBadges: (
-      <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1.5 rounded-full bg-background/92 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] text-brand-dark">
+    badge: (
+      <span className="inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-0.5 text-[9.5px] font-medium uppercase tracking-[0.1em] text-brand-dark backdrop-blur-md">
         <span aria-hidden className="pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-brand text-brand" />
         Bumicert
       </span>
     ),
     placeholder: (
-      <div className="flex h-full w-full items-center justify-center font-garamond text-[15px] italic text-foreground/35">
+      <div className="flex h-full w-full items-center justify-center font-garamond text-[14px] italic text-foreground/30">
         No cover image
       </div>
     ),
@@ -592,15 +611,15 @@ function Spinner() {
 function SkeletonGrid() {
   return (
     <div className={GRID_CLS} aria-hidden>
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="overflow-hidden rounded-2xl border border-border-soft">
+      {Array.from({ length: 15 }).map((_, i) => (
+        <div key={i} className="overflow-hidden rounded-xl border border-border-soft">
           <div className="skeleton aspect-[4/3]" />
-          <div className="space-y-2 p-4">
-            <div className="skeleton h-4 w-3/4 rounded" />
+          <div className="space-y-2 px-3 pb-2.5 pt-2.5">
+            <div className="skeleton h-3.5 w-3/4 rounded" />
             <div className="skeleton h-3 w-1/2 rounded" />
-            <div className="mt-3 flex items-center gap-2 border-t border-border-soft pt-2.5">
-              <div className="skeleton h-5 w-5 rounded-full" />
-              <div className="skeleton h-3 w-2/3 rounded" />
+            <div className="mt-2 flex items-center justify-between border-t border-border-soft pt-2">
+              <div className="skeleton h-2.5 w-1/3 rounded" />
+              <div className="skeleton h-2.5 w-1/4 rounded" />
             </div>
           </div>
         </div>
