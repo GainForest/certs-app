@@ -17,6 +17,7 @@ import {
 import { RecordDrawer } from "./RecordDrawer";
 import { RecordMap } from "./RecordMap";
 import { OwnerBadge } from "./AuthorChip";
+import { isPdsBlobUrl } from "../_lib/pds";
 import { formatNumber, countryFlag, shortDid, formatDate } from "../_lib/format";
 
 // Single-stream record explorer. One of the three GainForest record types
@@ -68,7 +69,13 @@ const GRID_CLS =
 
 type Phase = "idle" | "loading" | "ready" | "error" | "more";
 
-const PAGE_SIZE = 24;
+// Load a deep first page across every stream so the grid, map, and stats
+// reflect a real slice of the data. The indexer caps each request at 100, so
+// the fetchers page the cursor to reach this.
+const LOAD_TARGET = 1000;
+// Photos/Audio occurrences are sparse — chasing 1000 would scan tens of
+// thousands of records — so media-filtered views keep a screenful instead.
+const MEDIA_TARGET = 60;
 
 export function RecordExplorer({ kind }: { kind: RecordKind }) {
   const meta = KIND_META[kind];
@@ -107,11 +114,12 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
         return [...base, ...incoming.filter((r) => !seen.has(r.id))];
       };
 
+      setWalking(true);
+
       if (kind === "occurrence") {
-        setWalking(true);
         walkOccurrences({
           media: occMedia,
-          target: PAGE_SIZE,
+          target: occMedia === "all" ? LOAD_TARGET : MEDIA_TARGET,
           after,
           signal: ctrl.signal,
           onProgress: (running) => {
@@ -136,10 +144,16 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
         return;
       }
 
+      // Sites + Bumicerts page the cursor to the same target, emitting each
+      // 100-record page so the grid fills progressively.
+      const onProgress = (running: ExplorerRecord[]) => {
+        setRecords(merge(running));
+        setPhase("ready");
+      };
       const request: Promise<Page<ExplorerRecord>> =
         kind === "site"
-          ? fetchSites(PAGE_SIZE, after, ctrl.signal)
-          : fetchBumicerts(PAGE_SIZE, after, ctrl.signal);
+          ? fetchSites(LOAD_TARGET, after, ctrl.signal, onProgress)
+          : fetchBumicerts(LOAD_TARGET, after, ctrl.signal, onProgress);
 
       request
         .then((page) => {
@@ -152,6 +166,9 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
           if ((err as Error).name === "AbortError") return;
           console.warn(`[explorer] ${kind} fetch failed`, err);
           setPhase(stateRef.current.records.length ? "ready" : "error");
+        })
+        .finally(() => {
+          if (!ctrl.signal.aborted) setWalking(false);
         });
     },
     [kind, occMedia],
@@ -340,11 +357,10 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
           )}
         </div>
 
-        {/* Walking hint (occurrence only) */}
-        {kind === "occurrence" && walking && records.length > 0 && (
+        {/* Loading hint while pages stream in */}
+        {walking && records.length > 0 && (
           <p className="mt-6 flex items-center justify-center gap-2 text-[13px] italic text-foreground/55">
-            <Spinner /> Scanning the indexer for more{" "}
-            {occMedia === "audio" ? "audio" : occMedia === "image" ? "photos" : "records"}…
+            <Spinner /> Loading records…
           </p>
         )}
 
@@ -355,10 +371,10 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
               <button
                 type="button"
                 onClick={() => load("more")}
-                disabled={phase === "more" || (kind === "occurrence" && walking)}
+                disabled={phase === "more" || walking}
                 className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface px-6 py-3 text-[14px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-sunken disabled:opacity-60"
               >
-                {phase === "more" || (kind === "occurrence" && walking) ? (
+                {phase === "more" || walking ? (
                   <>
                     <Spinner /> Loading more
                   </>
@@ -426,7 +442,7 @@ function RecordCard({ record, onOpen }: { record: ExplorerRecord; onOpen: () => 
             alt={v.alt}
             fill
             sizes="(max-width:640px) 50vw, (max-width:1280px) 25vw, 240px"
-            unoptimized={record.imageUrl!.startsWith("/")}
+            unoptimized={!isPdsBlobUrl(record.imageUrl)}
             onError={() => setImgError(true)}
             className="scale-[1.08] object-cover transition-transform duration-500 group-hover:scale-100"
           />

@@ -75,3 +75,12 @@ export function blobUrl(host: string, did: string, cid: string): string {
     did,
   )}&cid=${encodeURIComponent(cid)}`;
 }
+
+/** True for our resolved PDS blob URLs. next/image can optimize these (their
+ *  host pattern is allowlisted in next.config and large originals benefit).
+ *  Arbitrary record image URIs (e.g. a bumicert cover on some random host)
+ *  are NOT — they must be served `unoptimized` so the optimizer never has to
+ *  allowlist an unbounded set of hosts. */
+export function isPdsBlobUrl(url: string | null | undefined): boolean {
+  return Boolean(url && url.includes("/xrpc/com.atproto.sync.getBlob"));
+}

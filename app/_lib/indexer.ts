@@ -61,6 +61,10 @@ export type Page<R> = {
 
 const RESOLVE_CONCURRENCY = 8;
 
+/** The indexer caps every connection query at 100 edges regardless of the
+ *  requested `first`, so multi-hundred loads must page the cursor. */
+const INDEXER_MAX_PAGE = 100;
+
 /** Resolve a list of blob refs to URLs with bounded concurrency. */
 async function resolveImages<R>(
   items: R[],
@@ -87,6 +91,33 @@ async function resolveImages<R>(
     Array.from({ length: Math.min(RESOLVE_CONCURRENCY, out.length) }, worker),
   );
   return out;
+}
+
+/**
+ * Walk a single-page fetcher's cursor until `target` records are gathered (or
+ * the stream ends), emitting the running list after each 100-record page so a
+ * 1000-record load fills the grid in waves instead of after one long wait.
+ */
+async function collectPaged<R>(
+  fetchPage: (after: string | null, signal?: AbortSignal) => Promise<Page<R>>,
+  target: number,
+  after: string | null,
+  signal?: AbortSignal,
+  onProgress?: (records: R[]) => void,
+): Promise<Page<R>> {
+  const all: R[] = [];
+  let cursor = after;
+  let hasMore = true;
+  while (all.length < target) {
+    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    const page = await fetchPage(cursor, signal);
+    all.push(...page.records);
+    cursor = page.cursor;
+    hasMore = page.hasMore;
+    onProgress?.([...all]);
+    if (!hasMore || !cursor) break;
+  }
+  return { records: all, cursor, hasMore };
 }
 
 // ── 1. Darwin Core occurrences ────────────────────────────────────────────
@@ -262,7 +293,7 @@ export async function walkOccurrences(opts: {
 }): Promise<OccurrenceWalkResult> {
   const { media, target, signal } = opts;
   const maxPages = opts.maxPages ?? MAX_WALK_PAGES;
-  const pageSize = media === "all" ? target : 100;
+  const pageSize = INDEXER_MAX_PAGE;
 
   const collected: OccurrenceRecord[] = [];
   let cursor: string | null = opts.after;
@@ -296,7 +327,6 @@ export async function walkOccurrences(opts: {
     }
 
     if (collected.length >= target || !hasNextPage || !cursor) break;
-    if (media === "all") break;
   }
 
   return {
@@ -398,14 +428,13 @@ function mapActivity(n: RawActivity): BumicertRecord {
   };
 }
 
-export async function fetchBumicerts(
-  first: number,
+async function fetchActivityPage(
   after: string | null,
   signal?: AbortSignal,
 ): Promise<Page<BumicertRecord>> {
   const data = await indexerQuery<{
     orgHypercertsClaimActivity?: Connection<RawActivity>;
-  }>(ACTIVITY_QUERY, { first, after }, signal);
+  }>(ACTIVITY_QUERY, { first: INDEXER_MAX_PAGE, after }, signal);
   const conn = data?.orgHypercertsClaimActivity;
   const nodes = (conn?.edges ?? [])
     .map((e) => e?.node)
@@ -422,6 +451,16 @@ export async function fetchBumicerts(
     cursor: conn?.pageInfo?.endCursor ?? null,
     hasMore: Boolean(conn?.pageInfo?.hasNextPage),
   };
+}
+
+/** Load up to `target` Bumicerts, paging the indexer's 100-record cap. */
+export async function fetchBumicerts(
+  target: number,
+  after: string | null,
+  signal?: AbortSignal,
+  onProgress?: (records: BumicertRecord[]) => void,
+): Promise<Page<BumicertRecord>> {
+  return collectPaged(fetchActivityPage, target, after, signal, onProgress);
 }
 
 // ── 3. Project sites (organizations) ───────────────────────────────────────
@@ -480,14 +519,13 @@ function mapOrg(n: RawOrg): SiteRecord {
   };
 }
 
-export async function fetchSites(
-  first: number,
+async function fetchOrgPage(
   after: string | null,
   signal?: AbortSignal,
 ): Promise<Page<SiteRecord>> {
   const data = await indexerQuery<{
     appGainforestOrganizationInfo?: Connection<RawOrg>;
-  }>(ORG_QUERY, { first, after }, signal);
+  }>(ORG_QUERY, { first: INDEXER_MAX_PAGE, after }, signal);
   const conn = data?.appGainforestOrganizationInfo;
   const nodes = (conn?.edges ?? [])
     .map((e) => e?.node)
@@ -507,6 +545,16 @@ export async function fetchSites(
     cursor: conn?.pageInfo?.endCursor ?? null,
     hasMore: Boolean(conn?.pageInfo?.hasNextPage),
   };
+}
+
+/** Load up to `target` project sites, paging the indexer's 100-record cap. */
+export async function fetchSites(
+  target: number,
+  after: string | null,
+  signal?: AbortSignal,
+  onProgress?: (records: SiteRecord[]) => void,
+): Promise<Page<SiteRecord>> {
+  return collectPaged(fetchOrgPage, target, after, signal, onProgress);
 }
 
 // ── Unified record type for the detail drawer ──────────────────────────────

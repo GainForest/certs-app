@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { ExplorerRecord } from "../_lib/indexer";
 import { formatDate, formatNumber, countryFlag } from "../_lib/format";
 import { AuthorChip } from "./AuthorChip";
+import { isPdsBlobUrl } from "../_lib/pds";
 import {
   BUMICERTS_URL,
   GLOBE_URL,
@@ -89,7 +90,7 @@ export function RecordDrawer({
                 alt={title}
                 fill
                 sizes="480px"
-                unoptimized={record.imageUrl.startsWith("/")}
+                unoptimized={!isPdsBlobUrl(record.imageUrl)}
                 onError={() => setImgError(true)}
                 className="object-cover"
               />
