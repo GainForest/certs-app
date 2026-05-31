@@ -122,17 +122,6 @@ export function DeviceMonitor({ initial }: { initial: DevicesSnapshot }) {
           </ul>
         )}
 
-        <div className="mt-10 flex justify-center">
-          <Link
-            href={MONITOR_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="group inline-flex items-center gap-1.5 text-[13.5px] font-medium text-foreground/65 transition-colors hover:text-primary"
-          >
-            Tainá monitor on GitHub
-            <span aria-hidden className="transition-transform group-hover:translate-x-0.5">↗</span>
-          </Link>
-        </div>
       </div>
     </section>
   );
