@@ -3,6 +3,10 @@
  * data endpoints. Kept in one place so a host change is a single edit.
  */
 
+/** Bumiscan's own canonical origin (the production Vercel domain). Drives
+ *  metadataBase, canonical/OG URLs, the sitemap, and robots. */
+export const SITE_URL = "https://bumiscan.vercel.app";
+
 /** Production Hyperindex GraphQL endpoint. Serves `access-control-allow-origin: *`
  *  so the browser can query it directly (no API proxy needed). */
 export const INDEXER_URL = "https://hi.gainforest.app/graphql";

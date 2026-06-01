@@ -5,6 +5,7 @@ import { TopNav } from "./_components/TopNav";
 import { Footer } from "./_components/Footer";
 import { AccountDrawerProvider } from "./_components/AccountDrawer";
 import { fetchStatus } from "./_lib/status";
+import { SITE_URL } from "./_lib/urls";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,7 +35,6 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
-const SITE_URL = "https://bumiscan.vercel.app";
 const SITE_NAME = "Bumiscan";
 const SITE_TAGLINE = "the GainForest data commons explorer";
 const SITE_DESCRIPTION =
