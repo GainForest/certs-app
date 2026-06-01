@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Instrument_Serif, Inter, JetBrains_Mono } from "nex
 import "./globals.css";
 import { TopNav } from "./_components/TopNav";
 import { Footer } from "./_components/Footer";
+import { AccountDrawerProvider } from "./_components/AccountDrawer";
 import { fetchStatus } from "./_lib/status";
 
 const inter = Inter({
@@ -33,7 +34,7 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
-const SITE_URL = "https://explorer.gainforest.app";
+const SITE_URL = "https://bumiscan.vercel.app";
 const SITE_NAME = "Bumiscan";
 const SITE_TAGLINE = "the GainForest data commons explorer";
 const SITE_DESCRIPTION =
@@ -118,9 +119,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         className={`${inter.variable} ${cormorant.variable} ${instrument.variable} ${mono.variable} antialiased`}
       >
         <div className="flex min-h-screen flex-col bg-background">
-          <TopNav status={status} />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <AccountDrawerProvider>
+            <TopNav status={status} />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </AccountDrawerProvider>
         </div>
       </body>
     </html>

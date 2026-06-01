@@ -1701,3 +1701,158 @@ export async function fetchRecordDetail(
   }
   return null;
 }
+
+// ── Account summary (handle → profile drawer) ──────────────────────────
+//
+// Clicking a handle anywhere opens a drawer about that DID: when its repo was
+// created (PLC audit log), which org lexicons it publishes (certified actor /
+// GainForest org), and how many Bumicerts + Darwin Core observations it owns.
+// All counts come from one aliased indexer query (where: { did: { eq } } +
+// totalCount); identity/age come from plc.directory. Both endpoints are
+// CORS-open so this runs entirely in the browser.
+
+export type AccountSummary = {
+  did: string;
+  /** Handle from the PLC audit log's alsoKnownAs (best-effort). */
+  handle: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  bio: string | null;
+  website: string | null;
+  country: string | null;
+  /** Repo (DID) creation time from the PLC audit log. */
+  createdAt: string | null;
+  hasCertifiedOrg: boolean;
+  certOrgType: string | null;
+  hasGainforestOrg: boolean;
+  bumicertCount: number;
+  observationCount: number;
+};
+
+type AccountSummaryNode = {
+  occ?: { totalCount?: number | null } | null;
+  bumi?: { totalCount?: number | null } | null;
+  certOrg?: {
+    createdAt?: string | null;
+    organizationType?: string[] | null;
+    visibility?: string | null;
+  } | null;
+  gfOrg?: {
+    createdAt?: string | null;
+    displayName?: string | null;
+    country?: string | null;
+    coverImage?: { image?: { ref?: string | null } | null } | null;
+    logo?: { image?: { ref?: string | null } | null } | null;
+  } | null;
+  certProfile?: {
+    displayName?: string | null;
+    description?: string | null;
+    website?: string | null;
+    avatar?: { image?: { ref?: string | null } | null } | null;
+  } | null;
+};
+
+const ACCOUNT_SUMMARY_QUERY = `
+  query AccountSummary($did: String!, $certOrg: String!, $gfOrg: String!, $certProfile: String!) {
+    occ: appGainforestDwcOccurrence(first: 0, where: { did: { eq: $did } }) { totalCount }
+    bumi: orgHypercertsClaimActivity(first: 0, where: { did: { eq: $did } }) { totalCount }
+    certOrg: appCertifiedActorOrganizationByUri(uri: $certOrg) {
+      createdAt organizationType visibility
+    }
+    gfOrg: appGainforestOrganizationInfoByUri(uri: $gfOrg) {
+      createdAt displayName country
+      coverImage { image { ref } }
+      logo { image { ref } }
+    }
+    certProfile: appCertifiedActorProfileByUri(uri: $certProfile) {
+      displayName description website
+      avatar { __typename ... on OrgHypercertsDefsSmallImage { image { ref } } }
+    }
+  }
+`;
+
+/** First PLC audit entry = repo creation; last entry's alsoKnownAs = handle. */
+async function fetchPlcIdentity(
+  did: string,
+  signal?: AbortSignal,
+): Promise<{ createdAt: string | null; handle: string | null }> {
+  if (!did.startsWith("did:plc:")) return { createdAt: null, handle: null };
+  try {
+    const res = await fetch(`https://plc.directory/${did}/log/audit`, { signal });
+    if (!res.ok) return { createdAt: null, handle: null };
+    const log = (await res.json()) as Array<{
+      createdAt?: string;
+      operation?: { alsoKnownAs?: string[] };
+    }>;
+    const first = log[0];
+    const last = log[log.length - 1];
+    const aka = (last?.operation?.alsoKnownAs ?? first?.operation?.alsoKnownAs ?? [])[0];
+    const handle = aka
+      ? aka.replace(/^at:\/\//, "").replace(/^https?:\/\//, "") || null
+      : null;
+    return { createdAt: first?.createdAt ?? null, handle };
+  } catch (err) {
+    if ((err as Error).name === "AbortError") throw err;
+    return { createdAt: null, handle: null };
+  }
+}
+
+export async function fetchAccountSummary(
+  did: string,
+  signal?: AbortSignal,
+): Promise<AccountSummary> {
+  const [data, plc] = await Promise.all([
+    indexerQuery<AccountSummaryNode>(
+      ACCOUNT_SUMMARY_QUERY,
+      {
+        did,
+        certOrg: `at://${did}/app.certified.actor.organization/self`,
+        gfOrg: `at://${did}/app.gainforest.organization.info/self`,
+        certProfile: `at://${did}/app.certified.actor.profile/self`,
+      },
+      signal,
+    ),
+    fetchPlcIdentity(did, signal),
+  ]);
+
+  const certOrg = data?.certOrg ?? null;
+  const gfOrg = data?.gfOrg ?? null;
+  const profile = data?.certProfile ?? null;
+
+  const certType =
+    (certOrg?.organizationType ?? [])
+      .map((t) => sv(t))
+      .filter((t): t is string => Boolean(t))
+      .map(cap)
+      .join(", ") || null;
+
+  // Avatar precedence: certified profile avatar → GainForest logo → cover.
+  const avatarRef =
+    normaliseRef(profile?.avatar?.image?.ref) ??
+    normaliseRef(gfOrg?.logo?.image?.ref) ??
+    normaliseRef(gfOrg?.coverImage?.image?.ref);
+  let avatarUrl: string | null = null;
+  if (avatarRef) {
+    try {
+      avatarUrl = await resolveBlobUrl(did, avatarRef, signal);
+    } catch {
+      /* monogram fallback in the UI */
+    }
+  }
+
+  return {
+    did,
+    handle: plc.handle,
+    displayName: sv(profile?.displayName) ?? sv(gfOrg?.displayName) ?? null,
+    avatarUrl,
+    bio: sv(profile?.description) ?? null,
+    website: sv(profile?.website) ?? null,
+    country: sv(gfOrg?.country) ?? null,
+    createdAt: sv(plc.createdAt) ?? sv(certOrg?.createdAt) ?? sv(gfOrg?.createdAt) ?? null,
+    hasCertifiedOrg: Boolean(certOrg),
+    certOrgType: certType,
+    hasGainforestOrg: Boolean(gfOrg),
+    bumicertCount: data?.bumi?.totalCount ?? 0,
+    observationCount: data?.occ?.totalCount ?? 0,
+  };
+}
