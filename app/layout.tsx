@@ -38,6 +38,9 @@ const SITE_NAME = "Bumiscan";
 const SITE_TAGLINE = "the GainForest data commons explorer";
 const SITE_DESCRIPTION =
   "Bumiscan is a read-only explorer for the GainForest data commons. Darwin Core occurrences, project sites, Bumicerts, and funding receipts from Hyperindex, plus Tainá field-device liveness and system status.";
+const OG_IMAGE = "/og/bumiscan-og.png";
+const OG_ALT =
+  "Bumiscan — a warm cream editorial card. On the left, the sage GainForest leaf mark, the kicker ‘Explore the GainForest data commons’, the Bumiscan wordmark (with an italic sage ‘scan’), and an ‘observations · sites · bumicerts · donations’ pill. On the right, a vintage natural-history collage over an antique map: a blue tit and a robin, a fern, a golden chanterelle, a sunflower, a hand cradling soil with a seedling, an archival field-science photo, a brass magnifying glass, and floating faceted crystals.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -72,6 +75,7 @@ export const metadata: Metadata = {
     title: `${SITE_NAME}: ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
+    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: OG_ALT }],
   },
   twitter: {
     card: "summary_large_image",
@@ -79,6 +83,7 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     creator: "@gainforest",
     site: "@gainforest",
+    images: [{ url: OG_IMAGE, alt: OG_ALT }],
   },
   icons: {
     icon: [
