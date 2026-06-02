@@ -61,9 +61,10 @@ export type Page<R> = {
 
 const RESOLVE_CONCURRENCY = 8;
 
-/** The indexer caps every connection query at 100 edges regardless of the
- *  requested `first`, so multi-hundred loads must page the cursor. */
-const INDEXER_MAX_PAGE = 100;
+/** The indexer caps every connection query at 1000 edges regardless of the
+ *  requested `first` (it was 100 before the upgrade), so loads beyond 1000 must
+ *  page the cursor. */
+const INDEXER_MAX_PAGE = 1000;
 
 /** Resolve a list of blob refs to URLs with bounded concurrency. */
 async function resolveImages<R>(
@@ -95,8 +96,8 @@ async function resolveImages<R>(
 
 /**
  * Walk a single-page fetcher's cursor until `target` records are gathered (or
- * the stream ends), emitting the running list after each 100-record page so a
- * 1000-record load fills the grid in waves instead of after one long wait.
+ * the stream ends), emitting the running list after each page so a multi-page
+ * load fills the grid in waves instead of after one long wait.
  */
 async function collectPaged<R>(
   fetchPage: (after: string | null, signal?: AbortSignal) => Promise<Page<R>>,
@@ -493,7 +494,7 @@ async function fetchActivityPage(
   };
 }
 
-/** Load up to `target` Bumicerts, paging the indexer's 100-record cap. */
+/** Load up to `target` Bumicerts, paging the indexer's 1000-record cap. */
 export async function fetchBumicerts(
   target: number,
   after: string | null,
@@ -741,7 +742,7 @@ function siteTime(iso: string | null | undefined): number {
 }
 
 /**
- * Load up to `target` project sites, paging the indexer's 100-record cap.
+ * Load up to `target` project sites, paging the indexer's 1000-record cap.
  * `source` picks the GainForest org lexicon, the certified actor lexicon, or
  * both merged (newest first). Cursors only apply to single-source loads — the
  * merged view fetches each stream to `target` in one pass.

@@ -103,12 +103,10 @@ function paramToUri(value: string, kind: RecordKind): string | null {
 type Phase = "idle" | "loading" | "ready" | "error" | "more";
 
 // Load a deep first page across every stream so the grid, map, and stats
-// reflect a real slice of the data. The indexer caps each request at 100, so
-// the fetchers page the cursor to reach this.
+// reflect a real slice of the data. The indexer caps each request at 1000, so
+// a single page now reaches this for the media-filtered views (which push the
+// filter down server-side) and the cursor pages it for the rest.
 const LOAD_TARGET = 1000;
-// Photos/Audio occurrences are sparse — chasing 1000 would scan tens of
-// thousands of records — so media-filtered views keep a screenful instead.
-const MEDIA_TARGET = 60;
 
 export function RecordExplorer({ kind }: { kind: RecordKind }) {
   const meta = KIND_META[kind];
@@ -158,7 +156,7 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
       if (kind === "occurrence") {
         walkOccurrences({
           media: occMedia,
-          target: occMedia === "all" ? LOAD_TARGET : MEDIA_TARGET,
+          target: LOAD_TARGET,
           after,
           signal: ctrl.signal,
           onProgress: (running) => {
@@ -184,7 +182,7 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
       }
 
       // Sites + Bumicerts page the cursor to the same target, emitting each
-      // 100-record page so the grid fills progressively.
+      // page (up to 1000 records) so the grid fills progressively.
       const onProgress = (running: ExplorerRecord[]) => {
         setRecords(merge(running));
         setPhase("ready");
