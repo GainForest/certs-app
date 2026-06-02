@@ -6,7 +6,7 @@ import type { ExplorerKpis } from "../_lib/kpis";
 import type { ExplorerTrends, MetricSeries } from "../_lib/trends";
 import type { StatusSnapshot } from "../_lib/status";
 import type { DevicesLiveSummary } from "../_lib/devices";
-import type { FormatKey } from "./MetricTrend";
+import type { FormatKey, Baseline } from "./MetricTrend";
 import { formatCompact, formatUsd } from "../_lib/format";
 
 // Editorial hero, same rhythm as gainforest-app: eyebrow, big Cormorant
@@ -30,11 +30,18 @@ export function Hero({
     sub: string;
     series?: MetricSeries | null;
     format?: FormatKey;
+    baseline?: Baseline;
   }> = [
     {
       value: formatCompact(kpis.occurrences),
       label: "Species observations",
-      sub: "Darwin Core records",
+      sub: "Darwin Core records · recent",
+      series: trends.observations,
+      format: "number",
+      // The full ~400k history can't be built at request time; show the recent
+      // cumulative tail (newest 1000) anchored to the true total, framed to its
+      // own range so the slope is visible.
+      baseline: "min",
     },
     {
       value: formatCompact(kpis.bumicerts),
@@ -110,6 +117,7 @@ export function Hero({
               sub={c.sub}
               series={c.series}
               format={c.format}
+              baseline={c.baseline}
             />
           ))}
         </ul>

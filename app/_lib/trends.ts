@@ -13,13 +13,17 @@
  */
 
 import { INDEXER_URL, FACILITATOR_DID } from "./urls";
-import { ms, seriesFromIncrements, type MetricSeries } from "./series";
+import { ms, seriesFromIncrements, cumulativeTailSeries, type MetricSeries } from "./series";
 
 export type { MetricSeries } from "./series";
 
 const REVALIDATE = 60 * 15; // 15 minutes, matches kpis.ts.
 
 export type ExplorerTrends = {
+  /** Recent cumulative tail (newest ~1000 records) anchored to the true total.
+   *  Species observations (~400k) can't be charted in full at request time, so
+   *  we surface the recent growth slope from one cheap page. */
+  observations: MetricSeries | null;
   bumicerts: MetricSeries | null;
   sites: MetricSeries | null;
   totalRaised: MetricSeries | null;
@@ -61,8 +65,35 @@ async function fetchNodes<T>(
   return out;
 }
 
+/** One cheap query: the newest 1000 occurrence timestamps + the true total
+ *  count, turned into a cumulative tail ending at that total. */
+async function fetchObservationsTail(): Promise<MetricSeries | null> {
+  const query = `{
+    appGainforestDwcOccurrence(first: 1000, sortBy: createdAt, sortDirection: DESC) {
+      totalCount
+      edges { node { createdAt } }
+    }
+  }`;
+  const res = await fetch(INDEXER_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ query }),
+    next: { revalidate: REVALIDATE },
+  });
+  if (!res.ok) return null;
+  const json = (await res.json()) as {
+    data?: { appGainforestDwcOccurrence?: { totalCount?: number; edges?: { node?: { createdAt?: string } }[] } };
+  };
+  const conn = json.data?.appGainforestDwcOccurrence;
+  if (!conn) return null;
+  const times = (conn.edges ?? []).map((e) => ms(e?.node?.createdAt)).filter((t) => !Number.isNaN(t));
+  const total = conn.totalCount ?? times.length;
+  return cumulativeTailSeries(times, total);
+}
+
 export async function fetchTrends(): Promise<ExplorerTrends> {
-  const [bumiNodes, siteNodes, receiptNodes] = await Promise.all([
+  const [observations, bumiNodes, siteNodes, receiptNodes] = await Promise.all([
+    fetchObservationsTail().catch(() => null),
     fetchNodes<{ createdAt?: string }>("orgHypercertsClaimActivity", "createdAt").catch(() => []),
     fetchNodes<{ createdAt?: string }>("appGainforestOrganizationInfo", "createdAt").catch(() => []),
     fetchNodes<{ createdAt?: string; amount?: string; currency?: string }>(
@@ -82,5 +113,5 @@ export async function fetchTrends(): Promise<ExplorerTrends> {
       .map((n) => ({ t: ms(n.createdAt), inc: parseFloat(n.amount ?? "0") || 0 })),
   );
 
-  return { bumicerts, sites, totalRaised };
+  return { observations, bumicerts, sites, totalRaised };
 }

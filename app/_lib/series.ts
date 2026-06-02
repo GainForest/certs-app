@@ -99,6 +99,19 @@ export function seriesFromAverage(events: { t: number; value: number }[]): Metri
   return { days: isoDays, values };
 }
 
+/** Cumulative series for the recent tail of a large collection: the running
+ *  total of the newest `times.length` records, anchored so the last point
+ *  equals the real `total`. Use when the full per-day history is too expensive
+ *  to build (e.g. 400k species observations) but the newest page is cheap — the
+ *  line shows the recent growth slope ending at the true total. Pair with a
+ *  "min" chart baseline so the near-the-top tail isn't drawn as a flat line. */
+export function cumulativeTailSeries(times: number[], total: number): MetricSeries | null {
+  const base = seriesFromIncrements(times.map((t) => ({ t, inc: 1 })));
+  if (!base) return null;
+  const offset = total - times.filter((t) => !Number.isNaN(t)).length;
+  return { days: base.days, values: base.values.map((v) => v + offset) };
+}
+
 /** Per-day (non-cumulative) counts over the most recent `windowDays` — an
  *  activity line for windowed metrics like "Last 30 days". */
 export function dailyCountSeries(times: number[], windowDays: number): MetricSeries | null {

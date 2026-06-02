@@ -22,11 +22,18 @@ const LINE = "var(--primary)";
 // Sparkline
 // ---------------------------------------------------------------------------
 
-function sparkPaths(values: number[], vw: number, vh: number) {
+/** Chart baseline: "zero" anchors the y-axis at 0 (default); "min" frames it
+ *  to the data range so a near-the-top tail (e.g. a recent cumulative slice of
+ *  a 400k metric) shows its slope instead of flattening against the top. */
+export type Baseline = "zero" | "min";
+
+function sparkPaths(values: number[], vw: number, vh: number, baseline: Baseline = "zero") {
   const n = values.length;
   const maxY = Math.max(1, ...values);
+  const minY = baseline === "min" ? Math.min(...values) : 0;
+  const range = maxY - minY || 1;
   const x = (i: number) => (i / (n - 1)) * vw;
-  const y = (v: number) => vh - (v / maxY) * vh;
+  const y = (v: number) => vh - ((v - minY) / range) * vh;
   const line = values
     .map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`)
     .join(" ");
@@ -34,10 +41,18 @@ function sparkPaths(values: number[], vw: number, vh: number) {
   return { line, area };
 }
 
-export function Sparkline({ values, className = "" }: { values: number[]; className?: string }) {
+export function Sparkline({
+  values,
+  className = "",
+  baseline = "zero",
+}: {
+  values: number[];
+  className?: string;
+  baseline?: Baseline;
+}) {
   const VW = 100;
   const VH = 32;
-  const { line, area } = sparkPaths(values, VW, VH);
+  const { line, area } = sparkPaths(values, VW, VH, baseline);
   return (
     <svg viewBox={`0 0 ${VW} ${VH}`} preserveAspectRatio="none" className={className} aria-hidden>
       <path d={area} fill={LINE} opacity={0.12} />
@@ -68,12 +83,19 @@ function niceMax(v: number): number {
 
 const axisFmt = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
 
+/** Nice rounded [lo, hi] + step framing the [min, max] data range. */
+function niceBounds(min: number, max: number): { lo: number; hi: number; step: number } {
+  const step = Math.max(1, niceMax((max - min) / 4));
+  return { lo: Math.floor(min / step) * step, hi: Math.ceil(max / step) * step, step };
+}
+
 function MetricModal({
   title,
   sub,
   series,
   format,
   valueLabel,
+  baseline = "zero",
   onClose,
 }: {
   title: string;
@@ -83,6 +105,7 @@ function MetricModal({
   /** Headline number override so the modal matches the card's displayed value
    *  (e.g. windowed/compact metrics where the last point differs). */
   valueLabel?: string;
+  baseline?: Baseline;
   onClose: () => void;
 }) {
   const [hover, setHover] = useState<number | null>(null);
@@ -107,9 +130,15 @@ function MetricModal({
   const pad = { top: 16, right: 16, bottom: 28, left: 56 };
   const iw = VW - pad.left - pad.right;
   const ih = VH - pad.top - pad.bottom;
-  const maxY = niceMax(Math.max(1, ...values));
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(1, ...values);
+  const framed = baseline === "min" && dataMin > 0;
+  const bounds = framed ? niceBounds(dataMin, dataMax) : { lo: 0, hi: niceMax(dataMax), step: niceMax(dataMax) / 4 };
+  const yMin = bounds.lo;
+  const yMax = bounds.hi;
+  const span = yMax - yMin || 1;
   const x = (i: number) => pad.left + (n <= 1 ? 0 : (i / (n - 1)) * iw);
-  const y = (v: number) => pad.top + ih - (v / maxY) * ih;
+  const y = (v: number) => pad.top + ih - ((v - yMin) / span) * ih;
   const line = values
     .map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`)
     .join(" ");
@@ -118,8 +147,7 @@ function MetricModal({
   )},${(pad.top + ih).toFixed(1)} Z`;
 
   const yTicks: number[] = [];
-  const step = maxY / 4;
-  for (let v = 0; v <= maxY + 0.5; v += step) yTicks.push(Math.round(v));
+  for (let v = yMin; v <= yMax + 0.5; v += bounds.step) yTicks.push(Math.round(v));
 
   const idxs = n > 1 ? [0, Math.floor((n - 1) / 2), n - 1] : [0];
   const shortDate = (iso: string) => {
@@ -245,12 +273,14 @@ export function KpiCard({
   sub,
   series,
   format = "number",
+  baseline = "zero",
 }: {
   value: string;
   label: string;
   sub: string;
   series?: MetricSeries | null;
   format?: FormatKey;
+  baseline?: Baseline;
 }) {
   const [open, setOpen] = useState(false);
   const hasSeries = !!series && series.values.length > 1;
@@ -269,7 +299,9 @@ export function KpiCard({
         >
           {value}
         </div>
-        {hasSeries && <Sparkline values={series!.values} className="h-9 w-20 shrink-0 self-center" />}
+        {hasSeries && (
+          <Sparkline values={series!.values} baseline={baseline} className="h-9 w-20 shrink-0 self-center" />
+        )}
       </div>
       <div className="mt-2 flex items-center gap-1.5 text-[14px] font-medium text-foreground lg:text-[15px]">
         {label}
@@ -313,6 +345,7 @@ export function KpiCard({
           series={series!}
           format={FORMATTERS[format]}
           valueLabel={value}
+          baseline={baseline}
           onClose={() => setOpen(false)}
         />
       )}
