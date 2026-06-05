@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
-import { RecordExplorer } from "../_components/RecordExplorer";
+import { fetchBumicerts } from "../_lib/indexer";
+import { BumicertsExploreClient } from "./BumicertsExploreClient";
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Bumicerts",
+  title: "Explore Bumicerts — Verified Regenerative Impact Projects",
   description:
-    "Browse org.hypercerts.claim.activity records from the GainForest indexer: title, contributors, certified locations, and cover image.",
+    "Browse verified environmental impact certificates from nature stewards around the world. Filter by country, organization, and impact area.",
   alternates: { canonical: "/bumicerts" },
 };
 
-export default function BumicertsPage() {
-  return <RecordExplorer kind="bumicert" />;
+export default async function BumicertsPage() {
+  const page = await fetchBumicerts(72, null);
+  return <BumicertsExploreClient records={page.records} />;
 }

@@ -1,92 +1,143 @@
 @import "tailwindcss";
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Bumiscan — design tokens.
+@custom-variant dark (&:is(.dark *));
 
-   Ported verbatim from the gainforest-app landing (../gainforest-app), which
-   follows gainforest.earth's May 2026 editorial redesign with the Bumicerts
-   sage primary. The brand mint (#2fce8a) is restricted to the logo + a small
-   set of subtle live-data accents (LIVE badges, status dots, active tab);
-   it is NEVER a solid button fill. `--primary` (#3e7053) is the sage forest
-   call-to-action colour.
+/* ──────────────────────────────────────────────────────────────────────────
+   Bumiscan — Bumicerts design system tokens.
+
+   Mirrored from ../bumicerts-monorepo/apps/bumicerts/app/globals.css: stark
+   white/ink surfaces, oklch sage primary, shadcn-compatible card/muted/accent
+   slots, and the same radius + typography registrations. Compatibility aliases
+   keep the explorer-specific card, map, and status components themed without a
+   large mechanical class rename.
 ────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --background: #f4efe4;        /* warm cream */
-  --foreground: #1c1c1a;        /* near-black body text */
-  --muted-foreground: #5b5b56;  /* stone */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
 
-  --primary: #3e7053;           /* sage forest (Bumicerts primary) */
-  --primary-dark: #2e5840;      /* hover / pressed */
-  --primary-foreground: #fafafa;
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
 
-  --brand: #2fce8a;             /* logo mint + subtle live-data accents only */
-  --brand-dark: #21b073;
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
 
-  --border: #d9d3c3;            /* warm grey */
-  --border-soft: #e6dfd0;       /* paler */
+  --primary: oklch(0.5 0.0719 157.12);
+  --primary-dark: oklch(0.42 0.0719 157.12);
+  --primary-foreground: oklch(0.985 0 0);
 
-  --ink: #141413;               /* dark section bg */
-  --ink-foreground: #f4efe4;
-  --ink-muted: #a8a59a;
-  --ink-border: #2a2a27;
+  --secondary: oklch(0.97 0.003 264.54);
+  --secondary-foreground: oklch(0.205 0 0);
 
-  /* Surface used by data cards + panels sitting on the cream — one shade
-     lighter than the background so cards read as lifted, not cut-in. */
-  --surface: #fbf8f0;
-  --surface-sunken: #efe9da;
+  --muted: oklch(0.97 0.003 264.54);
+  --muted-foreground: oklch(0.48 0.012 264.54);
 
-  /* Status semantics (instatus mirror). Green = operational, amber =
-     degraded / partial, red = down. Muted to sit on the cream palette. */
-  --ok: #3e9d6b;
-  --warn: #c89a3a;
-  --down: #c25c4e;
+  --accent: oklch(0.97 0.0209 147.64);
+  --accent-foreground: oklch(0.3 0.04 157);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.922 0.004 286.32);
+  --input: oklch(0.922 0.004 286.32);
+  --ring: oklch(0.5 0.0719 157.12 / 0.3);
+
+  --radius: 0.75rem;
+
+  /* Bumiscan legacy aliases, now mapped onto the Bumicerts system. */
+  --border-soft: var(--border);
+  --surface: var(--card);
+  --surface-sunken: var(--muted);
+  --brand: var(--primary);
+  --brand-dark: var(--primary-dark);
+  --ink: oklch(0.08 0 0);
+  --ink-foreground: oklch(0.93 0 0);
+  --ink-muted: oklch(0.65 0.01 264.54);
+  --ink-border: oklch(1 0 0 / 0.08);
+
+  --ok: oklch(0.58 0.12 157);
+  --warn: oklch(0.72 0.13 78);
+  --down: oklch(0.62 0.19 28);
 
   color-scheme: light;
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Dark mode. The palette is the editorial "ink" black the donations dashboard
-   already used, promoted to a site-wide theme: near-black background, cream
-   foreground, sage lifted one step for legibility on dark surfaces. Toggled by
-   adding `.dark` to <html> (see ThemeToggle + the no-FOUC script in layout).
-────────────────────────────────────────────────────────────────────────── */
 .dark {
-  --background: #141413;        /* ink */
-  --foreground: #f1ece1;        /* cream text */
-  --muted-foreground: #a8a59a;  /* warm grey */
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(0.93 0 0);
 
-  --primary: #6fae86;           /* sage lifted for dark surfaces */
-  --primary-dark: #82bd97;      /* hover = brighter on dark */
-  --primary-foreground: #10231a;
+  --card: oklch(0.12 0 0);
+  --card-foreground: oklch(0.93 0 0);
 
-  --brand: #2fce8a;
-  --brand-dark: #58dca3;
+  --popover: oklch(0.12 0 0);
+  --popover-foreground: oklch(0.93 0 0);
 
-  --border: #2c2c28;
-  --border-soft: #34332e;
+  --primary: oklch(0.58 0.0751 159.05);
+  --primary-dark: oklch(0.66 0.0751 159.05);
+  --primary-foreground: oklch(0.93 0 0);
 
-  --surface: #1c1c1a;           /* panels lifted off the ink background */
-  --surface-sunken: #26251f;
+  --secondary: oklch(0.18 0.005 264.54);
+  --secondary-foreground: oklch(0.93 0 0);
 
-  --ok: #4fbf86;
-  --warn: #d8af52;
-  --down: #d97a6c;
+  --muted: oklch(0.16 0.005 264.54);
+  --muted-foreground: oklch(0.65 0.01 264.54);
+
+  --accent: oklch(0.2 0.02 157);
+  --accent-foreground: oklch(0.75 0.08 157);
+
+  --destructive: oklch(0.65 0.22 27.325);
+  --destructive-foreground: oklch(0.08 0 0);
+
+  --border: oklch(1 0 0 / 0.08);
+  --input: oklch(1 0 0 / 0.08);
+  --ring: oklch(0.58 0.0751 159.05 / 0.3);
+
+  --border-soft: var(--border);
+  --surface: var(--card);
+  --surface-sunken: var(--muted);
+  --brand: var(--primary);
+  --brand-dark: var(--primary-dark);
+  --ink: oklch(0.08 0 0);
+  --ink-foreground: oklch(0.93 0 0);
+  --ink-muted: oklch(0.65 0.01 264.54);
+  --ink-border: oklch(1 0 0 / 0.08);
+
+  --ok: oklch(0.64 0.13 157);
+  --warn: oklch(0.76 0.13 78);
+  --down: oklch(0.68 0.18 28);
 
   color-scheme: dark;
+}
+
+@theme {
+  --breakpoint-xs: 30rem;
+  --animate-spin-slow: spin 8s linear infinite;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-dark: var(--primary-dark);
-  --color-brand: var(--brand);
-  --color-brand-dark: var(--brand-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-border-soft: var(--border-soft);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
   --color-ink: var(--ink);
   --color-ink-foreground: var(--ink-foreground);
   --color-ink-muted: var(--ink-muted);
@@ -97,10 +148,19 @@
   --color-warn: var(--warn);
   --color-down: var(--down);
 
-  --font-sans: var(--font-sans), system-ui, sans-serif;
-  --font-garamond: var(--font-garamond), Georgia, serif;
-  --font-instrument: var(--font-instrument), Georgia, serif;
-  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-serif: var(--font-garamond-var), Georgia, serif;
+  --font-garamond: var(--font-garamond-var), Georgia, serif;
+  --font-instrument: var(--font-instrument-serif-var), Georgia, serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+  --radius-full: 9999px;
 }
 
 html {
@@ -111,16 +171,15 @@ html,
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-/* ── View Transition: circular reveal on theme toggle ───────────────────
-   Ported from broadlistening-frontend (originally bumicerts-monorepo).
-   ThemeToggle sets --theme-ripple-x/y to the click origin and calls
-   document.startViewTransition(...); this block disables the default
-   cross-fade, layers the new theme above the old, and starts its clip-path as
-   a 0px circle at that origin so an inline Web Animation can grow the circle
-   out to the far viewport corner (~1.2s) for a clean radial wipe. */
+body {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
 ::view-transition-group(root),
 ::view-transition-old(root),
 ::view-transition-new(root) {

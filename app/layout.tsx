@@ -1,22 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
+import { Cormorant_Garamond, Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
-import { TopNav } from "./_components/TopNav";
+import { AppShell } from "./_components/AppShell";
 import { Footer } from "./_components/Footer";
 import { AccountDrawerProvider } from "./_components/AccountDrawer";
 import { fetchStatus } from "./_lib/status";
 import { SITE_URL } from "./_lib/urls";
 
-const inter = Inter({
+const geistSans = Geist({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-geist-sans",
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-garamond",
+  variable: "--font-garamond-var",
   display: "swap",
 });
 
@@ -24,14 +30,7 @@ const instrument = Instrument_Serif({
   subsets: ["latin"],
   weight: ["400"],
   style: ["normal", "italic"],
-  variable: "--font-instrument",
-  display: "swap",
-});
-
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-mono",
+  variable: "--font-instrument-serif-var",
   display: "swap",
 });
 
@@ -120,16 +119,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${cormorant.variable} ${instrument.variable} ${mono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${instrument.variable} antialiased`}
       >
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
-        <div className="flex min-h-screen flex-col bg-background">
-          <AccountDrawerProvider>
-            <TopNav status={status} />
-            <main className="flex-1">{children}</main>
+        <AccountDrawerProvider>
+          <AppShell status={status}>
+            {children}
             <Footer />
-          </AccountDrawerProvider>
-        </div>
+          </AppShell>
+        </AccountDrawerProvider>
       </body>
     </html>
   );

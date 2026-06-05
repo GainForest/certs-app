@@ -9,8 +9,10 @@
     "start": "next start --port 3040"
   },
   "dependencies": {
+    "framer-motion": "^12.40.0",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
+    "lucide-react": "^1.17.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"

@@ -36,10 +36,10 @@ export function BrowseGrid({
       statLabel: "records",
     },
     {
-      href: "/sites",
+      href: "/organizations",
       label: "app.gainforest.organization.info",
-      title: "Project sites",
-      blurb: "Registered organizations: display name, country, and cover/logo blobs.",
+      title: "Organizations",
+      blurb: "Nature steward profiles: countries, project photos, and marketplace presence.",
       stat: formatCompact(kpis.sites),
       statLabel: "organizations",
     },

@@ -11,7 +11,7 @@ import { BUMICERTS_URL, GLOBE_URL } from "../_lib/urls";
 
 const NAV = [
   { href: "/observations", label: "Observations" },
-  { href: "/sites", label: "Sites" },
+  { href: "/organizations", label: "Organizations" },
   { href: "/bumicerts", label: "Bumicerts" },
   { href: "/donations", label: "Donations" },
   { href: "/devices", label: "Devices" },
