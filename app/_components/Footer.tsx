@@ -1,131 +1,138 @@
+import Image from "next/image";
 import Link from "next/link";
-import { LogoMark } from "./Logo";
-import { BUMICERTS_URL, GLOBE_URL, GAINFOREST_URL, STATUS_URL, INDEXER_URL } from "../_lib/urls";
+import { ExternalLinkIcon, FileTextIcon, GlobeIcon } from "lucide-react";
+import { BUMICERTS_URL, GAINFOREST_URL, GLOBE_URL, INDEXER_URL, STATUS_URL } from "../_lib/urls";
 
-const LINKS: Array<{ label: string; href: string }> = [
-  { label: "Green Globe", href: GLOBE_URL },
-  { label: "Bumicerts", href: `${BUMICERTS_URL}/explore` },
-  { label: "Status", href: STATUS_URL },
-  { label: "Indexer", href: INDEXER_URL },
-  { label: "GitHub", href: "https://github.com/GainForest/gainforest-explorer" },
-  { label: "gainforest.earth", href: GAINFOREST_URL },
-];
+const PRIMARY_LINKS = [
+  { href: GAINFOREST_URL, label: "GainForest", Icon: GlobeIcon, external: true },
+  { href: "https://docs.fund.gainforest.app/", label: "Documentation", Icon: FileTextIcon, external: true },
+  { href: "https://www.x.com/GainForestNow", label: "Twitter", Icon: TwitterIcon, external: true },
+  { href: "https://github.com/GainForest/gainforest-explorer", label: "GitHub", Icon: GithubIcon, external: true },
+] as const;
 
-// Social profiles — inline Bootstrap Icons (MIT, viewBox 0 0 16 16) so they
-// follow `currentColor` and need no icon package. Mirrors gainforest-app.
-const SOCIAL_LINKS: Array<{ label: string; href: string; path: string }> = [
-  {
-    label: "Facebook",
-    href: "https://www.facebook.com/gainforest",
-    path: "M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951",
-  },
-  {
-    label: "X (Twitter)",
-    href: "https://x.com/GainForestNow",
-    path: "M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z",
-  },
-  {
-    label: "Instagram",
-    href: "https://www.instagram.com/gainforest/",
-    path: "M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.9 3.9 0 0 0-1.417.923A3.9 3.9 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.9 3.9 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.9 3.9 0 0 0-.923-1.417A3.9 3.9 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599s.453.546.598.92c.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.5 2.5 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.5 2.5 0 0 1-.92-.598 2.5 2.5 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233s.008-2.388.046-3.231c.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92s.546-.453.92-.598c.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92m-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217m0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334",
-  },
-];
+const DATA_LINKS = [
+  { href: "/bumicerts", label: "Bumicerts" },
+  { href: "/organizations", label: "Organizations" },
+  { href: "/observations", label: "Observations" },
+  { href: "/donations", label: "Donations" },
+  { href: GLOBE_URL, label: "Green Globe" },
+  { href: STATUS_URL, label: "Status" },
+  { href: INDEXER_URL, label: "Indexer" },
+] as const;
 
-// Slim technical footer: the brand mark, the data sources it reads, the
-// GainForest e.V. legal block (matching gainforest.earth), and a factual
-// disclaimer. Always rendered on the editorial ink band.
+// Mixed footer: Bumicerts' light, minimal brand block plus the explorer's data
+// source/legal details and GainForest social presence.
 export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-ink-border bg-ink text-ink-foreground">
-      <div className="mx-auto w-full max-w-[1480px] px-6 py-10 sm:px-10 lg:px-16">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-[520px]">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <LogoMark className="h-6 w-6 text-brand" title="Bumiscan" />
-              <span className="font-garamond text-[20px] font-semibold text-ink-foreground">
-                Bumiscan
-              </span>
+    <footer className="mx-auto max-w-7xl border-t border-border px-6 py-16">
+      <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-start">
+        <div className="max-w-xl">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2.5">
+              <Image
+                src="/assets/media/images/app-icon.png"
+                alt="Bumicerts"
+                width={28}
+                height={28}
+                className="drop-shadow-md"
+              />
+              <span className="font-serif text-xl font-bold tracking-tight">Bumicerts</span>
             </div>
-            <p className="mt-3 text-[13px] leading-[1.6] text-ink-foreground/60">
-              Read-only view over the GainForest data commons. Records resolve
-              from Hyperindex and each owner&apos;s ATProto PDS; donation totals
-              mirror the indexer and may lag the chain. Not an official record.
-            </p>
-
-            <ul
-              role="list"
-              aria-label="GainForest on social media"
-              className="mt-4 flex items-center gap-3"
+            <p
+              className="text-sm text-muted-foreground"
+              style={{ fontFamily: "var(--font-instrument-serif-var)", fontStyle: "italic" }}
             >
-              {SOCIAL_LINKS.map((s) => (
-                <li key={s.label}>
-                  <Link
-                    href={s.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`GainForest on ${s.label}`}
-                    className="inline-grid h-8 w-8 place-items-center rounded-full text-ink-foreground/55 transition-colors hover:bg-ink-foreground/10 hover:text-brand"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
-                      <path d={s.path} />
-                    </svg>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+              Connecting communities with funders.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/60">
+              Open infrastructure. Built with GainForest. Read-only explorer views resolve from Hyperindex,
+              certified.one, ATProto PDS records, and live service status.
+            </p>
           </div>
 
-          <nav className="flex flex-wrap gap-x-6 gap-y-2.5 text-[13.5px] text-ink-foreground/78 lg:max-w-[420px] lg:justify-end">
-            {LINKS.map((l) => (
+          <nav className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-muted-foreground" aria-label="Data collections">
+            {DATA_LINKS.map((link) => (
               <Link
-                key={l.label}
-                href={l.href}
-                target="_blank"
-                rel="noreferrer"
-                className="transition-colors hover:text-brand"
+                key={link.href}
+                href={link.href}
+                target={link.href.startsWith("http") ? "_blank" : undefined}
+                rel={link.href.startsWith("http") ? "noreferrer" : undefined}
+                className="transition-colors hover:text-foreground"
               >
-                {l.label}
+                {link.label}
               </Link>
             ))}
           </nav>
         </div>
 
-        {/* Legal block — GainForest e.V., matching gainforest.earth's footer. */}
-        <div className="mt-8 flex flex-col gap-4 border-t border-ink-border pt-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-col gap-1.5 text-[12.5px] leading-[1.55] text-ink-foreground/55">
-            <span>© {year} GainForest. All rights reserved.</span>
+        <nav className="flex flex-col gap-1" aria-label="Footer links">
+          {PRIMARY_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              target={link.external ? "_blank" : undefined}
+              rel={link.external ? "noreferrer" : undefined}
+              className="flex items-center gap-2 py-0.5 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
+            >
+              <link.Icon className="h-3.5 w-3.5" />
+              <span>{link.label}</span>
+              {link.external && <ExternalLinkIcon className="h-3 w-3 opacity-50" />}
+            </Link>
+          ))}
+        </nav>
+      </div>
+
+      <div className="mt-8 border-t border-border pt-4 text-xs text-muted-foreground/50">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-1.5 leading-[1.55]">
             <span>
-              <span className="font-medium text-ink-foreground/85">GainForest e.V.</span>
-              <span className="text-ink-foreground/35"> · </span>
+              © {year} Bumicerts / GainForest. Open source, community-powered.
+            </span>
+            <span>
+              <span className="font-medium text-muted-foreground/80">GainForest e.V.</span>
+              <span className="text-muted-foreground/35"> · </span>
               Schwandenacker 35, 8052 Zurich, Switzerland
             </span>
             <span>
-              GainForest e.V. is a tax-exempt non-profit.
-              <span className="text-ink-foreground/35"> · </span>
+              Tax-exempt non-profit
+              <span className="text-muted-foreground/35"> · </span>
               <Link
                 href="https://www.uid.admin.ch/Detail.aspx?uid_id=CHE181901605"
                 target="_blank"
                 rel="noreferrer"
-                className="underline-offset-4 transition-colors hover:text-brand hover:underline"
+                className="underline-offset-4 transition-colors hover:text-primary hover:underline"
               >
                 UID: CHE-181.901.605
               </Link>
-              <span className="text-ink-foreground/35"> · </span>
-              <Link
-                href="mailto:team@gainforest.net"
-                className="underline-offset-4 transition-colors hover:text-brand hover:underline"
-              >
+              <span className="text-muted-foreground/35"> · </span>
+              <Link href="mailto:team@gainforest.net" className="underline-offset-4 transition-colors hover:text-primary hover:underline">
                 team@gainforest.net
               </Link>
             </span>
           </div>
-          <span className="font-mono text-[12px] text-ink-foreground/40">
-            hi.gainforest.app/graphql · certified.one · instatus
+          <span className="font-mono text-[12px] text-muted-foreground/40">
+            hi.gainforest.app/graphql · certified.one · instatus · {BUMICERTS_URL.replace(/^https?:\/\//, "")}
           </span>
         </div>
       </div>
     </footer>
+  );
+}
+
+function GithubIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.3c0 .32.22.7.83.58A12 12 0 0 0 12 .5Z" />
+    </svg>
+  );
+}
+
+function TwitterIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.657l-5.214-6.817-5.967 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
+    </svg>
   );
 }

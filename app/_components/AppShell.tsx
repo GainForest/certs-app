@@ -114,7 +114,12 @@ type DocWithViewTransitions = Document & {
 };
 
 export function AppShell({ children }: { children: React.ReactNode; status: StatusSnapshot }) {
+  const pathname = usePathname() ?? "/";
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  if (pathname === "/") {
+    return <>{children}</>;
+  }
 
   return (
     <>

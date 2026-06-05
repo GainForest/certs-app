@@ -1,26 +1,29 @@
-import { Hero } from "./_components/Hero";
+import type { Metadata } from "next";
 import { BrowseGrid } from "./_components/BrowseGrid";
-import { fetchKpis } from "./_lib/kpis";
-import { fetchTrends } from "./_lib/trends";
-import { fetchStatus } from "./_lib/status";
+import { HomeLanding } from "./_components/HomeLanding";
 import { fetchDevicesSummary } from "./_lib/devices";
+import { fetchKpis } from "./_lib/kpis";
+import { fetchStatus } from "./_lib/status";
 
-// Home. The editorial hero with the live KPI band, then a navigation grid of
-// the six explorer surfaces. Both upstreams are cheap and cached via
-// `revalidate`; the heavy record streams and tables live on their own routes.
 export const revalidate = 300;
 
+export const metadata: Metadata = {
+  title: "Bumicerts — Fund Regenerative Impact",
+  description:
+    "Bumicerts connects funders with nature stewards doing on-ground regenerative work. Fund verified environmental impact directly.",
+  alternates: { canonical: "/" },
+};
+
 export default async function HomePage() {
-  const [kpis, trends, status, devices] = await Promise.all([
+  const [kpis, status, devices] = await Promise.all([
     fetchKpis(),
-    fetchTrends(),
     fetchStatus({ revalidate: 60 }),
     fetchDevicesSummary(),
   ]);
 
   return (
     <>
-      <Hero kpis={kpis} trends={trends} status={status} devices={devices} />
+      <HomeLanding kpis={kpis} status={status} devices={devices} />
       <BrowseGrid kpis={kpis} status={status} devices={devices} />
     </>
   );
