@@ -1,0 +1,517 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowRightIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  LoaderIcon,
+  LogOutIcon,
+  SettingsIcon,
+  UserIcon,
+} from "lucide-react";
+import {
+  useRef,
+  useState,
+  useTransition,
+  type FormEvent,
+} from "react";
+import type { AuthSession } from "../_lib/auth";
+import { buildLoginUrl, redirectToLogout } from "../_lib/auth-client";
+import { shortDid } from "../_lib/format";
+import { accountHref, BUMICERTS_URL } from "../_lib/urls";
+import { Button } from "@/components/ui/button";
+import { ModalContent, ModalDescription, ModalTitle } from "@/components/ui/modal/modal";
+import { useModal } from "@/components/ui/modal/context";
+
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      className={cn(
+        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function AuthModal() {
+  return (
+    <ModalContent className="py-2">
+      <ModalTitle className="sr-only">Sign in to Bumicerts</ModalTitle>
+      <ModalDescription className="sr-only">
+        Sign in or create your account to access Bumicerts.
+      </ModalDescription>
+      <LoginModal />
+    </ModalContent>
+  );
+}
+
+function PillToggle({
+  active,
+  onChange,
+}: {
+  active: "handle" | "email";
+  onChange: (tab: "handle" | "email") => void;
+}) {
+  return (
+    <div className="flex w-full rounded-full bg-muted p-1">
+      <button
+        type="button"
+        onClick={() => onChange("email")}
+        className={cn(
+          "flex-1 rounded-full px-4 py-1.5 text-sm font-medium transition-all",
+          active === "email"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+      >
+        Email
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("handle")}
+        className={cn(
+          "flex-1 rounded-full px-4 py-1.5 text-sm font-medium transition-all",
+          active === "handle"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+      >
+        Handle
+      </button>
+    </div>
+  );
+}
+
+function EmailForm() {
+  const [email, setEmail] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setIsRedirecting(true);
+    setTimeout(() => setIsRedirecting(false), 10_000);
+    localStorage.setItem("auth_redirect", `${window.location.pathname}${window.location.search}`);
+    window.location.href = buildLoginUrl({ email });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-1.5">
+        <label htmlFor="login-email" className="text-sm font-medium">
+          Email
+        </label>
+        <Input
+          id="login-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          autoComplete="email"
+          autoFocus
+          disabled={isRedirecting}
+        />
+        <p className="text-xs text-muted-foreground">We’ll send you a verification code</p>
+      </div>
+
+      <Button type="submit" disabled={isRedirecting || !email.trim()} className="w-full">
+        {isRedirecting ? (
+          <>
+            <LoaderIcon className="animate-spin" />
+            Redirecting…
+          </>
+        ) : (
+          <>
+            Continue
+            <ArrowRightIcon />
+          </>
+        )}
+      </Button>
+    </form>
+  );
+}
+
+function isValidHandleLabel(label: string): boolean {
+  return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label);
+}
+
+type HandleErrorKey =
+  | "invalidCharacters"
+  | "missingDomain"
+  | "emptyLabel"
+  | "invalidLabelEdges";
+
+function getHandleErrorKey(handle: string): HandleErrorKey | null {
+  const trimmedHandle = handle.trim();
+
+  if (!trimmedHandle) {
+    return null;
+  }
+
+  if (/[^a-z0-9\-.]/.test(trimmedHandle)) {
+    return "invalidCharacters";
+  }
+
+  const labels = trimmedHandle.split(".");
+
+  if (labels.length < 2) {
+    return "missingDomain";
+  }
+
+  if (labels.some((label) => label.length === 0)) {
+    return "emptyLabel";
+  }
+
+  if (!labels.every(isValidHandleLabel)) {
+    return "invalidLabelEdges";
+  }
+
+  return null;
+}
+
+function HandleForm() {
+  const getValidationMessage = (key: HandleErrorKey) => {
+    switch (key) {
+      case "invalidCharacters":
+        return "Only letters, numbers, hyphens, and dots are allowed.";
+      case "missingDomain":
+        return "Enter your full handle, including its domain.";
+      case "emptyLabel":
+        return "Handle labels cannot be empty.";
+      case "invalidLabelEdges":
+        return "Handle labels must start and end with a letter or number.";
+    }
+  };
+  const [handle, setHandle] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const normalizedHandle = handle.trim();
+  const handleErrorKey = getHandleErrorKey(handle);
+  const canSubmit = Boolean(normalizedHandle) && !handleErrorKey;
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setError(null);
+    localStorage.setItem("auth_redirect", `${window.location.pathname}${window.location.search}`);
+    startTransition(() => {
+      try {
+        window.location.href = buildLoginUrl({ handle: handle.trim() });
+      } catch {
+        setError("Something went wrong. Please try again.");
+      }
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-1.5">
+        <label htmlFor="login-handle" className="text-sm font-medium">
+          Handle
+        </label>
+        <Input
+          id="login-handle"
+          type="text"
+          value={handle}
+          onChange={(e) => {
+            setHandle(e.target.value.toLowerCase());
+            setError(null);
+          }}
+          placeholder="alice.example.com"
+          autoComplete="username"
+          autoFocus
+          disabled={isPending}
+        />
+
+        <AnimatePresence mode="wait">
+          {handleErrorKey ? (
+            <motion.p
+              key="herr"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="text-xs text-destructive"
+            >
+              {getValidationMessage(handleErrorKey)}
+            </motion.p>
+          ) : normalizedHandle ? (
+            <motion.p
+              key="hpreview"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="text-xs text-muted-foreground"
+            >
+              Signing in as{" "}
+              <span className="font-mono text-foreground">{normalizedHandle}</span>
+            </motion.p>
+          ) : null}
+        </AnimatePresence>
+      </div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-xs text-destructive"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      <Button type="submit" disabled={!canSubmit || isPending} className="w-full">
+        {isPending ? (
+          <>
+            <LoaderIcon className="animate-spin" />
+            Redirecting…
+          </>
+        ) : (
+          <>
+            Continue
+            <ArrowRightIcon />
+          </>
+        )}
+      </Button>
+    </form>
+  );
+}
+
+function LoginModal() {
+  const [activeTab, setActiveTab] = useState<"handle" | "email">("email");
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.97, y: 8 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.97, y: 8 }}
+      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+      className="w-full"
+    >
+      <div className="mb-4 flex justify-center">
+        <Image
+          src="/assets/media/images/gainforest-logo.svg"
+          alt="GainForest logo"
+          width={40}
+          height={40}
+        />
+      </div>
+
+      <div className="mb-6 text-center">
+        <h2
+          className="mb-2 text-3xl font-light tracking-[-0.02em] text-foreground"
+          style={{ fontFamily: "var(--font-garamond-var)" }}
+        >
+          Get Started
+        </h2>
+        <p className="text-sm text-muted-foreground">Sign up or sign in to your account</p>
+      </div>
+
+      <div className="mb-6">
+        <PillToggle active={activeTab} onChange={setActiveTab} />
+      </div>
+
+      <AnimatePresence mode="wait">
+        {activeTab === "email" ? (
+          <motion.div
+            key="email"
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <EmailForm />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="handle"
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <HandleForm />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+export function SignInPrompt() {
+  const { pushModal, show } = useModal();
+
+  const handleSignIn = () => {
+    pushModal({
+      id: "auth-modal",
+      content: <AuthModal />,
+    });
+    show();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+      className="mx-1 p-3 rounded-lg bg-muted/40 border border-border/50"
+    >
+      <p className="text-xs text-muted-foreground text-center mb-2">
+        Sign in to manage your account and content.
+      </p>
+      <Button variant="ghost" size="sm" className="w-full" onClick={handleSignIn}>
+        Sign In
+        <ChevronRightIcon />
+      </Button>
+    </motion.div>
+  );
+}
+
+function AuthSkeleton() {
+  return (
+    <div className="flex items-center gap-2 px-1 py-1 animate-pulse">
+      <div className="h-7 w-7 rounded-full bg-muted" />
+      <div className="hidden sm:block h-3 w-20 rounded bg-muted" />
+    </div>
+  );
+}
+
+function UnauthenticatedButtons() {
+  const { pushModal, show } = useModal();
+
+  const openAuth = () => {
+    pushModal(
+      {
+        id: "auth",
+        content: <AuthModal />,
+      },
+      true,
+    );
+    show();
+  };
+
+  return (
+    <motion.button
+      onClick={openAuth}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      className="text-sm font-medium bg-primary text-primary-foreground rounded-full px-3.5 py-1.5 hover:bg-primary/90 transition-colors cursor-pointer"
+    >
+      Get started
+    </motion.button>
+  );
+}
+
+function AuthenticatedMenu({ session }: { session: Extract<AuthSession, { isLoggedIn: true }> }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const displayLabel = session.handle || shortDid(session.did);
+  const secondaryLabel = session.handle ? `@${session.handle}` : "User account";
+
+  const handleBlur = (event: React.FocusEvent) => {
+    if (!containerRef.current?.contains(event.relatedTarget as Node)) {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="relative" onBlur={handleBlur}>
+      <button
+        onClick={() => setOpen((value) => !value)}
+        className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-muted/60 transition-colors cursor-pointer group"
+      >
+        <div className="h-7 w-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
+          <UserIcon className="h-3.5 w-3.5 text-primary" />
+        </div>
+
+        <span className="hidden sm:block text-sm font-medium text-foreground max-w-[120px] truncate">
+          {displayLabel}
+        </span>
+
+        <motion.div
+          className="hidden sm:block"
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDownIcon className="h-3.5 w-3.5 text-muted-foreground" />
+        </motion.div>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 6 }}
+            transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+            className="absolute top-full right-0 mt-2 w-52 rounded-xl border border-border bg-background/95 backdrop-blur-sm shadow-xl shadow-black/10 overflow-hidden z-50"
+          >
+            <div className="px-3 py-2.5 border-b border-border">
+              <p className="text-sm font-medium text-foreground truncate">{displayLabel}</p>
+              {secondaryLabel && (
+                <p className="text-xs text-muted-foreground truncate">{secondaryLabel}</p>
+              )}
+            </div>
+
+            <div className="p-1">
+              <Link
+                href={accountHref(session.did)}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted/60 transition-colors w-full text-left"
+              >
+                <UserIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                My Account
+              </Link>
+
+              <Link
+                href={`${BUMICERTS_URL}/settings`}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted/60 transition-colors w-full text-left"
+              >
+                <SettingsIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                Settings
+              </Link>
+
+              <div className="h-px bg-border/60 my-1" />
+
+              <button
+                onClick={redirectToLogout}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors w-full text-left cursor-pointer"
+              >
+                <LogOutIcon className="h-3.5 w-3.5 shrink-0" />
+                Sign out
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export function AuthButton({ session }: { session: AuthSession }) {
+  if (!session) {
+    return <AuthSkeleton />;
+  }
+
+  if (session.isLoggedIn) {
+    return <AuthenticatedMenu session={session} />;
+  }
+
+  return <UnauthenticatedButtons />;
+}

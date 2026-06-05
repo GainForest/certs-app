@@ -8,7 +8,6 @@ import {
   BinocularsIcon,
   BookOpenIcon,
   Building2Icon,
-  ChevronRightIcon,
   CompassIcon,
   GlobeIcon,
   HeartHandshakeIcon,
@@ -17,13 +16,17 @@ import {
   MoonIcon,
   PlusIcon,
   RadioTowerIcon,
+  SettingsIcon,
   SparkleIcon,
   SunIcon,
   TrophyIcon,
+  UserIcon,
 } from "lucide-react";
 import { useEffect, useState, type MouseEvent, type SVGProps } from "react";
 import type { StatusSnapshot } from "../_lib/status";
-import { BUMICERTS_URL } from "../_lib/urls";
+import type { AuthSession } from "../_lib/auth";
+import { AuthButton, SignInPrompt } from "./AuthFlow";
+import { accountHref, BUMICERTS_URL } from "../_lib/urls";
 
 type NavLeaf = {
   kind: "leaf";
@@ -113,7 +116,14 @@ type DocWithViewTransitions = Document & {
   startViewTransition?: (updateCallback: () => void) => { ready: Promise<void> };
 };
 
-export function AppShell({ children }: { children: React.ReactNode; status: StatusSnapshot }) {
+export function AppShell({
+  children,
+  authSession,
+}: {
+  children: React.ReactNode;
+  status: StatusSnapshot;
+  authSession: AuthSession;
+}) {
   const pathname = usePathname() ?? "/";
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -124,19 +134,19 @@ export function AppShell({ children }: { children: React.ReactNode; status: Stat
   return (
     <>
       <div className="hidden md:flex h-screen overflow-hidden">
-        <UnifiedSidebar />
+        <UnifiedSidebar authSession={authSession} />
         <main className="relative flex-1 overflow-y-auto">
-          <Header onOpenMobileNav={() => setMobileNavOpen(true)} />
+          <Header authSession={authSession} onOpenMobileNav={() => setMobileNavOpen(true)} />
           {children}
         </main>
       </div>
 
       <div className="flex h-screen flex-col overflow-hidden md:hidden">
         <MobileNavDrawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-          <UnifiedSidebar />
+          <UnifiedSidebar authSession={authSession} />
         </MobileNavDrawer>
         <div className="relative flex-1 overflow-y-auto">
-          <Header onOpenMobileNav={() => setMobileNavOpen(true)} />
+          <Header authSession={authSession} onOpenMobileNav={() => setMobileNavOpen(true)} />
           {children}
         </div>
       </div>
@@ -144,7 +154,7 @@ export function AppShell({ children }: { children: React.ReactNode; status: Stat
   );
 }
 
-function UnifiedSidebar() {
+function UnifiedSidebar({ authSession }: { authSession: AuthSession }) {
   return (
     <nav className="w-[240px] h-full flex flex-col p-4 border-r border-border bg-foreground/3 relative">
       {/* Top section */}
@@ -164,7 +174,7 @@ function UnifiedSidebar() {
       <BumicertCreationCard />
       <div className="flex flex-col gap-2">
         <LayoutGroup id="unified-sidebar-nav-manage">
-          <ManageSection />
+          <ManageSection authSession={authSession} />
         </LayoutGroup>
 
         <div className="h-px bg-border" />
@@ -344,7 +354,36 @@ function BumicertCreationCard() {
   );
 }
 
-function ManageSection() {
+function ManageSection({ authSession }: { authSession: AuthSession }) {
+  const items: NavLeaf[] = authSession.isLoggedIn
+    ? [
+        {
+          kind: "leaf",
+          id: "profile",
+          text: "Profile",
+          Icon: UserIcon,
+          href: accountHref(authSession.did),
+          pathCheck: { startsWith: "/account" },
+        },
+        {
+          kind: "leaf",
+          id: "bumicerts-manage",
+          text: "Bumicerts",
+          Icon: CompassIcon,
+          href: `${BUMICERTS_URL}/account/${authSession.did}/bumicerts`,
+          pathCheck: { startsWith: "/account" },
+        },
+        {
+          kind: "leaf",
+          id: "settings",
+          text: "Settings",
+          Icon: SettingsIcon,
+          href: `${BUMICERTS_URL}/settings`,
+          pathCheck: { startsWith: "/settings" },
+        },
+      ]
+    : [];
+
   return (
     <div className="flex flex-col gap-2">
       <motion.div
@@ -362,27 +401,16 @@ function ManageSection() {
         </span>
       </motion.div>
 
-      <SignInPrompt />
+      {authSession.isLoggedIn ? (
+        <ul className="flex flex-col gap-0.5">
+          {items.map((item, index) => (
+            <NavLeaf key={item.id} item={item} isActive={false} index={index + 1} />
+          ))}
+        </ul>
+      ) : (
+        <SignInPrompt />
+      )}
     </div>
-  );
-}
-
-function SignInPrompt() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-      className="mx-1 p-3 rounded-lg bg-muted/40 border border-border/50"
-    >
-      <p className="text-xs text-muted-foreground text-center mb-2">
-        Sign in to manage your account and content.
-      </p>
-      <button type="button" className={cn(buttonClasses.ghostSm, "w-full")}>
-        Sign In
-        <ChevronRightIcon />
-      </button>
-    </motion.div>
   );
 }
 
@@ -480,7 +508,13 @@ function ProgressiveBlur({
   );
 }
 
-function Header({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
+function Header({
+  authSession,
+  onOpenMobileNav,
+}: {
+  authSession: AuthSession;
+  onOpenMobileNav: () => void;
+}) {
   return (
     <div className="sticky top-0 z-30" data-header>
       {/* Progressive blur background - same approach as Bumicerts Header. */}
@@ -524,6 +558,7 @@ function Header({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
                 <span className="hidden sm:inline">Create Bumicert</span>
               </motion.span>
             </Link>
+            <AuthButton session={authSession} />
           </div>
         </div>
       </div>

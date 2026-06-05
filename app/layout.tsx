@@ -4,7 +4,9 @@ import "./globals.css";
 import { AppShell } from "./_components/AppShell";
 import { Footer } from "./_components/Footer";
 import { AccountDrawerProvider } from "./_components/AccountDrawer";
+import { ModalProvider } from "@/components/ui/modal/context";
 import { fetchStatus } from "./_lib/status";
+import { fetchAuthSession } from "./_lib/auth-server";
 import { SITE_URL } from "./_lib/urls";
 
 const geistSans = Geist({
@@ -115,19 +117,24 @@ const THEME_INIT = `(function(){try{var t=localStorage.getItem('bumiscan-theme')
 // The nav's live status pill is prefetched here so it is shared across every
 // route (cached via `revalidate`, so it stays out of the per-request path).
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const status = await fetchStatus({ revalidate: 60 });
+  const [status, authSession] = await Promise.all([
+    fetchStatus({ revalidate: 60 }),
+    fetchAuthSession(),
+  ]);
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${instrument.variable} antialiased`}
       >
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
-        <AccountDrawerProvider>
-          <AppShell status={status}>
-            {children}
-            <Footer />
-          </AppShell>
-        </AccountDrawerProvider>
+        <ModalProvider>
+          <AccountDrawerProvider>
+            <AppShell status={status} authSession={authSession}>
+              {children}
+              <Footer />
+            </AppShell>
+          </AccountDrawerProvider>
+        </ModalProvider>
       </body>
     </html>
   );

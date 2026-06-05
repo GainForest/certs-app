@@ -9,7 +9,8 @@ the live status page and the Bumicerts donations dashboard.
 
 ```bash
 pnpm install
-pnpm dev        # http://127.0.0.1:3040
+pnpm dev        # Next.js on http://127.0.0.1:3040
+pnpm dev:proxy  # Caddy HTTPS proxy at https://local.gainforest.app
 pnpm build
 ```
 
@@ -46,6 +47,33 @@ vercel --prod
 See `.env.local.example`. The board re-polls `/api/devices` every 60s (the Pi
 heartbeat cadence) and leads with liveness: status, last-seen, CPU temp, RAM,
 disk, load, uptime, and the local Tainá draft queue.
+
+## GainForest auth
+
+The sidebar and header auth UI are wired to the central auth service
+(`auth.gainforest.app`). The app forwards the incoming `Cookie` header
+server-side to `/api/auth/session`, then redirects users to `/login` or
+`/logout` with the current page as `returnTo`.
+
+Auth cookies are scoped to `*.gainforest.app`, so local auth must run through a
+`*.gainforest.app` hostname over HTTPS, just like Bumicerts. Use Caddy as the
+local reverse proxy:
+
+```bash
+# one-time machine setup
+brew install caddy
+sudo sh -c 'echo "127.0.0.1 local.gainforest.app" >> /etc/hosts'
+
+# terminal 1 — Next.js on :3040
+pnpm dev
+
+# terminal 2 — HTTPS proxy on :443 -> :3040
+pnpm dev:proxy
+```
+
+Open **https://local.gainforest.app**. Keep
+`NEXT_PUBLIC_AUTH_BASE_URL=https://auth.gainforest.app` locally and in hosted
+environments.
 
 ## Design system
 
