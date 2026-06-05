@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import type { RichBlock, RichSpan } from "../_lib/indexer";
 
 // Renders a decoded Leaflet linear document (bumicert descriptions) as elegant,
@@ -9,10 +10,10 @@ import type { RichBlock, RichSpan } from "../_lib/indexer";
 // embedded images and iframe/video embeds. Inline styling (bold/italic/links)
 // comes from richtext facets already resolved into spans by the data layer.
 
-export function RichText({ blocks }: { blocks: RichBlock[] }) {
+export function RichText({ blocks, className }: { blocks: RichBlock[]; className?: string }) {
   if (!blocks?.length) return null;
   return (
-    <div className="mt-5 space-y-3.5 text-[14px] leading-[1.62] text-foreground/80">
+    <div className={cn("mt-5 space-y-3.5 text-[14px] leading-[1.62] text-foreground/80", className)}>
       {blocks.map((b, i) => (
         <Block key={i} block={b} />
       ))}

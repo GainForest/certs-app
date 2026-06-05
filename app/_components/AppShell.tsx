@@ -2,15 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import {
+  ArrowRightIcon,
   BinocularsIcon,
   BookOpenIcon,
   Building2Icon,
+  CheckIcon,
   CompassIcon,
   GlobeIcon,
   HeartHandshakeIcon,
+  HeartIcon,
   LeafIcon,
   MapPinIcon,
   MenuIcon,
@@ -19,15 +22,19 @@ import {
   PlusIcon,
   RadioTowerIcon,
   SettingsIcon,
+  Share2Icon,
   SparkleIcon,
   SunIcon,
   TreePineIcon,
   TrophyIcon,
   UserIcon,
 } from "lucide-react";
-import { useEffect, useState, type MouseEvent, type SVGProps } from "react";
+import { Suspense, useEffect, useState, type MouseEvent, type SVGProps } from "react";
 import type { StatusSnapshot } from "../_lib/status";
 import type { AuthSession } from "../_lib/auth";
+import { BumiscanBumicertCard, type BumiscanBumicertCardRecord } from "@/components/bumicert/BumiscanBumicertCard";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import { AuthButton, SignInPrompt } from "./AuthFlow";
 import { accountHref, BUMICERTS_URL } from "../_lib/urls";
 
@@ -548,6 +555,9 @@ function Header({
   authSession: AuthSession;
   onOpenMobileNav: () => void;
 }) {
+  const pathname = usePathname() ?? "/";
+  const showBumicertTabs = isBumicertDetailPath(pathname);
+
   return (
     <div className="sticky top-0 z-30" data-header>
       {/* Progressive blur background - same approach as Bumicerts Header. */}
@@ -555,7 +565,7 @@ function Header({
         <div
           className="absolute inset-0 z-1"
           style={{
-            background: "linear-gradient(to bottom, var(--background) 0%, transparent 100%)",
+            background: `linear-gradient(to bottom, var(--background) 0%,${showBumicertTabs ? " var(--background) 80%," : ""} transparent 100%)`,
             opacity: 0.8,
           }}
         />
@@ -594,9 +604,180 @@ function Header({
             <AuthButton session={authSession} />
           </div>
         </div>
+
+        {showBumicertTabs ? (
+          <div className="overflow-hidden px-4 pb-1">
+            <Suspense fallback={<BumicertHeaderTabsSkeleton />}>
+              <BumicertHeaderTabs pathname={pathname} />
+            </Suspense>
+          </div>
+        ) : null}
       </div>
     </div>
   );
+}
+
+const BUMICERT_DETAIL_TABS = [
+  { id: "overview", label: "Overview" },
+  { id: "site-boundaries", label: "Site Boundaries" },
+  { id: "donations", label: "Donations" },
+  { id: "timeline", label: "Timeline" },
+] as const;
+
+type BumicertDetailTab = (typeof BUMICERT_DETAIL_TABS)[number]["id"];
+
+function isBumicertDetailPath(pathname: string): boolean {
+  return /^\/bumicert\/[^/]+\/[^/]+\/?$/.test(pathname);
+}
+
+function parseBumicertTab(value: string | null): BumicertDetailTab {
+  return BUMICERT_DETAIL_TABS.some((tab) => tab.id === value) ? (value as BumicertDetailTab) : "overview";
+}
+
+function bumicertTabHref(pathname: string, tab: BumicertDetailTab): string {
+  if (tab === "overview") return pathname;
+  return `${pathname}?${new URLSearchParams({ tab }).toString()}`;
+}
+
+const BUMICERT_HEADER_SUMMARY_EVENT = "bumiscan:bumicert-summary";
+
+type BumicertHeaderSummary = {
+  title: string;
+  card: BumiscanBumicertCardRecord;
+  donateHref: string;
+};
+
+type WindowWithBumicertSummary = Window & {
+  __bumicertHeaderSummary?: BumicertHeaderSummary | null;
+};
+
+function BumicertHeaderTabs({ pathname }: { pathname: string }) {
+  const searchParams = useSearchParams();
+  const activeTab = parseBumicertTab(searchParams.get("tab"));
+  const [summary, setSummary] = useState<BumicertHeaderSummary | null>(null);
+
+  useEffect(() => {
+    const currentSummary = (window as WindowWithBumicertSummary).__bumicertHeaderSummary;
+    setSummary(currentSummary ?? null);
+
+    const handleSummary = (event: Event) => {
+      const nextSummary = (event as CustomEvent<BumicertHeaderSummary | null>).detail;
+      setSummary(nextSummary ?? null);
+    };
+
+    window.addEventListener(BUMICERT_HEADER_SUMMARY_EVENT, handleSummary);
+    return () => window.removeEventListener(BUMICERT_HEADER_SUMMARY_EVENT, handleSummary);
+  }, []);
+
+  return (
+    <div>
+      {activeTab !== "overview" && summary ? (
+        <BumicertHeaderAccordion summary={summary} overviewHref={bumicertTabHref(pathname, "overview")} />
+      ) : null}
+      <div className="-mx-4 overflow-x-auto px-4">
+        <div className="flex min-w-max items-end border-b border-border">
+          {BUMICERT_DETAIL_TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <Link
+                key={tab.id}
+                href={bumicertTabHref(pathname, tab.id)}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "relative flex items-center whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors duration-150",
+                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {tab.label}
+                {isActive ? (
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-foreground" />
+                ) : null}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BumicertHeaderAccordion({
+  summary,
+  overviewHref,
+}: {
+  summary: BumicertHeaderSummary;
+  overviewHref: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  function handleShare() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <Accordion type="single" collapsible className="mb-1.5 rounded-2xl bg-secondary px-3 text-secondary-foreground">
+      <AccordionItem value="bumicert-card" className="border-b-0">
+        <AccordionTrigger className="min-w-0 py-2.5 text-base hover:no-underline">
+          <span className="min-w-0 truncate text-sm font-medium sm:text-base">{summary.title}</span>
+        </AccordionTrigger>
+        <AccordionContent className="pt-1">
+          <div className="mx-auto w-full max-w-[360px] space-y-3">
+            <BumiscanBumicertCard record={summary.card} />
+            <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={handleShare}>
+                <AnimatePresence mode="wait" initial={false}>
+                  {copied ? (
+                    <motion.span
+                      key="copied"
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.7 }}
+                      transition={{ duration: 0.15 }}
+                      className="flex items-center gap-1.5"
+                    >
+                      <CheckIcon className="h-3.5 w-3.5 text-primary" />
+                      Copied!
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="share"
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.7 }}
+                      transition={{ duration: 0.15 }}
+                      className="flex items-center gap-1.5"
+                    >
+                      <Share2Icon className="h-3.5 w-3.5" />
+                      Share
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Button>
+              <Button asChild size="sm">
+                <Link href={summary.donateHref} target="_blank" rel="noreferrer">
+                  <HeartIcon className="h-3.5 w-3.5" />
+                  Donate
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="icon-sm" aria-label="Go to overview tab">
+                <Link href={overviewHref}>
+                  <ArrowRightIcon className="h-3.5 w-3.5" />
+                  <span className="sr-only">Overview</span>
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+}
+
+function BumicertHeaderTabsSkeleton() {
+  return <div className="h-[42px] border-b border-border" />;
 }
 
 function MobileNavDrawer({

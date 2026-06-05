@@ -371,6 +371,32 @@ export async function walkOccurrences(opts: {
   };
 }
 
+/** Load recent image observations owned by a single DID. Used by Bumicert detail
+ * pages to show a compact evidence gallery connected to the publishing
+ * organization. */
+export async function fetchImageOccurrencesByDid(
+  did: string,
+  target = 24,
+  signal?: AbortSignal,
+): Promise<OccurrenceRecord[]> {
+  const where = { did: { eq: did }, imageEvidence: { isNull: false } };
+  const page = await fetchOccurrencePage(Math.min(INDEXER_MAX_PAGE, Math.max(target, 24)), null, signal, where);
+  const matches = page.nodes.filter((node) => Boolean(node.imageEvidence?.file?.ref));
+  let mapped = matches.map(mapOccurrence);
+  mapped = await resolveImages(
+    mapped,
+    (record) => {
+      if (record.imageUrl) return null;
+      const raw = matches.find((node) => node.rkey === record.rkey && node.did === record.did);
+      const ref = raw?.imageEvidence?.file?.ref ?? null;
+      return ref ? { did: record.did, ref } : null;
+    },
+    (record, url) => ({ ...record, imageUrl: url }),
+    signal,
+  );
+  return mapped.filter((record) => Boolean(record.imageUrl)).slice(0, target);
+}
+
 // ── 2. Bumicerts (hypercert claim activities) ──────────────────────────────
 
 export type BumicertRecord = {
