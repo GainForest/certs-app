@@ -12,13 +12,16 @@ import {
   GlobeIcon,
   HeartHandshakeIcon,
   LeafIcon,
+  MapPinIcon,
   MenuIcon,
+  MicIcon,
   MoonIcon,
   PlusIcon,
   RadioTowerIcon,
   SettingsIcon,
   SparkleIcon,
   SunIcon,
+  TreePineIcon,
   TrophyIcon,
   UserIcon,
 } from "lucide-react";
@@ -355,23 +358,48 @@ function BumicertCreationCard() {
 }
 
 function ManageSection({ authSession }: { authSession: AuthSession }) {
+  const pathname = usePathname() ?? "/";
   const items: NavLeaf[] = authSession.isLoggedIn
     ? [
         {
           kind: "leaf",
-          id: "profile",
-          text: "Profile",
-          Icon: UserIcon,
-          href: accountHref(authSession.did),
-          pathCheck: { startsWith: "/account" },
+          id: "organization",
+          text: "Organization",
+          Icon: Building2Icon,
+          href: "/manage",
+          pathCheck: { equals: "/manage" },
+        },
+        {
+          kind: "leaf",
+          id: "sites",
+          text: "Sites",
+          Icon: MapPinIcon,
+          href: "/manage/sites",
+          pathCheck: { startsWith: "/manage/sites" },
+        },
+        {
+          kind: "leaf",
+          id: "audio",
+          text: "Audio",
+          Icon: MicIcon,
+          href: "/manage/audio",
+          pathCheck: { startsWith: "/manage/audio" },
         },
         {
           kind: "leaf",
           id: "bumicerts-manage",
           text: "Bumicerts",
-          Icon: CompassIcon,
-          href: `${accountHref(authSession.did)}/bumicerts`,
-          pathCheck: { startsWith: "/account" },
+          Icon: BumicertIcon,
+          href: `${BUMICERTS_URL}/bumicert/create`,
+          pathCheck: { startsWith: "/bumicert/create" },
+        },
+        {
+          kind: "leaf",
+          id: "trees",
+          text: "Trees",
+          Icon: TreePineIcon,
+          href: "/manage/trees",
+          pathCheck: { startsWith: "/manage/trees" },
         },
         {
           kind: "leaf",
@@ -404,7 +432,12 @@ function ManageSection({ authSession }: { authSession: AuthSession }) {
       {authSession.isLoggedIn ? (
         <ul className="flex flex-col gap-0.5">
           {items.map((item, index) => (
-            <NavLeaf key={item.id} item={item} isActive={false} index={index + 1} />
+            <NavLeaf
+              key={item.id}
+              item={item}
+              isActive={isLeafActive(item.pathCheck, pathname)}
+              index={index + 1}
+            />
           ))}
         </ul>
       ) : (

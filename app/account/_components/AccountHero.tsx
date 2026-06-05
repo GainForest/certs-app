@@ -12,7 +12,6 @@ import {
   PencilIcon,
 } from "lucide-react";
 import type { AccountRouteData } from "../_lib/account-route";
-import { accountSettingsPath } from "../_lib/account-route";
 import { countryFlag } from "../../_lib/format";
 
 function formatWebsite(url: string): string {
@@ -137,7 +136,7 @@ export function AccountHero({
 
         {isOwner && (
           <Link
-            href={accountSettingsPath(account.urlIdentifier)}
+            href="/manage?mode=edit"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground border border-primary/20 shadow-lg transition-colors"
             aria-label="Edit profile"
           >
