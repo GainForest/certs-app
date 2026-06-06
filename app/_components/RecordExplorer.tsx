@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import {
   walkOccurrences,
@@ -18,7 +18,6 @@ import {
 } from "../_lib/indexer";
 import { RecordDrawer } from "./RecordDrawer";
 import { RecordMap } from "./RecordMap";
-import { OwnerBadge } from "./AuthorChip";
 import { StatCard, type FormatKey } from "./MetricTrend";
 import { isPdsBlobUrl } from "../_lib/pds";
 import {
@@ -29,7 +28,6 @@ import {
   type MetricSeries,
 } from "../_lib/series";
 import { formatNumber, countryFlag, formatDate } from "../_lib/format";
-import { AutoLoadMoreButton } from "./AutoLoadMoreButton";
 import { PictureHero } from "./PictureHero";
 
 // Single-stream record explorer. One of the three GainForest record types
@@ -124,7 +122,9 @@ type Phase = "idle" | "loading" | "ready" | "error" | "more";
 // reflect a real slice of the data. The indexer caps each request at 1000, so
 // a single page now reaches this for the media-filtered views (which push the
 // filter down server-side) and the cursor pages it for the rest.
-const LOAD_TARGET = 1000;
+const LOAD_TARGET = 12;
+const INITIAL_CARD_LIMIT = 48;
+const CARD_BATCH_SIZE = 48;
 const DEFAULT_OCCURRENCE_MEDIA: OccurrenceFilter = "image";
 
 export function RecordExplorer({ kind }: { kind: RecordKind }) {
@@ -135,6 +135,7 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
   const [hasMore, setHasMore] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [sort, setSort] = useState<SortMode>("newest");
   const [occMedia, setOccMedia] = useState<OccurrenceFilter>(DEFAULT_OCCURRENCE_MEDIA);
   const [siteSource, setSiteSource] = useState<SiteSourceFilter>("both");
@@ -144,6 +145,7 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
   // params (media/source) are applied before the initial fetch.
   const [hydrated, setHydrated] = useState(false);
   const [drawer, setDrawer] = useState<ExplorerRecord | null>(null);
+  const [cardLimit, setCardLimit] = useState(INITIAL_CARD_LIMIT);
   // `?record=` value awaiting resolution, so the URL keeps it while we fetch.
   const [pendingRecord, setPendingRecord] = useState<string | null>(null);
   // Skip the very first URL write so we don't strip params we just read in.
@@ -333,7 +335,19 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, occMedia, siteSource, phase]);
 
-  const filtered = sortRecords(filterRecords(records, query), sort);
+  const filtered = useMemo(
+    () => sortRecords(filterRecords(records, deferredQuery), sort),
+    [deferredQuery, records, sort],
+  );
+  const renderedRecords = useMemo(
+    () => (view === "cards" ? filtered.slice(0, cardLimit) : filtered),
+    [cardLimit, filtered, view],
+  );
+  const hasMoreCardsToShow = view === "cards" && renderedRecords.length < filtered.length;
+
+  useEffect(() => {
+    setCardLimit(INITIAL_CARD_LIMIT);
+  }, [deferredQuery, kind, occMedia, siteSource, sort, view]);
   // Stats + their trend series are derived from the full loaded set (not the
   // search-filtered view), so memoize on `records` to avoid rebuilding the
   // cumulative series on every keystroke.
@@ -493,7 +507,9 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
                 <span aria-hidden className="pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-brand text-brand" />
                 {query
                   ? `${formatNumber(filtered.length)} of ${formatNumber(records.length)} shown`
-                  : `${formatNumber(records.length)} shown`}
+                  : view === "cards" && filtered.length > renderedRecords.length
+                    ? `${formatNumber(renderedRecords.length)} of ${formatNumber(filtered.length)} shown`
+                    : `${formatNumber(filtered.length)} shown`}
               </>
             )}
           </div>
@@ -534,9 +550,9 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
             )
           ) : (
             <ul role="list" className={GRID_CLS}>
-              {filtered.map((r, i) => (
+              {renderedRecords.map((r, i) => (
                 <li key={r.id} className="animate-in" style={{ animationDelay: `${Math.min(i, 12) * 18}ms` }}>
-                  <RecordCard record={r} onOpen={() => setDrawer(r)} />
+                  <RecordCard record={r} onOpen={setDrawer} />
                 </li>
               ))}
             </ul>
@@ -552,14 +568,33 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
 
         {/* Load more */}
         {records.length > 0 && !query && (
-          <div className="mt-10 flex justify-center">
-            <AutoLoadMoreButton
-              hasMore={hasMore}
-              loading={phase === "more" || walking}
-              onLoadMore={() => load("more")}
-              className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface px-6 py-3 text-[14px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-sunken disabled:opacity-60"
-              endClassName="text-[13px] italic text-foreground/50"
-            />
+          <div className="mt-10 flex flex-col items-center gap-3">
+            {view === "cards" && filtered.length > renderedRecords.length && (
+              <p className="text-[13px] text-foreground/55">
+                Showing {formatNumber(renderedRecords.length)} of {formatNumber(filtered.length)} loaded items.
+              </p>
+            )}
+            {hasMoreCardsToShow ? (
+              <button
+                type="button"
+                onClick={() => setCardLimit((current) => current + CARD_BATCH_SIZE)}
+                className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface px-6 py-3 text-[14px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-sunken"
+              >
+                Show more
+              </button>
+            ) : hasMore ? (
+              <button
+                type="button"
+                onClick={() => load("more")}
+                disabled={phase === "more" || walking}
+                aria-busy={phase === "more" || walking}
+                className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface px-6 py-3 text-[14px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-sunken disabled:opacity-60"
+              >
+                {phase === "more" || walking ? "Loading" : "Load more"}
+              </button>
+            ) : (
+              <span className="text-[13px] italic text-foreground/50">You have reached the end.</span>
+            )}
           </div>
         )}
       </div>
@@ -593,11 +628,9 @@ type CardView = {
   /** Floating type badge for the top-right of the cover. */
   badge?: ReactNode;
   placeholder: ReactNode;
-  /** A better avatar the card already has (e.g. an org logo). */
-  avatarOverride?: string | null;
 };
 
-function RecordCard({ record, onOpen }: { record: ExplorerRecord; onOpen: () => void }) {
+const RecordCard = memo(function RecordCard({ record, onOpen }: { record: ExplorerRecord; onOpen: (record: ExplorerRecord) => void }) {
   const [imgError, setImgError] = useState(false);
   const hasImage = Boolean(record.imageUrl) && !imgError;
   const v = cardView(record);
@@ -605,7 +638,7 @@ function RecordCard({ record, onOpen }: { record: ExplorerRecord; onOpen: () => 
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={() => onOpen(record)}
       className="group relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border-soft bg-surface text-left transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-[0_18px_40px_-24px_rgba(20,30,15,0.45)]"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-surface-sunken">
@@ -623,9 +656,8 @@ function RecordCard({ record, onOpen }: { record: ExplorerRecord; onOpen: () => 
           v.placeholder
         )}
 
-        {/* Owner badge: avatar always, @handle once resolved. */}
-        <div className="absolute left-1.5 top-1.5 z-10 inline-flex max-w-[calc(100%-0.75rem)] items-center rounded-full bg-background/75 py-0.5 pl-0.5 pr-2 shadow-sm backdrop-blur-md">
-          <OwnerBadge did={record.did} avatarOverride={v.avatarOverride} />
+        <div className="absolute left-1.5 top-1.5 z-10 inline-flex max-w-[calc(100%-0.75rem)] items-center rounded-full bg-background/75 px-2 py-1 text-[10px] font-medium text-foreground/65 shadow-sm backdrop-blur-md">
+          Shared profile
         </div>
 
         {v.badge ? <div className="absolute right-1.5 top-1.5 z-10">{v.badge}</div> : null}
@@ -658,7 +690,7 @@ function RecordCard({ record, onOpen }: { record: ExplorerRecord; onOpen: () => 
       </div>
     </button>
   );
-}
+});
 
 function Pill({ children, accent }: { children: ReactNode; accent?: boolean }) {
   return (
@@ -752,8 +784,6 @@ function cardView(record: ExplorerRecord): CardView {
           {countryFlag(record.country) || "\u25F0"}
         </div>
       ),
-      // The org's own cover/logo is the most meaningful avatar for its row.
-      avatarOverride: record.imageUrl,
     };
   }
 

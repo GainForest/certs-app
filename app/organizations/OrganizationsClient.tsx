@@ -15,9 +15,8 @@ import {
   UsersIcon,
   XIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { AutoLoadMoreButton } from "../_components/AutoLoadMoreButton";
 import { RecordDrawer } from "../_components/RecordDrawer";
 import { RecordMap } from "../_components/RecordMap";
 import { StatsTileGrid } from "../_components/StatsTile";
@@ -47,6 +46,10 @@ const QUICK_CHIPS: Array<{ value: QuickFilter; label: string; Icon: typeof Image
   { value: "locations", label: "Mapped locations", Icon: MapPinIcon },
 ];
 
+const ORGANIZATIONS_PAGE_SIZE = 24;
+const INITIAL_CARD_LIMIT = 96;
+const CARD_BATCH_SIZE = 96;
+
 export function OrganizationsClient({ records: initialRecords = [] }: { records?: SiteRecord[] }) {
   const [records, setRecords] = useState<SiteRecord[]>(initialRecords);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -62,12 +65,14 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
   const [view, setView] = useState<ViewMode>("cards");
   const [openDropdown, setOpenDropdown] = useState(false);
   const [drawer, setDrawer] = useState<SiteRecord | null>(null);
+  const [cardLimit, setCardLimit] = useState(INITIAL_CARD_LIMIT);
+  const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
     if (initialRecords.length > 0) return;
     const controller = new AbortController();
     setLoading(true);
-    fetchSites(1000, null, controller.signal, (running) => {
+    fetchSites(ORGANIZATIONS_PAGE_SIZE, null, controller.signal, (running) => {
       setRecords(running as SiteRecord[]);
       setLoading(false);
     })
@@ -105,7 +110,7 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
   }, [records, typeFilter]);
 
   const visibleRecords = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = deferredQuery.trim().toLowerCase();
     const filtered = records.filter((record) => {
       if (sourceFilter !== "both" && record.source !== sourceFilter) return false;
       if (countryFilter && normalizeCountry(record.country) !== countryFilter) return false;
@@ -133,7 +138,7 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
           return siteTime(b.createdAt) - siteTime(a.createdAt);
       }
     });
-  }, [records, query, sort, sourceFilter, countryFilter, typeFilter, quickFilters]);
+  }, [records, deferredQuery, sort, sourceFilter, countryFilter, typeFilter, quickFilters]);
 
   const stats = useMemo(
     () => [
@@ -157,12 +162,23 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
     [visibleRecords],
   );
 
+  const renderedRecords = useMemo(
+    () => (view === "cards" ? visibleRecords.slice(0, cardLimit) : visibleRecords),
+    [cardLimit, view, visibleRecords],
+  );
+
+  const hasMoreCardsToShow = view === "cards" && renderedRecords.length < visibleRecords.length;
+
   const hasActiveFilters =
     query.trim().length > 0 ||
     sourceFilter !== "both" ||
     Boolean(countryFilter) ||
     Boolean(typeFilter) ||
     quickFilters.length > 0;
+
+  useEffect(() => {
+    setCardLimit(INITIAL_CARD_LIMIT);
+  }, [deferredQuery, sort, sourceFilter, countryFilter, typeFilter, quickFilters, view]);
 
   const toggleQuickFilter = (filter: QuickFilter) => {
     setQuickFilters((current) =>
@@ -184,7 +200,7 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
     const controller = new AbortController();
     const base = records;
     setLoadingMore(true);
-    fetchSites(1000, cursor, controller.signal, (running) => {
+    fetchSites(ORGANIZATIONS_PAGE_SIZE, cursor, controller.signal, (running) => {
       setRecords(mergeSiteRecords(base, running));
     })
       .then((page) => {
@@ -338,25 +354,41 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
           ) : visibleRecords.length === 0 ? (
             <EmptyState onClear={clearAll} hasActiveFilters={hasActiveFilters} />
           ) : (
-            <div
-              key={`${query}-${sort}-${sourceFilter}-${countryFilter}-${typeFilter}-${quickFilters.join(".")}`}
-              className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-2 lg:gap-4"
-            >
-              {visibleRecords.map((record) => (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-2 lg:gap-4">
+              {renderedRecords.map((record) => (
                 <OrganizationCard key={record.id} record={record} onOpen={setDrawer} />
               ))}
             </div>
           )}
 
           {records.length > 0 && (
-            <div className="mt-10 flex justify-center">
-              <AutoLoadMoreButton
-                hasMore={hasMore}
-                loading={loadingMore}
-                onLoadMore={loadMore}
-                className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
-                endClassName="text-sm italic text-muted-foreground"
-              />
+            <div className="mt-10 flex flex-col items-center gap-3">
+              {view === "cards" && visibleRecords.length > renderedRecords.length && (
+                <p className="text-sm text-muted-foreground">
+                  Showing {renderedRecords.length} of {visibleRecords.length} organizations.
+                </p>
+              )}
+              {hasMoreCardsToShow ? (
+                <button
+                  type="button"
+                  onClick={() => setCardLimit((current) => current + CARD_BATCH_SIZE)}
+                  className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                  Show more
+                </button>
+              ) : hasMore ? (
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  aria-busy={loadingMore}
+                  className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
+                >
+                  {loadingMore ? "Loading" : "Load more"}
+                </button>
+              ) : (
+                <span className="text-sm italic text-muted-foreground">You have reached the end.</span>
+              )}
             </div>
           )}
         </div>
@@ -511,7 +543,7 @@ function OrganizationsGridSkeleton() {
   );
 }
 
-function OrganizationCard({ record, onOpen }: { record: SiteRecord; onOpen: (record: SiteRecord) => void }) {
+const OrganizationCard = memo(function OrganizationCard({ record, onOpen }: { record: SiteRecord; onOpen: (record: SiteRecord) => void }) {
   const country = normalizeCountry(record.country);
   const countryLabel = country ? countryName(country) : null;
   const types = orgTypes(record).map(titleCase);
@@ -552,20 +584,15 @@ function OrganizationCard({ record, onOpen }: { record: SiteRecord; onOpen: (rec
                 </span>
               )}
               {hasMappableLocation(record) && (
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-background/60 text-primary backdrop-blur-sm" title="Mapped location">
-                  <MapPinIcon className="h-3.5 w-3.5" />
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-background/60 text-xs text-primary backdrop-blur-sm" title="Mapped location">
+                  ●
                 </span>
               )}
             </div>
 
             <div className="absolute right-4 bottom-2 left-4 flex flex-col items-start gap-2">
               <div className="-ml-1 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background/80">
-                {record.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={record.imageUrl} alt="" loading="lazy" className="h-full w-full rounded-full object-cover" />
-                ) : (
-                  <span className="text-sm font-semibold text-muted-foreground">{initials(record.name)}</span>
-                )}
+                <span className="text-sm font-semibold text-muted-foreground">{initials(record.name)}</span>
               </div>
               <h3 className="line-clamp-1 font-instrument text-2xl italic text-foreground">
                 {record.name}
@@ -601,7 +628,7 @@ function OrganizationCard({ record, onOpen }: { record: SiteRecord; onOpen: (rec
               {created && <span className="block text-muted-foreground/70">Joined {created}</span>}
             </div>
             <div className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary">
-              <LeafIcon className="size-3.5" />
+              <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
               <span>Open</span>
             </div>
           </div>
@@ -609,7 +636,7 @@ function OrganizationCard({ record, onOpen }: { record: SiteRecord; onOpen: (rec
       </button>
     </div>
   );
-}
+});
 
 function EmptyState({ onClear, hasActiveFilters }: { onClear: () => void; hasActiveFilters: boolean }) {
   return (

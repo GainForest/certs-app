@@ -336,7 +336,7 @@ export async function walkOccurrences(opts: {
   // With a server-side filter every returned node already matches, so the
   // target is reached in one or two pages — no need for the deep imageless walk.
   const maxPages = opts.maxPages ?? (where ? 5 : MAX_WALK_PAGES);
-  const pageSize = INDEXER_MAX_PAGE;
+  const pageSize = Math.min(INDEXER_MAX_PAGE, Math.max(target, 24));
 
   const collected: OccurrenceRecord[] = [];
   let cursor: string | null = opts.after;
@@ -350,14 +350,16 @@ export async function walkOccurrences(opts: {
 
     const matches = res.nodes.filter((n) => matchesFilter(n, media));
     if (matches.length > 0) {
-      let mapped = matches.map(mapOccurrence);
+      const needed = target - collected.length;
+      const pageMatches = matches.slice(0, needed);
+      let mapped = pageMatches.map(mapOccurrence);
       mapped = await resolveImages(
         mapped,
         (r) => {
           // External-thumbnail records already have a usable imageUrl; only PDS
           // blob evidence needs a getBlob resolution.
           if (r.imageUrl) return null;
-          const raw = matches.find((n) => n.rkey === r.rkey && n.did === r.did);
+          const raw = pageMatches.find((n) => n.rkey === r.rkey && n.did === r.did);
           const ref =
             raw?.imageEvidence?.file?.ref ?? raw?.spectrogramEvidence?.file?.ref ?? null;
           return ref ? { did: r.did, ref } : null;

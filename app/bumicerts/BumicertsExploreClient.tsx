@@ -15,9 +15,8 @@ import {
   SlidersHorizontalIcon,
   UsersIcon,
 } from "lucide-react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { AutoLoadMoreButton } from "../_components/AutoLoadMoreButton";
 import { RecordDrawer } from "../_components/RecordDrawer";
 import { RecordMap } from "../_components/RecordMap";
 import { StatsTileGrid } from "../_components/StatsTile";
@@ -52,6 +51,10 @@ const SORT_LABELS: Record<SortMode, string> = Object.fromEntries(
   SORT_OPTIONS.map((option) => [option.value, option.label]),
 ) as Record<SortMode, string>;
 
+const BUMICERTS_PAGE_SIZE = 48;
+const INITIAL_CARD_LIMIT = 96;
+const CARD_BATCH_SIZE = 96;
+
 export function BumicertsExploreClient({ records: initialRecords = [] }: { records?: BumicertRecord[] }) {
   const [records, setRecords] = useState<BumicertRecord[]>(initialRecords);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -59,19 +62,21 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
   const [loading, setLoading] = useState(initialRecords.length === 0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [sort, setSort] = useState<SortMode>("newest");
   const [openSort, setOpenSort] = useState(false);
   const [openFilters, setOpenFilters] = useState(false);
   const [filters, setFilters] = useState<FilterKey[]>(["images"]);
   const [view, setView] = useState<ViewMode>("cards");
   const [drawer, setDrawer] = useState<BumicertRecord | null>(null);
+  const [cardLimit, setCardLimit] = useState(INITIAL_CARD_LIMIT);
   const filtersMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (initialRecords.length > 0) return;
     const controller = new AbortController();
     setLoading(true);
-    fetchBumicerts(1000, null, controller.signal, (running) => {
+    fetchBumicerts(BUMICERTS_PAGE_SIZE, null, controller.signal, (running) => {
       setRecords(running);
       setLoading(false);
     })
@@ -89,7 +94,7 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
   }, [initialRecords.length]);
 
   const visibleRecords = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     const filtered = records.filter((record) => {
       if (q) {
         const haystack = `${record.title} ${record.shortDescription ?? ""} ${record.did}`.toLowerCase();
@@ -111,7 +116,18 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
-  }, [records, query, sort, filters]);
+  }, [records, deferredQuery, sort, filters]);
+
+  const renderedRecords = useMemo(
+    () => (view === "cards" ? visibleRecords.slice(0, cardLimit) : visibleRecords),
+    [cardLimit, view, visibleRecords],
+  );
+
+  const hasMoreCardsToShow = view === "cards" && renderedRecords.length < visibleRecords.length;
+
+  useEffect(() => {
+    setCardLimit(INITIAL_CARD_LIMIT);
+  }, [deferredQuery, filters, sort, view]);
 
   const stats = useMemo(
     () => [
@@ -172,7 +188,7 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
     const controller = new AbortController();
     const base = records;
     setLoadingMore(true);
-    fetchBumicerts(1000, cursor, controller.signal, (running) => {
+    fetchBumicerts(BUMICERTS_PAGE_SIZE, cursor, controller.signal, (running) => {
       setRecords(mergeBumicertRecords(base, running));
     })
       .then((page) => {
@@ -419,19 +435,38 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
             {view === "map" ? (
               <RecordMap records={visibleRecords} kind="bumicert" onOpen={openMapRecord} />
             ) : (
-              <BumicertGrid records={visibleRecords} loading={loading} onOpen={openRecord} />
+              <BumicertGrid records={renderedRecords} loading={loading} onOpen={openRecord} />
             )}
           </div>
 
           {records.length > 0 && (
-            <div className="mt-10 flex justify-center">
-              <AutoLoadMoreButton
-                hasMore={hasMore}
-                loading={loadingMore}
-                onLoadMore={loadMore}
-                className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
-                endClassName="text-sm italic text-muted-foreground"
-              />
+            <div className="mt-10 flex flex-col items-center gap-3">
+              {view === "cards" && visibleRecords.length > renderedRecords.length && (
+                <p className="text-sm text-muted-foreground">
+                  Showing {renderedRecords.length} of {visibleRecords.length} projects.
+                </p>
+              )}
+              {hasMoreCardsToShow ? (
+                <button
+                  type="button"
+                  onClick={() => setCardLimit((current) => current + CARD_BATCH_SIZE)}
+                  className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                  Show more
+                </button>
+              ) : hasMore ? (
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  aria-busy={loadingMore}
+                  className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
+                >
+                  {loadingMore ? "Loading" : "Load more"}
+                </button>
+              ) : (
+                <span className="text-sm italic text-muted-foreground">You have reached the end.</span>
+              )}
             </div>
           )}
         </div>
@@ -654,53 +689,14 @@ type CardPill = {
   emphasis?: boolean;
 };
 
-const PILL_GAP_PX = 8;
-
 function OneLinePillRow({ items }: { items: CardPill[] }) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const itemRefs = useRef<Array<HTMLSpanElement | null>>([]);
-  const moreRefs = useRef<Array<HTMLSpanElement | null>>([]);
-  const [visibleCount, setVisibleCount] = useState(items.length);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || items.length === 0) return;
-
-    const measure = () => {
-      const width = container.getBoundingClientRect().width;
-      const itemWidths = items.map((_, index) => itemRefs.current[index]?.getBoundingClientRect().width ?? 0);
-      const allItemsWidth = itemWidths.reduce((sum, itemWidth) => sum + itemWidth, 0) + PILL_GAP_PX * Math.max(0, items.length - 1);
-
-      if (allItemsWidth <= width) {
-        setVisibleCount((current) => (current === items.length ? current : items.length));
-        return;
-      }
-
-      let nextVisibleCount = 0;
-      let visibleWidth = 0;
-      for (let count = 0; count < items.length; count += 1) {
-        const hiddenCount = items.length - count;
-        const moreWidth = moreRefs.current[hiddenCount]?.getBoundingClientRect().width ?? 0;
-        const totalWidth = visibleWidth + moreWidth + (count > 0 ? PILL_GAP_PX * count : 0);
-        if (totalWidth <= width) nextVisibleCount = count;
-        visibleWidth += itemWidths[count] ?? 0;
-      }
-
-      setVisibleCount((current) => (current === nextVisibleCount ? current : nextVisibleCount));
-    };
-
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, [items]);
-
-  const hiddenCount = Math.max(0, items.length - visibleCount);
+  const visibleItems = items.slice(0, 2);
+  const hiddenCount = Math.max(0, items.length - visibleItems.length);
 
   return (
-    <div ref={containerRef} className="relative mt-4 w-full overflow-hidden">
+    <div className="relative mt-4 w-full overflow-hidden">
       <div className="flex w-full flex-nowrap items-center gap-2">
-        {items.slice(0, visibleCount).map((item) => (
+        {visibleItems.map((item) => (
           <Pill key={item.key} item={item} />
         ))}
         {hiddenCount > 0 && (
@@ -714,44 +710,13 @@ function OneLinePillRow({ items }: { items: CardPill[] }) {
           />
         )}
       </div>
-
-      <div aria-hidden className="invisible pointer-events-none absolute left-0 top-0 flex flex-nowrap items-center gap-2">
-        {items.map((item, index) => (
-          <Pill
-            key={`measure-${item.key}`}
-            item={item}
-            measureRef={(node) => {
-              itemRefs.current[index] = node;
-            }}
-          />
-        ))}
-        {items.map((_, index) => {
-          const hidden = index + 1;
-          return (
-            <Pill
-              key={`measure-more-${hidden}`}
-              item={{ key: `more-${hidden}`, content: `+${hidden}`, emphasis: true }}
-              measureRef={(node) => {
-                moreRefs.current[hidden] = node;
-              }}
-            />
-          );
-        })}
-      </div>
     </div>
   );
 }
 
-function Pill({
-  item,
-  measureRef,
-}: {
-  item: CardPill;
-  measureRef?: (node: HTMLSpanElement | null) => void;
-}) {
+function Pill({ item }: { item: CardPill }) {
   return (
     <span
-      ref={measureRef}
       aria-label={item.ariaLabel}
       className={`inline-flex h-7 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 text-sm font-medium ${
         item.emphasis ? "text-foreground" : "text-muted-foreground"
