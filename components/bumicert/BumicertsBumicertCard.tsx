@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { isPdsBlobUrl } from "@/app/_lib/pds";
 import { cn } from "@/lib/utils";
 
-export type BumiscanBumicertCardRecord = {
+export type BumicertsBumicertCardRecord = {
   did: string;
   title: string;
   shortDescription: string | null;
@@ -37,12 +37,12 @@ const orgLabelTextVariants = {
   },
 };
 
-export function BumiscanBumicertCard({
+export function BumicertsBumicertCard({
   record,
   priority = false,
   className,
 }: {
-  record: BumiscanBumicertCardRecord;
+  record: BumicertsBumicertCardRecord;
   priority?: boolean;
   className?: string;
 }) {
@@ -123,7 +123,7 @@ export function BumiscanBumicertCard({
   );
 }
 
-function buildObjectiveLabels(record: BumiscanBumicertCardRecord): string[] {
+function buildObjectiveLabels(record: BumicertsBumicertCardRecord): string[] {
   const labels: string[] = [];
   if (record.locationCount > 0) labels.push(`${record.locationCount} ${record.locationCount === 1 ? "site" : "sites"}`);
   if (record.contributorCount > 0) labels.push(`${record.contributorCount} ${record.contributorCount === 1 ? "contributor" : "contributors"}`);

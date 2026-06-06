@@ -32,7 +32,7 @@ import {
 import { Suspense, useEffect, useState, type MouseEvent, type SVGProps } from "react";
 import type { StatusSnapshot } from "../_lib/status";
 import type { AuthSession } from "../_lib/auth";
-import { BumiscanBumicertCard, type BumiscanBumicertCardRecord } from "@/components/bumicert/BumiscanBumicertCard";
+import { BumicertsBumicertCard, type BumicertsBumicertCardRecord } from "@/components/bumicert/BumicertsBumicertCard";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { AuthButton, SignInPrompt } from "./AuthFlow";
@@ -120,7 +120,7 @@ const SOCIAL_LINKS = [
 ] as const;
 
 const RIPPLE_DURATION_MS = 1200;
-const STORAGE_KEY = "bumiscan-theme";
+const STORAGE_KEY = "bumicerts-theme";
 
 type DocWithViewTransitions = Document & {
   startViewTransition?: (updateCallback: () => void) => { ready: Promise<void> };
@@ -639,11 +639,11 @@ function bumicertTabHref(pathname: string, tab: BumicertDetailTab): string {
   return `${pathname}?${new URLSearchParams({ tab }).toString()}`;
 }
 
-const BUMICERT_HEADER_SUMMARY_EVENT = "bumiscan:bumicert-summary";
+const BUMICERT_HEADER_SUMMARY_EVENT = "bumicerts:bumicert-summary";
 
 type BumicertHeaderSummary = {
   title: string;
-  card: BumiscanBumicertCardRecord;
+  card: BumicertsBumicertCardRecord;
   donateHref: string;
 };
 
@@ -725,7 +725,7 @@ function BumicertHeaderAccordion({
         </AccordionTrigger>
         <AccordionContent className="pt-1">
           <div className="mx-auto w-full max-w-[360px] space-y-3">
-            <BumiscanBumicertCard record={summary.card} />
+            <BumicertsBumicertCard record={summary.card} />
             <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
               <Button type="button" variant="outline" size="sm" onClick={handleShare}>
                 <AnimatePresence mode="wait" initial={false}>

@@ -36,13 +36,13 @@ const instrument = Instrument_Serif({
   display: "swap",
 });
 
-const SITE_NAME = "Bumiscan";
+const SITE_NAME = "Bumicerts";
 const SITE_TAGLINE = "the GainForest data commons explorer";
 const SITE_DESCRIPTION =
-  "Bumiscan is a read-only explorer for the GainForest data commons. Darwin Core occurrences, project sites, Bumicerts, and funding receipts from Hyperindex, plus Tainá field-device liveness and system status.";
-const OG_IMAGE = "/og/bumiscan-og.png";
+  "Bumicerts is a read-only explorer for the GainForest data commons. Darwin Core occurrences, project sites, Bumicerts, and funding receipts from Hyperindex, plus Tainá field-device liveness and system status.";
+const OG_IMAGE = "/og/bumicerts-og.png";
 const OG_ALT =
-  "Bumiscan — a warm cream editorial card. On the left, the sage GainForest leaf mark, the kicker ‘Explore the GainForest data commons’, the Bumiscan wordmark (with an italic sage ‘scan’), and an ‘observations · sites · bumicerts · donations’ pill. On the right, a vintage natural-history collage over an antique map: a blue tit and a robin, a fern, a golden chanterelle, a sunflower, a hand cradling soil with a seedling, an archival field-science photo, a brass magnifying glass, and floating faceted crystals.";
+  "Bumicerts — a warm cream editorial card. On the left, the sage GainForest leaf mark, the kicker ‘Explore the GainForest data commons’, the Bumicerts wordmark (with an italic sage ‘scan’), and an ‘observations · sites · bumicerts · donations’ pill. On the right, a vintage natural-history collage over an antique map: a blue tit and a robin, a fern, a golden chanterelle, a sunflower, a hand cradling soil with a seedling, an archival field-science photo, a brass magnifying glass, and floating faceted crystals.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   creator: "GainForest",
   publisher: "GainForest",
   keywords: [
-    "Bumiscan",
+    "Bumicerts",
     "GainForest",
     "Bumicerts",
     "Darwin Core",
@@ -112,7 +112,7 @@ export const viewport: Viewport = {
 
 // Set the theme class before first paint so there's no light/dark flash. Reads
 // the saved choice, else falls back to the OS preference.
-const THEME_INIT = `(function(){try{var t=localStorage.getItem('bumiscan-theme');var m=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t!=='light'&&m)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
+const THEME_INIT = `(function(){try{var t=localStorage.getItem('bumicerts-theme');var m=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t!=='light'&&m)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
 
 // The nav's live status pill is prefetched here so it is shared across every
 // route (cached via `revalidate`, so it stays out of the per-request path).

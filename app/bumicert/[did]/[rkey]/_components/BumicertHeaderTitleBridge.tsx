@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import type { BumiscanBumicertCardRecord } from "@/components/bumicert/BumiscanBumicertCard";
+import type { BumicertsBumicertCardRecord } from "@/components/bumicert/BumicertsBumicertCard";
 
-export const BUMICERT_HEADER_SUMMARY_EVENT = "bumiscan:bumicert-summary";
+export const BUMICERT_HEADER_SUMMARY_EVENT = "bumicerts:bumicert-summary";
 
 export type BumicertHeaderSummary = {
   title: string;
-  card: BumiscanBumicertCardRecord;
+  card: BumicertsBumicertCardRecord;
   donateHref: string;
 };
 

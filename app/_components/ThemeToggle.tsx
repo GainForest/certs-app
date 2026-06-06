@@ -10,7 +10,7 @@ import { useEffect, useState, type MouseEvent } from "react";
 // (Firefox / older Safari) or the user prefers reduced motion. The pre-paint
 // class is set by the inline script in layout (no FOUC).
 
-const STORAGE_KEY = "bumiscan-theme";
+const STORAGE_KEY = "bumicerts-theme";
 const RIPPLE_DURATION_MS = 1200;
 
 type DocWithVT = Document & {

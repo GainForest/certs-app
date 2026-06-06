@@ -1,6 +1,6 @@
-# Bumiscan
+# Bumicerts
 
-Bumiscan is a block explorer for everything GainForest signs on the AT Protocol, in the
+Bumicerts is a block explorer for everything GainForest signs on the AT Protocol, in the
 editorial design language of the [gainforest-app](../gainforest-app) landing
 (cream + sage, Cormorant Garamond headlines, the brushed underline, the dark
 ink data bands). It ports the GainForest-relevant slices of

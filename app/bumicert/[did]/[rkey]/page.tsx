@@ -11,7 +11,7 @@ import {
   MapPinnedIcon,
   SproutIcon,
 } from "lucide-react";
-import { BumiscanBumicertCard } from "@/components/bumicert/BumiscanBumicertCard";
+import { BumicertsBumicertCard } from "@/components/bumicert/BumicertsBumicertCard";
 import { RichText } from "../../../_components/RichText";
 import { SocialGlyph } from "../../../_components/SocialIcon";
 import { fetchReceipts, type DonorRef, type FundingReceipt } from "../../../_lib/dashboard";
@@ -204,7 +204,7 @@ async function fetchBumicertFundingConfig(did: string, rkey: string): Promise<Bu
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       query: `
-        query BumiscanBumicertFundingConfig($uri: String!) {
+        query BumicertsBumicertFundingConfig($uri: String!) {
           appGainforestFundingConfigByUri(uri: $uri) {
             receivingWallet { ... on AppGainforestFundingConfigEvmLinkRef { uri } }
             status
@@ -775,7 +775,7 @@ function MoreBumicertsSection({
       >
         {bumicerts.map((item) => (
           <Link key={item.id} href={localBumicertHref(item.did, item.rkey)} className="block w-[260px] shrink-0">
-            <BumiscanBumicertCard record={item} />
+            <BumicertsBumicertCard record={item} />
           </Link>
         ))}
       </div>

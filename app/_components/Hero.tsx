@@ -98,7 +98,7 @@ export function Hero({
           </h1>
 
           <p className="mt-6 max-w-[660px] text-[16px] leading-[1.55] text-foreground/80 lg:text-[18px]">
-            Bumiscan is a read-only browser over the GainForest data commons —
+            Bumicerts is a read-only browser over the GainForest data commons —
             the indexer (Hyperindex) and the ATProto PDS instances behind it.
             Records, donations, and device health, queried live.
           </p>

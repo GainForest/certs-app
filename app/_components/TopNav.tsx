@@ -54,11 +54,11 @@ export function TopNav({ status }: { status: StatusSnapshot }) {
           <Link
             href="/"
             className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-80"
-            aria-label="Bumiscan home"
+            aria-label="Bumicerts home"
           >
-            <LogoMark className="h-6 w-6 text-brand lg:h-7 lg:w-7" title="Bumiscan" />
+            <LogoMark className="h-6 w-6 text-brand lg:h-7 lg:w-7" title="Bumicerts" />
             <span className="font-garamond text-[20px] font-semibold tracking-tight text-foreground lg:text-[22px]">
-              Bumiscan
+              Bumicerts
             </span>
             <span className="hidden rounded-full border border-border-soft px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.14em] text-foreground/55 sm:inline-block">
               GainForest

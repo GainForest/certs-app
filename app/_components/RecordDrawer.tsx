@@ -231,7 +231,7 @@ export function RecordDrawer({
                 href={localBumicertHref(record.did, record.rkey)}
                 className="group flex items-center justify-between rounded-xl border border-primary/30 bg-primary px-4 py-3 text-[14px] font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
               >
-                <span>Open Bumiscan detail page</span>
+                <span>Open Bumicerts detail page</span>
                 <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
                   →
                 </span>

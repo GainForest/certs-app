@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Bumiscan — Bumicerts design system tokens.
+   Bumicerts — Bumicerts design system tokens.
 
    Mirrored from ../bumicerts-monorepo/apps/bumicerts/app/globals.css: stark
    white/ink surfaces, oklch sage primary, shadcn-compatible card/muted/accent
@@ -45,7 +45,7 @@
 
   --radius: 0.75rem;
 
-  /* Bumiscan legacy aliases, now mapped onto the Bumicerts system. */
+  /* Bumicerts legacy aliases, now mapped onto the Bumicerts system. */
   --border-soft: var(--border);
   --surface: var(--card);
   --surface-sunken: var(--muted);

@@ -3,7 +3,7 @@
  * data endpoints. Kept in one place so a host change is a single edit.
  */
 
-/** Bumiscan's own canonical origin. Drives metadataBase, canonical/OG
+/** Bumicerts's own canonical origin. Drives metadataBase, canonical/OG
  * URLs, the sitemap, and robots. Configure this per deployment. */
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://certs-rewrite.gainforest.app").replace(/\/$/, "");
 
@@ -57,12 +57,12 @@ export function bumicertHref(did: string, rkey: string): string {
   return `${BUMICERTS_URL}/bumicert/${encodeURIComponent(did)}-${encodeURIComponent(rkey)}`;
 }
 
-/** Build a local Bumiscan Bumicert detail page URL from a DID/handle + rkey. */
+/** Build a local Bumicerts Bumicert detail page URL from a DID/handle + rkey. */
 export function localBumicertHref(didOrHandle: string, rkey: string): string {
   return `/bumicert/${encodeURIComponent(didOrHandle)}/${encodeURIComponent(rkey)}`;
 }
 
-/** Build a local Bumiscan account page URL from a DID or handle. */
+/** Build a local Bumicerts account page URL from a DID or handle. */
 export function accountHref(didOrHandle: string): string {
   return `/account/${encodeURIComponent(didOrHandle)}`;
 }
