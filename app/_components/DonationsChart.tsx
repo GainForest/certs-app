@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { TimePoint } from "../_lib/dashboard";
-import { formatUsd, formatDate } from "../_lib/format";
+import { formatCompactUsd, formatDate, formatUsd } from "../_lib/format";
 
 // Lightweight dependency-free donations chart. Renders the cumulative USD
 // raised as a smooth sage area, with per-day volume as faint bars underneath
@@ -61,7 +61,7 @@ export function DonationsChart({ data }: { data: TimePoint[] }) {
             {hover != null ? "On " + formatDate(active.date) : "Total raised to date"}
           </div>
           <div className="mt-1 font-garamond text-[30px] leading-none text-foreground sm:text-[36px]">
-            {formatUsd(hover != null ? active.cumulative : maxCum)}
+            {formatCompactUsd(hover != null ? active.cumulative : maxCum)}
           </div>
         </div>
         {hover != null && (

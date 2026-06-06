@@ -3,7 +3,7 @@ import { ArrowUpRightIcon, LeafIcon } from "lucide-react";
 import type { ExplorerKpis } from "../_lib/kpis";
 import type { StatusSnapshot } from "../_lib/status";
 import type { DevicesLiveSummary } from "../_lib/devices";
-import { formatCompact, formatUsd } from "../_lib/format";
+import { formatCompact, formatCompactUsd } from "../_lib/format";
 
 // Landing-page collections grid. Kept intentionally aligned to the Bumicerts
 // home sections: max-w-6xl, centered editorial heading, rounded cards, and the
@@ -57,7 +57,7 @@ export function BrowseGrid({
       label: "Impact champions",
       title: "Leaderboard",
       blurb: "Celebrate the top contributors funding regenerative work across Bumicerts.",
-      stat: formatUsd(kpis.totalRaised),
+      stat: formatCompactUsd(kpis.totalRaised),
       statLabel: "raised",
     },
     {

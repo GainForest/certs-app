@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import type { MetricSeries } from "../_lib/trends";
-import { formatDate, formatNumber, formatUsd } from "../_lib/format";
+import { formatCompactUsd, formatDate, formatNumber } from "../_lib/format";
 
 /** Serializable formatter key — functions can't cross the server→client boundary. */
 export type FormatKey = "number" | "usd";
 const FORMATTERS: Record<FormatKey, (n: number) => string> = {
   number: (n) => formatNumber(n),
-  usd: (n) => formatUsd(n),
+  usd: (n) => formatCompactUsd(n),
 };
 
 // Inline sparkline + expand-to-full chart modal for the hero KPI band, in the

@@ -9,7 +9,7 @@ export function formatNumber(n: number | null | undefined): string {
   return numberFmt.format(n);
 }
 
-/** Compact USD: $26,938.82 → "$26,938.82", small values keep cents. */
+/** USD amount: 26938.82 → "$26,938.82". */
 export function formatUsd(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
   return new Intl.NumberFormat("en-US", {
@@ -17,6 +17,27 @@ export function formatUsd(n: number | null | undefined): string {
     currency: "USD",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
+  }).format(n);
+}
+
+/** Compact USD total: 26938.82 → "$26.9K", 1250000 → "$1.3M". */
+export function formatCompactUsd(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  if (Math.abs(n) < 1000) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+      maximumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    }).format(n);
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    compactDisplay: "short",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
   }).format(n);
 }
 

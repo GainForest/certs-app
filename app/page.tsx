@@ -23,7 +23,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <HomeLanding kpis={kpis} status={status} devices={devices} />
+      <HomeLanding kpis={kpis} />
       <BrowseGrid kpis={kpis} status={status} devices={devices} />
     </>
   );

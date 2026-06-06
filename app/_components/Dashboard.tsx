@@ -46,7 +46,7 @@ import {
   type TxRow,
 } from "../_lib/dashboard";
 import { accountHref, localBumicertHref } from "../_lib/urls";
-import { formatNumber, formatUsd } from "../_lib/format";
+import { formatCompactUsd, formatNumber, formatUsd } from "../_lib/format";
 import { AuthorInline } from "./AuthorChip";
 import { StatsTile } from "./StatsTile";
 import { PictureHero } from "./PictureHero";
@@ -210,7 +210,7 @@ function KPISummary({ kpis }: { kpis: DashboardKpis }) {
       <StatCard
         icon={<DollarSignIcon className="h-4 w-4" />}
         label="Total Raised"
-        value={formatUsd(kpis.totalRaised)}
+        value={formatCompactUsd(kpis.totalRaised)}
         sub="All USD donations"
       />
       <StatCard
@@ -362,7 +362,7 @@ function DonationsVolumeChart({
               tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(value: number) => (value >= 1000 ? `$${(value / 1000).toFixed(1)}k` : `$${value}`)}
+              tickFormatter={(value: number) => formatCompactUsd(value)}
               width={48}
             />
             <Tooltip content={<ChartTooltip />} />
@@ -389,7 +389,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
   return (
     <div className="rounded-xl border border-border bg-background px-3 py-2 text-xs shadow-sm">
       <p className="font-medium text-foreground">{label}</p>
-      <p className="mt-0.5 text-muted-foreground">{formatUsd(amount)}</p>
+      <p className="mt-0.5 text-muted-foreground">{formatCompactUsd(amount)}</p>
       <p className="text-muted-foreground">{count} {count === 1 ? "donation" : "donations"}</p>
     </div>
   );
@@ -444,7 +444,7 @@ function TopDonorsTable({ rows }: { rows: TopDonor[] }) {
                 <tr key={row.donorId} className="border-t border-border/50 transition-colors hover:bg-muted/20">
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.rank}</td>
                   <td className="px-3 py-2.5"><DonorCell id={row.donorId} type={row.donorType} /></td>
-                  <td className="px-3 py-2.5 text-foreground tabular-nums">{formatUsd(row.totalAmount)}</td>
+                  <td className="px-3 py-2.5 text-foreground tabular-nums">{formatCompactUsd(row.totalAmount)}</td>
                   <td className="px-3 py-2.5 text-muted-foreground tabular-nums">{row.donationCount}</td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">{formatTableDate(row.lastDonatedAt)}</td>
                 </tr>
@@ -513,7 +513,7 @@ function OrganizationsTable({ rows }: { rows: OrgRow[] }) {
                       <ExternalLinkIcon className="h-3 w-3 opacity-60" />
                     </Link>
                   </td>
-                  <td className="px-3 py-2.5 text-foreground tabular-nums">{formatUsd(row.totalRaised)}</td>
+                  <td className="px-3 py-2.5 text-foreground tabular-nums">{formatCompactUsd(row.totalRaised)}</td>
                   <td className="px-3 py-2.5 text-muted-foreground tabular-nums">{row.bumicertCount}</td>
                   <td className="px-3 py-2.5 text-muted-foreground tabular-nums">{row.donorCount}</td>
                 </tr>

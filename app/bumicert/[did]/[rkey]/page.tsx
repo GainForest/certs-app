@@ -15,7 +15,7 @@ import { BumicertsBumicertCard } from "@/components/bumicert/BumicertsBumicertCa
 import { RichText } from "../../../_components/RichText";
 import { SocialGlyph } from "../../../_components/SocialIcon";
 import { fetchReceipts, type DonorRef, type FundingReceipt } from "../../../_lib/dashboard";
-import { formatDate, formatDateTime, formatNumber, formatRelative, formatUsd } from "../../../_lib/format";
+import { formatCompactUsd, formatDate, formatDateTime, formatNumber, formatRelative, formatUsd } from "../../../_lib/format";
 import {
   fetchBumicertsByDid,
   fetchImageOccurrencesByDid,
@@ -459,7 +459,7 @@ function SidebarDonations({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <p className="text-xs text-muted-foreground">Raised</p>
-          <p className="mt-0.5 text-lg font-medium text-foreground">{formatUsd(totalUsd)}</p>
+          <p className="mt-0.5 text-lg font-medium text-foreground">{formatCompactUsd(totalUsd)}</p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Completed gifts</p>
@@ -700,7 +700,7 @@ function DonationsPanel({ receipts, unavailable }: { receipts: FundingReceipt[];
       ) : (
         <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-3">
-            <StatCard label="Total raised" value={formatUsd(totalUsd)} />
+            <StatCard label="Total raised" value={formatCompactUsd(totalUsd)} />
             <StatCard label="Donations" value={formatNumber(receipts.length)} />
             <StatCard label="Donors" value={formatNumber(donorCount)} />
           </div>

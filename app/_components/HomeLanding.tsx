@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ActivityIcon,
   ArrowUpRightIcon,
   BinocularsIcon,
   Building2Icon,
@@ -13,20 +12,15 @@ import {
   DollarSignIcon,
   LeafIcon,
   MapPinIcon,
-  RadioTowerIcon,
 } from "lucide-react";
 import { useState } from "react";
-import type { DevicesLiveSummary } from "../_lib/devices";
 import type { ExplorerKpis } from "../_lib/kpis";
-import type { StatusSnapshot } from "../_lib/status";
-import { formatCompact, formatUsd } from "../_lib/format";
+import { formatCompact, formatCompactUsd } from "../_lib/format";
 import { StatsTileGrid } from "./StatsTile";
 import { ThemeToggle } from "./ThemeToggle";
 
 type HomeLandingProps = {
   kpis: ExplorerKpis;
-  status: StatusSnapshot;
-  devices: DevicesLiveSummary;
 };
 
 const FEATURE_ITEMS = [
@@ -102,13 +96,13 @@ const FAQ_ITEMS = [
 
 type FaqKey = (typeof FAQ_ITEMS)[number]["key"];
 
-export function HomeLanding({ kpis, status, devices }: HomeLandingProps) {
+export function HomeLanding({ kpis }: HomeLandingProps) {
   return (
     <div className="min-h-screen bg-background">
       <LandingTopNavbar />
       <main className="w-full">
         <LandingHero />
-        <HomeStats kpis={kpis} status={status} devices={devices} />
+        <HomeStats kpis={kpis} />
         <FeaturesSection />
         <UserOptionCards />
         <WhatIsBumicert />
@@ -285,11 +279,7 @@ function LandingHero() {
   );
 }
 
-function HomeStats({ kpis, status, devices }: HomeLandingProps) {
-  const operational = status.components.filter((component) => component.status === "OPERATIONAL").length;
-  const total = status.components.length;
-  const liveDevices = devices.configured && devices.total > 0 ? `${devices.healthy}/${devices.total}` : "—";
-
+function HomeStats({ kpis }: { kpis: ExplorerKpis }) {
   const stats = [
     {
       value: formatCompact(kpis.bumicerts),
@@ -314,26 +304,11 @@ function HomeStats({ kpis, status, devices }: HomeLandingProps) {
       icon: <BinocularsIcon />,
     },
     {
-      value: formatUsd(kpis.totalRaised),
+      value: formatCompactUsd(kpis.totalRaised),
       label: "Funding raised",
       detail: "direct support tracked",
       href: "/leaderboard",
       icon: <DollarSignIcon />,
-      accent: true,
-    },
-    {
-      value: liveDevices,
-      label: "Tainá devices",
-      detail: "field heartbeats",
-      href: "/devices",
-      icon: <RadioTowerIcon />,
-    },
-    {
-      value: total > 0 ? `${operational}/${total}` : "—",
-      label: "Services running",
-      detail: "site health",
-      href: "/status",
-      icon: <ActivityIcon />,
       accent: true,
     },
   ];
@@ -341,7 +316,7 @@ function HomeStats({ kpis, status, devices }: HomeLandingProps) {
   return (
     <section className="px-6 pb-8 pt-0 sm:px-12 md:px-6 md:pb-12">
       <div className="mx-auto -mt-24 max-w-6xl rounded-[2rem] bg-background/65 p-2 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur-xl">
-        <StatsTileGrid items={stats} columns={6} />
+        <StatsTileGrid items={stats} columns={4} />
       </div>
     </section>
   );

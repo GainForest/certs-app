@@ -18,6 +18,7 @@ import {
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AuthorInline } from "../_components/AuthorChip";
 import { fetchReceipts, type FundingReceipt } from "../_lib/dashboard";
+import { formatCompactUsd } from "../_lib/format";
 import { accountHref } from "../_lib/urls";
 
 type Period = "all" | "month" | "week";
@@ -298,7 +299,7 @@ function StatsSummary({
     <div className="grid gap-4 lg:grid-cols-3">
       <StatCard
         label="Total Raised"
-        value={formatCurrency(totalRaised)}
+        value={formatCompactUsd(totalRaised)}
         detail="All time across the platform"
         icon={<LeafIcon className="size-8" />}
         accent
@@ -577,7 +578,7 @@ function DonorCard({ entry, index }: { entry: LeaderboardEntry; index: number })
 
       <div className="text-right">
         <div className="whitespace-nowrap text-base font-bold tabular-nums text-primary sm:text-lg">
-          {formatCurrency(entry.totalAmount)}
+          {formatCompactUsd(entry.totalAmount)}
         </div>
       </div>
 
@@ -683,15 +684,6 @@ function dateTimeValue(date: string | null): number {
   if (!date) return 0;
   const time = Date.parse(date);
   return Number.isNaN(time) ? 0 : time;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
 }
 
 function donationSummary(count: number, relativeTime: string | null): string {

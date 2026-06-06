@@ -7,7 +7,7 @@ import type { ExplorerTrends, MetricSeries } from "../_lib/trends";
 import type { StatusSnapshot } from "../_lib/status";
 import type { DevicesLiveSummary } from "../_lib/devices";
 import type { FormatKey, Baseline } from "./MetricTrend";
-import { formatCompact, formatUsd } from "../_lib/format";
+import { formatCompact, formatCompactUsd } from "../_lib/format";
 
 // Editorial hero, same rhythm as gainforest-app: eyebrow, big Cormorant
 // headline with one brushed word + one Instrument-Serif italic word, a short
@@ -58,7 +58,7 @@ export function Hero({
       format: "number",
     },
     {
-      value: formatUsd(kpis.totalRaised),
+      value: formatCompactUsd(kpis.totalRaised),
       label: "Funding raised",
       sub: "Across all Bumicerts",
       series: trends.totalRaised,

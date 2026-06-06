@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { HeartIcon, ExternalLinkIcon } from "lucide-react";
 import type { FundingReceipt } from "../../_lib/dashboard";
+import { formatCompactUsd } from "../../_lib/format";
 import { localBumicertHref } from "../../_lib/urls";
 
 interface DonationHistoryProps {
@@ -133,7 +134,7 @@ export function DonationHistory({ receipts }: DonationHistoryProps) {
           <div className="rounded-lg border border-border bg-card p-3">
             <p className="text-xs text-muted-foreground mb-1">Total Donated</p>
             <p className="text-xl font-bold text-foreground">
-              ${totalDonated.toFixed(2)}
+              {formatCompactUsd(totalDonated)}
             </p>
           </div>
           <div className="rounded-lg border border-border bg-card p-3">
