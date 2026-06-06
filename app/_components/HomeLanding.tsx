@@ -19,7 +19,6 @@ import { useState } from "react";
 import type { DevicesLiveSummary } from "../_lib/devices";
 import type { ExplorerKpis } from "../_lib/kpis";
 import type { StatusSnapshot } from "../_lib/status";
-import { BUMICERTS_URL } from "../_lib/urls";
 import { formatCompact, formatUsd } from "../_lib/format";
 import { StatsTileGrid } from "./StatsTile";
 import { ThemeToggle } from "./ThemeToggle";
@@ -63,7 +62,7 @@ const OPTION_CARDS = [
   },
   {
     key: "organizations",
-    href: `${BUMICERTS_URL}/bumicert/create`,
+    href: "/bumicert/create",
     image: "/assets/media/images/landing/steward-waterfall.jpg",
     alt: "Waterfall in a tropical forest",
     label: "For Organizations",

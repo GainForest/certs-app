@@ -11,9 +11,6 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://certs-rewr
  *  so the browser can query it directly (no API proxy needed). */
 export const INDEXER_URL = "https://hi.gainforest.app/graphql";
 
-/** Bumicerts marketplace (certs.gainforest.app). */
-export const BUMICERTS_URL = "https://certs.gainforest.app";
-
 /** Green Globe live map (data.gainforest.app). */
 export const GLOBE_URL = "https://data.gainforest.app";
 
@@ -52,12 +49,7 @@ export const STATUS_URL = "https://gainforest-status.instatus.com";
  *  (apps/bumicerts/app/(marketplace)/dashboard/_components/DashboardClient.tsx). */
 export const FACILITATOR_DID = "did:plc:edod7rboajioq3jbyxsgeicc";
 
-/** Build a Bumicerts marketplace project page URL from a DID + rkey. */
-export function bumicertHref(did: string, rkey: string): string {
-  return `${BUMICERTS_URL}/bumicert/${encodeURIComponent(did)}-${encodeURIComponent(rkey)}`;
-}
-
-/** Build a local Bumicerts Bumicert detail page URL from a DID/handle + rkey. */
+/** Build a Bumicerts detail page URL in this app from a DID/handle + rkey. */
 export function localBumicertHref(didOrHandle: string, rkey: string): string {
   return `/bumicert/${encodeURIComponent(didOrHandle)}/${encodeURIComponent(rkey)}`;
 }

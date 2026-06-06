@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { HeartIcon, ExternalLinkIcon } from "lucide-react";
 import type { FundingReceipt } from "../../_lib/dashboard";
-import { bumicertHref } from "../../_lib/urls";
+import { localBumicertHref } from "../../_lib/urls";
 
 interface DonationHistoryProps {
   receipts: FundingReceipt[];
@@ -75,7 +75,7 @@ function DonationCard({
           <span className="text-xs text-muted-foreground">·</span>
           {bumicertInfo ? (
             <Link
-              href={bumicertHref(bumicertInfo.did, bumicertInfo.rkey)}
+              href={localBumicertHref(bumicertInfo.did, bumicertInfo.rkey)}
               className="text-xs text-primary hover:underline truncate"
             >
               View bumicert

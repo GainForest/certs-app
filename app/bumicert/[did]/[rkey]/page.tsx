@@ -26,7 +26,7 @@ import {
   type OccurrenceRecord,
 } from "../../../_lib/indexer";
 import { isPdsBlobUrl } from "../../../_lib/pds";
-import { blockExplorerUrl, bumicertHref, INDEXER_URL, localBumicertHref } from "../../../_lib/urls";
+import { blockExplorerUrl, INDEXER_URL, localBumicertHref } from "../../../_lib/urls";
 import { getAccountRouteData, readAccountRouteParams } from "../../../account/_lib/account-route";
 import { Separator } from "@/components/ui/separator";
 import { BumicertHeaderTitleBridge } from "./_components/BumicertHeaderTitleBridge";
@@ -86,12 +86,12 @@ export default async function BumicertDetailPage({
   params: BumicertPageParams;
   searchParams: BumicertSearchParams;
 }) {
-  const [{ record, detail, owner, fundingConfig }, search] = await Promise.all([
+  const [{ record, detail, owner, fundingConfig, urlIdentifier }, search] = await Promise.all([
     readRouteData(params),
     searchParams,
   ]);
   const activeTab = parseDetailTab(search.tab);
-  const externalHref = bumicertHref(record.did, record.rkey);
+  const detailHref = localBumicertHref(urlIdentifier, record.rkey);
   const period = record.startDate || record.endDate
     ? `${record.startDate ? formatDate(record.startDate) : "—"} → ${record.endDate ? formatDate(record.endDate) : "—"}`
     : "Not specified";
@@ -123,7 +123,7 @@ export default async function BumicertDetailPage({
       <BumicertHeaderTitleBridge
         summary={{
           title: record.title,
-          donateHref: externalHref,
+          donateHref: detailHref,
           card: {
             did: record.did,
             title: record.title,
@@ -653,7 +653,7 @@ function DonationsPanel({ receipts, unavailable }: { receipts: FundingReceipt[];
         <EmptyState
           icon={<HeartIcon className="h-8 w-8" />}
           title="Donation data is unavailable"
-          body="The indexer did not return funding receipts for this Bumicert. Try again later or view the marketplace page."
+          body="The indexer did not return funding receipts for this Bumicert. Try again later on this page."
         />
       ) : receipts.length === 0 ? (
         <EmptyState

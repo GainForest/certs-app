@@ -99,7 +99,7 @@ walks) — cards stream in as they're found.
 - Indexer: `https://hi.gainforest.app/graphql`
 - Facilitator (all donations): `did:plc:edod7rboajioq3jbyxsgeicc`
 - Status: `https://gainforest-status.instatus.com`
-- Links out: `certs.gainforest.app`, `data.gainforest.app`
+- Links out: `data.gainforest.app` (Bumicerts links stay in this app)
 
 > The explorer is a read-only window over the commons. Donation figures
 > mirror the live indexer and may lag the chain; it is not an official record.

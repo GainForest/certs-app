@@ -7,7 +7,7 @@ import { LogoMark } from "./Logo";
 import { StatusPill } from "./StatusPill";
 import { ThemeToggle } from "./ThemeToggle";
 import type { StatusSnapshot } from "../_lib/status";
-import { BUMICERTS_URL, GLOBE_URL } from "../_lib/urls";
+import { GLOBE_URL } from "../_lib/urls";
 
 const NAV = [
   { href: "/observations", label: "Observations" },
@@ -135,8 +135,8 @@ export function TopNav({ status }: { status: StatusSnapshot }) {
               <Link href={GLOBE_URL} target="_blank" rel="noreferrer" className="hover:text-primary">
                 Green Globe ↗
               </Link>
-              <Link href={`${BUMICERTS_URL}/explore`} target="_blank" rel="noreferrer" className="hover:text-primary">
-                Bumicerts ↗
+              <Link href="/bumicerts" className="hover:text-primary">
+                Bumicerts
               </Link>
             </div>
           </nav>

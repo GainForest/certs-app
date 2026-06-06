@@ -1123,6 +1123,78 @@ export async function fetchOccurrencesByDid(
   return { records: collected.slice(0, target), cursor, hasMore: hasNextPage && Boolean(cursor) };
 }
 
+// ── 7. Manage section — tree datasets by DID ───────────────────────────────
+
+export type UploadTreeDatasetRecord = {
+  uri: string;
+  rkey: string;
+  name: string;
+  description: string | null;
+  recordCount: number | null;
+  createdAt: string | null;
+};
+
+const TREE_DATASET_BY_DID_QUERY = `
+  query ExplorerDatasetsByDid($did: String!, $first: Int!, $after: String) {
+    appGainforestDwcDataset(
+      where: { did: { eq: $did } }
+      first: $first
+      after: $after
+      sortBy: createdAt
+      sortDirection: DESC
+    ) {
+      pageInfo { hasNextPage endCursor }
+      edges { node { did uri rkey name description recordCount createdAt } }
+    }
+  }
+`;
+
+type RawTreeDatasetNode = {
+  uri: string;
+  rkey: string;
+  name: string;
+  description?: string | null;
+  recordCount?: number | null;
+  createdAt?: string | null;
+};
+
+export async function fetchTreeDatasetsByDid(
+  did: string,
+  signal?: AbortSignal,
+): Promise<UploadTreeDatasetRecord[]> {
+  const all: UploadTreeDatasetRecord[] = [];
+  let cursor: string | null = null;
+
+  for (let page = 0; page < 10; page++) {
+    type DatasetPage = { appGainforestDwcDataset?: Connection<RawTreeDatasetNode> };
+    const data: DatasetPage | null = await indexerQuery<DatasetPage>(
+      TREE_DATASET_BY_DID_QUERY,
+      { did, first: 100, after: cursor },
+      signal,
+    );
+    const conn: Connection<RawTreeDatasetNode> | undefined = data?.appGainforestDwcDataset;
+    const nodes = (conn?.edges ?? [])
+      .map((edge) => edge?.node)
+      .filter((node): node is RawTreeDatasetNode => Boolean(node?.uri && node?.rkey && node?.name));
+
+    all.push(
+      ...nodes.map((node) => ({
+        uri: node.uri,
+        rkey: node.rkey,
+        name: node.name,
+        description: node.description?.trim() || null,
+        recordCount: typeof node.recordCount === "number" ? node.recordCount : null,
+        createdAt: node.createdAt ?? null,
+      })),
+    );
+
+    if (!conn?.pageInfo?.hasNextPage || !conn.pageInfo.endCursor) break;
+    cursor = conn.pageInfo.endCursor;
+  }
+
+  return all;
+}
+
 // ── Unified record type for the detail drawer ──────────────────────────────
 
 export type ExplorerRecord = OccurrenceRecord | BumicertRecord | SiteRecord;

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { deleteRecord, putRecord } from "../../_lib/mutations";
 import type { OccurrenceRecord } from "@/app/_lib/indexer";
+import { TreesManageSkeleton } from "./TreesManageSkeleton";
 
 // ── TreeCard ──────────────────────────────────────────────────────────────────
 
@@ -337,13 +338,7 @@ export function TreesClient({ did, onUpload }: { did: string; onUpload?: () => v
   };
 
   if (isLoading) {
-    return (
-      <Container className="pt-4 pb-8">
-        <div className="flex items-center justify-center h-40">
-          <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      </Container>
-    );
+    return <TreesManageSkeleton />;
   }
 
   return (
@@ -351,7 +346,7 @@ export function TreesClient({ did, onUpload }: { did: string; onUpload?: () => v
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-medium">Trees</h1>
+          <h1 className="text-2xl font-bold font-garamond">Trees</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Manage tree occurrence datasets and biodiversity records.
           </p>
@@ -414,7 +409,7 @@ export function TreesClient({ did, onUpload }: { did: string; onUpload?: () => v
             >
               {trees.length === 0 ? (
                 <>
-                  <p className="text-xl font-medium text-muted-foreground">No tree records yet</p>
+                  <p className="text-xl font-semibold text-muted-foreground font-garamond">No tree records yet</p>
                   <p className="text-sm text-muted-foreground max-w-sm">
                     Upload a CSV of tree occurrences to get started.
                   </p>

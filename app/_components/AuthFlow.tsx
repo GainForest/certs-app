@@ -21,7 +21,7 @@ import {
 import type { AuthSession } from "../_lib/auth";
 import { buildLoginUrl, redirectToLogout } from "../_lib/auth-client";
 import { shortDid } from "../_lib/format";
-import { accountHref, BUMICERTS_URL } from "../_lib/urls";
+import { accountHref } from "../_lib/urls";
 import { Button } from "@/components/ui/button";
 import { ModalContent, ModalDescription, ModalTitle } from "@/components/ui/modal/modal";
 import { useModal } from "@/components/ui/modal/context";
@@ -479,7 +479,7 @@ function AuthenticatedMenu({ session }: { session: Extract<AuthSession, { isLogg
               </Link>
 
               <Link
-                href={`${BUMICERTS_URL}/settings`}
+                href={`${accountHref(session.did)}/settings`}
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted/60 transition-colors w-full text-left"
               >

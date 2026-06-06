@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BadgeCheckIcon,
@@ -32,6 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 import { createRecord, putRecord, deleteRecord } from "../../_lib/mutations";
 import type { ManagedLocation } from "@/app/_lib/indexer";
+import { SitesSkeleton } from "./SitesSkeleton";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -431,6 +433,8 @@ function generateSitePreviewUrl(did: string, rkey: string): string {
 }
 
 export function SitesClient({ did }: { did: string }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [sites, setSites] = useState<ManagedLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -464,7 +468,18 @@ export function SitesClient({ did }: { did: string }) {
 
   useEffect(() => { void loadSites(); }, [loadSites]);
 
+  useEffect(() => {
+    const rkey = searchParams.get("rkey");
+    if (!rkey || previewingRkey === rkey || !sites.some((site) => site.metadata.rkey === rkey)) return;
+    setPreviewingRkey(rkey);
+    setIframeUrl(generateSitePreviewUrl(did, rkey));
+  }, [did, previewingRkey, searchParams, sites]);
+
   const handlePreviewSite = (rkey: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("rkey", rkey);
+    router.push(`?${params.toString()}`, { scroll: false });
+
     const previewUrl = generateSitePreviewUrl(did, rkey);
     if (previewingRkey === rkey) {
       // Already loaded — send postMessage to navigate
@@ -520,13 +535,7 @@ export function SitesClient({ did }: { did: string }) {
   };
 
   if (isLoading) {
-    return (
-      <Container className="pt-4 pb-8">
-        <div className="flex items-center justify-center h-40">
-          <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      </Container>
-    );
+    return <SitesSkeleton />;
   }
 
   return (
@@ -534,7 +543,7 @@ export function SitesClient({ did }: { did: string }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-medium">Sites</h1>
+          <h1 className="text-2xl font-bold font-garamond">Sites</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Manage your certified field locations.
           </p>
@@ -616,7 +625,7 @@ export function SitesClient({ did }: { did: string }) {
           transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
           className="flex flex-col items-center justify-center h-48 gap-4 rounded-xl border border-dashed border-border text-center"
         >
-          <p className="text-xl font-medium text-muted-foreground">No sites yet</p>
+          <p className="text-xl font-semibold text-muted-foreground font-garamond">No sites yet</p>
           <p className="text-sm text-muted-foreground max-w-sm">
             Add your first certified field location to get started.
           </p>

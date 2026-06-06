@@ -24,7 +24,6 @@ import {
 import BumicertIcon from "@/icons/BumicertIcon";
 import type { ComponentType } from "react";
 import type { LucideIcon } from "lucide-react";
-import { BUMICERTS_URL } from "@/app/_lib/urls";
 
 type AccountKind = "organization" | "user";
 
@@ -62,7 +61,7 @@ const ORG_NAV_CARDS: NavCard[] = [
     id: "bumicerts",
     label: "Bumicerts",
     description: "Create and publish verified impact certificates.",
-    href: `${BUMICERTS_URL}/bumicert/create`,
+    href: "/bumicert/create",
     Icon: BumicertIcon,
   },
 ];

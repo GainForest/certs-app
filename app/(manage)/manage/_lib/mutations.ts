@@ -49,8 +49,17 @@ export async function deleteRecord(collection: string, rkey: string): Promise<vo
   await callProxy({ operation: "deleteRecord", collection, rkey });
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
 export async function uploadBlob(file: File): Promise<UploadBlobResult> {
   const buf = await file.arrayBuffer();
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const b64 = bytesToBase64(new Uint8Array(buf));
   return callProxy({ operation: "uploadBlob", blobData: b64, blobMimeType: file.type });
 }

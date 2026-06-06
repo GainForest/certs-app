@@ -7,7 +7,6 @@ import {
   CirclePlusIcon,
   LayoutGridIcon,
   ListIcon,
-  Loader2Icon,
   SearchIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import Container from "@/components/ui/container";
 import { AudioCard } from "./AudioCard";
 import { AudioEditor } from "./AudioEditor";
+import { AudioSkeleton } from "./AudioSkeleton";
 import type { ManagedAudio } from "@/app/_lib/indexer";
 
 type ViewMode = "grid" | "list" | "add" | "edit";
@@ -87,13 +87,7 @@ export function AudioClient({ did }: { did: string }) {
   };
 
   if (isLoading) {
-    return (
-      <Container className="pt-4 pb-8">
-        <div className="flex items-center justify-center h-40">
-          <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      </Container>
-    );
+    return <AudioSkeleton />;
   }
 
   return (
@@ -101,7 +95,7 @@ export function AudioClient({ did }: { did: string }) {
       {/* Header — hidden in editor */}
       {!isEditorMode && (
         <div>
-          <h1 className="text-2xl font-medium">Audio</h1>
+          <h1 className="text-2xl font-bold font-garamond">Audio</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Manage ecoacoustic and field audio evidence.
           </p>
@@ -191,7 +185,7 @@ export function AudioClient({ did }: { did: string }) {
               >
                 {recordings.length === 0 ? (
                   <>
-                    <p className="text-xl font-medium text-muted-foreground">No recordings yet</p>
+                    <p className="text-xl font-semibold text-muted-foreground font-garamond">No recordings yet</p>
                     <p className="text-sm text-muted-foreground max-w-sm">
                       Upload field audio to evidence your biodiversity monitoring work.
                     </p>

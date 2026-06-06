@@ -208,8 +208,8 @@ body {
 }
 
 /* Editorial brushed underline — single arced cubic curve, ported verbatim
-   from the Bumicerts "Real Communities" hero (certs.gainforest.app) the way
-   gainforest-app's BrushedText does it. */
+   from the Bumicerts "Real Communities" hero the way gainforest-app's
+   BrushedText does it. */
 .brush-svg {
   position: absolute;
   left: 0;

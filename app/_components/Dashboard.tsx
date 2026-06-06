@@ -45,7 +45,7 @@ import {
   type TopDonor,
   type TxRow,
 } from "../_lib/dashboard";
-import { accountHref, bumicertHref } from "../_lib/urls";
+import { accountHref, localBumicertHref } from "../_lib/urls";
 import { formatNumber, formatUsd, shortWallet } from "../_lib/format";
 import { AuthorInline } from "./AuthorChip";
 import { StatsTile } from "./StatsTile";
@@ -631,7 +631,7 @@ function DonorCell({ id, type }: { id: string; type: "did" | "wallet" }) {
   }
 
   return (
-    <Link href={accountHref(id)} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
+    <Link href={accountHref(id)} className="underline-offset-2 hover:underline">
       <AuthorInline did={id} />
     </Link>
   );
@@ -642,7 +642,7 @@ function BumicertLink({ uri }: { uri: string | null }) {
   const parsed = parseBumicertUri(uri);
   if (!parsed) return <>—</>;
   return (
-    <Link href={bumicertHref(parsed.did, parsed.rkey)} target="_blank" rel="noreferrer" className="text-primary hover:underline" title="View bumicert">
+    <Link href={localBumicertHref(parsed.did, parsed.rkey)} className="text-primary hover:underline" title="View bumicert">
       {parsed.rkey}
     </Link>
   );
@@ -739,15 +739,13 @@ function DashboardError() {
         Donation data is unavailable
       </div>
       <p className="mt-2 max-w-[420px] text-sm leading-[1.5] text-muted-foreground">
-        The indexer did not return funding receipts. View the live figures on the Bumicerts dashboard instead.
+        The indexer did not return funding receipts. Try this donations dashboard again later.
       </p>
       <Link
-        href="https://certs.gainforest.app/dashboard"
-        target="_blank"
-        rel="noreferrer"
+        href="/donations"
         className="mt-5 rounded-full bg-primary px-5 py-2.5 text-[13.5px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
       >
-        Open Bumicerts dashboard ↗
+        Open donations dashboard
       </Link>
     </div>
   );

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ExternalLinkIcon, FileTextIcon, GlobeIcon } from "lucide-react";
-import { BUMICERTS_URL, GAINFOREST_URL, GLOBE_URL, INDEXER_URL, STATUS_URL } from "../_lib/urls";
+import { GAINFOREST_URL, GLOBE_URL, INDEXER_URL, STATUS_URL } from "../_lib/urls";
 
 const PRIMARY_LINKS = [
   { href: GAINFOREST_URL, label: "GainForest", Icon: GlobeIcon, external: true },
@@ -113,7 +113,7 @@ export function Footer() {
             </span>
           </div>
           <span className="font-mono text-[12px] text-muted-foreground/40">
-            hi.gainforest.app/graphql · certified.one · instatus · {BUMICERTS_URL.replace(/^https?:\/\//, "")}
+            hi.gainforest.app/graphql · certified.one · instatus · current app
           </span>
         </div>
       </div>

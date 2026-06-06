@@ -36,7 +36,7 @@ import { BumicertsBumicertCard, type BumicertsBumicertCardRecord } from "@/compo
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { AuthButton, SignInPrompt } from "./AuthFlow";
-import { accountHref, BUMICERTS_URL } from "../_lib/urls";
+import { accountHref } from "../_lib/urls";
 
 type NavLeaf = {
   kind: "leaf";
@@ -352,7 +352,7 @@ function BumicertCreationCard() {
 
       {/*CTA*/}
       <Link
-        href={`${BUMICERTS_URL}/bumicert/create`}
+        href="/bumicert/create"
         className={cn(
           buttonClasses.outlineSm,
           "relative z-2 w-full bg-background hover:bg-primary hover:text-primary-foreground",
@@ -397,7 +397,7 @@ function ManageSection({ authSession }: { authSession: AuthSession }) {
           id: "bumicerts-manage",
           text: "Bumicerts",
           Icon: BumicertIcon,
-          href: `${BUMICERTS_URL}/bumicert/create`,
+          href: "/bumicert/create",
           pathCheck: { startsWith: "/bumicert/create" },
         },
         {
@@ -591,7 +591,7 @@ function Header({
 
           {/* Right slot */}
           <div className="flex items-center gap-3 shrink-0">
-            <Link href={`${BUMICERTS_URL}/bumicert/create`}>
+            <Link href="/bumicert/create">
               <motion.span
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -757,7 +757,7 @@ function BumicertHeaderAccordion({
                 </AnimatePresence>
               </Button>
               <Button asChild size="sm">
-                <Link href={summary.donateHref} target="_blank" rel="noreferrer">
+                <Link href={summary.donateHref}>
                   <HeartIcon className="h-3.5 w-3.5" />
                   Donate
                 </Link>

@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import type { AccountRouteData } from "@/app/account/_lib/account-route";
 import { ManageNavGrid } from "./ManageNavGrid";
 import { ManageAccountSetup } from "./ManageAccountSetup";
+import type { ManageMode } from "./manageDashboardMode";
 import { RichText } from "@/app/_components/RichText";
 import { countryFlag } from "@/app/_lib/format";
 import { putRecord, uploadBlob } from "../_lib/mutations";
@@ -416,7 +417,7 @@ export function ManageDashboardClient({
   mode,
 }: {
   account: AccountRouteData;
-  mode: string | null;
+  mode: ManageMode | null;
 }) {
   const router = useRouter();
 
@@ -536,7 +537,7 @@ export function ManageDashboardClient({
   if (isOnboarding) {
     return (
       <Container className="pt-4 pb-8">
-        <ManageAccountSetup mode={mode} />
+        <ManageAccountSetup did={account.did} mode={mode} />
       </Container>
     );
   }

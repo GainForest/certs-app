@@ -16,10 +16,8 @@ import { RichText } from "./RichText";
 import { SocialGlyph, socialLabel } from "./SocialIcon";
 import { isPdsBlobUrl } from "../_lib/pds";
 import {
-  BUMICERTS_URL,
   GLOBE_URL,
   accountHref,
-  bumicertHref,
   hyperscanRecordHref,
   localBumicertHref,
 } from "../_lib/urls";
@@ -27,8 +25,8 @@ import {
 // Right-side detail sheet for any explorer record. Slides in over a dimmed
 // scrim; Escape or a scrim click closes it. Shows the record image, the
 // structured field set for that record kind, the canonical at:// URI (with a
-// copy button), and outbound links to the production surfaces (Bumicerts /
-// Green Globe / the PDS sync endpoint / Bluesky).
+// copy button), and links to in-app Bumicerts pages plus external reference
+// surfaces (Green Globe / the PDS sync endpoint / Bluesky).
 
 export function RecordDrawer({
   record,
@@ -241,13 +239,13 @@ export function RecordDrawer({
               <Link
                 key={l.href}
                 href={l.href}
-                target="_blank"
-                rel="noreferrer"
+                target={l.href.startsWith("http") ? "_blank" : undefined}
+                rel={l.href.startsWith("http") ? "noreferrer" : undefined}
                 className="group flex items-center justify-between rounded-xl border border-border-soft bg-surface px-4 py-3 text-[14px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-sunken"
               >
                 <span>{l.label}</span>
                 <span aria-hidden className="text-foreground/35 transition-transform group-hover:translate-x-0.5 group-hover:text-primary">
-                  ↗
+                  {l.href.startsWith("http") ? "↗" : "→"}
                 </span>
               </Link>
             ))}
@@ -419,14 +417,14 @@ type LinkItem = { href: string; label: string };
 function buildLinks(r: ExplorerRecord): LinkItem[] {
   const links: LinkItem[] = [];
   if (r.kind === "bumicert") {
-    links.push({ href: bumicertHref(r.did, r.rkey), label: "View on Bumicerts" });
+    links.push({ href: localBumicertHref(r.did, r.rkey), label: "View on Bumicerts" });
   }
   if (r.kind === "site") {
     links.push({ href: accountHref(r.did), label: "View organization on Bumicerts" });
     links.push({ href: GLOBE_URL, label: "Open the Green Globe map" });
   }
   if (r.kind === "occurrence") {
-    links.push({ href: `${BUMICERTS_URL}/account/${r.did}`, label: "View recorder account" });
+    links.push({ href: accountHref(r.did), label: "View recorder account" });
   }
   // Bluesky profile of the record owner is always meaningful.
   links.push({ href: `https://bsky.app/profile/${r.did}`, label: "Owner on Bluesky" });

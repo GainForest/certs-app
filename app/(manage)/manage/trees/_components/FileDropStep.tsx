@@ -35,6 +35,7 @@ import {
   fetchUploadSiteBoundary,
 } from "../../_lib/upload/site-boundary";
 import type { ManagedLocation } from "@/app/_lib/indexer";
+import TreeDataGuide, { KoboExportGuide } from "./TreeDataGuide";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_MEDIA_ZIP_SIZE_BYTES = 200 * 1024 * 1024;
@@ -220,6 +221,11 @@ export default function FileDropStep({
       <div>
         <h2 className="text-lg font-semibold">Upload your data file</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Drag and drop a CSV or TSV file, or click to browse.</p>
+      </div>
+
+      <div className="space-y-3">
+        <TreeDataGuide />
+        <KoboExportGuide />
       </div>
 
       <div
