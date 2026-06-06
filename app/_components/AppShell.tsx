@@ -396,8 +396,8 @@ function ManageSection({ authSession }: { authSession: AuthSession }) {
           id: "bumicerts-manage",
           text: "Bumicerts",
           Icon: BumicertIcon,
-          href: "/bumicert/create",
-          pathCheck: { startsWith: "/bumicert/create" },
+          href: "/manage/bumicerts",
+          pathCheck: { startsWith: "/manage/bumicerts" },
         },
         {
           kind: "leaf",
