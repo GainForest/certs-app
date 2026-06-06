@@ -133,7 +133,7 @@ function CreateHeroCard() {
             Create a<br />Bumicert
           </h1>
           <p className="mt-5 max-w-[25rem] text-base leading-7 text-muted-foreground">
-            Turn verified conservation, restoration, and community stewardship work into a shareable impact certificate.
+            Turn checked conservation, restoration, and community stewardship work into a shareable impact certificate.
           </p>
           <div className="mt-7">
             <Button asChild>
@@ -176,10 +176,10 @@ function ExplainerCard() {
       </h2>
       <div className="mt-4 space-y-4 text-base leading-7 text-muted-foreground">
         <p>
-          Bumicerts are public impact claims that connect a project story to people, places, time periods, and supporting evidence.
+          Bumicerts are public impact stories that connect a project to people, places, time periods, and supporting photos or notes.
         </p>
         <p>
-          Use them to make field work easier to review, share, and fund while keeping the underlying records discoverable.
+          Use them to make field work easier to review, share, and fund while keeping the project details easy to find.
         </p>
       </div>
       <Button variant="outline" size="sm" asChild className="mt-5">
