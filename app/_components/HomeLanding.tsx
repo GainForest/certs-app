@@ -62,7 +62,7 @@ const OPTION_CARDS = [
   },
   {
     key: "organizations",
-    href: "/bumicert/create",
+    href: "/manage/bumicerts",
     image: "/assets/media/images/landing/steward-waterfall.jpg",
     alt: "Waterfall in a tropical forest",
     label: "For Organizations",

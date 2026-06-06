@@ -7,6 +7,7 @@ import { AccountDrawerProvider } from "./_components/AccountDrawer";
 import { ModalProvider } from "@/components/ui/modal/context";
 import { fetchStatus } from "./_lib/status";
 import { fetchAuthSession } from "./_lib/auth-server";
+import { fetchAccountSummary } from "./_lib/indexer";
 import { SITE_URL } from "./_lib/urls";
 
 const geistSans = Geist({
@@ -117,6 +118,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     fetchStatus({ revalidate: 60 }),
     fetchAuthSession(),
   ]);
+  const manageAccountKind = authSession.isLoggedIn
+    ? await fetchAccountSummary(authSession.did)
+        .then((summary) => summary.hasCertifiedOrg || summary.hasGainforestOrg ? "organization" as const : "user" as const)
+        .catch(() => "user" as const)
+    : "user" as const;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -125,7 +132,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         <ModalProvider>
           <AccountDrawerProvider>
-            <AppShell status={status} authSession={authSession}>
+            <AppShell status={status} authSession={authSession} manageAccountKind={manageAccountKind}>
               {children}
               <Footer />
             </AppShell>

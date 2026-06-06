@@ -10,7 +10,7 @@
  *   Sites         → /manage/sites
  *   Audio         → /manage/audio
  *   Trees         → /manage/trees
- *   Bumicerts     → /bumicert/create
+ *   Bumicerts     → /manage/bumicerts
  */
 
 import Link from "next/link";

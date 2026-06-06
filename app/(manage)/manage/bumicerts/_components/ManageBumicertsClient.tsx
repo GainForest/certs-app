@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRightIcon,
+  BadgeIcon,
   CirclePlusIcon,
   ClockIcon,
   ExternalLinkIcon,
@@ -20,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { BumicertCardSkeleton, BumicertCardVisual } from "@/components/bumicert/BumicertCard";
 import type { BumicertRecord } from "@/app/_lib/indexer";
 import { localBumicertHref } from "@/app/_lib/urls";
-import { cn } from "@/lib/utils";
 
 type DraftValues = {
   title?: string;
@@ -43,7 +43,10 @@ type LocalDraft = {
 type CreateTab = "recent" | "drafts";
 
 const DRAFT_STORAGE_KEY = "bumicerts:create-drafts:v1";
-const tabs: CreateTab[] = ["recent", "drafts"];
+const tabs: Array<{ id: CreateTab; label: string; icon: typeof BadgeIcon }> = [
+  { id: "recent", label: "Recent", icon: BadgeIcon },
+  { id: "drafts", label: "Drafts", icon: FilePenLineIcon },
+];
 
 const tabPanelIds: Record<CreateTab, string> = {
   recent: "create-bumicert-recent-panel",
@@ -134,7 +137,7 @@ function CreateHeroCard() {
           </p>
           <div className="mt-7">
             <Button asChild>
-              <Link href="/bumicert/create">
+              <Link href="/manage/bumicerts">
                 <CirclePlusIcon />
                 Create Bumicert
               </Link>
@@ -201,11 +204,7 @@ function RecentBumicerts({ bumicerts, did }: { bumicerts: BumicertRecord[]; did:
             transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
             className="flex min-h-[18rem] flex-col items-center justify-center px-6 text-center"
           >
-            <div className="relative mb-4 flex size-24 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary">
-              <div className="absolute -bottom-5 left-1/2 h-16 w-28 -translate-x-1/2 rounded-[50%] bg-primary/15" />
-              <div className="absolute -bottom-7 left-[42%] h-14 w-24 -translate-x-1/2 rounded-[50%] bg-primary/10" />
-              <LeafIcon className="relative z-10 size-9" />
-            </div>
+            <LeafIcon className="mb-4 size-10 text-primary" />
             <div className="space-y-2">
               <p className="font-serif text-2xl font-medium leading-tight tracking-[-0.02em] text-foreground">
                 No Bumicerts yet
@@ -216,7 +215,7 @@ function RecentBumicerts({ bumicerts, did }: { bumicerts: BumicertRecord[]; did:
               </p>
             </div>
             <Button variant="outline" size="sm" asChild className="mt-5">
-              <Link href="/bumicert/create">
+              <Link href="/manage/bumicerts">
                 <CirclePlusIcon />
                 Create first Bumicert
               </Link>
@@ -313,7 +312,7 @@ function DraftBumicerts() {
                 <Trash2Icon />
               </Button>
               <Button variant="outline" size="icon-sm" className="rounded-full" asChild>
-                <Link href="/bumicert/create">
+                <Link href="/manage/bumicerts">
                   <ArrowRightIcon />
                 </Link>
               </Button>
@@ -330,34 +329,32 @@ function CreateBumicertTabs({ bumicerts, did }: { bumicerts: BumicertRecord[]; d
 
   return (
     <section className="pt-2">
-      <div role="tablist" aria-label="Bumicert create sections" className="flex items-end gap-8 border-b border-border/80 px-1">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab;
-          return (
-            <button
-              key={tab}
-              id={tabButtonIds[tab]}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={tabPanelIds[tab]}
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                "relative -mb-px px-4 pb-4 pt-2 text-sm font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2",
-                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {tab}
-              {isActive && (
-                <motion.span
-                  layoutId="create-bumicert-active-tab"
-                  className="absolute inset-x-0 bottom-0 h-px bg-primary"
-                  transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-                />
-              )}
-            </button>
-          );
-        })}
+      <div className="overflow-x-auto scrollbar-hidden -mx-4 px-4">
+        <div role="tablist" aria-label="Bumicert create sections" className="flex min-w-max items-end gap-1 border-b border-border">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                id={tabButtonIds[tab.id]}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={tabPanelIds[tab.id]}
+                onClick={() => setActiveTab(tab.id)}
+                className={[
+                  "relative flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors duration-150 whitespace-nowrap select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2",
+                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                ].join(" ")}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                {tab.label}
+                {isActive && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-foreground" />}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div id={tabPanelIds[activeTab]} role="tabpanel" aria-labelledby={tabButtonIds[activeTab]} tabIndex={0} className="min-h-[19rem] focus-visible:outline-none">

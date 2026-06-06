@@ -53,6 +53,8 @@ type NavSection = {
   items: NavLeaf[];
 };
 
+type ManageAccountKind = "organization" | "user";
+
 const NAV_ITEMS: NavSection[] = [
   {
     kind: "section",
@@ -128,10 +130,12 @@ type DocWithViewTransitions = Document & {
 export function AppShell({
   children,
   authSession,
+  manageAccountKind,
 }: {
   children: React.ReactNode;
   status: StatusSnapshot;
   authSession: AuthSession;
+  manageAccountKind: ManageAccountKind;
 }) {
   const pathname = usePathname() ?? "/";
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -143,7 +147,7 @@ export function AppShell({
   return (
     <HeaderSlotsProvider>
       <div className="hidden md:flex h-screen overflow-hidden">
-        <UnifiedSidebar authSession={authSession} />
+        <UnifiedSidebar authSession={authSession} manageAccountKind={manageAccountKind} />
         <main className="relative flex-1 overflow-y-auto">
           <Header authSession={authSession} onOpenMobileNav={() => setMobileNavOpen(true)} />
           {children}
@@ -152,7 +156,7 @@ export function AppShell({
 
       <div className="flex h-screen flex-col overflow-hidden md:hidden">
         <MobileNavDrawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-          <UnifiedSidebar authSession={authSession} />
+          <UnifiedSidebar authSession={authSession} manageAccountKind={manageAccountKind} />
         </MobileNavDrawer>
         <div className="relative flex-1 overflow-y-auto">
           <Header authSession={authSession} onOpenMobileNav={() => setMobileNavOpen(true)} />
@@ -163,7 +167,7 @@ export function AppShell({
   );
 }
 
-function UnifiedSidebar({ authSession }: { authSession: AuthSession }) {
+function UnifiedSidebar({ authSession, manageAccountKind }: { authSession: AuthSession; manageAccountKind: ManageAccountKind }) {
   return (
     <nav className="w-[240px] h-full flex flex-col p-4 border-r border-border bg-foreground/3 relative">
       {/* Top section */}
@@ -183,7 +187,7 @@ function UnifiedSidebar({ authSession }: { authSession: AuthSession }) {
       <BumicertCreationCard />
       <div className="flex flex-col gap-2">
         <LayoutGroup id="unified-sidebar-nav-manage">
-          <ManageSection authSession={authSession} />
+          <ManageSection authSession={authSession} manageAccountKind={manageAccountKind} />
         </LayoutGroup>
 
         <div className="h-px bg-border" />
@@ -351,7 +355,7 @@ function BumicertCreationCard() {
 
       {/*CTA*/}
       <Link
-        href="/bumicert/create"
+        href="/manage/bumicerts"
         className={cn(
           buttonClasses.outlineSm,
           "relative z-2 w-full bg-background hover:bg-primary hover:text-primary-foreground",
@@ -363,52 +367,76 @@ function BumicertCreationCard() {
   );
 }
 
-function ManageSection({ authSession }: { authSession: AuthSession }) {
+function ManageSection({
+  authSession,
+  manageAccountKind,
+}: {
+  authSession: AuthSession;
+  manageAccountKind: ManageAccountKind;
+}) {
   const pathname = usePathname() ?? "/";
+  const organizationItems: NavLeaf[] = [
+    {
+      kind: "leaf",
+      id: "organization",
+      text: "Organization",
+      Icon: Building2Icon,
+      href: "/manage",
+      pathCheck: { equals: "/manage" },
+    },
+    {
+      kind: "leaf",
+      id: "sites",
+      text: "Sites",
+      Icon: MapPinIcon,
+      href: "/manage/sites",
+      pathCheck: { startsWith: "/manage/sites" },
+    },
+    {
+      kind: "leaf",
+      id: "audio",
+      text: "Audio",
+      Icon: MicIcon,
+      href: "/manage/audio",
+      pathCheck: { startsWith: "/manage/audio" },
+    },
+    {
+      kind: "leaf",
+      id: "bumicerts-manage",
+      text: "Bumicerts",
+      Icon: BumicertIcon,
+      href: "/manage/bumicerts",
+      pathCheck: { startsWith: "/manage/bumicerts" },
+    },
+    {
+      kind: "leaf",
+      id: "trees",
+      text: "Trees",
+      Icon: TreePineIcon,
+      href: "/manage/trees",
+      pathCheck: { startsWith: "/manage/trees" },
+    },
+  ];
+  const userItems: NavLeaf[] = [
+    {
+      kind: "leaf",
+      id: "profile",
+      text: "Profile",
+      Icon: UserIcon,
+      href: "/manage",
+      pathCheck: { equals: "/manage" },
+    },
+    {
+      kind: "leaf",
+      id: "bumicerts-manage",
+      text: "Bumicerts",
+      Icon: BumicertIcon,
+      href: "/manage/bumicerts",
+      pathCheck: { startsWith: "/manage/bumicerts" },
+    },
+  ];
   const items: NavLeaf[] = authSession.isLoggedIn
-    ? [
-        {
-          kind: "leaf",
-          id: "organization",
-          text: "Organization",
-          Icon: Building2Icon,
-          href: "/manage",
-          pathCheck: { equals: "/manage" },
-        },
-        {
-          kind: "leaf",
-          id: "sites",
-          text: "Sites",
-          Icon: MapPinIcon,
-          href: "/manage/sites",
-          pathCheck: { startsWith: "/manage/sites" },
-        },
-        {
-          kind: "leaf",
-          id: "audio",
-          text: "Audio",
-          Icon: MicIcon,
-          href: "/manage/audio",
-          pathCheck: { startsWith: "/manage/audio" },
-        },
-        {
-          kind: "leaf",
-          id: "bumicerts-manage",
-          text: "Bumicerts",
-          Icon: BumicertIcon,
-          href: "/manage/bumicerts",
-          pathCheck: { startsWith: "/manage/bumicerts" },
-        },
-        {
-          kind: "leaf",
-          id: "trees",
-          text: "Trees",
-          Icon: TreePineIcon,
-          href: "/manage/trees",
-          pathCheck: { startsWith: "/manage/trees" },
-        },
-
-      ]
+    ? manageAccountKind === "organization" ? organizationItems : userItems
     : [];
 
   return (
@@ -550,7 +578,7 @@ function getRouteHeaderActions(pathname: string, authSession: AuthSession) {
 
 function CreateBumicertHeaderButton({ isUnauthenticated }: { isUnauthenticated: boolean }) {
   return (
-    <Link href="/bumicert/create">
+    <Link href="/manage/bumicerts">
       <motion.span
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
