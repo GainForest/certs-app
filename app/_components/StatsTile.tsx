@@ -8,6 +8,8 @@ export type StatsTileItem = {
   icon: ReactNode;
   href?: string;
   accent?: boolean;
+  /** Extra classes for the tile wrapper, e.g. grid-column spanning. */
+  className?: string;
 };
 
 const GRID_COLUMNS: Record<3 | 4 | 5 | 6, string> = {
@@ -35,7 +37,7 @@ export function StatsTileGrid({
   );
 }
 
-export function StatsTile({ label, value, detail, icon, accent = false, href }: StatsTileItem) {
+export function StatsTile({ label, value, detail, icon, accent = false, href, className: extraClassName }: StatsTileItem) {
   if (value == null) return null;
 
   const content = (
@@ -49,7 +51,7 @@ export function StatsTile({ label, value, detail, icon, accent = false, href }: 
           <span className="sr-only">{label}</span>
           <div
             className={[
-              "min-w-0 text-2xl font-semibold tracking-[-0.02em] tabular-nums sm:text-3xl",
+              "min-w-0 truncate text-xl font-semibold tracking-[-0.02em] tabular-nums sm:text-2xl lg:text-3xl",
               accent ? "text-primary" : "text-foreground",
             ].join(" ")}
           >
@@ -61,8 +63,12 @@ export function StatsTile({ label, value, detail, icon, accent = false, href }: 
     </>
   );
 
-  const className =
-    "group relative overflow-hidden rounded-2xl bg-foreground/5 p-4 text-left backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-foreground/[0.07] sm:rounded-3xl sm:p-6";
+  const className = [
+    "group relative overflow-hidden rounded-2xl bg-foreground/5 p-4 text-left backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-foreground/[0.07] sm:rounded-3xl sm:p-6",
+    extraClassName,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   if (href) {
     return (

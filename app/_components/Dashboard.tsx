@@ -19,13 +19,15 @@ import {
   ChevronUpIcon,
   ChevronsUpDownIcon,
   ClockIcon,
+  CoinsIcon,
   HandHeartIcon,
   ExternalLinkIcon,
+  GaugeIcon,
   GlobeIcon,
-  HashIcon,
-  LayoutGridIcon,
+  SproutIcon,
   TrendingUpIcon,
   UsersIcon,
+  UsersRoundIcon,
 } from "lucide-react";
 import {
   computeGeoStats,
@@ -186,7 +188,7 @@ function DashboardShell({ children, periodFilter }: { children: React.ReactNode;
         icon={<BarChart3Icon />}
         title="Donations"
         accent="Overview"
-        lede="Track giving across Bumicerts: total raised, supporter activity, places reached, funding trends, and recent gifts."
+        lede="Track giving across Bumicerts: total raised, supporter activity, places reached, funding trends, and recent donations."
         actions={periodFilter}
       />
 
@@ -246,43 +248,44 @@ function PeriodFilter({ period, onPeriodChange }: { period: Period; onPeriodChan
 
 function KPISummary({ kpis }: { kpis: DashboardKpis }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-5">
       <StatCard
-        icon={<HandHeartIcon className="h-4 w-4" />}
+        icon={<CoinsIcon className="h-4 w-4" />}
         label="Total Raised"
         value={formatCompactUsd(kpis.totalRaised)}
-        sub="Raised from completed gifts"
+        sub="Raised from completed donations"
       />
       <StatCard
-        icon={<HashIcon className="h-4 w-4" />}
+        icon={<HandHeartIcon className="h-4 w-4" />}
         label="Total Donations"
         value={formatCompact(kpis.totalDonations)}
-        sub="Completed gifts"
+        sub="Completed donations"
       />
       <StatCard
-        icon={<UsersIcon className="h-4 w-4" />}
+        icon={<UsersRoundIcon className="h-4 w-4" />}
         label="Supporters"
         value={formatCompact(kpis.uniqueDonors)}
         sub="Supporters counted"
       />
       <StatCard
-        icon={<TrendingUpIcon className="h-4 w-4" />}
-        label="Average Gift"
-        value={formatCompactUsd(kpis.avgDonation)}
-        sub="Average gift size"
-      />
-      <StatCard
-        icon={<LayoutGridIcon className="h-4 w-4" />}
+        icon={<SproutIcon className="h-4 w-4" />}
         label="Active Bumicerts"
         value={formatCompact(kpis.activeBumicerts)}
         sub="Bumicerts with funding"
+      />
+      <StatCard
+        icon={<GaugeIcon className="h-4 w-4" />}
+        label="Average Donation"
+        value={formatCompactUsd(kpis.avgDonation)}
+        sub="Average donation size"
+        className="col-span-2 sm:col-span-1"
       />
     </div>
   );
 }
 
-function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub: string }) {
-  return <StatsTile icon={icon} label={label} value={value} detail={sub} accent={label === "Total Raised" || label === "Active Bumicerts"} />;
+function StatCard({ icon, label, value, sub, className }: { icon: React.ReactNode; label: string; value: string; sub: string; className?: string }) {
+  return <StatsTile icon={icon} label={label} value={value} detail={sub} accent={label === "Total Raised" || label === "Active Bumicerts"} className={className} />;
 }
 
 function GeographicReach({ stats }: { stats: GeoStats }) {
@@ -569,7 +572,7 @@ function RecentTransactionsTable({ rows }: { rows: TxRow[] }) {
         <div>
           <div className="flex items-center gap-2">
             <ClockIcon className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium tracking-[0.15em] text-muted-foreground uppercase">Recent Gifts</span>
+            <span className="text-xs font-medium tracking-[0.15em] text-muted-foreground uppercase">Recent Donations</span>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             All time · {rows.length} {rows.length === 1 ? "donation" : "donations"}
@@ -579,7 +582,7 @@ function RecentTransactionsTable({ rows }: { rows: TxRow[] }) {
       </div>
 
       {rows.length === 0 ? (
-        <p className="px-5 pb-5 text-sm text-muted-foreground">No gifts yet.</p>
+        <p className="px-5 pb-5 text-sm text-muted-foreground">No donations yet.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
