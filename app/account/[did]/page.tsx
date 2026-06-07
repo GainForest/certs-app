@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { RichText } from "../../_components/RichText";
+import { AccountHomeTabContent } from "../_components/AccountTabContent";
 import { accountBumicertsPath, getAccountRouteData, readAccountRouteParams } from "../_lib/account-route";
 
 export default async function AccountByDidPage({ params }: { params: Promise<{ did: string }> }) {
@@ -10,17 +10,5 @@ export default async function AccountByDidPage({ params }: { params: Promise<{ d
     redirect(accountBumicertsPath(account.urlIdentifier));
   }
 
-  if (!account.detail?.richBody?.length && !account.detail?.blurb) return null;
-
-  return (
-    <section className="py-1 md:py-2 org-animate org-fade-in-up org-delay-1">
-      {account.detail?.richBody?.length ? (
-        <RichText blocks={account.detail.richBody} />
-      ) : (
-        <p className="mt-5 max-w-3xl text-[14px] leading-[1.62] text-foreground/80">
-          {account.detail?.blurb}
-        </p>
-      )}
-    </section>
-  );
+  return <AccountHomeTabContent account={account} />;
 }
