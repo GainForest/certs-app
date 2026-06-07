@@ -7,7 +7,9 @@
     "dev": "next dev --port 3040 --turbopack",
     "dev:proxy": "caddy run --config Caddyfile --watch",
     "build": "next build",
-    "start": "next start --port 3040"
+    "start": "next start --port 3040",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
@@ -33,6 +35,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/jszip": "^3.4.1",
     "@types/leaflet": "^1.9.21",

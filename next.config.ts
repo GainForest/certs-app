@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  allowedDevOrigins: ["local-e2e.gainforest.app"],
   experimental: {
     dynamicOnHover: true,
     preloadEntriesOnStart: true,
@@ -11,6 +12,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    qualities: [75, 95],
     // Record thumbnails (occurrences, bumicerts, org covers) are resolved to
     // each record owner's PDS via com.atproto.sync.getBlob. The host is
     // derived from the DID at request time, so we accept any PDS that exposes

@@ -6,5 +6,10 @@
 *.pem
 .env*.local
 .vercel
+/e2e/.env
+/e2e/.auth
+/reports
+/test-results
+/playwright-report
 *.tsbuildinfo
 next-env.d.ts.bak
