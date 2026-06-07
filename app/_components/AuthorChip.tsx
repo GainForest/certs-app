@@ -8,6 +8,7 @@ import {
   type DidProfile,
 } from "../_lib/did-profile";
 import { formatDate } from "../_lib/format";
+import { resolveBlobUrl } from "../_lib/pds";
 import { useAccountDrawer } from "./AccountDrawer";
 
 // Owner identity + created date, shown on every record card / row / drawer.
@@ -24,6 +25,7 @@ export function AuthorChip({
   did,
   createdAt,
   avatarOverride,
+  avatarRefOverride,
   nameOverride,
   size = "md",
   className = "",
@@ -31,6 +33,7 @@ export function AuthorChip({
   did: string;
   createdAt?: string | null;
   avatarOverride?: string | null;
+  avatarRefOverride?: string | null;
   nameOverride?: string | null;
   size?: Size;
   className?: string;
@@ -40,15 +43,13 @@ export function AuthorChip({
   useEffect(() => {
     let active = true;
     setProfile(getCachedProfile(did) ?? null);
-    if (!nameOverride) {
-      resolveDidProfile(did).then((p) => {
-        if (active) setProfile(p);
-      });
-    }
+    resolveDidProfile(did).then((p) => {
+      if (active) setProfile(p);
+    });
     return () => {
       active = false;
     };
-  }, [did, nameOverride]);
+  }, [did]);
 
   const { openAccount } = useAccountDrawer();
   const handle = profile?.handle ?? null;
@@ -66,7 +67,7 @@ export function AuthorChip({
       title="View profile"
       className={`-mx-1 flex w-full min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-surface-sunken ${className}`}
     >
-      <Avatar did={did} handle={handle} avatar={avatar} className={av} />
+      <Avatar did={did} handle={handle} avatar={avatar} avatarRef={avatarRefOverride ?? null} className={av} />
       <div className="min-w-0 flex-1 leading-tight">
         <div className={`truncate font-medium text-foreground ${primaryCls}`}>{primary}</div>
         {date ? (
@@ -84,11 +85,13 @@ export function AuthorChip({
 export function AuthorInline({
   did,
   avatarOverride,
+  avatarRefOverride,
   nameOverride,
   showAvatar = true,
 }: {
   did: string;
   avatarOverride?: string | null;
+  avatarRefOverride?: string | null;
   nameOverride?: string | null;
   showAvatar?: boolean;
 }) {
@@ -96,15 +99,13 @@ export function AuthorInline({
   useEffect(() => {
     let active = true;
     setProfile(getCachedProfile(did) ?? null);
-    if (!nameOverride) {
-      resolveDidProfile(did).then((p) => {
-        if (active) setProfile(p);
-      });
-    }
+    resolveDidProfile(did).then((p) => {
+      if (active) setProfile(p);
+    });
     return () => {
       active = false;
     };
-  }, [did, nameOverride]);
+  }, [did]);
 
   const handle = profile?.handle ?? null;
   const avatar = avatarOverride ?? profile?.avatar ?? null;
@@ -112,7 +113,7 @@ export function AuthorInline({
 
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5 align-middle" title={label}>
-      {showAvatar ? <Avatar did={did} handle={handle} avatar={avatar} className="h-4 w-4 text-[8px]" /> : null}
+      {showAvatar ? <Avatar did={did} handle={handle} avatar={avatar} avatarRef={avatarRefOverride ?? null} className="h-4 w-4 text-[8px]" /> : null}
       <span className="truncate text-foreground/80">{label}</span>
     </span>
   );
@@ -124,25 +125,25 @@ export function AuthorInline({
 export function OwnerBadge({
   did,
   avatarOverride,
+  avatarRefOverride,
   nameOverride,
 }: {
   did: string;
   avatarOverride?: string | null;
+  avatarRefOverride?: string | null;
   nameOverride?: string | null;
 }) {
   const [profile, setProfile] = useState<DidProfile | null>(() => getCachedProfile(did) ?? null);
   useEffect(() => {
     let active = true;
     setProfile(getCachedProfile(did) ?? null);
-    if (!nameOverride) {
-      resolveDidProfile(did).then((p) => {
-        if (active) setProfile(p);
-      });
-    }
+    resolveDidProfile(did).then((p) => {
+      if (active) setProfile(p);
+    });
     return () => {
       active = false;
     };
-  }, [did, nameOverride]);
+  }, [did]);
 
   const { openAccount } = useAccountDrawer();
   const handle = profile?.handle ?? null;
@@ -166,7 +167,7 @@ export function OwnerBadge({
       className="inline-flex min-w-0 cursor-pointer items-center gap-1.5"
       title="View profile"
     >
-      <Avatar did={did} handle={handle} avatar={avatar} className="h-5 w-5 text-[9px]" />
+      <Avatar did={did} handle={handle} avatar={avatar} avatarRef={avatarRefOverride ?? null} className="h-5 w-5 text-[9px]" />
       {nameOverride || profile?.displayName || handle ? (
         <span className="truncate text-[11px] font-medium text-foreground">{nameOverride || profile?.displayName || handle}</span>
       ) : null}
@@ -178,21 +179,42 @@ function Avatar({
   did,
   handle,
   avatar,
+  avatarRef,
   className,
 }: {
   did: string;
   handle: string | null;
   avatar: string | null;
+  avatarRef: string | null;
   className: string;
 }) {
+  const [resolvedAvatar, setResolvedAvatar] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
-  if (avatar && !failed) {
+
+  useEffect(() => {
+    setFailed(false);
+    setResolvedAvatar(null);
+    if (avatar || !avatarRef) return;
+
+    const controller = new AbortController();
+    resolveBlobUrl(did, avatarRef, controller.signal)
+      .then((url) => setResolvedAvatar(url))
+      .catch((error) => {
+        if ((error as Error).name !== "AbortError") setResolvedAvatar(null);
+      });
+
+    return () => controller.abort();
+  }, [avatar, avatarRef, did]);
+
+  const src = avatar ?? resolvedAvatar;
+
+  if (src && !failed) {
     // eslint-disable-next-line @next/next/no-img-element -- avatar URLs come
     // from arbitrary PDS/CDN hosts and are tiny; next/image optimization is
     // not worth the remotePatterns surface here.
     return (
       <img
-        src={avatar}
+        src={src}
         alt=""
         onError={() => setFailed(true)}
         className={`shrink-0 rounded-full object-cover ${className}`}

@@ -138,6 +138,7 @@ export default async function BumicertDetailPage({
             locationCount: record.locationCount,
             contributorCount: record.contributorCount,
             creatorName: record.creatorName,
+            creatorAvatarRef: record.creatorAvatarRef,
             startDate: record.startDate,
             endDate: record.endDate,
           },

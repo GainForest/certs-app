@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { CalendarDaysIcon, MapPinIcon, UsersIcon } from "lucide-react";
 import { isPdsBlobUrl } from "@/app/_lib/pds";
 import { cn } from "@/lib/utils";
+import { BumicertOwnerAvatar } from "./BumicertOwnerAvatar";
 import { BumicertPillRows, type BumicertCardPill } from "./BumicertPillRows";
 
 export type BumicertsBumicertCardRecord = {
@@ -18,6 +19,7 @@ export type BumicertsBumicertCardRecord = {
   startDate: string | null;
   endDate: string | null;
   creatorName?: string | null;
+  creatorAvatarRef?: string | null;
 };
 
 const orgLabelTextVariants = {
@@ -97,11 +99,12 @@ export function BumicertsBumicertCard({
       </div>
 
       <div className="absolute left-2 top-2 flex max-w-[calc(100%-1rem)] min-w-0 items-center gap-1 overflow-hidden rounded-full bg-background/70 p-1 shadow-lg backdrop-blur-lg">
-        <div className="relative h-6 w-6 shrink-0 scale-120 overflow-hidden rounded-full bg-white shadow-sm transition-all duration-300 group-hover:scale-100">
-          <div className="absolute inset-0 flex items-center justify-center bg-muted text-[8px] font-bold text-muted-foreground">
-            {organizationName.charAt(0).toUpperCase()}
-          </div>
-        </div>
+        <BumicertOwnerAvatar
+          did={record.did}
+          avatarRef={record.creatorAvatarRef}
+          label={organizationName}
+          className="h-6 w-6 shrink-0 scale-120 shadow-sm transition-all duration-300 group-hover:scale-100"
+        />
         <motion.span
           variants={orgLabelTextVariants}
           className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-foreground text-shadow-md"

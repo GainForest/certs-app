@@ -113,6 +113,8 @@ function RecentBumicerts({ bumicerts, did }: { bumicerts: BumicertRecord[]; did:
                 <BumicertCardVisual
                   coverImage={bumicert.imageUrl}
                   logoUrl={null}
+                  logoRef={bumicert.creatorAvatarRef}
+                  ownerDid={bumicert.did || did}
                   title={bumicert.title}
                   organizationName={bumicert.creatorName ?? "Your profile"}
                   objectives={[

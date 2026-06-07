@@ -102,6 +102,7 @@ export function RecordDrawer({
   const siteBannerUrl = record.kind === "site" ? record.bannerUrl ?? (record.coverRef ? record.imageUrl : null) : null;
   const heroUrl = record.kind === "site" ? siteBannerUrl : record.kind === "occurrence" ? record.imageUrl ?? resolvedOccurrenceImageUrl : record.imageUrl;
   const ownerAvatarOverride = record.kind === "site" ? record.avatarUrl ?? (!record.coverRef && record.logoRef ? record.imageUrl : null) : undefined;
+  const ownerAvatarRefOverride = record.kind === "bumicert" || record.kind === "occurrence" ? record.creatorAvatarRef : record.kind === "site" ? record.logoRef : null;
   const ownerNameOverride = record.kind === "bumicert" || record.kind === "occurrence" ? record.creatorName : record.kind === "site" ? record.name : null;
   const hasHeroImage = Boolean(heroUrl) && !imgError;
   const showHero = record.kind === "site" || hasHeroImage;
@@ -234,6 +235,7 @@ export function RecordDrawer({
               did={record.did}
               createdAt={record.createdAt}
               avatarOverride={ownerAvatarOverride}
+              avatarRefOverride={ownerAvatarRefOverride}
               nameOverride={ownerNameOverride}
             />
             <Link

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { BumicertOwnerAvatar } from "./BumicertOwnerAvatar";
 
 function resolveImageSrc(coverImage: File | string): string {
   return typeof coverImage === "string" ? coverImage : URL.createObjectURL(coverImage);
@@ -50,6 +51,8 @@ const orgLabelTextVariants = {
 export interface BumicertCardVisualProps {
   coverImage: File | string | null;
   logoUrl: string | null;
+  logoRef?: string | null;
+  ownerDid?: string | null;
   title: string;
   organizationName: string;
   objectives: string[];
@@ -60,6 +63,8 @@ export interface BumicertCardVisualProps {
 export function BumicertCardVisual({
   coverImage,
   logoUrl,
+  logoRef,
+  ownerDid,
   title,
   organizationName,
   objectives,
@@ -110,15 +115,13 @@ export function BumicertCardVisual({
       </div>
 
       <div className="absolute top-2 left-2 bg-background/70 rounded-full p-1 backdrop-blur-lg shadow-lg flex items-center gap-1 min-w-0">
-        <div className="relative h-6 w-6 rounded-full bg-white shadow-sm overflow-hidden shrink-0 scale-120 group-hover:scale-100 transition-all duration-300">
-          {logoUrl ? (
-            <Image src={logoUrl} alt={organizationName} fill unoptimized className="object-cover" />
-          ) : (
-            <div className="absolute inset-0 bg-muted flex items-center justify-center text-[8px] font-bold text-muted-foreground">
-              {organizationName.charAt(0)}
-            </div>
-          )}
-        </div>
+        <BumicertOwnerAvatar
+          did={ownerDid}
+          avatarUrl={logoUrl}
+          avatarRef={logoRef}
+          label={organizationName}
+          className="h-6 w-6 shrink-0 scale-120 shadow-sm transition-all duration-300 group-hover:scale-100"
+        />
         <motion.span
           variants={orgLabelTextVariants}
           className="text-xs font-medium text-foreground text-shadow-md whitespace-nowrap overflow-hidden"

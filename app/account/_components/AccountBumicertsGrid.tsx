@@ -72,6 +72,8 @@ export function AccountBumicertsGrid({ bumicerts, organizationName, logoUrl }: O
                 className="h-full"
                 coverImage={b.imageUrl}
                 logoUrl={logoUrl}
+                logoRef={b.creatorAvatarRef}
+                ownerDid={b.did}
                 title={b.title}
                 organizationName={organizationName}
                 objectives={objectivesFor(b)}
