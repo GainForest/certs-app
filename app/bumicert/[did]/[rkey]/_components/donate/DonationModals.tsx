@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRightIcon, BadgeCheckIcon, CheckIcon, CopyIcon, HeartIcon, WalletIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useModal } from "@/components/ui/modal/context";
 import { ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal/modal";
 import type { AuthSession } from "@/app/_lib/auth";
@@ -45,8 +46,6 @@ export type DonationFundingConfig = {
 export type RecipientStatus =
   | { hasAttestation: true; address: string; chainId: number }
   | { hasAttestation: false };
-
-export const DONATION_DIALOG_WIDTH = "max-w-md";
 
 const MODAL_IDS = {
   amount: "bumicert-donate-amount",
@@ -246,7 +245,7 @@ export function AmountModal({
               className="min-w-0 bg-transparent text-xl font-semibold text-foreground outline-none"
               placeholder="25"
             />
-            <span className="col-span-2 text-xs font-medium text-muted-foreground sm:col-span-1 sm:justify-self-end">digital dollars</span>
+            <span className="col-span-2 text-xs font-medium text-muted-foreground sm:col-span-1 sm:justify-self-end">USDC</span>
           </div>
           {(minDonation !== null || maxDonation !== null) && (
             <p className="text-xs text-muted-foreground">
@@ -273,11 +272,10 @@ export function AmountModal({
 
         {authSession.isLoggedIn ? (
           <label className="flex min-w-0 cursor-pointer items-start gap-3 rounded-2xl border border-border-soft bg-surface p-3">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={donorChoseAnonymous}
-              onChange={(event) => setDonorChoseAnonymous(event.target.checked)}
-              className="mt-1 size-4 shrink-0 accent-primary"
+              onCheckedChange={(checked) => setDonorChoseAnonymous(checked === true)}
+              className="mt-1"
             />
             <span className="min-w-0">
               <span className="block text-sm font-medium text-foreground">Donate anonymously</span>
@@ -300,10 +298,9 @@ export function AmountModal({
           onClick={() => pushModal({
             id: MODAL_IDS.wallet,
             content: <WalletModal bumicert={bumicert} amount={amount} donorChoseAnonymous={donorChoseAnonymous} authSession={authSession} />,
-            dialogWidth: DONATION_DIALOG_WIDTH,
           })}
         >
-          <WalletIcon className="size-4" /> Continue to payment app
+          <WalletIcon className="size-4" /> Continue to wallet
         </Button>
         <Button variant="outline" onClick={handleCancel} className="w-full">Cancel</Button>
       </ModalFooter>
@@ -335,7 +332,7 @@ function WalletModal({
     const ethereum = getEthereum();
     if (!ethereum) {
       setState("error");
-      setError("No supported payment app was found. Install MetaMask or another compatible payment app to continue.");
+      setError("No supported wallet was found. Install MetaMask or another compatible wallet to continue.");
       return;
     }
 
@@ -344,7 +341,7 @@ function WalletModal({
     try {
       const accounts = await ethereum.request<string[]>({ method: "eth_requestAccounts" });
       const senderWallet = accounts[0];
-      if (!senderWallet) throw new Error("Payment app connection failed.");
+      if (!senderWallet) throw new Error("Wallet connection failed.");
       await ensureBaseNetwork(ethereum);
       const recipient = await fetchRecipient(bumicert.organizationDid);
       if (!recipient.hasAttestation) {
@@ -362,19 +359,18 @@ function WalletModal({
             authSession={authSession}
           />
         ),
-        dialogWidth: DONATION_DIALOG_WIDTH,
       });
     } catch (connectError) {
       setState("error");
-      setError(connectError instanceof Error ? connectError.message : "Payment app connection failed.");
+      setError(connectError instanceof Error ? connectError.message : "Wallet connection failed.");
     }
   };
 
   return (
     <ModalContent dismissible={false}>
       <ModalHeader backAction={state === "connecting" ? undefined : popModal}>
-        <ModalTitle>Connect your payment app</ModalTitle>
-        <ModalDescription>Donations use digital dollars behind the scenes.</ModalDescription>
+        <ModalTitle>Connect your wallet</ModalTitle>
+        <ModalDescription>Donations use USDC.</ModalDescription>
       </ModalHeader>
 
       <div className="space-y-4 py-2 text-center">
@@ -382,14 +378,14 @@ function WalletModal({
           <WalletIcon className="size-6" />
         </div>
         <p className="text-sm leading-6 text-muted-foreground">
-          Your payment app will ask you to approve the donation. Any network fee is covered for you, and the completed gift will be shown publicly.
+          Your wallet will ask you to approve the donation. Any network fee is covered for you, and the completed gift will be shown publicly.
         </p>
         {error ? <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
       </div>
 
       <ModalFooter className="flex flex-col gap-2">
         <Button onClick={handleConnect} disabled={state === "connecting"} className="w-full">
-          {state === "connecting" ? "Preparing payment app…" : "Connect payment app"}
+          {state === "connecting" ? "Preparing wallet…" : "Connect wallet"}
         </Button>
         <Button variant="outline" onClick={handleCancel} disabled={state === "connecting"} className="w-full">Cancel</Button>
       </ModalFooter>
@@ -451,7 +447,7 @@ function ConfirmModal({
     const ethereum = getEthereum();
     if (!ethereum) {
       setTxState("error");
-      setError("No supported payment app was found.");
+      setError("No supported wallet was found.");
       return;
     }
 
@@ -516,7 +512,6 @@ function ConfirmModal({
       pushModal({
         id: MODAL_IDS.success,
         content: <SuccessModal bumicert={bumicert} amount={amount} transactionHash={transactionHash} donorRecordedAs={donorRecordedAs} />,
-        dialogWidth: DONATION_DIALOG_WIDTH,
       }, true);
     } catch (paymentError) {
       setTxState("error");
@@ -534,7 +529,7 @@ function ConfirmModal({
         <div className="flex flex-col items-center gap-4 py-8 text-center">
           <div className="size-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="font-medium text-foreground">
-            {txState === "signing" ? "Approve the donation in your payment app." : "Finishing your donation and preparing the public note…"}
+            {txState === "signing" ? "Approve the donation in your wallet." : "Finishing your donation and preparing the public note…"}
           </p>
           <p className="text-sm text-muted-foreground">Do not close this window.</p>
         </div>
@@ -551,7 +546,7 @@ function ConfirmModal({
 
       <div className="space-y-3">
         <div className="rounded-2xl border border-border bg-background p-4">
-          <p className="text-xs text-muted-foreground">Your payment app</p>
+          <p className="text-xs text-muted-foreground">Your wallet</p>
           <p className="mt-1 font-mono text-sm font-medium text-foreground">{shortWallet(senderWallet)}</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Available: {balanceLoading ? "loading…" : balance !== null ? `$${formatUsdc(balance)}` : "unavailable"}
@@ -565,7 +560,7 @@ function ConfirmModal({
         </div>
         {!balanceLoading && balance !== null && !hasEnoughBalance ? (
           <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
-            Your payment app does not have enough digital dollars for this donation.
+            Your wallet does not have enough USDC for this donation.
           </p>
         ) : null}
         {error ? <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
