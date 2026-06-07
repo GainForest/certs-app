@@ -1,55 +1,95 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useId, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import {
   ArrowLeftIcon,
+  ArrowRightIcon,
   Building2Icon,
   CalendarIcon,
   ChevronRight,
   GlobeIcon,
   ImageIcon,
   Loader2Icon,
-  LockIcon,
+  MapPinHouseIcon,
   SparklesIcon,
   UserIcon,
   type LucideIcon,
 } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { useModal } from "@/components/ui/modal/context";
+import { countryFlag } from "@/app/_lib/format";
 import { cn } from "@/lib/utils";
 import { putRecord, uploadBlob } from "../_lib/mutations";
+import { ImageEditorModal, CountrySelectorModal } from "../_modals/DashboardEditModals";
 import type { ManageMode } from "./manageDashboardMode";
 import { HeaderContent } from "@/app/_components/HeaderSlots";
 
 type OnboardingKind = "user" | "organization";
 
-type OnboardingRoleOption = {
-  Icon: LucideIcon;
-  optionName: string;
-  optionDescription: string;
-  href: string;
+const CODE_OF_CONDUCT_URL =
+  "https://gainforest.notion.site/GainForest-Community-Code-of-Conduct-23094a2f76b380118bc0dfe560df4a2e";
+
+const APP_ICON_SRC = "/assets/media/images/app-icon.png";
+
+type BrandInfo = {
+  found: boolean;
+  name?: string;
+  description?: string;
+  logoUrl?: string;
+  domain?: string;
+  countryCode?: string;
+  foundedYear?: number;
 };
 
-function validateUrl(value: string): boolean {
-  if (!value.trim()) return true;
+function countryName(code: string): string {
   try {
-    const url = new URL(value.startsWith("http") ? value : `https://${value}`);
-    return url.hostname.includes(".");
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+function extractDomain(url: string): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+    return parsed.hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function validateUrl(url: string): boolean {
+  if (!url) return true;
+  try {
+    const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+    return parsed.hostname.includes(".");
   } catch {
     return false;
   }
 }
 
-function normalizeUrl(value: string): string | undefined {
-  const trimmed = value.trim();
+function normalizeWebsite(url: string): string | undefined {
+  const trimmed = url.trim();
   if (!trimmed) return undefined;
   return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
 }
+
+// ── Bumicerts mark ──────────────────────────────────────────────────────────
 
 function BumicertsMark({ className, alt = "" }: { className?: string; alt?: string }) {
   return (
@@ -58,8 +98,36 @@ function BumicertsMark({ className, alt = "" }: { className?: string; alt?: stri
       transition={{ duration: 0.75, type: "spring" }}
       layoutId="bumicerts-icon"
     >
-      <Image className="drop-shadow-2xl" src="/assets/media/images/app-icon.png" fill alt={alt} />
+      <Image className="drop-shadow-2xl" src={APP_ICON_SRC} fill alt={alt} />
     </motion.div>
+  );
+}
+
+// ── Choice step ─────────────────────────────────────────────────────────────
+
+type OnboardingRoleOption = {
+  Icon: LucideIcon;
+  optionName: string;
+  optionDescription: string;
+  onClick: () => void;
+};
+
+function OnboardingRoleOptionCard({ onClick, Icon, optionName, optionDescription }: OnboardingRoleOption) {
+  return (
+    <Button
+      variant="secondary"
+      className="group relative h-auto w-full max-w-md flex-col items-start justify-between rounded-xl shadow-none hover:bg-primary/10"
+      onClick={onClick}
+    >
+      <span className="flex items-center gap-1.5 text-2xl italic font-instrument">
+        <Icon className="text-primary opacity-50" />
+        {optionName}
+      </span>
+      <span className="text-left text-muted-foreground text-pretty">{optionDescription}</span>
+      <span className="absolute right-3 top-3 -translate-x-2 text-primary opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100">
+        <ChevronRight />
+      </span>
+    </Button>
   );
 }
 
@@ -88,28 +156,13 @@ function OnboardingRoleSelector({
   );
 }
 
-function OnboardingRoleOptionCard({ href, Icon, optionName, optionDescription }: OnboardingRoleOption) {
-  return (
-    <Button
-      asChild
-      variant="secondary"
-      className="group relative h-auto w-full max-w-md flex-col items-start justify-between rounded-xl py-4 shadow-none hover:bg-primary/10"
-    >
-      <Link href={href}>
-        <span className="flex items-center gap-1.5 text-2xl italic font-instrument">
-          <Icon className="text-primary opacity-50" />
-          {optionName}
-        </span>
-        <span className="text-left text-muted-foreground text-pretty">{optionDescription}</span>
-        <span className="absolute right-3 top-3 -translate-x-2 text-primary opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100">
-          <ChevronRight />
-        </span>
-      </Link>
-    </Button>
-  );
-}
-
-function AccountSetupChoiceStep() {
+function AccountSetupChoiceStep({
+  onChooseUser,
+  onChooseOrganization,
+}: {
+  onChooseUser: () => void;
+  onChooseOrganization: () => void;
+}) {
   return (
     <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
       <OnboardingRoleSelector
@@ -118,16 +171,18 @@ function AccountSetupChoiceStep() {
         description="Pick the kind of profile you want to create on Bumicerts."
         options={[
           {
-            href: "/manage?mode=onboard-user",
+            onClick: onChooseUser,
             Icon: UserIcon,
             optionName: "User",
-            optionDescription: "Create a personal profile with your avatar, banner, name and bio.",
+            optionDescription:
+              "Create a personal profile with your avatar, banner, name and bio.",
           },
           {
-            href: "/manage?mode=onboard-org",
+            onClick: onChooseOrganization,
             Icon: Building2Icon,
             optionName: "Organization",
-            optionDescription: "Set up your organization profile, website, country and start date.",
+            optionDescription:
+              "Set up your organization profile and let Bumicerts prefill what it can from your website.",
           },
         ]}
       />
@@ -135,115 +190,474 @@ function AccountSetupChoiceStep() {
   );
 }
 
-function MediaInput({
-  label,
-  file,
-  onChange,
+// ── Media field (banner + avatar + name) ────────────────────────────────────
+
+function OnboardingMediaField({
   kind,
+  primaryImage,
+  bannerImage,
+  displayName,
+  displayNamePlaceholder,
+  displayNameError,
+  onPrimaryImageChange,
+  onBannerImageChange,
+  onDisplayNameChange,
 }: {
-  label: string;
-  file: File | null;
-  onChange: (file: File | null) => void;
-  kind: "logo" | "cover";
+  kind: OnboardingKind;
+  primaryImage: File | undefined;
+  bannerImage: File | undefined;
+  displayName: string;
+  displayNamePlaceholder: string;
+  displayNameError?: string;
+  onPrimaryImageChange: (image: File | undefined) => void;
+  onBannerImageChange: (image: File | undefined) => void;
+  onDisplayNameChange: (value: string) => void;
 }) {
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  const modal = useModal();
+  const primaryImageUrl = useMemo(
+    () => (primaryImage ? URL.createObjectURL(primaryImage) : null),
+    [primaryImage],
+  );
+  const bannerImageUrl = useMemo(
+    () => (bannerImage ? URL.createObjectURL(bannerImage) : null),
+    [bannerImage],
+  );
+  const primaryLabel = kind === "organization" ? "Logo" : "Avatar";
+
+  const openImageEditor = (target: "primary" | "banner") => {
+    const isPrimary = target === "primary";
+    modal.pushModal(
+      {
+        id: "onboarding-image-editor",
+        content: (
+          <ImageEditorModal
+            title={`Upload ${isPrimary ? primaryLabel.toLowerCase() : "banner"}`}
+            description={
+              isPrimary
+                ? `Choose a clear ${primaryLabel.toLowerCase()} for your profile.`
+                : "Choose a banner that sets the tone for your profile."
+            }
+            currentUrl={isPrimary ? primaryImageUrl : bannerImageUrl}
+            onConfirm={(file) => (isPrimary ? onPrimaryImageChange(file) : onBannerImageChange(file))}
+          />
+        ),
+        dialogWidth: isPrimary ? "max-w-sm" : "max-w-2xl",
+      },
+      true,
+    );
+    void modal.show();
+  };
 
   return (
-    <label
-      className={cn(
-        "group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-muted/30 text-center transition-colors hover:border-primary/50 hover:bg-primary/5",
-        kind === "cover" ? "h-32" : "h-28",
-      )}
-    >
-      {previewUrl ? (
-        <Image src={previewUrl} alt="Selected media preview" fill unoptimized className="object-cover" />
-      ) : (
-        <span className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-          <ImageIcon className="h-5 w-5" />
-          {label}
+    <div className="space-y-0 pt-2">
+      <button
+        type="button"
+        onClick={() => openImageEditor("banner")}
+        className="relative block w-full overflow-hidden rounded-t-[24px] mask-b-from-0 bg-muted/80 border-t text-left"
+      >
+        <div className="aspect-[16/6] w-full">
+          {bannerImageUrl ? (
+            <div className="relative h-full w-full">
+              <Image src={bannerImageUrl} alt="Banner preview" fill unoptimized className="object-cover" />
+            </div>
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <ImageIcon className="size-8 opacity-60" />
+                <p className="text-sm text-foreground">Banner</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <span className="absolute top-3 right-3 rounded-full bg-background/75 px-2.5 py-1 text-xs text-foreground backdrop-blur-sm">
+          {bannerImageUrl ? "Change banner" : "Add banner"}
         </span>
-      )}
-      <input
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        className="sr-only"
-        onChange={(event) => onChange(event.target.files?.[0] ?? null)}
-      />
-    </label>
+      </button>
+
+      <div className="flex items-start gap-4 pl-4">
+        <button
+          type="button"
+          onClick={() => openImageEditor("primary")}
+          className="relative -mt-14 flex h-28 aspect-square shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/50 bg-background"
+          aria-label={`Upload ${primaryLabel.toLowerCase()}`}
+        >
+          {primaryImageUrl ? (
+            <Image src={primaryImageUrl} alt={`${primaryLabel} preview`} fill unoptimized className="object-cover" />
+          ) : (
+            <ImageIcon className="size-8 text-muted-foreground/60" />
+          )}
+        </button>
+
+        <div className="min-w-0 flex-1 space-y-2 pt-3">
+          <InputGroup className="rounded-full">
+            <InputGroupInput
+              value={displayName}
+              onChange={(event) => onDisplayNameChange(event.target.value)}
+              placeholder={displayNamePlaceholder}
+              aria-invalid={displayNameError ? true : undefined}
+            />
+          </InputGroup>
+          {displayNameError ? <p className="text-xs text-destructive">{displayNameError}</p> : null}
+        </div>
+      </div>
+    </div>
   );
 }
 
-function AccountSetupForm({ did, kind }: { did: string; kind: OnboardingKind }) {
+// ── Organization details step ───────────────────────────────────────────────
+
+function OrganizationSetupDetailsPanel({
+  country,
+  startDate,
+  longDescription,
+  canSubmit,
+  showAiGeneratedReviewNotice,
+  isSubmitting,
+  submitLabel,
+  submitError,
+  onBack,
+  onCountryChange,
+  onStartDateChange,
+  onLongDescriptionChange,
+}: {
+  country: string;
+  startDate: string;
+  longDescription: string;
+  canSubmit: boolean;
+  showAiGeneratedReviewNotice: boolean;
+  isSubmitting: boolean;
+  submitLabel: string;
+  submitError: string | null;
+  onBack: () => void;
+  onCountryChange: (value: string) => void;
+  onStartDateChange: (value: string) => void;
+  onLongDescriptionChange: (value: string) => void;
+}) {
+  const modal = useModal();
+  const selectedDate = useMemo(
+    () => (startDate ? parseISO(startDate) : undefined),
+    [startDate],
+  );
+  const selectedCountryName = country ? countryName(country) : null;
+
+  const handleOpenCountrySelector = () => {
+    modal.pushModal(
+      {
+        id: "onboarding-country-selector",
+        content: <CountrySelectorModal currentCountry={country} onConfirm={onCountryChange} />,
+      },
+      true,
+    );
+    void modal.show();
+  };
+
+  return (
+    <section className="space-y-5">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col">
+          <label className="text-sm font-medium text-foreground">Country</label>
+
+          <button
+            type="button"
+            className="relative min-h-[72px] rounded-2xl border-2 border-dashed bg-background px-2 py-1 text-left hover:bg-muted"
+            onClick={handleOpenCountrySelector}
+          >
+            {selectedCountryName ? (
+              <div className="flex h-full flex-col justify-between items-start">
+                <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <MapPinHouseIcon className="size-3" />
+                  <span>Based in</span>
+                </span>
+                <span className="absolute top-0 right-2 text-2xl">{countryFlag(country)}</span>
+                <span className="text-sm font-medium">
+                  {selectedCountryName.length > 22
+                    ? `${selectedCountryName.slice(0, 20)}...`
+                    : selectedCountryName}
+                </span>
+              </div>
+            ) : (
+              <span className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
+                Select a Country
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm font-medium text-foreground">Founding Date</label>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="relative min-h-[72px] rounded-2xl border-2 border-dashed bg-background px-2 py-1 text-left hover:bg-muted"
+              >
+                {selectedDate ? (
+                  <div className="flex h-full flex-col justify-between items-start">
+                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <CalendarIcon className="size-3" />
+                      <span>Founded</span>
+                    </span>
+                    <span className="self-end text-sm font-medium">
+                      {format(selectedDate, "d MMMM,")}
+                      <span className="ml-1 text-lg font-bold opacity-40 md:text-2xl">
+                        {format(selectedDate, "yyyy")}
+                      </span>
+                    </span>
+                  </div>
+                ) : (
+                  <span className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
+                    Select a Date
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                captionLayout="dropdown"
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => onStartDateChange(date ? format(date, "yyyy-MM-dd") : "")}
+                disabled={(date) => date > new Date()}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Long description</label>
+        <Textarea
+          value={longDescription}
+          onChange={(event) => onLongDescriptionChange(event.target.value)}
+          placeholder="Tell the story behind your organization, the work you do, and why it matters."
+          className="min-h-[200px] resize-none"
+        />
+      </div>
+
+      {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
+
+      {showAiGeneratedReviewNotice ? (
+        <p className="text-center text-muted-foreground">
+          Please review and edit the generated content to accurately represent your organization
+          before saving.
+        </p>
+      ) : null}
+
+      <div className="flex items-center gap-3">
+        <Button type="button" size="lg" variant="outline" onClick={onBack}>
+          <ArrowLeftIcon />
+          Back
+        </Button>
+        <Button type="submit" size="lg" className="flex-1" disabled={!canSubmit}>
+          {submitLabel}
+          {isSubmitting ? <Loader2Icon className="animate-spin" /> : <ArrowRightIcon />}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+// ── Form ────────────────────────────────────────────────────────────────────
+
+function FieldError({ error }: { error?: string }) {
+  if (!error) return null;
+  return <p className="text-xs text-destructive">{error}</p>;
+}
+
+const organizationStepVariants = {
+  enter: (direction: number) => ({ opacity: 0, x: direction > 0 ? 24 : -24 }),
+  center: { opacity: 1, x: 0 },
+  exit: (direction: number) => ({ opacity: 0, x: direction > 0 ? -24 : 24 }),
+} satisfies Variants;
+
+function AccountSetupForm({
+  kind,
+  onBack,
+}: {
+  kind: OnboardingKind;
+  onBack: () => void;
+}) {
   const router = useRouter();
-  const fieldId = useId();
-  const nameId = `${fieldId}-name`;
-  const bioId = `${fieldId}-bio`;
-  const websiteId = `${fieldId}-website`;
-  const countryId = `${fieldId}-country`;
-  const startId = `${fieldId}-start`;
-  const visibilityId = `${fieldId}-visibility`;
-  const longDescriptionId = `${fieldId}-long`;
+
   const [displayName, setDisplayName] = useState("");
-  const [description, setDescription] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
   const [website, setWebsite] = useState("");
   const [country, setCountry] = useState("");
   const [startDate, setStartDate] = useState("");
   const [longDescription, setLongDescription] = useState("");
-  const [visibility, setVisibility] = useState<"Public" | "Unlisted">("Public");
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [accepted, setAccepted] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [primaryImage, setPrimaryImage] = useState<File | undefined>();
+  const [bannerImage, setBannerImage] = useState<File | undefined>();
+
+  const [touchedFields, setTouchedFields] = useState<{
+    displayName?: boolean;
+    shortDescription?: boolean;
+    website?: boolean;
+  }>({});
+  const [brandfetchFeedback, setBrandfetchFeedback] = useState<{
+    tone: "neutral" | "success" | "destructive";
+    message: string;
+  } | null>(null);
+  const [hasAcceptedCodeOfConduct, setHasAcceptedCodeOfConduct] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isFetchingBrandInfo, setIsFetchingBrandInfo] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [stepDirection, setStepDirection] = useState<1 | -1>(1);
 
-  const websiteValid = validateUrl(website);
-  const baseComplete = displayName.trim().length > 0 && description.trim().length > 0 && websiteValid && accepted;
-  const canContinue = baseComplete && !isSubmitting;
-  const canSubmit = baseComplete && !isSubmitting;
+  const isOrganizationFlow = kind === "organization";
+  const isOrganizationDetailsStep = isOrganizationFlow && onboardingStep === 1;
 
-  const handleBack = () => {
-    if (kind === "organization" && onboardingStep > 0) {
-      setOnboardingStep(0);
+  const domain = useMemo(() => extractDomain(website), [website]);
+
+  const fieldErrors = useMemo(() => {
+    const errors: { displayName?: string; shortDescription?: string; website?: string } = {};
+    const trimmedName = displayName.trim();
+    if (trimmedName.length === 0) errors.displayName = "Name is required.";
+    else if (trimmedName.length > 64) errors.displayName = "Name must be 64 characters or fewer.";
+
+    const trimmedBio = shortDescription.trim();
+    if (trimmedBio.length === 0) errors.shortDescription = "Bio is required.";
+    else if (trimmedBio.length > 256) errors.shortDescription = "Bio must be 256 characters or fewer.";
+
+    if (kind === "organization" && website.trim().length > 0 && !validateUrl(website)) {
+      errors.website = "Enter a valid website URL.";
+    }
+    return errors;
+  }, [displayName, shortDescription, website, kind]);
+
+  const canSubmit = Object.keys(fieldErrors).length === 0 && !isSubmitting;
+  const canFetchBrandInfo =
+    kind === "organization" &&
+    website.trim().length > 0 &&
+    fieldErrors.website === undefined &&
+    domain !== null &&
+    !isFetchingBrandInfo;
+  const hasSuccessfulPrefill = brandfetchFeedback?.tone === "success";
+  const isOrganizationOptionalStepEmpty =
+    country.trim().length === 0 && startDate.length === 0 && longDescription.trim().length === 0;
+
+  const visibleDisplayNameError = touchedFields.displayName ? fieldErrors.displayName : undefined;
+  const visibleShortDescriptionError = touchedFields.shortDescription ? fieldErrors.shortDescription : undefined;
+  const visibleWebsiteError =
+    kind === "organization" && touchedFields.website ? fieldErrors.website : undefined;
+
+  const fetchLogoAsFile = useCallback(async (logoUrl: string): Promise<File | null> => {
+    try {
+      const response = await fetch(logoUrl);
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      const extension = logoUrl.split(".").pop()?.split("?")[0] ?? "png";
+      return new File([blob], `logo.${extension}`, { type: blob.type || `image/${extension}` });
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const handleFetchBrandInfo = useCallback(async () => {
+    setTouchedFields((current) => ({ ...current, website: true }));
+    setBrandfetchFeedback(null);
+    setSubmitError(null);
+
+    if (!canFetchBrandInfo || !domain) return;
+
+    setIsFetchingBrandInfo(true);
+    try {
+      const response = await fetch("/api/brand/fetch-info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain }),
+      });
+      if (!response.ok) throw new Error("Unable to fetch website information right now.");
+
+      const brandInfo = (await response.json()) as BrandInfo;
+      if (!brandInfo.found) {
+        setBrandfetchFeedback({ tone: "destructive", message: "No brand data found." });
+        return;
+      }
+
+      if (brandInfo.name) setDisplayName(brandInfo.name);
+      if (brandInfo.description) {
+        setShortDescription(brandInfo.description.slice(0, 160));
+        setLongDescription(brandInfo.description);
+      }
+      if (brandInfo.countryCode && /^[A-Za-z]{2}$/.test(brandInfo.countryCode)) {
+        setCountry(brandInfo.countryCode.toUpperCase());
+      }
+      if (brandInfo.foundedYear) setStartDate(`${brandInfo.foundedYear}-01-01`);
+      if (brandInfo.logoUrl) {
+        const logoFile = await fetchLogoAsFile(brandInfo.logoUrl);
+        if (logoFile) setPrimaryImage(logoFile);
+      }
+
+      setTouchedFields((current) => ({
+        ...current,
+        displayName: true,
+        shortDescription: true,
+        website: true,
+      }));
+      setBrandfetchFeedback({ tone: "success", message: "Prefilled what we found." });
+    } catch {
+      setBrandfetchFeedback({ tone: "destructive", message: "Couldn’t prefill right now." });
+    } finally {
+      setIsFetchingBrandInfo(false);
+    }
+  }, [canFetchBrandInfo, domain, fetchLogoAsFile]);
+
+  const handleSubmit = useCallback(async () => {
+    setTouchedFields({
+      displayName: true,
+      shortDescription: true,
+      ...(kind === "organization" ? { website: true } : {}),
+    });
+
+    if (Object.keys(fieldErrors).length > 0) {
+      if (isOrganizationDetailsStep) {
+        setStepDirection(-1);
+        setOnboardingStep(0);
+      }
       return;
     }
-    router.push("/manage");
-  };
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!canSubmit) return;
 
     setIsSubmitting(true);
-    setError(null);
+    setSubmitError(null);
 
     try {
       const [avatarBlob, bannerBlob] = await Promise.all([
-        logoFile ? uploadBlob(logoFile) : Promise.resolve(null),
-        coverFile ? uploadBlob(coverFile) : Promise.resolve(null),
+        primaryImage ? uploadBlob(primaryImage) : Promise.resolve(null),
+        bannerImage ? uploadBlob(bannerImage) : Promise.resolve(null),
       ]);
+
+      const trimmedName = displayName.trim();
+      const trimmedBio = shortDescription.trim();
+      const normalizedWebsite = kind === "organization" ? normalizeWebsite(website) : undefined;
 
       const profileRecord: Record<string, unknown> = {
         $type: "app.bsky.actor.profile",
-        displayName: displayName.trim(),
-        description: description.trim(),
+        displayName: trimmedName,
+        description: trimmedBio,
       };
       const certifiedProfileRecord: Record<string, unknown> = {
         $type: "app.certified.actor.profile",
-        displayName: displayName.trim(),
-        description: description.trim(),
+        displayName: trimmedName,
+        description: trimmedBio,
         createdAt: new Date().toISOString(),
       };
-      const normalizedWebsite = normalizeUrl(website);
       if (normalizedWebsite) {
         profileRecord.website = normalizedWebsite;
         certifiedProfileRecord.website = normalizedWebsite;
       }
       if (avatarBlob) {
         profileRecord.avatar = avatarBlob;
-        certifiedProfileRecord.avatar = { $type: "org.hypercerts.defs#smallImage", image: avatarBlob.ref };
+        certifiedProfileRecord.avatar = {
+          $type: "org.hypercerts.defs#smallImage",
+          image: avatarBlob.ref,
+        };
       }
       if (bannerBlob) profileRecord.banner = bannerBlob;
+
       await Promise.all([
         putRecord("app.bsky.actor.profile", "self", profileRecord),
         putRecord("app.certified.actor.profile", "self", certifiedProfileRecord),
@@ -252,7 +666,7 @@ function AccountSetupForm({ did, kind }: { did: string; kind: OnboardingKind }) 
       if (kind === "organization") {
         const orgRecord: Record<string, unknown> = {
           $type: "app.certified.actor.organization",
-          visibility: visibility === "Unlisted" ? "unlisted" : "public",
+          visibility: "public",
           createdAt: new Date().toISOString(),
         };
         if (country.trim().length === 2) orgRecord.country = country.trim().toUpperCase();
@@ -269,128 +683,300 @@ function AccountSetupForm({ did, kind }: { did: string; kind: OnboardingKind }) 
       router.push("/manage");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to complete setup.");
+      setSubmitError(err instanceof Error ? err.message : "Failed to complete setup.");
       setIsSubmitting(false);
     }
-  }
+  }, [
+    bannerImage,
+    country,
+    displayName,
+    fieldErrors,
+    isOrganizationDetailsStep,
+    kind,
+    longDescription,
+    primaryImage,
+    router,
+    shortDescription,
+    startDate,
+    website,
+  ]);
+
+  const handleOrganizationStepAdvance = useCallback(() => {
+    setTouchedFields({ displayName: true, shortDescription: true, website: true });
+    if (Object.keys(fieldErrors).length > 0) return;
+    if (!hasAcceptedCodeOfConduct) return;
+    setSubmitError(null);
+    setStepDirection(1);
+    setOnboardingStep(1);
+  }, [fieldErrors, hasAcceptedCodeOfConduct]);
+
+  const handleBackClick = useCallback(() => {
+    if (isOrganizationDetailsStep) {
+      setStepDirection(-1);
+      setOnboardingStep(0);
+      return;
+    }
+    setOnboardingStep(0);
+    onBack();
+  }, [isOrganizationDetailsStep, onBack]);
+
+  const mainFormFields = (
+    <>
+      {kind === "organization" && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Website</label>
+
+          <InputGroup className="rounded-full">
+            <InputGroupAddon>
+              <GlobeIcon />
+            </InputGroupAddon>
+            <InputGroupInput
+              type="url"
+              value={website}
+              onChange={(event) => {
+                setWebsite(event.target.value);
+                setTouchedFields((current) => ({ ...current, website: true }));
+                setBrandfetchFeedback(null);
+                setSubmitError(null);
+              }}
+              placeholder="https://your-organization.org"
+              aria-invalid={visibleWebsiteError ? true : undefined}
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                type="button"
+                variant="secondary"
+                size="xs"
+                className="rounded-full"
+                onClick={() => void handleFetchBrandInfo()}
+                disabled={!canFetchBrandInfo}
+              >
+                {isFetchingBrandInfo ? <Loader2Icon className="animate-spin" /> : <SparklesIcon />}
+                Prefill
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+
+          <div className="mt-3 space-y-2">
+            <FieldError error={visibleWebsiteError} />
+            {brandfetchFeedback && (
+              <p
+                className={cn("text-xs", {
+                  "text-primary": brandfetchFeedback.tone === "success",
+                  "text-muted-foreground": brandfetchFeedback.tone === "neutral",
+                  "text-destructive": brandfetchFeedback.tone === "destructive",
+                })}
+              >
+                {brandfetchFeedback.message}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <OnboardingMediaField
+        kind={kind}
+        primaryImage={primaryImage}
+        bannerImage={bannerImage}
+        displayName={displayName}
+        displayNamePlaceholder={kind === "organization" ? "Organization name" : "Your name"}
+        displayNameError={visibleDisplayNameError}
+        onPrimaryImageChange={setPrimaryImage}
+        onBannerImageChange={setBannerImage}
+        onDisplayNameChange={(value) => {
+          setDisplayName(value);
+          setTouchedFields((current) => ({ ...current, displayName: true }));
+          setSubmitError(null);
+        }}
+      />
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Bio</label>
+        <Textarea
+          value={shortDescription}
+          onChange={(event) => {
+            setShortDescription(event.target.value);
+            setTouchedFields((current) => ({ ...current, shortDescription: true }));
+            setSubmitError(null);
+          }}
+          placeholder={
+            kind === "organization"
+              ? "A short introduction to your organization and the work you do."
+              : "A short introduction to who you are."
+          }
+          rows={4}
+          aria-invalid={visibleShortDescriptionError ? true : undefined}
+        />
+        <div>
+          <FieldError error={visibleShortDescriptionError} />
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <>
       <HeaderContent
-        left={(
-          <Button type="button" variant="ghost" onClick={handleBack} className="-ml-2">
+        left={
+          <Button type="button" variant="ghost" size="sm" onClick={handleBackClick}>
             <ArrowLeftIcon />
             Back
           </Button>
-        )}
+        }
       />
-      <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <div className="flex items-start gap-3">
-        <BumicertsMark className="h-14 w-14 shrink-0" />
-        <div className="min-w-0 flex-1">
-          <p className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-            <SparklesIcon className="h-3 w-3" />
-            {kind === "organization" ? "Organization setup" : "User setup"}
+
+      <motion.form
+        className="mx-auto flex min-h-[calc(100vh-10rem)] w-full flex-col justify-center gap-5 py-8"
+        initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (kind === "organization" && onboardingStep === 0) {
+            handleOrganizationStepAdvance();
+            return;
+          }
+          void handleSubmit();
+        }}
+      >
+        <div className="space-y-1 text-center">
+          <h1 className="text-4xl italic font-instrument text-foreground">
+            {kind === "organization" ? "Organization" : "User"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {kind === "organization"
+              ? "Add the basics and we’ll prefill what we can."
+              : "A few basics and you’re in."}
           </p>
-          <h1 className="mt-2 text-xl font-medium">Create your {kind === "organization" ? "organization" : "profile"}</h1>
-          <p className="text-sm text-muted-foreground">Add the essentials now. You can refine everything from Manage later.</p>
         </div>
-      </div>
 
-      <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
-        <MediaInput label={kind === "organization" ? "Add logo" : "Add photo"} file={logoFile} onChange={setLogoFile} kind="logo" />
-        <MediaInput label="Add cover image" file={coverFile} onChange={setCoverFile} kind="cover" />
-      </div>
+        {kind === "organization" ? (
+          <AnimatePresence custom={stepDirection} mode="wait" initial={false}>
+            <motion.div
+              key={isOrganizationDetailsStep ? "organization-step-1" : "organization-step-0"}
+              custom={stepDirection}
+              variants={organizationStepVariants}
+              className="mx-auto w-full max-w-xl space-y-5"
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              {isOrganizationDetailsStep ? (
+                <OrganizationSetupDetailsPanel
+                  country={country}
+                  startDate={startDate}
+                  longDescription={longDescription}
+                  canSubmit={canSubmit}
+                  showAiGeneratedReviewNotice={hasSuccessfulPrefill}
+                  isSubmitting={isSubmitting}
+                  submitLabel={isOrganizationOptionalStepEmpty ? "Skip and Continue" : "Continue"}
+                  submitError={submitError}
+                  onBack={() => {
+                    setStepDirection(-1);
+                    setOnboardingStep(0);
+                  }}
+                  onCountryChange={setCountry}
+                  onStartDateChange={setStartDate}
+                  onLongDescriptionChange={setLongDescription}
+                />
+              ) : (
+                <>
+                  {mainFormFields}
 
-      <div className="space-y-1.5">
-        <label htmlFor={nameId} className="text-sm font-medium">Name <span className="text-destructive">*</span></label>
-        <Input id={nameId} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder={kind === "organization" ? "Organization name" : "Display name"} maxLength={64} />
-      </div>
+                  {submitError && <p className="text-sm text-destructive">{submitError}</p>}
 
-      <div className="space-y-1.5">
-        <label htmlFor={bioId} className="text-sm font-medium">Bio <span className="text-destructive">*</span></label>
-        <Textarea id={bioId} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Short public description…" rows={3} className="resize-none" maxLength={256} />
-        <p className="text-xs text-muted-foreground">{description.length}/256</p>
-      </div>
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="organization-code-of-conduct"
+                      checked={hasAcceptedCodeOfConduct}
+                      onCheckedChange={(checked) => setHasAcceptedCodeOfConduct(checked === true)}
+                      className="mt-0.5 bg-background"
+                    />
+                    <label htmlFor="organization-code-of-conduct" className="text-sm text-muted-foreground">
+                      I have reviewed and agree to the{" "}
+                      <a
+                        href={CODE_OF_CONDUCT_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-foreground underline underline-offset-4"
+                      >
+                        Code of Conduct
+                      </a>
+                      .
+                    </label>
+                  </div>
 
-      {kind === "organization" && onboardingStep === 1 && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label htmlFor={websiteId} className="flex items-center gap-1.5 text-sm font-medium"><GlobeIcon className="h-3.5 w-3.5" /> Website</label>
-              <Input id={websiteId} value={website} onChange={(event) => setWebsite(event.target.value)} placeholder="https://example.org" aria-invalid={!websiteValid} />
-              {!websiteValid && <p className="text-xs text-destructive">Enter a valid website address.</p>}
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor={countryId} className="text-sm font-medium">Country code</label>
-              <Input id={countryId} value={country} onChange={(event) => setCountry(event.target.value.toUpperCase().slice(0, 2))} placeholder="BR" maxLength={2} className="uppercase" />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor={startId} className="flex items-center gap-1.5 text-sm font-medium"><CalendarIcon className="h-3.5 w-3.5" /> Start date</label>
-              <Input id={startId} type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor={visibilityId} className="flex items-center gap-1.5 text-sm font-medium"><LockIcon className="h-3.5 w-3.5" /> Visibility</label>
-              <select
-                id={visibilityId}
-                value={visibility}
-                onChange={(event) => setVisibility(event.target.value as "Public" | "Unlisted")}
-                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              >
-                <option>Public</option>
-                <option>Unlisted</option>
-              </select>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor={longDescriptionId} className="text-sm font-medium">About your organization</label>
-            <Textarea id={longDescriptionId} value={longDescription} onChange={(event) => setLongDescription(event.target.value)} placeholder="Mission, work, local partners, monitoring approach…" rows={5} className="resize-none" />
-          </div>
-        </motion.div>
-      )}
-
-      <label className="flex items-start gap-2 text-sm text-muted-foreground">
-        <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 accent-primary" />
-        <span>I confirm this profile represents me or an organization I am authorized to manage.</span>
-      </label>
-
-      {error && <p className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
-
-      <div className="flex items-center justify-between gap-2 pt-1">
-        <Button type="button" variant="ghost" disabled={isSubmitting} onClick={handleBack}>
-          Back
-        </Button>
-        {kind === "organization" && onboardingStep === 0 ? (
-          <Button type="button" disabled={!canContinue} onClick={() => setOnboardingStep(1)}>
-            Continue
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full"
+                    disabled={!canSubmit || !hasAcceptedCodeOfConduct}
+                  >
+                    Continue
+                    <ArrowRightIcon />
+                  </Button>
+                </>
+              )}
+            </motion.div>
+          </AnimatePresence>
         ) : (
-          <Button type="submit" disabled={!canSubmit}>
-            {isSubmitting && <Loader2Icon className="h-3.5 w-3.5 animate-spin" />}
-            Complete setup
-          </Button>
+          <>
+            {mainFormFields}
+
+            {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+
+            <Button type="submit" size="lg" className="w-full" disabled={!canSubmit}>
+              Continue
+              {isSubmitting ? <Loader2Icon className="animate-spin" /> : <ArrowRightIcon />}
+            </Button>
+          </>
         )}
-      </div>
-    </form>
+      </motion.form>
     </>
   );
 }
 
-export function ManageAccountSetup({ did, mode }: { did: string; mode: ManageMode | null }) {
-  const onboardingKind = mode === "onboard-user" ? "user" : mode === "onboard-org" ? "organization" : null;
+// ── Page wrapper ──────────────────────────────────────────────────────────────
+
+export function ManageAccountSetup({ did: _did, mode }: { did: string; mode: ManageMode | null }) {
+  const router = useRouter();
+  const onboardingKind: OnboardingKind | null =
+    mode === "onboard-user" ? "user" : mode === "onboard-org" ? "organization" : null;
 
   return (
-    <motion.div className="mx-auto w-full max-w-xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}>
-      {onboardingKind ? (
-        <motion.div key={onboardingKind} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}>
-          <AccountSetupForm did={did} kind={onboardingKind} />
-        </motion.div>
-      ) : (
-        <motion.div key="choice" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}>
-          <AccountSetupChoiceStep />
-        </motion.div>
-      )}
+    <motion.div
+      className="mx-auto w-full max-w-xl"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+    >
+      <AnimatePresence mode="wait">
+        {onboardingKind ? (
+          <motion.div
+            key={onboardingKind}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <AccountSetupForm kind={onboardingKind} onBack={() => router.push("/manage")} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="choice"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <AccountSetupChoiceStep
+              onChooseUser={() => router.push("/manage?mode=onboard-user")}
+              onChooseOrganization={() => router.push("/manage?mode=onboard-org")}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

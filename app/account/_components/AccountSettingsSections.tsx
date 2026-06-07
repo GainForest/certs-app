@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { blo } from "blo";
 import {
   AlertTriangleIcon,
   ArrowRightIcon,
   CheckCircle2Icon,
   CheckIcon,
+  ChevronRight,
   ExternalLinkIcon,
   EyeIcon,
   EyeOffIcon,
+  ImageIcon,
   KeyRoundIcon,
   Loader2Icon,
   PencilIcon,
@@ -20,10 +24,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal/modal";
 import { useModal } from "@/components/ui/modal/context";
-import { deleteRecord } from "@/app/(manage)/manage/_lib/mutations";
+import { ImageEditorModal } from "@/app/(manage)/manage/_modals/DashboardEditModals";
+import { deleteRecord, putRecord, uploadBlob } from "@/app/(manage)/manage/_lib/mutations";
 import { INDEXER_URL } from "@/app/_lib/urls";
 import { CHAIN_ID } from "@/lib/facilitator/usdc";
 import { cn } from "@/lib/utils";
@@ -64,37 +78,295 @@ function shortAddress(address: string | null | undefined): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-function PasswordInput({ id, value, onChange, placeholder, autoComplete }: { id: string; value: string; onChange: (value: string) => void; placeholder?: string; autoComplete?: string }) {
+async function resolvePdsUrl(did: string): Promise<string> {
+  const response = await fetch(`/api/atproto/resolve-pds?did=${encodeURIComponent(did)}`);
+  const data = (await response.json().catch(() => null)) as { pdsUrl?: string; error?: string } | null;
+  if (!response.ok || !data?.pdsUrl) throw new Error(data?.error ?? "Failed to resolve account server");
+  return data.pdsUrl;
+}
+
+async function fetchRecordValue(
+  pdsUrl: string,
+  did: string,
+  collection: string,
+): Promise<Record<string, unknown> | null> {
+  const params = new URLSearchParams({ repo: did, collection, rkey: "self" });
+  const response = await fetch(
+    `${pdsUrl.replace(/\/$/, "")}/xrpc/com.atproto.repo.getRecord?${params.toString()}`,
+    { cache: "no-store" },
+  );
+  if (!response.ok) return null;
+  const data = (await response.json().catch(() => null)) as { value?: Record<string, unknown> } | null;
+  return data?.value ?? null;
+}
+
+// ── Profile (Edit Profile) ──────────────────────────────────────────────────
+
+function ProfileForm({ account }: { account: AccountRouteData }) {
+  const modal = useModal();
+
+  const [displayName, setDisplayName] = useState(account.displayName ?? "");
+  const [bio, setBio] = useState(account.description ?? "");
+  const [avatarFile, setAvatarFile] = useState<File | undefined>();
+  const [bannerFile, setBannerFile] = useState<File | undefined>();
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const avatarPreviewUrl = useMemo(() => (avatarFile ? URL.createObjectURL(avatarFile) : null), [avatarFile]);
+  const bannerPreviewUrl = useMemo(() => (bannerFile ? URL.createObjectURL(bannerFile) : null), [bannerFile]);
+
+  const displayedAvatarUrl = avatarPreviewUrl ?? account.avatarUrl;
+  const displayedBannerUrl = bannerPreviewUrl ?? account.coverUrl;
+
+  const displayNameError =
+    displayName.trim().length === 0
+      ? "Name is required."
+      : displayName.trim().length > 64
+        ? "Name must be 64 characters or fewer."
+        : undefined;
+  const bioError = bio.trim().length > 256 ? "Bio must be 256 characters or fewer." : undefined;
+
+  const openImageEditor = (target: "avatar" | "banner") => {
+    const isAvatar = target === "avatar";
+    modal.pushModal(
+      {
+        id: "settings-profile-image-editor",
+        content: (
+          <ImageEditorModal
+            title={isAvatar ? "Change avatar" : "Change banner"}
+            description={
+              isAvatar
+                ? "Choose a clear avatar for your profile."
+                : "Choose a banner that sets the tone for your profile."
+            }
+            currentUrl={isAvatar ? displayedAvatarUrl : displayedBannerUrl}
+            onConfirm={(file) => (isAvatar ? setAvatarFile(file) : setBannerFile(file))}
+          />
+        ),
+        dialogWidth: isAvatar ? "max-w-sm" : "max-w-2xl",
+      },
+      true,
+    );
+    void modal.show();
+  };
+
+  const handleSave = useCallback(async () => {
+    if (displayNameError || bioError) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+
+    try {
+      const pdsUrl = await resolvePdsUrl(account.did);
+      const [bskyRecord, certifiedRecord] = await Promise.all([
+        fetchRecordValue(pdsUrl, account.did, "app.bsky.actor.profile"),
+        fetchRecordValue(pdsUrl, account.did, "app.certified.actor.profile"),
+      ]);
+
+      const [avatarBlob, bannerBlob] = await Promise.all([
+        avatarFile ? uploadBlob(avatarFile) : Promise.resolve(null),
+        bannerFile ? uploadBlob(bannerFile) : Promise.resolve(null),
+      ]);
+
+      const trimmedName = displayName.trim();
+      const trimmedBio = bio.trim();
+
+      const nextBsky: Record<string, unknown> = {
+        ...(bskyRecord ?? {}),
+        $type: "app.bsky.actor.profile",
+        displayName: trimmedName,
+      };
+      if (trimmedBio) nextBsky.description = trimmedBio;
+      else delete nextBsky.description;
+      if (avatarBlob) nextBsky.avatar = avatarBlob;
+      if (bannerBlob) nextBsky.banner = bannerBlob;
+
+      const nextCertified: Record<string, unknown> = {
+        ...(certifiedRecord ?? {}),
+        $type: "app.certified.actor.profile",
+        displayName: trimmedName,
+      };
+      if (trimmedBio) nextCertified.description = trimmedBio;
+      else delete nextCertified.description;
+      if (!nextCertified.createdAt) nextCertified.createdAt = new Date().toISOString();
+      if (avatarBlob) {
+        nextCertified.avatar = { $type: "org.hypercerts.defs#smallImage", image: avatarBlob.ref };
+      }
+
+      await Promise.all([
+        putRecord("app.bsky.actor.profile", "self", nextBsky),
+        putRecord("app.certified.actor.profile", "self", nextCertified),
+      ]);
+
+      setAvatarFile(undefined);
+      setBannerFile(undefined);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Failed to save profile.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [account.did, avatarFile, bannerFile, bio, bioError, displayName, displayNameError]);
+
+  return (
+    <div className="space-y-5">
+      {/* Banner + Avatar picker */}
+      <div>
+        <button
+          type="button"
+          onClick={() => openImageEditor("banner")}
+          className="group relative block w-full overflow-hidden rounded-t-2xl border border-border bg-muted/50 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Change banner"
+        >
+          <div className="aspect-[16/5] w-full">
+            {displayedBannerUrl ? (
+              <Image src={displayedBannerUrl} alt="Banner" fill unoptimized className="object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <ImageIcon className="h-7 w-7 text-muted-foreground/40" />
+              </div>
+            )}
+          </div>
+          <span className="absolute right-2 top-2 rounded-full bg-background/80 px-2 py-0.5 text-xs text-foreground backdrop-blur-sm transition-opacity group-hover:opacity-100 opacity-80">
+            {displayedBannerUrl ? "Change banner" : "Add banner"}
+          </span>
+        </button>
+
+        <div className="flex items-end gap-4 pl-4">
+          <button
+            type="button"
+            onClick={() => openImageEditor("avatar")}
+            className="group relative -mt-10 flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-background bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Change avatar"
+          >
+            {displayedAvatarUrl ? (
+              <Image src={displayedAvatarUrl} alt="Avatar" fill unoptimized className="object-cover" />
+            ) : (
+              <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+              <ImageIcon className="h-5 w-5 text-white" />
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Text fields */}
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="settings-display-name">Display Name</Label>
+          <Input
+            id="settings-display-name"
+            value={displayName}
+            onChange={(e) => {
+              setDisplayName(e.target.value);
+              setSaveSuccess(false);
+            }}
+            placeholder="Your name"
+            maxLength={64}
+            className="max-w-sm"
+          />
+          {displayName.length > 0 && displayNameError && (
+            <p className="text-xs text-destructive">{displayNameError}</p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="settings-bio">Bio</Label>
+          <Textarea
+            id="settings-bio"
+            value={bio}
+            onChange={(e) => {
+              setBio(e.target.value);
+              setSaveSuccess(false);
+            }}
+            placeholder="A short introduction to who you are."
+            rows={3}
+            maxLength={256}
+            className="max-w-sm resize-none"
+          />
+          <p className="max-w-sm text-right text-xs text-muted-foreground">{bio.length}/256</p>
+          {bioError && <p className="text-xs text-destructive">{bioError}</p>}
+        </div>
+      </div>
+
+      {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+
+      <Button onClick={() => void handleSave()} disabled={isSaving || !!displayNameError} size="sm">
+        {isSaving ? (
+          <>
+            <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
+            Saving...
+          </>
+        ) : saveSuccess ? (
+          <>
+            <CheckIcon className="h-3.5 w-3.5" />
+            Saved!
+          </>
+        ) : (
+          "Save Changes"
+        )}
+      </Button>
+    </div>
+  );
+}
+
+function ProfileSection({ account }: { account: AccountRouteData }) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-base font-semibold">Edit Profile</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Update your display name, bio, and profile images.
+        </p>
+      </div>
+      <Separator />
+      <ProfileForm account={account} />
+    </div>
+  );
+}
+
+// ── Password ────────────────────────────────────────────────────────────────
+
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  autoComplete?: string;
+}) {
   const [visible, setVisible] = useState(false);
   return (
-    <div className="border-input relative flex h-9 w-full min-w-0 items-center rounded-md border bg-background shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
-      <input
+    <InputGroup className="bg-background">
+      <InputGroupInput
         id={id}
         type={visible ? "text" : "password"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="min-w-0 flex-1 bg-transparent px-3 py-1 text-sm outline-none placeholder:text-muted-foreground"
       />
-      <button
-        type="button"
-        onClick={() => setVisible((value) => !value)}
-        tabIndex={-1}
-        aria-label={visible ? "Hide password" : "Show password"}
-        className="mr-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-      >
-        {visible ? <EyeOffIcon className="size-3.5" /> : <EyeIcon className="size-3.5" />}
-      </button>
-    </div>
+      <InputGroupAddon align="inline-end">
+        <InputGroupButton
+          size="icon-sm"
+          onClick={() => setVisible((v) => !v)}
+          tabIndex={-1}
+          aria-label={visible ? "Hide password" : "Show password"}
+        >
+          {visible ? <EyeOffIcon className="size-3.5" /> : <EyeIcon className="size-3.5" />}
+        </InputGroupButton>
+      </InputGroupAddon>
+    </InputGroup>
   );
-}
-
-async function resolvePdsUrl(did: string): Promise<string> {
-  const response = await fetch(`/api/atproto/resolve-pds?did=${encodeURIComponent(did)}`);
-  const data = (await response.json().catch(() => null)) as { pdsUrl?: string; error?: string } | null;
-  if (!response.ok || !data?.pdsUrl) throw new Error(data?.error ?? "Failed to resolve account server");
-  return data.pdsUrl;
 }
 
 function PasswordSection({ did }: { did: string }) {
@@ -118,11 +390,11 @@ function PasswordSection({ did }: { did: string }) {
     try {
       const response = await fetch("/api/atproto/request-password-reset", { method: "POST" });
       const data = (await response.json().catch(() => null)) as { email?: string; error?: string } | null;
-      if (!response.ok) throw new Error(data?.error ?? "Failed to send reset email");
+      if (!response.ok) throw new Error(data?.error ?? "Failed to send reset email. Please try again.");
       setSentToEmail(data?.email ?? "");
       setStep("form");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send reset email");
+      setError(err instanceof Error ? err.message : "Failed to send reset email. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -130,8 +402,14 @@ function PasswordSection({ did }: { did: string }) {
 
   async function handleResetPassword() {
     if (!token.trim() || !newPassword.trim()) return;
-    if (newPassword !== confirmPassword) { setError("Passwords do not match."); return; }
-    if (newPassword.length < 8 || newPassword.length > 256) { setError("Password must be 8–256 characters."); return; }
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (newPassword.length < 8 || newPassword.length > 256) {
+      setError("Password must be between 8 and 256 characters.");
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -144,7 +422,7 @@ function PasswordSection({ did }: { did: string }) {
       });
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as { message?: string; error?: string } | null;
-        throw new Error(data?.message ?? data?.error ?? "Failed to change password");
+        throw new Error(data?.message ?? data?.error ?? "Failed to reset password. Check the code and try again.");
       }
       setStep("success");
       setSentToEmail("");
@@ -152,7 +430,7 @@ function PasswordSection({ did }: { did: string }) {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to change password");
+      setError(err instanceof Error ? err.message : "Failed to reset password. Check the code and try again.");
     } finally {
       setIsLoading(false);
     }
@@ -168,35 +446,49 @@ function PasswordSection({ did }: { did: string }) {
       <div className="bg-muted rounded-xl p-1 flex flex-col items-center w-full">
         {step === "idle" && (
           <div className="flex flex-col items-center gap-4 px-4 py-4 w-full">
-            <p className="text-sm text-muted-foreground text-center">Send a password reset code to your account email.</p>
+            <p className="text-sm text-muted-foreground text-center">
+              We&apos;ll send a reset code to the email address on your account.
+            </p>
             {error ? <p className="text-sm text-destructive text-center">{error}</p> : null}
             <Button onClick={() => void handleRequestReset()} disabled={isLoading} size="sm">
               {isLoading ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : null}
-              {isLoading ? "Sending…" : "Send code"}
+              {isLoading ? "Sending..." : "Send Reset Code"}
             </Button>
           </div>
         )}
 
         {step === "form" && (
           <div className="flex flex-col items-center gap-4 px-4 py-4 w-full">
-            <p className="text-sm text-muted-foreground text-center">{sentToEmail ? `Enter the reset code sent to ${sentToEmail}.` : "Enter the reset code sent to your email."}</p>
+            {sentToEmail ? (
+              <p className="text-sm text-muted-foreground text-center">
+                A reset code was sent to {sentToEmail}. Check your inbox.
+              </p>
+            ) : null}
             <div className="space-y-2 w-full">
-              <Label htmlFor="reset-token">Code</Label>
-              <Input id="reset-token" type="text" value={token} onChange={(e) => setToken(e.target.value)} placeholder="Reset code" autoComplete="one-time-code" className="bg-background" />
+              <Label htmlFor="reset-token">Reset Code</Label>
+              <Input
+                id="reset-token"
+                type="text"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="Enter the code from your email"
+                autoComplete="one-time-code"
+                className="bg-background"
+              />
             </div>
             <div className="space-y-2 w-full">
-              <Label htmlFor="new-password">New password</Label>
-              <PasswordInput id="new-password" value={newPassword} onChange={setNewPassword} placeholder="New password" autoComplete="new-password" />
+              <Label htmlFor="new-password">New Password</Label>
+              <PasswordInput id="new-password" value={newPassword} onChange={setNewPassword} placeholder="Min. 8 characters" autoComplete="new-password" />
             </div>
             <div className="space-y-2 w-full">
-              <Label htmlFor="confirm-password">Confirm password</Label>
-              <PasswordInput id="confirm-password" value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm password" autoComplete="new-password" />
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <PasswordInput id="confirm-password" value={confirmPassword} onChange={setConfirmPassword} placeholder="Repeat new password" autoComplete="new-password" />
             </div>
             {error ? <p className="text-sm text-destructive text-center w-full">{error}</p> : null}
             <div className="flex items-center gap-2">
               <Button onClick={() => void handleResetPassword()} disabled={isLoading || !token.trim() || !newPassword.trim() || !confirmPassword.trim()} size="sm">
                 {isLoading ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : null}
-                {isLoading ? "Saving…" : "Change password"}
+                {isLoading ? "Saving..." : "Change Password"}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => { setStep("idle"); setError(null); }}>Cancel</Button>
             </div>
@@ -206,13 +498,15 @@ function PasswordSection({ did }: { did: string }) {
         {step === "success" && (
           <div className="flex items-center gap-2 px-4 py-4 text-sm text-green-700 dark:text-green-400">
             <CheckIcon className="h-4 w-4 shrink-0" />
-            Password updated.
+            Password changed successfully.
           </div>
         )}
       </div>
     </div>
   );
 }
+
+// ── Wallets ─────────────────────────────────────────────────────────────────
 
 async function fetchWalletLinks(did: string): Promise<WalletLink[]> {
   const query = `
@@ -270,25 +564,25 @@ function AddWalletModal({ did, existingName, onSuccess, onBack }: { did: string;
 
   async function connectWallet() {
     const ethereum = getEthereum();
-    if (!ethereum) { setError("No payment app found. Install a supported payment app and try again."); setStatus("error"); return; }
+    if (!ethereum) { setError("No wallet found. Install a supported wallet and try again."); setStatus("error"); return; }
     setStatus("connecting");
     setError(null);
     try {
       const accounts = await ethereum.request({ method: "eth_requestAccounts" }) as string[];
       const nextAddress = accounts[0];
-      if (!nextAddress) throw new Error("Payment app connection failed.");
+      if (!nextAddress) throw new Error("Wallet connection failed.");
       await ensureBaseNetwork(ethereum);
       setAddress(nextAddress);
       setStatus("idle");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to connect payment app.");
+      setError(err instanceof Error ? err.message : "Failed to connect wallet.");
       setStatus("error");
     }
   }
 
   async function linkWallet() {
     const ethereum = getEthereum();
-    if (!ethereum) { setError("No payment app found."); setStatus("error"); return; }
+    if (!ethereum) { setError("No wallet found."); setStatus("error"); return; }
     const nextAddress = address;
     if (!nextAddress) { await connectWallet(); return; }
     setStatus("signing");
@@ -312,10 +606,10 @@ function AddWalletModal({ did, existingName, onSuccess, onBack }: { did: string;
         body: JSON.stringify({ address: nextAddress, chainId: CHAIN_ID, signature, message, ...(name.trim() ? { name: name.trim() } : {}) }),
       });
       const data = (await response.json().catch(() => null)) as { error?: string } | null;
-      if (!response.ok) throw new Error(data?.error ?? "Failed to connect payment app");
+      if (!response.ok) throw new Error(data?.error ?? "Could not link this wallet. Please try again.");
       setStatus("success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to connect payment app");
+      setError(err instanceof Error ? err.message : "Could not link this wallet. Please try again.");
       setStatus("error");
     }
   }
@@ -325,21 +619,21 @@ function AddWalletModal({ did, existingName, onSuccess, onBack }: { did: string;
   return (
     <ModalContent dismissible={!busy}>
       <ModalHeader backAction={busy ? undefined : onBack}>
-        <ModalTitle>{status === "success" ? "Payment app connected" : "Connect payment app"}</ModalTitle>
-        {address ? <ModalDescription>Name this payment app, then confirm to connect it to your account.</ModalDescription> : null}
+        <ModalTitle>{status === "success" ? "Wallet Linked" : "Link Wallet"}</ModalTitle>
+        {address && status !== "success" ? <ModalDescription>Sign with your wallet to prove ownership. A label helps you identify it later.</ModalDescription> : null}
       </ModalHeader>
       <div className="flex flex-col gap-4 pt-1">
         {!address && status !== "success" ? (
           <div className="flex flex-col items-center gap-4 py-4">
             <div className="flex size-14 items-center justify-center rounded-full bg-muted"><WalletIcon className="size-6 text-muted-foreground" /></div>
             <div className="text-center space-y-1">
-              <p className="text-sm font-medium text-foreground">Connect a payment app</p>
-              <p className="text-xs text-muted-foreground">Connect a payment app to receive or make payments.</p>
+              <p className="text-sm font-medium text-foreground">Connect a wallet</p>
+              <p className="text-xs text-muted-foreground">We&apos;ll ask you to sign a message to prove ownership. No transaction will be sent.</p>
             </div>
             {error ? <p className="text-sm text-destructive text-center">{error}</p> : null}
             <Button className="w-full" onClick={() => void connectWallet()} disabled={busy}>
               {busy ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
-              Connect payment app
+              Connect Wallet
               <ArrowRightIcon className="size-3.5" />
             </Button>
           </div>
@@ -348,17 +642,17 @@ function AddWalletModal({ did, existingName, onSuccess, onBack }: { did: string;
         {address && status !== "success" ? (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between rounded-md bg-muted px-3 py-2">
-              <div className="flex items-center gap-2"><div className="size-2 rounded-full bg-primary" /><span className="text-sm font-mono text-foreground">{shortAddress(address)}</span><span className="text-xs text-muted-foreground">Connected</span></div>
-              <button type="button" onClick={() => setAddress(null)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Switch</button>
+              <div className="flex items-center gap-2"><div className="size-2 rounded-full bg-primary" /><span className="text-sm font-mono text-foreground">{shortAddress(address)}</span><span className="text-xs text-muted-foreground">Base</span></div>
+              <button type="button" onClick={() => setAddress(null)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Disconnect</button>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Label <span className="text-muted-foreground font-normal">optional</span></Label>
-              <Input placeholder="e.g. Main payment app" value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} onKeyDown={(e) => { if (e.key === "Enter") void linkWallet(); }} />
+              <Label>Label <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input placeholder="e.g. Personal Wallet" value={name} onChange={(e) => setName(e.target.value.slice(0, 100))} onKeyDown={(e) => { if (e.key === "Enter") void linkWallet(); }} />
             </div>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <Button onClick={() => void linkWallet()} disabled={busy} className="w-full">
               {busy ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
-              {status === "signing" ? "Waiting for confirmation…" : status === "writing" ? "Saving…" : status === "error" ? "Try again" : "Confirm connection"}
+              {status === "signing" ? "Sign in wallet…" : status === "writing" ? "Saving…" : status === "error" ? "Try Again" : "Sign & Link Wallet"}
             </Button>
           </div>
         ) : null}
@@ -367,7 +661,7 @@ function AddWalletModal({ did, existingName, onSuccess, onBack }: { did: string;
           <div className="flex flex-col gap-4 py-2">
             <div className="flex items-center gap-3 rounded-md bg-primary/5 border border-primary/20 px-4 py-3">
               <CheckCircle2Icon className="size-5 text-primary shrink-0" />
-              <div><p className="text-sm font-medium text-foreground">Linked successfully</p>{name.trim() ? <p className="text-xs text-muted-foreground mt-0.5">Saved as {name.trim()}</p> : null}</div>
+              <div><p className="text-sm font-medium text-foreground">Wallet linked successfully</p>{name.trim() ? <p className="text-xs text-muted-foreground mt-0.5">Saved as “{name.trim()}”</p> : null}</div>
             </div>
             <Button onClick={onSuccess} className="w-full">Done</Button>
           </div>
@@ -389,24 +683,49 @@ function DeleteWalletModal({ link, onDeleted, onBack }: { link: WalletLink; onDe
       await deleteRecord("app.gainforest.link.evm", link.rkey);
       onDeleted();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to remove payment app");
+      setError(err instanceof Error ? err.message : "Could not remove this wallet. Please try again.");
       setIsDeleting(false);
     }
   }
 
+  const label = link.name ?? "Untitled";
+  const address = link.address ?? "";
+
   return (
     <ModalContent dismissible={!isDeleting}>
       <ModalHeader backAction={isDeleting ? undefined : onBack}>
-        <ModalTitle>Remove payment app?</ModalTitle>
-        <ModalDescription>This removes {link.name ?? shortAddress(link.address)} from your connected payment apps.</ModalDescription>
+        <ModalTitle>Remove Wallet</ModalTitle>
+        <ModalDescription>Confirm your choice</ModalDescription>
       </ModalHeader>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      <p className="mt-6 text-center text-pretty">
+        You are about to remove <span className="font-medium text-foreground">&quot;{label}&quot;</span> from your linked wallets.
+      </p>
+      <div className="bg-muted/50 rounded-2xl p-4 mt-4 grid grid-cols-[1fr_2rem_1fr] overflow-hidden">
+        <div className="flex flex-col items-center justify-center">
+          {address ? (
+            <Image height={32} width={32} alt={label} src={blo(address as `0x${string}`)} className="rounded-full border-2 drop-shadow-sm" />
+          ) : (
+            <div className="h-8 w-8 rounded-full bg-muted" />
+          )}
+          <span className="font-medium text-sm mt-2 bg-muted px-1 py-0.5 rounded-md">{shortAddress(address)}</span>
+        </div>
+        <div className="flex items-center justify-center">
+          <ChevronRight className="size-6 text-destructive opacity-50" />
+        </div>
+        <div className="flex items-center justify-center relative">
+          <div className="absolute h-10 w-10 rounded-full blur-xl bg-destructive/70" />
+          <Trash2Icon className="text-destructive size-8" />
+        </div>
+      </div>
+
+      {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
       <ModalFooter>
-        <Button variant="outline" onClick={onBack} disabled={isDeleting}>Cancel</Button>
-        <Button variant="destructive" onClick={() => void handleDelete()} disabled={isDeleting || !link.rkey}>
+        <Button variant="destructive" className="w-full" onClick={() => void handleDelete()} disabled={isDeleting || !link.rkey}>
           {isDeleting ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
-          Delete
+          {isDeleting ? "Removing…" : "Remove Wallet"}
         </Button>
+        <Button variant="outline" className="w-full" onClick={onBack} disabled={isDeleting}>Cancel</Button>
       </ModalFooter>
     </ModalContent>
   );
@@ -424,7 +743,7 @@ function WalletsSection({ did }: { did: string }) {
     try {
       setLinks(await fetchWalletLinks(did));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load payment apps");
+      setError(err instanceof Error ? err.message : "Failed to load wallets");
     } finally {
       setIsLoading(false);
     }
@@ -457,11 +776,11 @@ function WalletsSection({ did }: { did: string }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <WalletIcon className="h-4 w-4 text-foreground/70" />
-          <h2 className="text-sm font-medium">Payment apps</h2>
+          <h2 className="text-sm font-medium">Linked Wallets</h2>
         </div>
         <Button size="sm" variant="outline" onClick={() => openAdd()} className="gap-1.5">
           <PlusIcon className="h-3.5 w-3.5" />
-          Add payment app
+          Add Wallet
         </Button>
       </div>
 
@@ -473,13 +792,17 @@ function WalletsSection({ did }: { did: string }) {
         ) : error ? (
           <p className="text-sm text-destructive py-4 text-center">{error}</p>
         ) : links.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">No connected payment apps.</p>
+          <p className="text-sm text-muted-foreground py-4 text-center">No wallets linked yet.</p>
         ) : (
           <div className="w-full flex flex-col gap-0.5">
             {links.map((link) => (
               <div key={link.uri ?? link.rkey ?? link.address} className="flex items-center gap-3 rounded-lg bg-background/60 px-3 py-2.5">
                 <div className="relative shrink-0">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">0x</div>
+                  {link.address ? (
+                    <Image src={blo(link.address as `0x${string}`)} alt={link.address} width={36} height={36} className="rounded-full" />
+                  ) : (
+                    <div className="h-9 w-9 rounded-full bg-muted" />
+                  )}
                   <span className={cn("absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-muted", link.valid ? "bg-primary" : "bg-amber-500")} />
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
@@ -492,8 +815,8 @@ function WalletsSection({ did }: { did: string }) {
                   <span className="hidden sm:inline-flex shrink-0 items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full"><AlertTriangleIcon className="h-3 w-3" />Unverified</span>
                 )}
                 <div className="flex items-center gap-0.5 shrink-0">
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => openAdd(link)} aria-label="Edit payment app"><PencilIcon className="h-3.5 w-3.5" /></Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => openDelete(link)} aria-label="Remove payment app"><Trash2Icon className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => openAdd(link)} aria-label="Edit wallet"><PencilIcon className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => openDelete(link)} aria-label="Delete wallet"><Trash2Icon className="h-3.5 w-3.5" /></Button>
                 </div>
               </div>
             ))}
@@ -504,23 +827,40 @@ function WalletsSection({ did }: { did: string }) {
   );
 }
 
+// ── Account (Advanced) ──────────────────────────────────────────────────────
+
+const VIEWERS = [
+  { key: "pdsls", label: "pdsls.dev", href: (did: string) => `https://pdsls.dev/at://${did}` },
+  { key: "certified", label: "certified.app", href: (did: string) => `https://certified.app/profile/${did}` },
+  { key: "atproto", label: "atproto.at", href: (did: string) => `https://atproto.at/uri/at://${did}` },
+] as const;
+
 function AccountSection({ did }: { did: string }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <UserIcon className="h-4 w-4 text-foreground/70" />
-        <h2 className="text-sm font-medium">Public profile</h2>
+        <h2 className="text-sm font-medium">Account</h2>
       </div>
 
       <div className="bg-muted rounded-xl p-1 flex flex-col items-center w-full">
         <div className="flex flex-col items-center gap-3 px-3 py-3 w-full">
-          <p className="text-sm text-muted-foreground text-center">Open the public version of your profile.</p>
-          <Button variant="outline" size="sm" asChild>
-            <a href={`https://certified.app/profile/${did}`} target="_blank" rel="noopener noreferrer">
-              Public profile
-              <ExternalLinkIcon className="h-3 w-3" />
-            </a>
-          </Button>
+          <div className="flex flex-col items-center gap-1 w-full">
+            <p className="text-xs text-muted-foreground">Decentralized Identifier (DID)</p>
+            <p className="text-xs font-mono break-all text-foreground/70 text-center">{did ?? "—"}</p>
+          </div>
+          {did && (
+            <div className="flex flex-wrap gap-2 justify-center">
+              {VIEWERS.map(({ key, label, href }) => (
+                <Button key={key} variant="outline" size="sm" asChild>
+                  <a href={href(did)} target="_blank" rel="noopener noreferrer">
+                    {label}
+                    <ExternalLinkIcon className="h-3 w-3" />
+                  </a>
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -530,6 +870,7 @@ function AccountSection({ did }: { did: string }) {
 export function AccountSettingsSections({ account }: { account: AccountRouteData }) {
   return (
     <div className="mx-auto mt-8 mb-20 space-y-8">
+      <ProfileSection account={account} />
       <PasswordSection did={account.did} />
       <WalletsSection did={account.did} />
       <Accordion type="single" collapsible>
