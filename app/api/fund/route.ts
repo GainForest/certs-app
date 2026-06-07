@@ -73,11 +73,16 @@ function parseBody(raw: unknown): { ok: true; body: ParsedSettlementBody } | { o
   };
 }
 
+function getFacilitatorServiceHost(): string {
+  const configuredHost = process.env.FACILITATOR_SERVICE_HOST?.trim().replace(/\/+$/, "");
+  if (!configuredHost) throw new Error("FACILITATOR_SERVICE_HOST env var is not set");
+  return /^https?:\/\//i.test(configuredHost) ? configuredHost : `https://${configuredHost}`;
+}
+
 async function createFacilitatorSession(): Promise<string> {
-  const serviceHost = process.env.FACILITATOR_SERVICE_HOST?.replace(/\/$/, "");
+  const serviceHost = getFacilitatorServiceHost();
   const identifier = process.env.NEXT_PUBLIC_FACILITATOR_DID || FACILITATOR_DID;
   const password = process.env.FACILITATOR_PASSWORD;
-  if (!serviceHost) throw new Error("FACILITATOR_SERVICE_HOST env var is not set");
   if (!password) throw new Error("FACILITATOR_PASSWORD env var is not set");
 
   const response = await fetch(`${serviceHost}/xrpc/com.atproto.server.createSession`, {
@@ -98,8 +103,7 @@ async function writeFundingReceipt(params: {
   transactionHash: string;
   receiptSubject?: { uri: string; cid: string };
 }): Promise<string | null> {
-  const serviceHost = process.env.FACILITATOR_SERVICE_HOST?.replace(/\/$/, "");
-  if (!serviceHost) throw new Error("FACILITATOR_SERVICE_HOST env var is not set");
+  const serviceHost = getFacilitatorServiceHost();
 
   const token = await createFacilitatorSession();
   const occurredAt = new Date().toISOString();
@@ -203,7 +207,7 @@ export async function POST(request: Request) {
     transactionHash = (await executeTransferWithAuthorization({ authorization, signature })).transactionHash;
   } catch (error) {
     console.error("[fund] On-chain transfer failed:", error);
-    return Response.json({ error: "Payment could not be completed", details: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    return Response.json({ error: "Payment could not be completed. Please try again later." }, { status: 500 });
   }
 
   const donorRecordedAs = body.anonymous ? "wallet" : "did";

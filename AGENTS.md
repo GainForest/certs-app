@@ -2,7 +2,9 @@
 
 ## Plain-language product copy
 
-This app must stay understandable to non-technical users. Be strict: do not add user-facing jargon anywhere in pages, components, metadata, alt text, labels, buttons, toasts, modals, empty states, validation errors, or API error messages that can reach the UI.
+This app must stay understandable to non-technical users. Be strict: avoid unnecessary user-facing jargon in pages, components, metadata, alt text, labels, buttons, toasts, modals, empty states, validation errors, or API error messages that can reach the UI.
+
+Payment and donation flows are an exception where precise terms are expected. It is okay to use clear payment vocabulary such as `wallet`, `wallet address`, `USDC`, `Base`, `transaction hash`, `signature`, and `authorization` when those terms help users understand or complete the payment.
 
 ### Banned user-facing terms
 
@@ -10,7 +12,7 @@ Do not show terms like:
 
 - `did:plc`, `DID`, `rkey`, `URI`, `CID`, `repo`, `record`, `schema`, `collection`
 - `AT Protocol`, `ATProto`, `atproto`, `PDS`, `indexer`, `Hyperindex`, `GraphQL`, `API`, `endpoint`, `JSON`
-- `wallet address`, `transaction hash`, `Tx Hash`, `signature`, `authorization`, `facilitator`, `attestation`, `on-chain`, `blockchain`, `crypto`, `Base`, `USDC`
+- `facilitator`, `attestation`, `on-chain`, `blockchain`, `crypto`
 - `Darwin Core`, `GBIF`, `GeoJSON`, `Shapefile`, `CSV`, `TSV`, `Kobo`, `dataset`, `column mapping`
 - `infrastructure`, `operational`, `uptime`, `incident`, `dashboard`, `analytics`
 
@@ -24,7 +26,8 @@ Use replacements like:
 - `Bumicert`, `impact story`, `project story`, `checked certificate`
 - `project place`, `project area`, `drawn map area`, `map location`
 - `nature sighting`, `tree information`, `field sound recording`
-- `payment app`, `digital dollars`, `payment details`, `completed gift`, `public donation note`
+- In general copy: `payment details`, `completed gift`, `public donation note`
+- In donation and wallet flows: use exact terms like `wallet`, `wallet address`, `USDC`, `Base`, and `transaction hash` when they are accurate
 - `site health`, `services running`, `working`, `slow`, `not working`
 - `file`, `spreadsheet export`, `file heading`, `tree group`, `photo folder`
 
