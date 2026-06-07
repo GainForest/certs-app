@@ -24,8 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AuthorInline } from "../_components/AuthorChip";
 import { StatsTileGrid, type StatsTileItem } from "../_components/StatsTile";
+import {
+  getCachedProfile,
+  monogram,
+  resolveDidProfile,
+  type DidProfile,
+} from "../_lib/did-profile";
 import { fetchReceipts, type FundingReceipt } from "../_lib/dashboard";
 import { formatCompact, formatCompactUsd } from "../_lib/format";
 import { accountHref } from "../_lib/urls";
@@ -181,7 +186,7 @@ function DonorTypeTabs({
   onDonorFilterChange: (donorFilter: DonorFilter) => void;
 }) {
   return (
-    <div className="grid h-12 grid-cols-3 rounded-2xl bg-muted/55 p-1 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur sm:rounded-full">
+    <div className="grid h-12 grid-cols-3 rounded-full bg-muted/55 p-1 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur">
       {DONOR_FILTERS.map(({ value, Icon, label, shortLabel }) => {
         const isSelected = donorFilter === value;
         return (
@@ -191,7 +196,7 @@ function DonorTypeTabs({
             aria-pressed={isSelected}
             onClick={() => onDonorFilterChange(value)}
             className={cn(
-              "inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-2 text-xs font-medium transition-all duration-200 sm:gap-2 sm:rounded-full sm:px-4 sm:text-sm",
+              "inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-2 text-sm font-medium transition-all duration-200 sm:gap-2 sm:px-4",
               isSelected
                 ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
@@ -432,20 +437,15 @@ function LeaderboardSkeleton() {
   return (
     <div className="overflow-hidden rounded-3xl bg-card/70 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 divide-y divide-border/60">
       {Array.from({ length: 8 }).map((_, index) => (
-        <div
-          key={index}
-          className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-4 sm:gap-5 sm:px-5"
-        >
-          <Skeleton className="size-10 rounded-full" />
-          <Skeleton className="size-12 rounded-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-44 max-w-full" />
-            <Skeleton className="h-3 w-56 max-w-full" />
-          </div>
-          <div className="text-right">
-            <Skeleton className="ml-auto h-5 w-28" />
-          </div>
+        <div key={index} className="flex items-center gap-3.5 px-4 py-[18px] sm:gap-4 sm:px-5 sm:py-5">
           <Skeleton className="size-9 rounded-full" />
+          <Skeleton className="size-11 rounded-full" />
+          <div className="min-w-0 flex-1 space-y-2.5">
+            <Skeleton className="h-4 w-40 max-w-full" />
+            <Skeleton className="h-3 w-52 max-w-full" />
+          </div>
+          <Skeleton className="h-5 w-16 shrink-0" />
+          <Skeleton className="size-5 shrink-0 rounded-full" />
         </div>
       ))}
     </div>
@@ -468,124 +468,120 @@ function LeaderboardError() {
   );
 }
 
-function RankBadge({ rank }: { rank: number }) {
-  if (rank <= 3) {
-    const medals = ["", "🥇", "🥈", "🥉"];
-    return (
-      <span
-        className="flex size-10 items-center justify-center rounded-full bg-gradient-to-b from-primary/10 to-background text-2xl shadow-sm ring-1 ring-foreground/5"
-        role="img"
-        aria-label={`Rank ${rank}`}
-      >
-        {medals[rank]}
-      </span>
-    );
-  }
+const RANK_TIERS: Record<number, string> = {
+  1: "bg-gradient-to-br from-amber-300/35 to-amber-500/10 text-amber-700 ring-amber-500/25 dark:text-amber-300",
+  2: "bg-gradient-to-br from-slate-300/40 to-slate-400/10 text-slate-600 ring-slate-400/25 dark:text-slate-300",
+  3: "bg-gradient-to-br from-orange-300/35 to-orange-500/10 text-orange-700 ring-orange-500/25 dark:text-orange-300",
+};
 
+function RankBadge({ rank }: { rank: number }) {
   return (
-    <span className="flex size-10 items-center justify-center rounded-full bg-card text-base font-medium tabular-nums text-muted-foreground shadow-sm ring-1 ring-foreground/5">
+    <span
+      aria-label={`Rank ${rank}`}
+      className={cn(
+        "flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular-nums ring-1",
+        RANK_TIERS[rank] ?? "bg-muted/50 text-muted-foreground ring-foreground/5",
+      )}
+    >
       {rank}
     </span>
   );
 }
 
-function DonorBadges({ rank }: { rank: number }) {
-  if (rank === 1) {
-    return (
-      <div className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-          <CrownIcon className="size-3.5" />
-          Top Donor
-        </span>
-        <span className="hidden items-center gap-1 whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary sm:inline-flex">
-          <LeafIcon className="size-3.5" />
-          Nature Champion
-        </span>
-      </div>
-    );
+const RANK_BADGES: Record<number, { Icon: typeof CrownIcon; label: string }> = {
+  1: { Icon: CrownIcon, label: "Top Donor" },
+  2: { Icon: SparklesIcon, label: "Consistent Giver" },
+  3: { Icon: SproutIcon, label: "Rising Supporter" },
+};
+
+function DonorBadge({ rank }: { rank: number }) {
+  const badge = RANK_BADGES[rank];
+  if (!badge) return null;
+  const { Icon, label } = badge;
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium leading-none text-primary">
+      <Icon className="size-3" />
+      {label}
+    </span>
+  );
+}
+
+function DonorAvatar({ entry, profile }: { entry: LeaderboardEntry; profile: DidProfile | null }) {
+  const [failed, setFailed] = useState(false);
+  const ring = "size-11 shrink-0 rounded-full ring-1 ring-foreground/5";
+
+  const avatar = profile?.avatar ?? null;
+  if (avatar && !failed) {
+    // eslint-disable-next-line @next/next/no-img-element -- avatar URLs come from arbitrary PDS/CDN hosts; next/image is not worth the remotePatterns surface.
+    return <img src={avatar} alt="" onError={() => setFailed(true)} className={cn(ring, "object-cover")} />;
   }
 
-  if (rank === 2) {
-    return (
-      <div className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-          <SparklesIcon className="size-3.5" />
-          Consistent Giver
-        </span>
-      </div>
-    );
-  }
-
-  if (rank === 3) {
-    return (
-      <div className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-          <SparklesIcon className="size-3.5" />
-          Rising Supporter
-        </span>
-      </div>
-    );
-  }
-
-  return null;
+  const m = monogram(profile?.handle ?? null, entry.donorId);
+  return (
+    <span
+      aria-hidden
+      style={{ backgroundColor: m.bg }}
+      className={cn(ring, "grid place-items-center text-sm font-semibold text-white/95")}
+    >
+      {m.char}
+    </span>
+  );
 }
 
 function DonorCard({ entry }: { entry: LeaderboardEntry }) {
-  const relativeTime = entry.lastDonatedAt ? formatRelativeTimeFromNow(new Date(entry.lastDonatedAt)) : null;
   const isWallet = entry.donorType === "wallet";
+  const [profile, setProfile] = useState<DidProfile | null>(() =>
+    isWallet ? null : getCachedProfile(entry.donorId) ?? null,
+  );
+
+  useEffect(() => {
+    if (isWallet) return;
+    let active = true;
+    setProfile(getCachedProfile(entry.donorId) ?? null);
+    resolveDidProfile(entry.donorId).then((p) => {
+      if (active) setProfile(p);
+    });
+    return () => {
+      active = false;
+    };
+  }, [entry.donorId, isWallet]);
+
+  const relativeTime = entry.lastDonatedAt ? formatRelativeTimeFromNow(new Date(entry.lastDonatedAt)) : null;
   const actionHref = isWallet ? basescanAddress(entry.donorId) : accountHref(entry.donorId);
-  const walletLabel = "Anonymous supporter";
   const actionLabel = isWallet ? "Open payment details" : "Open supporter profile in a new tab";
+  const name = isWallet ? "Anonymous supporter" : profile?.displayName || profile?.handle || "Supporter";
 
   return (
-    <div className="group grid grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-4 transition-colors duration-200 hover:bg-card/65 sm:gap-5 sm:px-5">
-      <div className="flex items-center justify-center">
-        <RankBadge rank={entry.rank} />
-      </div>
+    <a
+      href={actionHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={actionLabel}
+      className="group flex items-center gap-3.5 px-4 py-[18px] transition-colors duration-200 hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:gap-4 sm:px-5 sm:py-5"
+    >
+      <RankBadge rank={entry.rank} />
+      {!isWallet && <DonorAvatar entry={entry} profile={profile} />}
 
-      <div
-        className={cn(
-          "flex size-12 items-center justify-center rounded-full bg-muted/60 text-muted-foreground ring-1 ring-foreground/5",
-          !isWallet && "bg-primary/10 text-primary ring-primary/10",
-        )}
-      >
-        {isWallet ? <WalletIcon className="size-5" /> : <UserRoundCheckIcon className="size-5" />}
-      </div>
-
-      <div className="min-w-0">
-        <div className="flex min-w-0 items-center gap-2">
-          {isWallet ? (
-            <span className="truncate text-sm font-semibold text-foreground sm:text-base">
-              {walletLabel}
-            </span>
-          ) : (
-            <span className="min-w-0 max-w-full text-sm font-semibold text-foreground sm:text-base">
-              <AuthorInline did={entry.donorId} />
-            </span>
-          )}
-          <DonorBadges rank={entry.rank} />
-        </div>
-        <p className="mt-1 truncate text-xs text-muted-foreground sm:text-sm">
-          {donationSummary(entry.donationCount, relativeTime)}
+      <div className="min-w-0 flex-1">
+        <p className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold text-foreground">
+          {isWallet && <WalletIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />}
+          <span className="truncate">{name}</span>
         </p>
-      </div>
-
-      <div className="text-right">
-        <div className="whitespace-nowrap text-base font-bold tabular-nums text-primary sm:text-lg">
-          {formatCompactUsd(entry.totalAmount)}
+        <div className="mt-1.5 flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
+          <DonorBadge rank={entry.rank} />
+          <span className="truncate">{donationSummary(entry.donationCount, relativeTime)}</span>
         </div>
       </div>
 
-      <a
-        href={actionHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={actionLabel}
-        className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <ChevronRightIcon className="size-5" aria-hidden="true" />
-      </a>
-    </div>
+      <span className="shrink-0 whitespace-nowrap text-[15px] font-bold tabular-nums text-primary sm:text-[17px]">
+        {formatCompactUsd(entry.totalAmount)}
+      </span>
+
+      <ChevronRightIcon
+        aria-hidden="true"
+        className="size-4 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary sm:size-5"
+      />
+    </a>
   );
 }
 
