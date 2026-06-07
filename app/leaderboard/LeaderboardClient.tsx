@@ -245,20 +245,22 @@ function HeroLandscapeArt() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 h-[22rem] overflow-hidden">
       <Image
-        src="/assets/media/images/leaderboard/hero-landscape-light.png"
+        src="/assets/media/images/leaderboard/hero-landscape-light@2x.webp"
         alt=""
         fill
         priority
-        sizes="(min-width: 1280px) 1152px, calc(100vw - 48px)"
+        quality={95}
+        sizes="(min-width: 768px) calc(100vw - 15rem), 100vw"
         aria-hidden="true"
         className="object-cover object-center opacity-90 dark:hidden"
       />
       <Image
-        src="/assets/media/images/leaderboard/hero-landscape-dark.png"
+        src="/assets/media/images/leaderboard/hero-landscape-dark@2x.webp"
         alt=""
         fill
         priority
-        sizes="(min-width: 1280px) 1152px, calc(100vw - 48px)"
+        quality={95}
+        sizes="(min-width: 768px) calc(100vw - 15rem), 100vw"
         aria-hidden="true"
         className="hidden object-cover object-center opacity-80 dark:block"
       />

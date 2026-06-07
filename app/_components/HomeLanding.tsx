@@ -173,11 +173,12 @@ function LandingHero() {
           className="absolute inset-0"
         >
           <Image
-            src="/assets/media/images/landing/hero-rainforest.jpg"
+            src="/assets/media/images/landing/hero-rainforest@2x.webp"
             alt="Misty rainforest valley"
             fill
             priority
-            sizes="(min-width: 768px) 58vw, 100vw"
+            quality={95}
+            sizes="100vw"
             className="object-cover object-center"
           />
           <div className="absolute inset-0 bg-linear-to-t from-background via-background/75 to-transparent md:bg-linear-to-r" />

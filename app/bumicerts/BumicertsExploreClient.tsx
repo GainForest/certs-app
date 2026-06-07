@@ -536,18 +536,20 @@ function HeroBackdrop() {
   return (
     <div className="absolute inset-0 overflow-hidden" aria-hidden>
       <Image
-        src="/images/explore/explore-hero-light.png"
+        src="/images/explore/explore-hero-light@2x.webp"
         alt=""
         fill
         priority
+        quality={95}
         sizes="(min-width: 768px) calc(100vw - 15rem), 100vw"
         className="object-cover object-center dark:hidden"
       />
       <Image
-        src="/images/explore/explore-hero-dark.png"
+        src="/images/explore/explore-hero-dark@2x.webp"
         alt=""
         fill
         priority
+        quality={95}
         sizes="(min-width: 768px) calc(100vw - 15rem), 100vw"
         className="hidden object-cover object-center dark:block"
       />

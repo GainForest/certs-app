@@ -67,8 +67,8 @@ const KIND_META: Record<RecordKind, KindMeta> = {
     accent: "observations",
     lede: "Browse nature sightings from GainForest: photos, sounds, species names, and map locations.",
     search: "Filter by species, family, or country",
-    heroLight: "/assets/media/images/observations/observations-hero-light.png",
-    heroDark: "/assets/media/images/observations/observations-hero-dark.png",
+    heroLight: "/assets/media/images/observations/observations-hero-light@2x.webp",
+    heroDark: "/assets/media/images/observations/observations-hero-dark@2x.webp",
   },
   site: {
     eyebrow: "Project Sites",
@@ -76,8 +76,8 @@ const KIND_META: Record<RecordKind, KindMeta> = {
     accent: "sites",
     lede: "Explore nature stewardship groups, where they work, and the stories they share.",
     search: "Filter by organization or country",
-    heroLight: "/assets/organizations/organizations-hero-light.png",
-    heroDark: "/assets/organizations/organizations-hero-dark.png",
+    heroLight: "/assets/organizations/organizations-hero-light@2x.webp",
+    heroDark: "/assets/organizations/organizations-hero-dark@2x.webp",
   },
   bumicert: {
     eyebrow: "Explore Projects",
@@ -85,8 +85,8 @@ const KIND_META: Record<RecordKind, KindMeta> = {
     accent: "Regenerative Impact",
     lede: "Browse projects from communities and organizations restoring ecosystems, strengthening livelihoods, and building a more resilient future.",
     search: "Filter Bumicerts by title or description",
-    heroLight: "/images/explore/explore-hero-light.png",
-    heroDark: "/images/explore/explore-hero-dark.png",
+    heroLight: "/images/explore/explore-hero-light@2x.webp",
+    heroDark: "/images/explore/explore-hero-dark@2x.webp",
   },
 };
 

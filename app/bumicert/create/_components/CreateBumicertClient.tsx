@@ -318,18 +318,20 @@ function CreateHero({ session }: { session: AuthSession }) {
       <section className="relative overflow-visible rounded-[1.8rem] border border-border bg-card shadow-sm">
         <div className="relative min-h-[20rem] overflow-hidden rounded-[1.72rem]">
           <Image
-            src="/assets/media/images/create-bumicert/hero-light.png"
+            src="/assets/media/images/create-bumicert/hero-light@2x.webp"
             alt=""
             fill
             priority
+            quality={95}
             sizes="(min-width: 1024px) 760px, 100vw"
             className="object-cover object-center dark:hidden"
           />
           <Image
-            src="/assets/media/images/create-bumicert/hero-dark.png"
+            src="/assets/media/images/create-bumicert/hero-dark@2x.webp"
             alt=""
             fill
             priority
+            quality={95}
             sizes="(min-width: 1024px) 760px, 100vw"
             className="hidden object-cover object-center dark:block"
           />
@@ -799,7 +801,7 @@ function NetworkStep({
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-foreground">{site.record.name || "Unnamed site"}</span>
                       <span className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
-                        {site.record.description || site.record.locationType || site.metadata.rkey}
+                        {site.record.description || site.record.locationType || "Project place"}
                       </span>
                     </span>
                   </button>
@@ -820,7 +822,7 @@ function ReviewStep({ values, sites, publishError }: { values: FormValues; sites
     ["Dates", values.startDate ? `${values.startDate} → ${values.ongoing ? "ongoing" : values.endDate || "missing"}` : "Missing"],
     ["Summary", clampDescription(values.shortDescription) || "Missing"],
     ["Contributors", contributorList(values).join(", ") || "Missing"],
-    ["Sites", selectedLocations(values, sites).map((site) => site.record.name || site.metadata.rkey).join(", ") || "None attached"],
+    ["Sites", selectedLocations(values, sites).map((site) => site.record.name || "Project place").join(", ") || "None attached"],
   ];
   const validation = validateAll(values);
   return (
@@ -871,18 +873,16 @@ function PublishSuccess({ result, session, onReset }: { result: PublishResult; s
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Button asChild>
-          <Link href={detailHref}>Open local detail <ArrowRightIcon /></Link>
+          <Link href={detailHref}>Open Bumicert <ArrowRightIcon /></Link>
         </Button>
         {hyperscanHref ? (
           <Button variant="outline" asChild>
-            <a href={hyperscanHref} target="_blank" rel="noreferrer">Inspect record</a>
+            <a href={hyperscanHref} target="_blank" rel="noreferrer">Open public entry</a>
           </Button>
         ) : null}
         <Button type="button" variant="outline" onClick={onReset}>Create another</Button>
       </div>
-      <p className="mt-5 break-all rounded-2xl bg-background/70 px-4 py-3 font-mono text-xs text-muted-foreground">
-        {result.uri}
-      </p>
+
     </motion.div>
   );
 }

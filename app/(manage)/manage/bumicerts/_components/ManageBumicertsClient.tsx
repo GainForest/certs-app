@@ -18,18 +18,20 @@ function CreateHeroCard() {
     <section className="relative overflow-visible rounded-[1.6rem] border border-border/80 bg-card shadow-sm">
       <div className="relative min-h-[6rem] overflow-hidden rounded-[1.55rem]">
         <Image
-          src="/assets/media/images/create-bumicert/hero-light.png"
+          src="/assets/media/images/create-bumicert/hero-light@2x.webp"
           alt=""
           fill
           priority
+          quality={95}
           sizes="100vw"
           className="object-cover object-center dark:hidden"
         />
         <Image
-          src="/assets/media/images/create-bumicert/hero-dark.png"
+          src="/assets/media/images/create-bumicert/hero-dark@2x.webp"
           alt=""
           fill
           priority
+          quality={95}
           sizes="100vw"
           className="hidden object-cover object-center dark:block"
         />

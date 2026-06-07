@@ -383,19 +383,21 @@ function OrganizationsHero() {
     <div className="relative min-h-[330px] overflow-hidden bg-card animate-in">
       <div className="absolute inset-0">
         <Image
-          src="/assets/organizations/organizations-hero-light.png"
+          src="/assets/organizations/organizations-hero-light@2x.webp"
           alt="Misty mountain forest at sunrise"
           fill
           priority
-          sizes="(min-width: 1280px) 1152px, calc(100vw - 48px)"
+          quality={95}
+          sizes="(min-width: 768px) calc(100vw - 15rem), 100vw"
           className="object-cover object-center dark:hidden"
         />
         <Image
-          src="/assets/organizations/organizations-hero-dark.png"
+          src="/assets/organizations/organizations-hero-dark@2x.webp"
           alt="Misty mountain forest at dusk"
           fill
           priority
-          sizes="(min-width: 1280px) 1152px, calc(100vw - 48px)"
+          quality={95}
+          sizes="(min-width: 768px) calc(100vw - 15rem), 100vw"
           className="hidden object-cover object-center dark:block"
         />
       </div>

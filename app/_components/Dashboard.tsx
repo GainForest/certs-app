@@ -135,8 +135,8 @@ function DashboardShell({ children, periodFilter }: { children: React.ReactNode;
   return (
     <section className="-mt-14 bg-background pb-20 md:pb-28">
       <PictureHero
-        lightSrc="/assets/media/images/donations/donations-hero-light.png"
-        darkSrc="/assets/media/images/donations/donations-hero-dark.png"
+        lightSrc="/assets/media/images/donations/donations-hero-light@2x.webp"
+        darkSrc="/assets/media/images/donations/donations-hero-dark@2x.webp"
         imageAlt="Misty regenerative landscape for donation activity"
         eyebrow="Giving Activity"
         icon={<BarChart3Icon />}

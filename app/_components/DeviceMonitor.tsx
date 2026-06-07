@@ -87,8 +87,8 @@ export function DeviceMonitor({ initial }: { initial?: DevicesSnapshot }) {
   return (
     <section className="-mt-14 bg-background pb-20 md:pb-28">
       <PictureHero
-        lightSrc="/assets/media/images/devices/devices-hero-light.png"
-        darkSrc="/assets/media/images/devices/devices-hero-dark.png"
+        lightSrc="/assets/media/images/devices/devices-hero-light@2x.webp"
+        darkSrc="/assets/media/images/devices/devices-hero-dark@2x.webp"
         imageAlt="Misty regenerative landscape for GainForest field devices"
         eyebrow="Field updates"
         icon={<LeafGlyph />}

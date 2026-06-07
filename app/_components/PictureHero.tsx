@@ -34,7 +34,8 @@ export function PictureHero({
           alt={imageAlt}
           fill
           priority={priority}
-          sizes="(min-width: 1280px) 1152px, calc(100vw - 48px)"
+          quality={95}
+          sizes="(min-width: 768px) calc(100vw - 15rem), 100vw"
           className="object-cover object-center dark:hidden"
         />
         <Image
@@ -42,7 +43,8 @@ export function PictureHero({
           alt={imageAlt}
           fill
           priority={priority}
-          sizes="(min-width: 1280px) 1152px, calc(100vw - 48px)"
+          quality={95}
+          sizes="(min-width: 768px) calc(100vw - 15rem), 100vw"
           className="hidden object-cover object-center dark:block"
         />
       </div>
