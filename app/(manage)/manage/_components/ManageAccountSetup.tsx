@@ -34,6 +34,7 @@ import { useModal } from "@/components/ui/modal/context";
 import { countryFlag } from "@/app/_lib/format";
 import { cn } from "@/lib/utils";
 import { putRecord, uploadBlob } from "../_lib/mutations";
+import { createCountryLocationStrongRef } from "../_lib/country-location";
 import { ImageEditorModal, CountrySelectorModal } from "../_modals/DashboardEditModals";
 import type { ManageMode } from "./manageDashboardMode";
 import { HeaderContent } from "@/app/_components/HeaderSlots";
@@ -669,7 +670,7 @@ function AccountSetupForm({
           visibility: "public",
           createdAt: new Date().toISOString(),
         };
-        if (country.trim().length === 2) orgRecord.country = country.trim().toUpperCase();
+        if (country.trim()) orgRecord.location = await createCountryLocationStrongRef(country);
         if (startDate) orgRecord.foundedDate = `${startDate}T00:00:00.000Z`;
         if (longDescription.trim()) {
           orgRecord.longDescription = {

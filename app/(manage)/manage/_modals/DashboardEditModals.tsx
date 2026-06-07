@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal/modal";
 import { useModal } from "@/components/ui/modal/context";
+import { countryEntries } from "@/app/_lib/countries";
 import { countryFlag } from "@/app/_lib/format";
 import { cn } from "@/lib/utils";
 
@@ -45,17 +46,7 @@ function isValidWebsite(value: string) {
   }
 }
 
-function countryName(code: string): string {
-  try {
-    return new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase()) ?? code;
-  } catch {
-    return code;
-  }
-}
-
-const COMMON_COUNTRIES = [
-  "BR", "ID", "KE", "US", "GB", "CH", "DE", "FR", "CO", "PE", "EC", "MX", "IN", "NP", "TZ", "UG", "RW", "GH", "CM", "CD", "MG", "AU", "CA", "CR", "PA",
-];
+const COUNTRY_OPTIONS = countryEntries.filter(([code]) => code.length === 2);
 
 export function ImageEditorModal({
   title,
@@ -210,32 +201,33 @@ export function CountrySelectorModal({
   const close = useModalClose();
   const [query, setQuery] = useState(currentCountry);
   const normalized = query.trim().toUpperCase().slice(0, 2);
-  const valid = normalized.length === 0 || /^[A-Z]{2}$/.test(normalized);
+  const selectedCountry = COUNTRY_OPTIONS.find(([code]) => code === normalized);
+  const valid = normalized.length === 0 || Boolean(selectedCountry);
 
-  const countries = COMMON_COUNTRIES.filter((code) => {
+  const countries = COUNTRY_OPTIONS.filter(([code, country]) => {
     const q = query.trim().toLowerCase();
     if (!q) return true;
-    return code.toLowerCase().includes(q) || countryName(code).toLowerCase().includes(q);
+    return code.toLowerCase().includes(q) || country.name.toLowerCase().includes(q);
   });
 
   return (
     <ModalContent className="space-y-4">
       <ModalHeader>
         <ModalTitle>Edit country</ModalTitle>
-        <ModalDescription>Select the organization country. You can type any ISO two-letter country code.</ModalDescription>
+        <ModalDescription>Select the organization country. You can search by country name or code.</ModalDescription>
       </ModalHeader>
       <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search or type country code…" autoFocus />
-      {!valid ? <p className="text-xs text-destructive">Use a two-letter country code, e.g. BR.</p> : null}
+      {!valid ? <p className="text-xs text-destructive">Choose a country from the list.</p> : null}
       <div className="grid max-h-64 gap-1 overflow-auto rounded-xl border border-border p-1">
-        {countries.map((code) => (
+        {countries.map(([code, country]) => (
           <button
             key={code}
             type="button"
             onClick={() => setQuery(code)}
             className={cn("flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted", normalized === code && "bg-primary/10 text-primary")}
           >
-            <span className="text-base">{countryFlag(code)}</span>
-            <span className="flex-1">{countryName(code)}</span>
+            <span className="text-base">{country.emoji || countryFlag(code)}</span>
+            <span className="flex-1">{country.name}</span>
             <span className="text-xs text-muted-foreground">{code}</span>
           </button>
         ))}

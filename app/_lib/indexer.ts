@@ -14,6 +14,7 @@
 
 import { cachedAsync } from "./async-cache";
 import { INDEXER_URL } from "./urls";
+import { fetchCertifiedLocationCountryCode } from "./country-location";
 import { blobUrl, resolveBlobUrl, resolvePdsHost, normaliseRef } from "./pds";
 import { asNumber, formatNumber, formatDate, formatDateTime } from "./format";
 
@@ -1533,7 +1534,7 @@ type CertProfileNode = {
 } | null;
 
 type DirectCertifiedOrgRecord = {
-  country: string | null;
+  locationUri: string | null;
   createdAt: string | null;
   foundedDate: string | null;
   visibility: string | null;
@@ -1556,8 +1557,12 @@ async function fetchDirectCertifiedOrgRecord(
     const data = (await response.json().catch(() => null)) as { value?: Record<string, unknown> } | null;
     const value = data?.value;
     if (!value) return null;
+    const location = value.location;
+    const locationUri = typeof location === "object" && location !== null && "uri" in location
+      ? typeof location.uri === "string" ? location.uri : null
+      : null;
     return {
-      country: typeof value.country === "string" ? value.country : null,
+      locationUri,
       createdAt: typeof value.createdAt === "string" ? value.createdAt : null,
       foundedDate: typeof value.foundedDate === "string" ? value.foundedDate : null,
       visibility: typeof value.visibility === "string" ? value.visibility : null,
@@ -1584,8 +1589,8 @@ async function attachCertifiedOrgCountries(records: SiteRecord[], signal?: Abort
       if (signal?.aborted) return;
       const index = i++;
       const record = out[index]!;
-      const direct = await fetchDirectCertifiedOrgRecord(record.did, signal).catch(() => null);
-      const country = direct?.country?.trim();
+      const locationUri = record.locationUri ?? (await fetchDirectCertifiedOrgRecord(record.did, signal).catch(() => null))?.locationUri ?? null;
+      const country = await fetchCertifiedLocationCountryCode(locationUri, signal).catch(() => null);
       if (country) out[index] = { ...record, country };
     }
   }
@@ -1628,7 +1633,7 @@ function mapCertOrg(n: RawCertOrg, profile: CertProfileInfo | undefined): SiteRe
     did: n.did,
     atUri,
     name: profile?.name || "Certified organization",
-    country: n.country?.trim() || null,
+    country: null,
     orgType: (n.organizationType ?? []).map((t) => sv(t)).filter(Boolean).join(", ") || null,
     locationUri: sv(n.location?.uri),
     createdAt: n.createdAt ?? null,
@@ -1750,11 +1755,13 @@ async function fetchCertifiedOrganizationStats(signal?: AbortSignal): Promise<Or
       .filter((node) => !profileAvatarRef(node.certifiedProfileData))
       .map((node) => node.did);
     const profiles = await fetchCertProfiles(missingProfileDids, signal);
-    const countryEntries = await Promise.all(
-      res.nodes.map((node) => fetchDirectCertifiedOrgRecord(node.did, signal).catch(() => null)),
+    const locationEntries = await Promise.all(
+      res.nodes.map((node) => node.location?.uri
+        ? Promise.resolve(node.location.uri)
+        : fetchDirectCertifiedOrgRecord(node.did, signal).then((record) => record?.locationUri ?? null).catch(() => null)),
     );
     for (const [index, node] of res.nodes.entries()) {
-      const country = normalizeStatsCountry(countryEntries[index]?.country);
+      const country = await fetchCertifiedLocationCountryCode(locationEntries[index], signal).catch(() => null);
       if (country) countries.add(country);
       if (profileAvatarRef(node.certifiedProfileData) || profiles.get(node.did)?.avatarRef) withPhotos += 1;
       if (node.location?.uri) mappedPlaces += 1;
@@ -3218,6 +3225,7 @@ const CERT_ORG_DETAIL_QUERY = `
     org: appCertifiedActorOrganizationByUri(uri: $org) {
       createdAt organizationType visibility foundedDate
       ${CERTIFIED_PROFILE_DATA_FIELDS}
+      location { uri }
       urls { url }
       longDescription { __typename ... on OrgHypercertsDefsDescriptionString { value } }
     }
@@ -3231,7 +3239,7 @@ const CERT_ORG_DETAIL_QUERY = `
 type CertOrgDetailNode = {
   org?: {
     organizationType?: string[] | null;
-    country?: string | null;
+    location?: { uri?: string | null } | null;
     visibility?: string | null;
     foundedDate?: string | null;
     urls?: Array<{ url?: string | null }> | null;
@@ -3247,7 +3255,7 @@ type CertOrgDetailNode = {
   } | null;
 };
 
-function buildCertOrgDetail(d: CertOrgDetailNode, createdAt: string | null): RecordDetail {
+function buildCertOrgDetail(d: CertOrgDetailNode, createdAt: string | null, country: string | null): RecordDetail {
   const org = d.org ?? {};
   const profile = d.profile ?? {};
   const types = (org.organizationType ?? [])
@@ -3259,7 +3267,7 @@ function buildCertOrgDetail(d: CertOrgDetailNode, createdAt: string | null): Rec
   const sections = [
     section("Organization", [
       field("Type", types.join(", ") || null, true),
-      field("Country", [countryFlagSafe(sv(org.country)), sv(org.country)].filter(Boolean).join(" ") || null),
+      field("Country", [countryFlagSafe(country), country].filter(Boolean).join(" ") || null),
       field("Founded", sv(org.foundedDate) ? formatDate(sv(org.foundedDate)!) : null),
       field("Visibility", sv(org.visibility) ? cap(sv(org.visibility)!) : null),
       field("Created", createdAt ? formatDateTime(createdAt) : null, true),
@@ -3338,9 +3346,12 @@ export async function fetchRecordDetail(
       fetchDirectCertifiedOrgRecord(did, signal).catch(() => null),
     ]);
     if (!data?.org) return null;
+    const locationUri = sv(data.org.location?.uri) ?? directOrg?.locationUri ?? null;
+    const country = await fetchCertifiedLocationCountryCode(locationUri, signal).catch(() => null);
     return buildCertOrgDetail(
-      { ...data, org: { ...data.org, country: directOrg?.country ?? null } },
+      data,
       sv(data.org.createdAt) ?? directOrg?.createdAt ?? null,
+      country,
     );
   }
   return null;
@@ -3382,7 +3393,7 @@ type AccountSummaryNode = {
   certOrg?: {
     createdAt?: string | null;
     organizationType?: string[] | null;
-    country?: string | null;
+    location?: { uri?: string | null } | null;
     visibility?: string | null;
     foundedDate?: string | null;
     certifiedProfileData?: CertifiedProfileData;
@@ -3403,6 +3414,7 @@ const ACCOUNT_SUMMARY_QUERY = `
     certOrg: appCertifiedActorOrganizationByUri(uri: $certOrg) {
       createdAt organizationType visibility foundedDate
       ${CERTIFIED_PROFILE_DATA_FIELDS}
+      location { uri }
     }
     certProfile: appCertifiedActorProfileByUri(uri: $certProfile) {
       displayName description website
@@ -3481,6 +3493,7 @@ export async function fetchAccountSummary(
   }
 
   const rawVisibility = sv(certOrg?.visibility);
+  const country = await fetchCertifiedLocationCountryCode(sv(certOrg?.location?.uri) ?? directCertOrg?.locationUri ?? null, signal).catch(() => null);
 
   return {
     did,
@@ -3489,7 +3502,7 @@ export async function fetchAccountSummary(
     avatarUrl,
     bio: sv(profile?.description) ?? null,
     website: sv(profile?.website) ?? null,
-    country: normalizeStatsCountry(directCertOrg?.country) ?? null,
+    country,
     createdAt: sv(plc.createdAt) ?? sv(certOrg?.createdAt) ?? directCertOrg?.createdAt ?? null,
     foundedDate: sv(certOrg?.foundedDate) ?? directCertOrg?.foundedDate ?? null,
     visibility: rawVisibility === "unlisted" || rawVisibility === "Unlisted" ? "Unlisted" : rawVisibility ? "Public" : directCertOrg?.visibility === "unlisted" ? "Unlisted" : directCertOrg?.visibility ? "Public" : null,

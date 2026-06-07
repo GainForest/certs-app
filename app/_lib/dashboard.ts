@@ -1,4 +1,5 @@
 import { cachedAsync } from "./async-cache";
+import { fetchCertifiedLocationCountryCode } from "./country-location";
 import { countryFlag } from "./format";
 import { resolvePdsHost } from "./pds";
 import { INDEXER_URL, FACILITATOR_DID, blockExplorerUrl } from "./urls";
@@ -399,7 +400,11 @@ async function fetchCertifiedOrgCountry(did: string): Promise<string | null> {
     const response = await fetch(`https://${host}/xrpc/com.atproto.repo.getRecord?${params.toString()}`);
     if (!response.ok) return null;
     const data = (await response.json().catch(() => null)) as { value?: Record<string, unknown> } | null;
-    return typeof data?.value?.country === "string" ? data.value.country : null;
+    const location = data?.value?.location;
+    const locationUri = typeof location === "object" && location !== null && "uri" in location
+      ? typeof location.uri === "string" ? location.uri : null
+      : null;
+    return fetchCertifiedLocationCountryCode(locationUri);
   } catch {
     return null;
   }

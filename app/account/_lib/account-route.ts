@@ -7,6 +7,7 @@ import {
   type RecordDetail,
 } from "../../_lib/indexer";
 import { shortDid } from "../../_lib/format";
+import { fetchCertifiedLocationCountryCode } from "../../_lib/country-location";
 import { resolveBlobUrl, resolvePdsHost } from "../../_lib/pds";
 
 export type AccountKind = "organization" | "user";
@@ -233,8 +234,12 @@ async function fetchDirectCertifiedOrganization(did: string): Promise<DirectCert
   const value = await fetchDirectRecordValue(did, "app.certified.actor.organization");
   if (!value) return null;
   const rawVisibility = typeof value.visibility === "string" ? value.visibility : null;
+  const location = value.location;
+  const locationUri = typeof location === "object" && location !== null && "uri" in location
+    ? typeof location.uri === "string" ? location.uri : null
+    : null;
   return {
-    country: typeof value.country === "string" ? value.country : null,
+    country: await fetchCertifiedLocationCountryCode(locationUri),
     foundedDate: typeof value.foundedDate === "string" ? value.foundedDate : null,
     visibility: rawVisibility === "unlisted" || rawVisibility === "Unlisted" ? "Unlisted" : rawVisibility ? "Public" : null,
     createdAt: typeof value.createdAt === "string" ? value.createdAt : null,
