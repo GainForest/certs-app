@@ -6,6 +6,7 @@ import {
   ArrowDownWideNarrowIcon,
   ChevronRightIcon,
   CrownIcon,
+  GiftIcon,
   LeafIcon,
   SparklesIcon,
   SproutIcon,
@@ -16,7 +17,15 @@ import {
   WalletIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AuthorInline } from "../_components/AuthorChip";
+import { StatsTileGrid, type StatsTileItem } from "../_components/StatsTile";
 import { fetchReceipts, type FundingReceipt } from "../_lib/dashboard";
 import { formatCompact, formatCompactUsd } from "../_lib/format";
 import { accountHref } from "../_lib/urls";
@@ -39,13 +48,14 @@ type LeaderboardResult = {
   totalDonorsCount: number;
   totalAmountSum: number;
   totalProjectsSupported: number;
+  totalDonationCount: number;
 };
 
 const PERIODS: Period[] = ["all", "month", "week"];
-const DONOR_FILTERS: Array<{ value: DonorFilter; Icon: typeof UsersRoundIcon; label: string }> = [
-  { value: "all", Icon: UsersRoundIcon, label: "All Donors" },
-  { value: "anonymous", Icon: UserRoundXIcon, label: "Anonymous Only" },
-  { value: "known", Icon: UserRoundCheckIcon, label: "Known Only" },
+const DONOR_FILTERS: Array<{ value: DonorFilter; Icon: typeof UsersRoundIcon; label: string; shortLabel: string }> = [
+  { value: "all", Icon: UsersRoundIcon, label: "All Donors", shortLabel: "All" },
+  { value: "anonymous", Icon: UserRoundXIcon, label: "Anonymous Only", shortLabel: "Anonymous" },
+  { value: "known", Icon: UserRoundCheckIcon, label: "Known Only", shortLabel: "Known" },
 ];
 const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
   { value: "total-raised", label: "Total Raised" },
@@ -124,6 +134,7 @@ export function LeaderboardClient() {
       totalDonors={leaderboard?.totalDonorsCount ?? 0}
       totalRaised={leaderboard?.totalAmountSum ?? 0}
       totalProjectsSupported={leaderboard?.totalProjectsSupported ?? 0}
+      totalDonationCount={leaderboard?.totalDonationCount ?? 0}
     >
       {error ? (
         <LeaderboardError />
@@ -170,8 +181,8 @@ function DonorTypeTabs({
   onDonorFilterChange: (donorFilter: DonorFilter) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 rounded-full bg-muted/55 p-1 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur sm:h-12 sm:grid-cols-3">
-      {DONOR_FILTERS.map(({ value, Icon, label }) => {
+    <div className="grid h-12 grid-cols-3 rounded-2xl bg-muted/55 p-1 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur sm:rounded-full">
+      {DONOR_FILTERS.map(({ value, Icon, label, shortLabel }) => {
         const isSelected = donorFilter === value;
         return (
           <button
@@ -180,14 +191,15 @@ function DonorTypeTabs({
             aria-pressed={isSelected}
             onClick={() => onDonorFilterChange(value)}
             className={cn(
-              "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-medium transition-all duration-200",
+              "inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-2 text-xs font-medium transition-all duration-200 sm:gap-2 sm:rounded-full sm:px-4 sm:text-sm",
               isSelected
                 ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
             )}
           >
-            <Icon className="size-4" />
-            {label}
+            <Icon className="hidden size-4 sm:block" />
+            <span className="sm:hidden">{shortLabel}</span>
+            <span className="hidden sm:inline">{label}</span>
           </button>
         );
       })}
@@ -205,57 +217,26 @@ function SortControl({ sortBy, onSortChange }: { sortBy: SortMode; onSortChange:
         <ArrowDownWideNarrowIcon className="size-4" />
         Sort by
       </span>
-      <select
-        aria-labelledby="leaderboard-sort-label"
+      <Select
         value={sortBy}
-        onChange={(event) => {
-          if (isSortMode(event.target.value)) onSortChange(event.target.value);
+        onValueChange={(value) => {
+          if (isSortMode(value)) onSortChange(value);
         }}
-        className="h-9 min-w-[10.5rem] cursor-pointer rounded-full border-0 bg-transparent px-3 text-sm font-medium text-foreground shadow-none outline-none focus-visible:ring-0"
       >
-        {SORT_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  detail,
-  icon,
-  accent = false,
-}: {
-  label: string;
-  value: ReactNode;
-  detail: string;
-  icon: ReactNode;
-  accent?: boolean;
-}) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl bg-foreground/5 p-4 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-foreground/[0.07] sm:rounded-3xl sm:p-6">
-      <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/10 transition-transform duration-300 group-hover:scale-105 sm:size-7 [&_svg]:size-3 sm:[&_svg]:size-3.5">
-            {icon}
-          </span>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs sm:tracking-[0.16em]">{label}</p>
-        </div>
-        <div
-          className={cn(
-            "mt-2 text-2xl font-semibold tracking-[-0.02em] tabular-nums sm:mt-3 sm:text-3xl",
-            accent ? "text-primary" : "text-foreground",
-          )}
+        <SelectTrigger
+          aria-labelledby="leaderboard-sort-label"
+          className="h-9 min-w-[10.5rem] rounded-full border-0 bg-background/70 px-3 text-sm font-medium text-foreground shadow-none ring-1 ring-foreground/5 focus:ring-1 focus:ring-ring"
         >
-          {value}
-        </div>
-        <p className="mt-1 text-xs leading-snug text-muted-foreground sm:text-sm sm:leading-normal">{detail}</p>
-      </div>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent align="end" className="rounded-2xl">
+          {SORT_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value} className="rounded-xl">
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
@@ -291,39 +272,47 @@ function StatsSummary({
   totalDonors,
   totalRaised,
   totalProjectsSupported,
+  totalDonationCount,
   loading,
 }: {
   totalDonors: number;
   totalRaised: number;
   totalProjectsSupported: number;
+  totalDonationCount: number;
   loading: boolean;
 }) {
   if (loading) return null;
 
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-      <StatCard
-        label="Total Raised"
-        value={formatCompactUsd(totalRaised)}
-        detail="All time across the platform"
-        icon={<LeafIcon className="size-8" />}
-        accent
-      />
-      <StatCard
-        label="Total Donors"
-        value={formatCompact(totalDonors)}
-        detail="Generous impact champions"
-        icon={<UsersRoundIcon className="size-8" />}
-      />
-      <StatCard
-        label="Projects Supported"
-        value={formatCompact(totalProjectsSupported)}
-        detail="Restoring ecosystems & livelihoods"
-        icon={<SproutIcon className="size-8" />}
-        accent
-      />
-    </div>
-  );
+  const stats: StatsTileItem[] = [
+    {
+      label: "Total Raised",
+      value: formatCompactUsd(totalRaised),
+      detail: "given in this view",
+      icon: <LeafIcon />,
+      accent: true,
+    },
+    {
+      label: "Total Donors",
+      value: formatCompact(totalDonors),
+      detail: "supporters included",
+      icon: <UsersRoundIcon />,
+    },
+    {
+      label: "Projects Supported",
+      value: formatCompact(totalProjectsSupported),
+      detail: "project stories helped",
+      icon: <SproutIcon />,
+      accent: true,
+    },
+    {
+      label: "Total Gifts",
+      value: formatCompact(totalDonationCount),
+      detail: "completed gifts counted",
+      icon: <GiftIcon />,
+    },
+  ];
+
+  return <StatsTileGrid items={stats} columns={4} />;
 }
 
 function LeaderboardShell({
@@ -337,6 +326,7 @@ function LeaderboardShell({
   totalDonors = 0,
   totalRaised = 0,
   totalProjectsSupported = 0,
+  totalDonationCount = 0,
   loading = false,
   children,
 }: {
@@ -350,6 +340,7 @@ function LeaderboardShell({
   totalDonors?: number;
   totalRaised?: number;
   totalProjectsSupported?: number;
+  totalDonationCount?: number;
   loading?: boolean;
   children?: ReactNode;
 }) {
@@ -403,6 +394,7 @@ function LeaderboardShell({
               totalDonors={totalDonors}
               totalRaised={totalRaised}
               totalProjectsSupported={totalProjectsSupported}
+              totalDonationCount={totalDonationCount}
               loading={loading}
             />
           </motion.div>
@@ -429,8 +421,8 @@ function LeaderboardGrid({ entries }: { entries: LeaderboardEntry[] }) {
 
   return (
     <div className="overflow-hidden rounded-3xl bg-card/70 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur divide-y divide-border/60">
-      {entries.map((entry, index) => (
-        <DonorCard key={entry.donorId} entry={entry} index={index} />
+      {entries.map((entry) => (
+        <DonorCard key={entry.donorId} entry={entry} />
       ))}
     </div>
   );
@@ -538,21 +530,15 @@ function DonorBadges({ rank }: { rank: number }) {
   return null;
 }
 
-function DonorCard({ entry, index }: { entry: LeaderboardEntry; index: number }) {
+function DonorCard({ entry }: { entry: LeaderboardEntry }) {
   const relativeTime = entry.lastDonatedAt ? formatRelativeTimeFromNow(new Date(entry.lastDonatedAt)) : null;
   const isWallet = entry.donorType === "wallet";
   const actionHref = isWallet ? basescanAddress(entry.donorId) : accountHref(entry.donorId);
-  const walletLabel = "Anonymous wallet";
-  const actionLabel = isWallet ? "Open wallet details" : "Open supporter profile in a new tab";
+  const walletLabel = "Anonymous supporter";
+  const actionLabel = isWallet ? "Open payment details" : "Open supporter profile in a new tab";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.3, delay: Math.min(index, 12) * 0.025, ease: [0.25, 0.1, 0.25, 1] }}
-      className="group grid grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-4 transition-colors duration-200 hover:bg-card/65 sm:gap-5 sm:px-5"
-    >
+    <div className="group grid grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-4 transition-colors duration-200 hover:bg-card/65 sm:gap-5 sm:px-5">
       <div className="flex items-center justify-center">
         <RankBadge rank={entry.rank} />
       </div>
@@ -599,7 +585,7 @@ function DonorCard({ entry, index }: { entry: LeaderboardEntry; index: number })
       >
         <ChevronRightIcon className="size-5" aria-hidden="true" />
       </a>
-    </motion.div>
+    </div>
   );
 }
 
@@ -652,6 +638,7 @@ function aggregateToLeaderboard(
     totalDonorsCount: donorMap.size,
     totalAmountSum: Array.from(donorMap.values()).reduce((sum, data) => sum + data.totalAmount, 0),
     totalProjectsSupported: projectUris.size,
+    totalDonationCount: usdOnly.filter((receipt) => receipt.from && donorMatchesFilter(receipt.from.type, options.donorFilter)).length,
   };
 }
 
