@@ -163,6 +163,9 @@ export type OccurrenceRecord = {
   createdAt: string;
   remarks: string | null;
   imageUrl: string | null;
+  /** Photo or spectrogram blob ref (CID), resolved by visible cards so the
+   *  first list page can appear without waiting for every image host lookup. */
+  imageRef: string | null;
   /** Audio evidence blob ref (CID), resolved to a PDS blob URL on demand for
    *  inline playback. Null when the record carries no audio. */
   audioRef: string | null;
@@ -187,7 +190,6 @@ const OCCURRENCE_NODE_FIELDS = `
 const OCCURRENCE_QUERY = `
   query ExplorerOccurrences($first: Int!, $after: String, $where: AppGainforestDwcOccurrenceWhereInput) {
     appGainforestDwcOccurrence(first: $first, after: $after, where: $where, sortBy: createdAt, sortDirection: DESC) {
-      totalCount
       pageInfo { hasNextPage endCursor }
       edges { node { ${OCCURRENCE_NODE_FIELDS} } }
     }
@@ -241,6 +243,7 @@ function mapOccurrence(n: RawOccurrence): OccurrenceRecord {
   if (n.audioEvidence?.file?.ref) media.push("audio");
   if (n.videoEvidence?.file?.ref) media.push("video");
   if (n.spectrogramEvidence?.file?.ref) media.push("spectrogram");
+  const imageRef = normaliseRef(n.imageEvidence?.file?.ref) ?? normaliseRef(n.spectrogramEvidence?.file?.ref);
   return {
     kind: "occurrence",
     id: `${n.did}-${n.rkey}`,
@@ -266,6 +269,7 @@ function mapOccurrence(n: RawOccurrence): OccurrenceRecord {
     createdAt: n.createdAt,
     remarks: n.occurrenceRemarks?.trim() || n.fieldNotes?.trim() || null,
     imageUrl: externalImage,
+    imageRef,
     audioRef: normaliseRef(n.audioEvidence?.file?.ref),
     media,
   };
@@ -338,6 +342,55 @@ export type OccurrenceWalkResult = {
   hasMore: boolean;
 };
 
+export type OccurrenceStats = {
+  totalSightings: number | null;
+  photoSightings: number | null;
+  soundRecordings: number | null;
+  mappedSightings: number | null;
+};
+
+const OCCURRENCE_COUNT_QUERY = `
+  query ExplorerOccurrenceCount($where: AppGainforestDwcOccurrenceWhereInput) {
+    appGainforestDwcOccurrence(first: 0, where: $where) { totalCount }
+  }
+`;
+
+async function fetchOccurrenceCountUncached(where?: Record<string, unknown>): Promise<number | null> {
+  const data = await indexerQuery<{
+    appGainforestDwcOccurrence?: { totalCount?: number | null } | null;
+  }>(OCCURRENCE_COUNT_QUERY, { where: where ?? null });
+  return data?.appGainforestDwcOccurrence?.totalCount ?? null;
+}
+
+function fetchOccurrenceCountCached(
+  key: string,
+  where?: Record<string, unknown>,
+  signal?: AbortSignal,
+): Promise<number | null> {
+  return cachedAsync(
+    `occurrence-count:${key}`,
+    TOTAL_STATS_CACHE_MS,
+    () => fetchOccurrenceCountUncached(where),
+    signal,
+  );
+}
+
+async function fetchOccurrenceStatsUncached(signal?: AbortSignal): Promise<OccurrenceStats> {
+  // Do these one at a time. Running all four count scans in one request (or in
+  // parallel requests) makes this large sightings stream much slower and can
+  // compete with the first card page.
+  const totalSightings = await fetchOccurrenceCountCached("total", undefined, signal);
+  const photoSightings = await fetchOccurrenceCountCached("photos", { imageEvidence: { isNull: false } }, signal);
+  const soundRecordings = await fetchOccurrenceCountCached("sounds", { audioEvidence: { isNull: false } }, signal);
+  const mappedSightings = await fetchOccurrenceCountCached("mapped", { decimalLatitude: { isNull: false } }, signal);
+
+  return { totalSightings, photoSightings, soundRecordings, mappedSightings };
+}
+
+export async function fetchOccurrenceStats(signal?: AbortSignal): Promise<OccurrenceStats> {
+  return fetchOccurrenceStatsUncached(signal);
+}
+
 /**
  * Progressively walk the occurrence connection, collecting up to `target`
  * records matching the media filter and emitting them via `onProgress` as each
@@ -345,9 +398,10 @@ export type OccurrenceWalkResult = {
  * (imageEvidence / audioEvidence isNull:false) to the indexer so only
  * media-bearing records come back — the gallery fills from one request instead
  * of scanning thousands of imageless bulk uploads. "all" still pages
- * client-side. PDS blob refs are resolved per page; external thumbnails (on the
- * sparser Restor records) render immediately. Returns the final cursor +
- * `hasMore` so "load more" continues from where it stopped.
+ * client-side. PDS blob refs can be resolved per page, or returned as refs for
+ * visible cards to resolve lazily; external thumbnails (on the sparser Restor
+ * records) render immediately. Returns the final cursor + `hasMore` so "load
+ * more" continues from where it stopped.
  */
 export async function walkOccurrences(opts: {
   media: OccurrenceFilter;
@@ -357,6 +411,7 @@ export async function walkOccurrences(opts: {
   maxPages?: number;
   onProgress?: (records: OccurrenceRecord[]) => void;
   signal?: AbortSignal;
+  resolveMedia?: boolean;
 }): Promise<OccurrenceWalkResult> {
   const { media, target, signal } = opts;
   const whereVariants = occurrenceWhereVariants(media, opts.query);
@@ -391,23 +446,23 @@ export async function walkOccurrences(opts: {
         }
         opts.onProgress?.(collected.slice(0, target));
 
-        const resolved = await resolveImages(
-          mapped,
-          (r) => {
-            // External-thumbnail records already have a usable imageUrl; only PDS
-            // blob evidence needs a getBlob resolution.
-            if (r.imageUrl) return null;
-            const raw = pageMatches.find((n) => n.rkey === r.rkey && n.did === r.did);
-            const ref = raw?.imageEvidence?.file?.ref ?? raw?.spectrogramEvidence?.file?.ref ?? null;
-            return ref ? { did: r.did, ref } : null;
-          },
-          (r, url) => ({ ...r, imageUrl: url }),
-          signal,
-        );
-        for (let index = 0; index < resolved.length && startIndex + index < collected.length; index += 1) {
-          collected[startIndex + index] = resolved[index]!;
+        if (opts.resolveMedia !== false) {
+          const resolved = await resolveImages(
+            mapped,
+            (r) => {
+              // External-thumbnail records already have a usable imageUrl; only PDS
+              // blob evidence needs a getBlob resolution.
+              if (r.imageUrl || !r.imageRef) return null;
+              return { did: r.did, ref: r.imageRef };
+            },
+            (r, url) => ({ ...r, imageUrl: url }),
+            signal,
+          );
+          for (let index = 0; index < resolved.length && startIndex + index < collected.length; index += 1) {
+            collected[startIndex + index] = resolved[index]!;
+          }
+          opts.onProgress?.(collected.slice(0, target));
         }
-        opts.onProgress?.(collected.slice(0, target));
       }
 
       if (collected.length >= target || !hasNextPage || !cursor) break;

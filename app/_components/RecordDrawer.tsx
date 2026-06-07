@@ -16,7 +16,7 @@ import { AuthorChip } from "./AuthorChip";
 import { RecordLocationMap } from "./RecordLocationMap";
 import { RichText } from "./RichText";
 import { SocialGlyph, socialLabel } from "./SocialIcon";
-import { isPdsBlobUrl } from "../_lib/pds";
+import { isPdsBlobUrl, resolveBlobUrl } from "../_lib/pds";
 import {
   INDEXER_URL,
   accountHref,
@@ -38,12 +38,21 @@ export function RecordDrawer({
   onClose: () => void;
 }) {
   const [imgError, setImgError] = useState(false);
+  const [resolvedOccurrenceImageUrl, setResolvedOccurrenceImageUrl] = useState<string | null>(null);
   const [detail, setDetail] = useState<RecordDetail | null>(null);
   // Whether this Bumicert is currently accepting donations — drives the Donate
   // button. `null` while we don't yet know (loading / non-bumicert).
   const [donatable, setDonatable] = useState<boolean | null>(null);
   useEffect(() => {
     setImgError(false);
+    setResolvedOccurrenceImageUrl(null);
+    if (!record || record.kind !== "occurrence" || record.imageUrl || !record.imageRef) return;
+
+    const ctrl = new AbortController();
+    resolveBlobUrl(record.did, record.imageRef, ctrl.signal)
+      .then((url) => setResolvedOccurrenceImageUrl(url))
+      .catch(() => {});
+    return () => ctrl.abort();
   }, [record]);
 
   useEffect(() => {
@@ -91,7 +100,7 @@ export function RecordDrawer({
         : record.name;
 
   const siteBannerUrl = record.kind === "site" ? record.bannerUrl ?? (record.coverRef ? record.imageUrl : null) : null;
-  const heroUrl = record.kind === "site" ? siteBannerUrl : record.imageUrl;
+  const heroUrl = record.kind === "site" ? siteBannerUrl : record.kind === "occurrence" ? record.imageUrl ?? resolvedOccurrenceImageUrl : record.imageUrl;
   const ownerAvatarOverride = record.kind === "site" ? record.avatarUrl ?? (!record.coverRef && record.logoRef ? record.imageUrl : null) : undefined;
   const hasHeroImage = Boolean(heroUrl) && !imgError;
   const showHero = record.kind === "site" || hasHeroImage;

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import {
   walkOccurrences,
+  fetchOccurrenceStats,
   fetchSites,
   fetchBumicerts,
   fetchRecordByUri,
@@ -26,6 +27,7 @@ import {
   type Page,
   type RecordKind,
   type OccurrenceFilter,
+  type OccurrenceStats,
   type SiteSourceFilter,
 } from "../_lib/indexer";
 import { RecordDrawer } from "./RecordDrawer";
@@ -135,6 +137,7 @@ type InitialExplorerPage = {
 // a single page now reaches this for the media-filtered views (which push the
 // filter down server-side) and the cursor pages it for the rest.
 const LOAD_TARGET = 48;
+const OCCURRENCE_LOAD_TARGET = 24;
 const INITIAL_CARD_LIMIT = 96;
 const CARD_BATCH_SIZE = 96;
 const DEFAULT_OCCURRENCE_MEDIA: OccurrenceFilter = "image";
@@ -162,6 +165,8 @@ export function RecordExplorer({
   const [siteSource, setSiteSource] = useState<SiteSourceFilter>("both");
   const [view, setView] = useState<"cards" | "map">("cards");
   const [walking, setWalking] = useState(false);
+  const [occurrenceStats, setOccurrenceStats] = useState<OccurrenceStats | null>(null);
+  const [occurrenceStatsLoading, setOccurrenceStatsLoading] = useState(kind === "occurrence");
   // Gate the first load until the URL has been read, so a shared link's filter
   // params (media/source) are applied before the initial fetch.
   const [hydrated, setHydrated] = useState(false);
@@ -176,6 +181,29 @@ export function RecordExplorer({
 
   const controller = useRef<AbortController | null>(null);
   const loadSeqRef = useRef(0);
+  const occurrenceStatsStartedRef = useRef(false);
+  const hasLoadedRecords = records.length > 0;
+
+  useEffect(() => {
+    if (kind !== "occurrence" || !hasLoadedRecords || occurrenceStatsStartedRef.current) return;
+    occurrenceStatsStartedRef.current = true;
+    const ctrl = new AbortController();
+    const timer = window.setTimeout(() => {
+      setOccurrenceStatsLoading(true);
+      fetchOccurrenceStats(ctrl.signal)
+        .then((nextStats) => setOccurrenceStats(nextStats))
+        .catch((error) => {
+          if ((error as Error).name !== "AbortError") setOccurrenceStats(null);
+        })
+        .finally(() => {
+          if (!ctrl.signal.aborted) setOccurrenceStatsLoading(false);
+        });
+    }, 500);
+    return () => {
+      window.clearTimeout(timer);
+      ctrl.abort();
+    };
+  }, [hasLoadedRecords, kind]);
   // Latest values for the load closure without re-creating it each render.
   const stateRef = useRef({ records, cursor, hasMore, phase });
   stateRef.current = { records, cursor, hasMore, phase };
@@ -189,6 +217,7 @@ export function RecordExplorer({
 
       const ctrl = new AbortController();
       const loadSeq = ++loadSeqRef.current;
+      const target = kind === "occurrence" ? OCCURRENCE_LOAD_TARGET : LOAD_TARGET;
       const isCurrent = () => loadSeqRef.current === loadSeq && !ctrl.signal.aborted;
       controller.current?.abort();
       controller.current = ctrl;
@@ -206,10 +235,11 @@ export function RecordExplorer({
       if (kind === "occurrence") {
         walkOccurrences({
           media: occMedia,
-          target: LOAD_TARGET,
+          target,
           after,
           query: deferredQuery,
           signal: ctrl.signal,
+          resolveMedia: false,
           onProgress: (progressRecords) => {
             if (!isCurrent()) return;
             setRecords(merge(progressRecords));
@@ -235,8 +265,8 @@ export function RecordExplorer({
 
       const request: Promise<Page<ExplorerRecord>> =
         kind === "site"
-          ? fetchSites(LOAD_TARGET, after, ctrl.signal, undefined, siteSource, { query: deferredQuery, sort })
-          : fetchBumicerts(LOAD_TARGET, after, ctrl.signal, undefined, { query: deferredQuery, sort });
+          ? fetchSites(target, after, ctrl.signal, undefined, siteSource, { query: deferredQuery, sort })
+          : fetchBumicerts(target, after, ctrl.signal, undefined, { query: deferredQuery, sort });
 
       request
         .then((page) => {
@@ -402,9 +432,14 @@ export function RecordExplorer({
   useEffect(() => {
     setCardLimit(INITIAL_CARD_LIMIT);
   }, [deferredQuery, kind, occMedia, siteSource, sort, view]);
-  // Stats are derived from the loaded set (not the search-filtered view), so
-  // memoize on `records` to avoid rebuilding the cards on every keystroke.
-  const stats = useMemo(() => computeStats(records, kind), [records, kind]);
+  // Observations use fast total counters from the index, matching the dedicated
+  // Bumicerts and organizations pages. Other embedded explorer uses still fall
+  // back to loaded-record summaries.
+  const stats = useMemo(
+    () => (kind === "occurrence" && occurrenceStats ? computeOccurrenceTotalStats(occurrenceStats) : computeStats(records, kind)),
+    [kind, occurrenceStats, records],
+  );
+  const showStats = kind === "occurrence" ? Boolean(occurrenceStats) || (!occurrenceStatsLoading && records.length > 0) : records.length > 0;
 
   return (
     <section className={`${showHero ? "-mt-14 " : ""}bg-background pb-20 md:pb-28`}>
@@ -422,8 +457,8 @@ export function RecordExplorer({
       )}
 
       <div className="relative z-10 mx-auto max-w-6xl px-6">
-        {/* Stats overview — computed live from the loaded records, matching the marketplace hero rhythm. */}
-        {records.length > 0 && (
+        {/* Stats overview — observations use total counters, while older embedded views keep loaded summaries. */}
+        {showStats && (
           <div className="relative z-20 -mt-10">
             <StatBand stats={stats.slice(0, 4)} />
           </div>
@@ -675,17 +710,33 @@ const OccurrenceCard = memo(function OccurrenceCard({
   onOpen: (record: ExplorerRecord) => void;
 }) {
   const [imgError, setImgError] = useState(false);
+  const [resolvedImageUrl, setResolvedImageUrl] = useState(record.imageUrl);
   const [profile, setProfile] = useState(() => getCachedProfile(record.did) ?? null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioState, setAudioState] = useState<"idle" | "loading" | "playing" | "paused">("idle");
 
-  const hasImage = Boolean(record.imageUrl) && !imgError;
+  const imageUrl = resolvedImageUrl ?? record.imageUrl;
+  const hasImage = Boolean(imageUrl) && !imgError;
   const hasAudio = Boolean(record.audioRef);
   const name = record.scientificName || record.vernacularName || "Unidentified";
   const subtitle =
     record.scientificName && record.vernacularName ? record.vernacularName : null;
   const handle = profile?.handle ?? profile?.displayName ?? null;
   const date = record.eventDate || record.createdAt;
+
+  useEffect(() => {
+    setImgError(false);
+    setResolvedImageUrl(record.imageUrl);
+    if (record.imageUrl || !record.imageRef) return;
+
+    const controller = new AbortController();
+    resolveBlobUrl(record.did, record.imageRef, controller.signal)
+      .then((url) => setResolvedImageUrl(url))
+      .catch((error) => {
+        if ((error as Error).name !== "AbortError") setResolvedImageUrl(null);
+      });
+    return () => controller.abort();
+  }, [record.did, record.imageRef, record.imageUrl]);
 
   useEffect(() => {
     if (profile) return;
@@ -750,11 +801,11 @@ const OccurrenceCard = memo(function OccurrenceCard({
     >
       {hasImage ? (
         <Image
-          src={record.imageUrl!}
+          src={imageUrl!}
           alt={name}
           fill
           sizes="(max-width:640px) 50vw, (max-width:1280px) 25vw, 240px"
-          unoptimized={!isPdsBlobUrl(record.imageUrl)}
+          unoptimized={!isPdsBlobUrl(imageUrl)}
           onError={() => setImgError(true)}
           className="scale-[1.08] object-cover transition-transform duration-500 group-hover:scale-100"
         />
@@ -1083,6 +1134,38 @@ function within(iso: string | null | undefined, days: number): boolean {
   if (!iso) return false;
   const t = new Date(iso).getTime();
   return Number.isFinite(t) && t >= Date.now() - days * 86_400_000;
+}
+
+function computeOccurrenceTotalStats(stats: OccurrenceStats): Stat[] {
+  const n = (v: number | null) => (v == null ? "—" : formatCompact(v));
+  return [
+    {
+      label: "Nature sightings",
+      value: n(stats.totalSightings),
+      detail: "sightings shared",
+      icon: <LayoutGridIcon />,
+      accent: true,
+    },
+    {
+      label: "Photo sightings",
+      value: n(stats.photoSightings),
+      detail: "with photos",
+      icon: <ImageIcon />,
+    },
+    {
+      label: "Sound recordings",
+      value: n(stats.soundRecordings),
+      detail: "with sounds",
+      icon: <AudioLinesIcon />,
+      accent: true,
+    },
+    {
+      label: "Mapped sightings",
+      value: n(stats.mappedSightings),
+      detail: "with map locations",
+      icon: <MapIcon />,
+    },
+  ];
 }
 
 function computeStats(records: ExplorerRecord[], kind: RecordKind): Stat[] {
