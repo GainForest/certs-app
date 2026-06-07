@@ -224,6 +224,7 @@ async function fetchWalletLinks(did: string): Promise<WalletLink[]> {
             rkey
             name
             address
+            certifiedProfileData { displayName }
             platformAttestation { __typename }
             userProof { __typename }
           }
@@ -237,7 +238,7 @@ async function fetchWalletLinks(did: string): Promise<WalletLink[]> {
     body: JSON.stringify({ query, variables: { did, first: 20 } }),
   });
   const json = (await response.json().catch(() => null)) as {
-    data?: { appGainforestLinkEvm?: { edges?: Array<{ node?: { uri?: string; rkey?: string; name?: string | null; address?: string | null; platformAttestation?: { __typename?: string } | null; userProof?: { __typename?: string } | null } }> } };
+    data?: { appGainforestLinkEvm?: { edges?: Array<{ node?: { uri?: string; rkey?: string; name?: string | null; address?: string | null; certifiedProfileData?: { displayName?: string | null } | null; platformAttestation?: { __typename?: string } | null; userProof?: { __typename?: string } | null } }> } };
   } | null;
   return json?.data?.appGainforestLinkEvm?.edges?.map(({ node }) => ({
     uri: node?.uri ?? null,

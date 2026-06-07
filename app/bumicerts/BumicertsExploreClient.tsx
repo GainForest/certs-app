@@ -680,7 +680,7 @@ function BumicertGridSkeleton() {
 
 const BumicertCardVisual = memo(function BumicertCardVisual({ record, priority }: { record: BumicertRecord; priority: boolean }) {
   const { scopeItems, iconItems } = useMemo(() => buildPillRows(record), [record]);
-  const organizationName = "Project steward";
+  const organizationName = record.creatorName ?? "Project steward";
   const [imgError, setImgError] = useState(false);
   const hasImage = Boolean(record.imageUrl) && !imgError;
 
@@ -724,7 +724,7 @@ const BumicertCardVisual = memo(function BumicertCardVisual({ record, priority }
         <BumicertPillRows scopeItems={scopeItems} iconItems={iconItems} />
       </div>
 
-      <div className="absolute left-2 top-2 flex min-w-0 items-center gap-1 rounded-full bg-background/70 p-1 shadow-lg backdrop-blur-lg">
+      <div className="absolute left-2 top-2 flex max-w-[calc(100%-1rem)] min-w-0 items-center gap-1 overflow-hidden rounded-full bg-background/70 p-1 shadow-lg backdrop-blur-lg">
         <div className="relative h-6 w-6 shrink-0 scale-120 overflow-hidden rounded-full bg-white shadow-sm transition-all duration-300 group-hover:scale-100">
           <div className="absolute inset-0 flex items-center justify-center bg-muted text-[8px] font-bold text-muted-foreground">
             {organizationName.charAt(0).toUpperCase()}
@@ -732,7 +732,7 @@ const BumicertCardVisual = memo(function BumicertCardVisual({ record, priority }
         </div>
         <motion.span
           variants={orgLabelTextVariants}
-          className="overflow-hidden whitespace-nowrap text-xs font-medium text-foreground text-shadow-md"
+          className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-foreground text-shadow-md"
         >
           {organizationName}
         </motion.span>

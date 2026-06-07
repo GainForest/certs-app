@@ -60,6 +60,26 @@ export type Page<R> = {
   hasMore: boolean;
 };
 
+type CertifiedProfileData = {
+  displayName?: string | null;
+  avatar?: { image?: { ref?: string | null } | null } | null;
+} | null;
+
+const CERTIFIED_PROFILE_DATA_FIELDS = `
+  certifiedProfileData {
+    displayName
+    avatar { __typename ... on OrgHypercertsDefsSmallImage { image { ref } } }
+  }
+`;
+
+function profileName(profile?: CertifiedProfileData): string | null {
+  return profile?.displayName?.trim() || null;
+}
+
+function profileAvatarRef(profile?: CertifiedProfileData): string | null {
+  return normaliseRef(profile?.avatar?.image?.ref);
+}
+
 type StatsPage<N> = {
   nodes: N[];
   totalCount: number | null;
@@ -161,6 +181,8 @@ export type OccurrenceRecord = {
   siteRef: string | null;
   datasetRef: string | null;
   createdAt: string;
+  creatorName: string | null;
+  creatorAvatarRef: string | null;
   remarks: string | null;
   imageUrl: string | null;
   /** Photo or spectrogram blob ref (CID), resolved by visible cards so the
@@ -175,6 +197,7 @@ export type OccurrenceRecord = {
 
 const OCCURRENCE_NODE_FIELDS = `
   did rkey uri createdAt eventDate
+  ${CERTIFIED_PROFILE_DATA_FIELDS}
   scientificName vernacularName kingdom family genus
   basisOfRecord recordedBy individualCount
   country countryCode locality decimalLatitude decimalLongitude
@@ -231,6 +254,7 @@ type RawOccurrence = {
   audioEvidence?: { file?: { ref?: string | null } | null } | null;
   videoEvidence?: { file?: { ref?: string | null } | null } | null;
   spectrogramEvidence?: { file?: { ref?: string | null } | null } | null;
+  certifiedProfileData?: CertifiedProfileData;
 };
 
 function mapOccurrence(n: RawOccurrence): OccurrenceRecord {
@@ -267,6 +291,8 @@ function mapOccurrence(n: RawOccurrence): OccurrenceRecord {
     siteRef: n.siteRef?.trim() || null,
     datasetRef: n.datasetRef?.trim() || null,
     createdAt: n.createdAt,
+    creatorName: profileName(n.certifiedProfileData),
+    creatorAvatarRef: profileAvatarRef(n.certifiedProfileData),
     remarks: n.occurrenceRemarks?.trim() || n.fieldNotes?.trim() || null,
     imageUrl: externalImage,
     imageRef,
@@ -543,10 +569,13 @@ export type BumicertRecord = {
   createdAt: string;
   imageUrl: string | null;
   imageRef: string | null;
+  creatorName: string | null;
+  creatorAvatarRef: string | null;
 };
 
 const ACTIVITY_NODE_FIELDS = `
   did rkey uri createdAt title shortDescription startDate endDate
+  ${CERTIFIED_PROFILE_DATA_FIELDS}
   workScope {
     __typename
     ... on OrgHypercertsClaimActivityWorkScopeString { scope }
@@ -618,6 +647,7 @@ const FUNDING_CONFIG_QUERY = `
       edges {
         node {
           did rkey uri status
+          ${CERTIFIED_PROFILE_DATA_FIELDS}
           receivingWallet { ... on AppGainforestFundingConfigEvmLinkRef { uri } }
         }
       }
@@ -643,6 +673,7 @@ type RawActivity = {
   locations?: Array<{ uri?: string | null }> | null;
   workScope?: { __typename?: string; scope?: string | null; expression?: string | null } | null;
   image?: RawActivityImage;
+  certifiedProfileData?: CertifiedProfileData;
 };
 
 type RawFundingConfig = {
@@ -650,6 +681,7 @@ type RawFundingConfig = {
   rkey: string;
   uri: string;
   status?: string | null;
+  certifiedProfileData?: CertifiedProfileData;
   receivingWallet?: { uri?: string | null } | null;
 };
 
@@ -701,6 +733,8 @@ function mapActivity(n: RawActivity): BumicertRecord {
     createdAt: n.createdAt,
     imageUrl,
     imageRef,
+    creatorName: profileName(n.certifiedProfileData),
+    creatorAvatarRef: profileAvatarRef(n.certifiedProfileData),
   };
 }
 
@@ -1017,6 +1051,7 @@ const ACTIVITY_STATS_QUERY = `
       pageInfo { hasNextPage endCursor }
       edges {
         node {
+          ${CERTIFIED_PROFILE_DATA_FIELDS}
           contributors { contributorIdentity { __typename } }
           locations { uri }
           image {
@@ -1030,7 +1065,7 @@ const ACTIVITY_STATS_QUERY = `
   }
 `;
 
-type RawActivityStats = Pick<RawActivity, "contributors" | "locations" | "image">;
+type RawActivityStats = Pick<RawActivity, "contributors" | "locations" | "image" | "certifiedProfileData">;
 
 function activityHasImage(image: RawActivityImage): boolean {
   if (image?.__typename === "OrgHypercertsDefsUri") return Boolean(image.uri?.trim());
@@ -1126,6 +1161,7 @@ export type SiteRecord = {
 
 const ORG_NODE_FIELDS = `
   did uri displayName country createdAt
+  ${CERTIFIED_PROFILE_DATA_FIELDS}
   coverImage { image { ref } }
   logo { image { ref } }
 `;
@@ -1166,6 +1202,7 @@ type RawOrg = {
   createdAt?: string | null;
   coverImage?: { image?: { ref?: string | null } | null } | null;
   logo?: { image?: { ref?: string | null } | null } | null;
+  certifiedProfileData?: CertifiedProfileData;
 };
 
 function mapOrg(n: RawOrg): SiteRecord {
@@ -1176,7 +1213,7 @@ function mapOrg(n: RawOrg): SiteRecord {
     id: atUri,
     did: n.did,
     atUri,
-    name: n.displayName?.trim() || "Unnamed organization",
+    name: n.displayName?.trim() || profileName(n.certifiedProfileData) || "Unnamed organization",
     country: n.country?.trim() || null,
     orgType: null,
     locationUri: null,
@@ -1322,6 +1359,7 @@ async function fetchOrgPage(
 
 const CERT_ORG_NODE_FIELDS = `
   did uri rkey createdAt visibility organizationType
+  ${CERTIFIED_PROFILE_DATA_FIELDS}
   location { uri }
 `;
 
@@ -1361,6 +1399,7 @@ type RawCertOrg = {
   visibility?: string | null;
   organizationType?: string[] | null;
   location?: { uri?: string | null } | null;
+  certifiedProfileData?: CertifiedProfileData;
 };
 
 type CertProfileInfo = { name: string | null; avatarRef: string | null };
@@ -1448,11 +1487,14 @@ async function fetchCertOrgPage(
   const nodes = (conn?.edges ?? [])
     .map((e) => e?.node)
     .filter((n): n is RawCertOrg => Boolean(n?.did));
-  const profiles = await fetchCertProfiles(
-    nodes.map((n) => n.did),
-    signal,
-  );
-  let records = nodes.map((n) => mapCertOrg(n, profiles.get(n.did)));
+  const missingProfileDids = nodes
+    .filter((n) => !profileName(n.certifiedProfileData) && !profileAvatarRef(n.certifiedProfileData))
+    .map((n) => n.did);
+  const profiles = await fetchCertProfiles(missingProfileDids, signal);
+  let records = nodes.map((n) => mapCertOrg(n, {
+    name: profileName(n.certifiedProfileData) ?? profiles.get(n.did)?.name ?? null,
+    avatarRef: profileAvatarRef(n.certifiedProfileData) ?? profiles.get(n.did)?.avatarRef ?? null,
+  }));
   records = await resolveImages(
     records,
     (r) => (r.logoRef ? { did: r.did, ref: r.logoRef } : null),
@@ -1483,6 +1525,7 @@ const ORG_STATS_QUERY = `
       edges {
         node {
           country
+          ${CERTIFIED_PROFILE_DATA_FIELDS}
           coverImage { image { ref } }
           logo { image { ref } }
         }
@@ -1496,13 +1539,13 @@ const CERT_ORG_STATS_QUERY = `
     appCertifiedActorOrganization(first: $first, after: $after) {
       totalCount
       pageInfo { hasNextPage endCursor }
-      edges { node { did location { uri } } }
+      edges { node { did ${CERTIFIED_PROFILE_DATA_FIELDS} location { uri } } }
     }
   }
 `;
 
-type RawOrgStats = Pick<RawOrg, "country" | "coverImage" | "logo">;
-type RawCertOrgStats = Pick<RawCertOrg, "did" | "location">;
+type RawOrgStats = Pick<RawOrg, "country" | "coverImage" | "logo" | "certifiedProfileData">;
+type RawCertOrgStats = Pick<RawCertOrg, "did" | "location" | "certifiedProfileData">;
 
 function normalizeStatsCountry(country: string | null | undefined): string | null {
   if (!country) return null;
@@ -1564,7 +1607,7 @@ async function fetchGainforestOrganizationStats(): Promise<OrganizationStats> {
     for (const node of res.nodes) {
       const country = normalizeStatsCountry(node.country);
       if (country) countries.add(country);
-      if (normaliseRef(node.coverImage?.image?.ref) || normaliseRef(node.logo?.image?.ref)) withPhotos += 1;
+      if (normaliseRef(node.coverImage?.image?.ref) || normaliseRef(node.logo?.image?.ref) || profileAvatarRef(node.certifiedProfileData)) withPhotos += 1;
     }
     if (!res.hasMore || !res.cursor) break;
     after = res.cursor;
@@ -1589,9 +1632,12 @@ async function fetchCertifiedOrganizationStats(): Promise<OrganizationStats> {
     const res = await fetchCertifiedOrgStatsPage(100, after);
     organizations ??= res.totalCount;
     seenRows += res.nodes.length;
-    const profiles = await fetchCertProfiles(res.nodes.map((node) => node.did));
+    const missingProfileDids = res.nodes
+      .filter((node) => !profileAvatarRef(node.certifiedProfileData))
+      .map((node) => node.did);
+    const profiles = await fetchCertProfiles(missingProfileDids);
     for (const node of res.nodes) {
-      if (profiles.get(node.did)?.avatarRef) withPhotos += 1;
+      if (profileAvatarRef(node.certifiedProfileData) || profiles.get(node.did)?.avatarRef) withPhotos += 1;
       if (node.location?.uri) mappedPlaces += 1;
     }
     if (!res.hasMore || !res.cursor) break;
@@ -1812,6 +1858,7 @@ const LOCATIONS_BY_DID_QUERY = `
       edges {
         node {
           did uri rkey cid createdAt
+          ${CERTIFIED_PROFILE_DATA_FIELDS}
           name description locationType
           location {
             __typename
@@ -1833,6 +1880,7 @@ type RawLocationNode = {
   name?: string | null;
   description?: string | null;
   locationType?: string | null;
+  certifiedProfileData?: CertifiedProfileData;
   location?: {
     __typename?: string;
     string?: string | null;
@@ -1939,6 +1987,7 @@ const AUDIO_BY_DID_QUERY = `
       edges {
         node {
           did uri rkey cid createdAt
+          ${CERTIFIED_PROFILE_DATA_FIELDS}
           name
           description { text }
           blob { file { ref mimeType size } }
@@ -1957,6 +2006,7 @@ type RawAudioNode = {
   createdAt?: string | null;
   name?: string | null;
   description?: { text?: string | null } | null;
+  certifiedProfileData?: CertifiedProfileData;
   blob?: { file?: { ref?: string | null; mimeType?: string | null; size?: number | null } | null } | null;
   metadata?: {
     recordedAt?: string | null;
@@ -2074,7 +2124,7 @@ const TREE_DATASET_BY_DID_QUERY = `
       sortDirection: DESC
     ) {
       pageInfo { hasNextPage endCursor }
-      edges { node { did uri rkey name description recordCount createdAt } }
+      edges { node { did uri rkey name description recordCount createdAt ${CERTIFIED_PROFILE_DATA_FIELDS} } }
     }
   }
 `;
@@ -2086,6 +2136,7 @@ type RawTreeDatasetNode = {
   description?: string | null;
   recordCount?: number | null;
   createdAt?: string | null;
+  certifiedProfileData?: CertifiedProfileData;
 };
 
 export async function fetchTreeDatasetsByDid(
@@ -2192,8 +2243,10 @@ export async function fetchRecordByUri(
     );
     const n = data?.appCertifiedActorOrganizationByUri;
     if (!n?.did) return null;
-    const profiles = await fetchCertProfiles([n.did], signal);
-    const rec = mapCertOrg(n, profiles.get(n.did));
+    const profile = profileName(n.certifiedProfileData) || profileAvatarRef(n.certifiedProfileData)
+      ? { name: profileName(n.certifiedProfileData), avatarRef: profileAvatarRef(n.certifiedProfileData) }
+      : (await fetchCertProfiles([n.did], signal)).get(n.did);
+    const rec = mapCertOrg(n, profile);
     if (rec.logoRef) {
       try {
         rec.avatarUrl = await resolveBlobUrl(rec.did, rec.logoRef, signal);
@@ -2320,6 +2373,7 @@ function iucnTone(category: string): DetailBadge["tone"] {
 
 type OccDetailNode = {
   [k: string]: unknown;
+  certifiedProfileData?: CertifiedProfileData;
   conservationStatus?: {
     iucnCategory?: string | null;
     nativeStatus?: string | null;
@@ -2330,7 +2384,7 @@ type OccDetailNode = {
 };
 
 const OCCURRENCE_DETAIL_FIELDS = `
-  did createdAt scientificName scientificNameAuthorship vernacularName taxonRank taxonomicStatus
+  did createdAt ${CERTIFIED_PROFILE_DATA_FIELDS} scientificName scientificNameAuthorship vernacularName taxonRank taxonomicStatus
   kingdom phylum class order family genus specificEpithet infraspecificEpithet higherClassification gbifTaxonKey
   basisOfRecord occurrenceStatus individualCount organismQuantity organismQuantityType lifeStage sex reproductiveCondition behavior
   country countryCode stateProvince county municipality locality verbatimLocality
@@ -2411,6 +2465,7 @@ function buildOccurrenceDetail(n: OccDetailNode): RecordDetail {
       field("Habitat", f("habitat"), true),
     ]),
     section("Record", [
+      field("Shared by", profileName(n.certifiedProfileData)),
       field("Recorded by", f("recordedBy")),
       field("Observed", eventWhen || null),
       field("Identified by", f("identifiedBy")),
@@ -2483,6 +2538,7 @@ type RawLeafletBlock = RawLeafletContent & {
 type LeafletBlock = { block?: RawLeafletBlock | null };
 type BumiDetailNode = {
   [k: string]: unknown;
+  certifiedProfileData?: CertifiedProfileData;
   description?:
     | { __typename?: string; value?: string | null; blocks?: LeafletBlock[] | null }
     | null;
@@ -2547,6 +2603,7 @@ const ACTIVITY_DETAIL_QUERY = `
   query ActivityDetail($uri: String!) {
     orgHypercertsClaimActivityByUri(uri: $uri) {
       did title shortDescription startDate endDate createdAt
+      ${CERTIFIED_PROFILE_DATA_FIELDS}
       description {
         __typename
         ... on OrgHypercertsDefsDescriptionString { value }
@@ -2569,10 +2626,12 @@ const ACTIVITY_DETAIL_QUERY = `
 const OWNER_SOCIALS_QUERY = `
   query OwnerSocials($cert: String!, $gf: String!) {
     cert: appCertifiedActorOrganizationByUri(uri: $cert) {
+      ${CERTIFIED_PROFILE_DATA_FIELDS}
       urls { url }
       longDescription { __typename ... on OrgHypercertsDefsDescriptionString { value } }
     }
     gf: appGainforestOrganizationInfoByUri(uri: $gf) {
+      ${CERTIFIED_PROFILE_DATA_FIELDS}
       website email
       shortDescription { text }
       socialLinks { platform url }
@@ -2581,12 +2640,13 @@ const OWNER_SOCIALS_QUERY = `
 `;
 
 type OwnerOrg = {
-  cert?: CertifiedOrgNode;
+  cert?: (CertifiedOrgNode & { certifiedProfileData?: CertifiedProfileData }) | null;
   gf?: {
     website?: string | null;
     email?: string | null;
     shortDescription?: { text?: string | null } | null;
     socialLinks?: Array<{ platform?: string | null; url?: string | null }> | null;
+    certifiedProfileData?: CertifiedProfileData;
   } | null;
 };
 
@@ -2818,6 +2878,7 @@ function buildBumicertDetail(
 
   const sections = [
     section("Claim", [
+      field("Published by", profileName(n.certifiedProfileData), true),
       field("Work period", period, true),
       field("Contributors", contributors ? formatNumber(contributors) : null),
       field("Certified sites", sites ? formatNumber(sites) : null),
@@ -2884,6 +2945,7 @@ type OrgDetailNode = {
   socialLinks?: Array<{ platform?: string | null; url?: string | null }> | null;
   ecosystemTypes?: string[] | null;
   focusSpeciesGroups?: string[] | null;
+  certifiedProfileData?: CertifiedProfileData;
 };
 
 const ORG_DETAIL_QUERY = `
@@ -2891,6 +2953,7 @@ const ORG_DETAIL_QUERY = `
   query OrgDetail($uri: String!) {
     appGainforestOrganizationInfoByUri(uri: $uri) {
       displayName country createdAt startDate foundedYear teamSize
+      ${CERTIFIED_PROFILE_DATA_FIELDS}
       website email visibility dataLicense dataDownloadUrl fundingSourcesDescription
       shortDescription { text }
       longDescription { ${LEAFLET_BLOCKS_SELECTION} }
@@ -2953,11 +3016,13 @@ const CERT_ORG_DETAIL_QUERY = `
   query CertifiedOrgDetail($org: String!, $profile: String!) {
     org: appCertifiedActorOrganizationByUri(uri: $org) {
       createdAt organizationType visibility foundedDate
+      ${CERTIFIED_PROFILE_DATA_FIELDS}
       urls { url }
       longDescription { __typename ... on OrgHypercertsDefsDescriptionString { value } }
     }
     profile: appCertifiedActorProfileByUri(uri: $profile) {
       displayName description website
+      ${CERTIFIED_PROFILE_DATA_FIELDS}
     }
   }
 `;
@@ -2970,11 +3035,13 @@ type CertOrgDetailNode = {
     urls?: Array<{ url?: string | null }> | null;
     longDescription?: { __typename?: string; value?: string | null } | null;
     createdAt?: string | null;
+    certifiedProfileData?: CertifiedProfileData;
   } | null;
   profile?: {
     displayName?: string | null;
     description?: string | null;
     website?: string | null;
+    certifiedProfileData?: CertifiedProfileData;
   } | null;
 };
 
@@ -3123,6 +3190,7 @@ type AccountSummaryNode = {
     organizationType?: string[] | null;
     visibility?: string | null;
     foundedDate?: string | null;
+    certifiedProfileData?: CertifiedProfileData;
   } | null;
   gfOrg?: {
     createdAt?: string | null;
@@ -3132,12 +3200,14 @@ type AccountSummaryNode = {
     foundedYear?: number | string | null;
     coverImage?: { image?: { ref?: string | null } | null } | null;
     logo?: { image?: { ref?: string | null } | null } | null;
+    certifiedProfileData?: CertifiedProfileData;
   } | null;
   certProfile?: {
     displayName?: string | null;
     description?: string | null;
     website?: string | null;
     avatar?: { image?: { ref?: string | null } | null } | null;
+    certifiedProfileData?: CertifiedProfileData;
   } | null;
 };
 
@@ -3147,14 +3217,17 @@ const ACCOUNT_SUMMARY_QUERY = `
     bumi: orgHypercertsClaimActivity(first: 0, where: { did: { eq: $did } }) { totalCount }
     certOrg: appCertifiedActorOrganizationByUri(uri: $certOrg) {
       createdAt organizationType visibility foundedDate
+      ${CERTIFIED_PROFILE_DATA_FIELDS}
     }
     gfOrg: appGainforestOrganizationInfoByUri(uri: $gfOrg) {
       createdAt displayName country visibility foundedYear
+      ${CERTIFIED_PROFILE_DATA_FIELDS}
       coverImage { image { ref } }
       logo { image { ref } }
     }
     certProfile: appCertifiedActorProfileByUri(uri: $certProfile) {
       displayName description website
+      ${CERTIFIED_PROFILE_DATA_FIELDS}
       avatar { __typename ... on OrgHypercertsDefsSmallImage { image { ref } } }
     }
   }
@@ -3218,7 +3291,10 @@ export async function fetchAccountSummary(
   // Avatar precedence: certified profile avatar → GainForest logo → cover.
   const avatarRef =
     normaliseRef(profile?.avatar?.image?.ref) ??
+    profileAvatarRef(profile?.certifiedProfileData) ??
     normaliseRef(gfOrg?.logo?.image?.ref) ??
+    profileAvatarRef(gfOrg?.certifiedProfileData) ??
+    profileAvatarRef(certOrg?.certifiedProfileData) ??
     normaliseRef(gfOrg?.coverImage?.image?.ref);
   let avatarUrl: string | null = null;
   if (avatarRef) {
@@ -3236,7 +3312,7 @@ export async function fetchAccountSummary(
   return {
     did,
     handle: plc.handle,
-    displayName: sv(profile?.displayName) ?? sv(gfOrg?.displayName) ?? null,
+    displayName: sv(profile?.displayName) ?? profileName(profile?.certifiedProfileData) ?? sv(gfOrg?.displayName) ?? profileName(gfOrg?.certifiedProfileData) ?? profileName(certOrg?.certifiedProfileData) ?? null,
     avatarUrl,
     bio: sv(profile?.description) ?? null,
     website: sv(profile?.website) ?? null,

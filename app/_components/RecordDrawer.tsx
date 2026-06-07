@@ -102,6 +102,7 @@ export function RecordDrawer({
   const siteBannerUrl = record.kind === "site" ? record.bannerUrl ?? (record.coverRef ? record.imageUrl : null) : null;
   const heroUrl = record.kind === "site" ? siteBannerUrl : record.kind === "occurrence" ? record.imageUrl ?? resolvedOccurrenceImageUrl : record.imageUrl;
   const ownerAvatarOverride = record.kind === "site" ? record.avatarUrl ?? (!record.coverRef && record.logoRef ? record.imageUrl : null) : undefined;
+  const ownerNameOverride = record.kind === "bumicert" || record.kind === "occurrence" ? record.creatorName : record.kind === "site" ? record.name : null;
   const hasHeroImage = Boolean(heroUrl) && !imgError;
   const showHero = record.kind === "site" || hasHeroImage;
 
@@ -233,6 +234,7 @@ export function RecordDrawer({
               did={record.did}
               createdAt={record.createdAt}
               avatarOverride={ownerAvatarOverride}
+              nameOverride={ownerNameOverride}
             />
             <Link
               href={ownerHref}
@@ -531,6 +533,7 @@ async function fetchDonationsOpen(did: string, rkey: string, signal: AbortSignal
       query: `
         query RecordDrawerFundingConfig($uri: String!) {
           appGainforestFundingConfigByUri(uri: $uri) {
+            certifiedProfileData { displayName }
             receivingWallet { ... on AppGainforestFundingConfigEvmLinkRef { uri } }
             status
           }
@@ -543,6 +546,7 @@ async function fetchDonationsOpen(did: string, rkey: string, signal: AbortSignal
   const json = (await response.json()) as {
     data?: {
       appGainforestFundingConfigByUri?: {
+        certifiedProfileData?: { displayName?: string | null } | null;
         receivingWallet?: { uri?: string | null } | null;
         status?: string | null;
       } | null;

@@ -721,7 +721,7 @@ const OccurrenceCard = memo(function OccurrenceCard({
   const name = record.scientificName || record.vernacularName || "Unidentified";
   const subtitle =
     record.scientificName && record.vernacularName ? record.vernacularName : null;
-  const handle = profile?.handle ?? profile?.displayName ?? null;
+  const creatorLabel = record.creatorName ?? profile?.handle ?? profile?.displayName ?? null;
   const date = record.eventDate || record.createdAt;
 
   useEffect(() => {
@@ -739,7 +739,7 @@ const OccurrenceCard = memo(function OccurrenceCard({
   }, [record.did, record.imageRef, record.imageUrl]);
 
   useEffect(() => {
-    if (profile) return;
+    if (record.creatorName || profile) return;
     let active = true;
     resolveDidProfile(record.did).then((p) => {
       if (active) setProfile(p);
@@ -747,7 +747,7 @@ const OccurrenceCard = memo(function OccurrenceCard({
     return () => {
       active = false;
     };
-  }, [profile, record.did]);
+  }, [profile, record.creatorName, record.did]);
 
   // Pause and release the audio element on unmount.
   useEffect(
@@ -846,8 +846,8 @@ const OccurrenceCard = memo(function OccurrenceCard({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
 
       <div className="absolute inset-x-0 bottom-0 z-10 p-3">
-        {handle ? (
-          <p className="truncate text-[11px] font-medium text-white/75">@{handle}</p>
+        {creatorLabel ? (
+          <p className="truncate text-[11px] font-medium text-white/75">{creatorLabel}</p>
         ) : null}
         <h3
           className="font-instrument text-[17px] italic leading-tight text-white drop-shadow-sm"
@@ -893,7 +893,7 @@ const GenericCard = memo(function GenericCard({ record, onOpen }: { record: Expl
         )}
 
         <div className="absolute left-1.5 top-1.5 z-10 inline-flex max-w-[calc(100%-0.75rem)] items-center rounded-full bg-background/75 px-2 py-1 text-[10px] font-medium text-foreground/65 shadow-sm backdrop-blur-md">
-          Shared profile
+          <span className="truncate">{record.kind === "bumicert" ? record.creatorName ?? "Project steward" : record.kind === "site" ? record.name : "Shared profile"}</span>
         </div>
 
         {v.badge ? <div className="absolute right-1.5 top-1.5 z-10">{v.badge}</div> : null}
@@ -1105,7 +1105,7 @@ function sortRecords(records: ExplorerRecord[], mode: SortMode): ExplorerRecord[
 
 function haystack(r: ExplorerRecord): string {
   if (r.kind === "occurrence") {
-    return [r.scientificName, r.vernacularName, r.family, r.genus, r.kingdom, r.country, r.countryCode, r.locality, r.recordedBy]
+    return [r.scientificName, r.vernacularName, r.family, r.genus, r.kingdom, r.country, r.countryCode, r.locality, r.recordedBy, r.creatorName]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
@@ -1113,7 +1113,7 @@ function haystack(r: ExplorerRecord): string {
   if (r.kind === "site") {
     return [r.name, r.country, r.did].filter(Boolean).join(" ").toLowerCase();
   }
-  return [r.title, r.shortDescription, r.did].filter(Boolean).join(" ").toLowerCase();
+  return [r.title, r.shortDescription, r.creatorName, r.did].filter(Boolean).join(" ").toLowerCase();
 }
 
 // ── Stats overview ───────────────────────────────────────────────────────

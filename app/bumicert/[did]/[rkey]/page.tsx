@@ -137,6 +137,7 @@ export default async function BumicertDetailPage({
             imageUrl: record.imageUrl,
             locationCount: record.locationCount,
             contributorCount: record.contributorCount,
+            creatorName: record.creatorName,
             startDate: record.startDate,
             endDate: record.endDate,
           },
@@ -214,6 +215,7 @@ async function fetchBumicertFundingConfig(did: string, rkey: string): Promise<Bu
       query: `
         query BumicertsBumicertFundingConfig($uri: String!) {
           appGainforestFundingConfigByUri(uri: $uri) {
+            certifiedProfileData { displayName }
             receivingWallet { ... on AppGainforestFundingConfigEvmLinkRef { uri } }
             status
             goalInUSD
@@ -230,6 +232,7 @@ async function fetchBumicertFundingConfig(did: string, rkey: string): Promise<Bu
   const json = (await response.json()) as {
     data?: {
       appGainforestFundingConfigByUri?: {
+        certifiedProfileData?: { displayName?: string | null } | null;
         receivingWallet?: { uri?: string | null } | null;
         status?: string | null;
         goalInUSD?: string | null;

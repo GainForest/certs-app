@@ -37,6 +37,7 @@ const RECEIPTS_QUERY = `
       edges {
         node {
           uri createdAt occurredAt amount currency transactionId paymentNetwork
+          certifiedProfileData { displayName }
           from {
             __typename
             ... on OrgHypercertsFundingReceiptText { value }
@@ -63,6 +64,7 @@ type RawReceipt = {
   transactionId?: string | null;
   paymentNetwork?: string | null;
   from?: RawFrom;
+  certifiedProfileData?: { displayName?: string | null } | null;
   for?: { uri?: string | null } | null;
 };
 
@@ -371,7 +373,7 @@ const ORG_COUNTRY_QUERY = `
   query DashboardOrgCountries($first: Int!, $after: String) {
     appGainforestOrganizationInfo(first: $first, after: $after) {
       pageInfo { hasNextPage endCursor }
-      edges { node { did country } }
+      edges { node { did country certifiedProfileData { displayName } } }
     }
   }
 `;

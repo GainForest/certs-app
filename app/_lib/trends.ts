@@ -46,7 +46,7 @@ async function fetchNodes<T>(
     const args = [`first: 1000`, whereClause, after ? `after: "${after}"` : ""]
       .filter(Boolean)
       .join(", ");
-    const query = `{ ${rootField}(${args}) { edges { node { ${selection} } } pageInfo { hasNextPage endCursor } } }`;
+    const query = `{ ${rootField}(${args}) { edges { node { ${selection} certifiedProfileData { displayName } } } pageInfo { hasNextPage endCursor } } }`;
     const res = await fetch(INDEXER_URL, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -71,7 +71,7 @@ async function fetchObservationsTail(): Promise<MetricSeries | null> {
   const query = `{
     appGainforestDwcOccurrence(first: 1000, sortBy: createdAt, sortDirection: DESC) {
       totalCount
-      edges { node { createdAt } }
+      edges { node { createdAt certifiedProfileData { displayName } } }
     }
   }`;
   const res = await fetch(INDEXER_URL, {
@@ -82,7 +82,7 @@ async function fetchObservationsTail(): Promise<MetricSeries | null> {
   });
   if (!res.ok) return null;
   const json = (await res.json()) as {
-    data?: { appGainforestDwcOccurrence?: { totalCount?: number; edges?: { node?: { createdAt?: string } }[] } };
+    data?: { appGainforestDwcOccurrence?: { totalCount?: number; edges?: { node?: { createdAt?: string; certifiedProfileData?: { displayName?: string | null } | null } }[] } };
   };
   const conn = json.data?.appGainforestDwcOccurrence;
   if (!conn) return null;

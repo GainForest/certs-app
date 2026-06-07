@@ -44,7 +44,7 @@ const RECEIPTS_TOTALS_QUERY = `
     ) {
       totalCount
       pageInfo { hasNextPage endCursor }
-      edges { node { amount currency } }
+      edges { node { amount currency certifiedProfileData { displayName } } }
     }
   }
 `;
@@ -113,7 +113,7 @@ async function fetchRaisedUncached(): Promise<
         data?: {
           orgHypercertsFundingReceipt?: {
             pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
-            edges?: Array<{ node?: { amount?: string; currency?: string } | null }>;
+            edges?: Array<{ node?: { amount?: string; currency?: string; certifiedProfileData?: { displayName?: string | null } | null } | null }>;
           } | null;
         };
       };

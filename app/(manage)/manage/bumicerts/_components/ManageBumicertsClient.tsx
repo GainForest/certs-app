@@ -114,7 +114,7 @@ function RecentBumicerts({ bumicerts, did }: { bumicerts: BumicertRecord[]; did:
                   coverImage={bumicert.imageUrl}
                   logoUrl={null}
                   title={bumicert.title}
-                  organizationName={bumicert.did || did}
+                  organizationName={bumicert.creatorName ?? "Your profile"}
                   objectives={[
                     bumicert.locationCount > 0 ? `${bumicert.locationCount} ${bumicert.locationCount === 1 ? "site" : "sites"}` : "",
                     bumicert.contributorCount > 0 ? `${bumicert.contributorCount} ${bumicert.contributorCount === 1 ? "contributor" : "contributors"}` : "",

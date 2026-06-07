@@ -13,6 +13,7 @@ const LINK_EVM_QUERY = `
         node {
           did
           address
+          certifiedProfileData { displayName }
           userProof {
             __typename
             ... on AppGainforestLinkEvmEip712Proof {
@@ -36,7 +37,7 @@ const LINK_EVM_QUERY = `
 
 const ACTIVITY_CID_QUERY = `
   query ActivityCid($uri: String!) {
-    orgHypercertsClaimActivityByUri(uri: $uri) { cid }
+    orgHypercertsClaimActivityByUri(uri: $uri) { cid certifiedProfileData { displayName } }
   }
 `;
 
@@ -66,6 +67,7 @@ type LinkMessage = {
 type LinkNode = {
   did?: string | null;
   address?: string | null;
+  certifiedProfileData?: { displayName?: string | null } | null;
   userProof?: {
     __typename?: string | null;
     signature?: string | null;
@@ -156,6 +158,6 @@ export async function fetchVerifiedRecipientAddress(did: string): Promise<string
 }
 
 export async function fetchActivityCid(activityUri: string): Promise<string | null> {
-  const data = await indexerQuery<{ orgHypercertsClaimActivityByUri?: { cid?: string | null } | null }>(ACTIVITY_CID_QUERY, { uri: activityUri });
+  const data = await indexerQuery<{ orgHypercertsClaimActivityByUri?: { cid?: string | null; certifiedProfileData?: { displayName?: string | null } | null } | null }>(ACTIVITY_CID_QUERY, { uri: activityUri });
   return data?.orgHypercertsClaimActivityByUri?.cid ?? null;
 }

@@ -90,6 +90,7 @@ const CERT_LOC_QUERY = `
   query MapCertifiedLocByUri($uri: String!) {
     appCertifiedLocationByUri(uri: $uri) {
       did
+      certifiedProfileData { displayName }
       location {
         __typename
         ... on AppCertifiedLocationString { string }
@@ -118,6 +119,7 @@ export async function resolveCertifiedLocationCoords(
       data?: {
         appCertifiedLocationByUri?: {
           did?: string;
+          certifiedProfileData?: { displayName?: string | null } | null;
           location?:
             | { __typename: "AppCertifiedLocationString"; string?: string | null }
             | { __typename: "OrgHypercertsDefsSmallBlob"; blob?: { ref?: string | null } | null }

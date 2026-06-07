@@ -24,12 +24,14 @@ export function AuthorChip({
   did,
   createdAt,
   avatarOverride,
+  nameOverride,
   size = "md",
   className = "",
 }: {
   did: string;
   createdAt?: string | null;
   avatarOverride?: string | null;
+  nameOverride?: string | null;
   size?: Size;
   className?: string;
 }) {
@@ -38,18 +40,20 @@ export function AuthorChip({
   useEffect(() => {
     let active = true;
     setProfile(getCachedProfile(did) ?? null);
-    resolveDidProfile(did).then((p) => {
-      if (active) setProfile(p);
-    });
+    if (!nameOverride) {
+      resolveDidProfile(did).then((p) => {
+        if (active) setProfile(p);
+      });
+    }
     return () => {
       active = false;
     };
-  }, [did]);
+  }, [did, nameOverride]);
 
   const { openAccount } = useAccountDrawer();
   const handle = profile?.handle ?? null;
   const avatar = avatarOverride ?? profile?.avatar ?? null;
-  const primary = profile?.displayName || handle || "Organization";
+  const primary = nameOverride || profile?.displayName || handle || "Organization";
   const date = createdAt ? formatDate(createdAt) : null;
 
   const av = size === "sm" ? "h-5 w-5 text-[9px]" : "h-7 w-7 text-[11px]";
@@ -80,27 +84,31 @@ export function AuthorChip({
 export function AuthorInline({
   did,
   avatarOverride,
+  nameOverride,
   showAvatar = true,
 }: {
   did: string;
   avatarOverride?: string | null;
+  nameOverride?: string | null;
   showAvatar?: boolean;
 }) {
   const [profile, setProfile] = useState<DidProfile | null>(() => getCachedProfile(did) ?? null);
   useEffect(() => {
     let active = true;
     setProfile(getCachedProfile(did) ?? null);
-    resolveDidProfile(did).then((p) => {
-      if (active) setProfile(p);
-    });
+    if (!nameOverride) {
+      resolveDidProfile(did).then((p) => {
+        if (active) setProfile(p);
+      });
+    }
     return () => {
       active = false;
     };
-  }, [did]);
+  }, [did, nameOverride]);
 
   const handle = profile?.handle ?? null;
   const avatar = avatarOverride ?? profile?.avatar ?? null;
-  const label = profile?.displayName || handle || "Supporter";
+  const label = nameOverride || profile?.displayName || handle || "Supporter";
 
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5 align-middle" title={label}>
@@ -116,21 +124,25 @@ export function AuthorInline({
 export function OwnerBadge({
   did,
   avatarOverride,
+  nameOverride,
 }: {
   did: string;
   avatarOverride?: string | null;
+  nameOverride?: string | null;
 }) {
   const [profile, setProfile] = useState<DidProfile | null>(() => getCachedProfile(did) ?? null);
   useEffect(() => {
     let active = true;
     setProfile(getCachedProfile(did) ?? null);
-    resolveDidProfile(did).then((p) => {
-      if (active) setProfile(p);
-    });
+    if (!nameOverride) {
+      resolveDidProfile(did).then((p) => {
+        if (active) setProfile(p);
+      });
+    }
     return () => {
       active = false;
     };
-  }, [did]);
+  }, [did, nameOverride]);
 
   const { openAccount } = useAccountDrawer();
   const handle = profile?.handle ?? null;
@@ -155,8 +167,8 @@ export function OwnerBadge({
       title="View profile"
     >
       <Avatar did={did} handle={handle} avatar={avatar} className="h-5 w-5 text-[9px]" />
-      {profile?.displayName || handle ? (
-        <span className="truncate text-[11px] font-medium text-foreground">{profile?.displayName || handle}</span>
+      {nameOverride || profile?.displayName || handle ? (
+        <span className="truncate text-[11px] font-medium text-foreground">{nameOverride || profile?.displayName || handle}</span>
       ) : null}
     </span>
   );
