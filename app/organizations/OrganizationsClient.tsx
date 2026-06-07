@@ -15,7 +15,7 @@ import {
   UsersIcon,
   XIcon,
 } from "lucide-react";
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RecordDrawer } from "../_components/RecordDrawer";
 import { RecordMap } from "../_components/RecordMap";
@@ -75,6 +75,7 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
   const [totalStats, setTotalStats] = useState<OrganizationStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const deferredQuery = useDeferredValue(query);
+  const requestSeqRef = useRef(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -93,23 +94,29 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
   useEffect(() => {
     if (initialRecords.length > 0) return;
     const controller = new AbortController();
+    const requestSeq = ++requestSeqRef.current;
+    const isCurrent = () => requestSeqRef.current === requestSeq && !controller.signal.aborted;
+    const options = { query: deferredQuery, country: countryFilter, orgType: typeFilter, quickFilters, sort };
     setLoading(true);
-    fetchSites(ORGANIZATIONS_PAGE_SIZE, null, controller.signal, (running) => {
-      setRecords(running as SiteRecord[]);
-      setLoading(false);
-    })
+    setLoadingMore(false);
+    setRecords([]);
+    setCursor(null);
+    setHasMore(true);
+    fetchSites(ORGANIZATIONS_PAGE_SIZE, null, controller.signal, undefined, sourceFilter, options)
       .then((page) => {
+        if (!isCurrent()) return;
         setRecords(page.records);
         setCursor(page.cursor);
         setHasMore(page.hasMore);
-        setLoading(false);
       })
       .catch((error) => {
-        if ((error as Error).name === "AbortError") return;
-        setLoading(false);
+        if ((error as Error).name !== "AbortError") console.warn("[organizations] fetch failed", error);
+      })
+      .finally(() => {
+        if (isCurrent()) setLoading(false);
       });
     return () => controller.abort();
-  }, [initialRecords.length]);
+  }, [countryFilter, deferredQuery, initialRecords.length, quickFilters, sort, sourceFilter, typeFilter]);
 
   const countryChips = useMemo(() => {
     const codes = records
@@ -140,7 +147,7 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
       if (quickFilters.includes("photos") && !hasPhoto(record)) return false;
       if (quickFilters.includes("locations") && !hasMappableLocation(record)) return false;
       if (!normalizedQuery) return true;
-      const haystack = [record.name, record.country, countryNameOrEmpty(record.country), record.orgType, record.did, record.source]
+      const haystack = [record.name, record.country, countryNameOrEmpty(record.country), record.orgType, record.source]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -160,7 +167,7 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
           return siteTime(b.createdAt) - siteTime(a.createdAt);
       }
     });
-  }, [records, deferredQuery, sort, sourceFilter, countryFilter, typeFilter, quickFilters]);
+  }, [countryFilter, deferredQuery, quickFilters, records, sort, sourceFilter, typeFilter]);
 
   const stats = useMemo(
     () => [
@@ -224,12 +231,13 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
     if (loading || loadingMore || !hasMore) return;
 
     const controller = new AbortController();
+    const requestSeq = ++requestSeqRef.current;
+    const isCurrent = () => requestSeqRef.current === requestSeq && !controller.signal.aborted;
     const base = records;
     setLoadingMore(true);
-    fetchSites(ORGANIZATIONS_PAGE_SIZE, cursor, controller.signal, (running) => {
-      setRecords(mergeSiteRecords(base, running));
-    })
+    fetchSites(ORGANIZATIONS_PAGE_SIZE, cursor, controller.signal, undefined, sourceFilter, { query: deferredQuery, country: countryFilter, orgType: typeFilter, quickFilters, sort })
       .then((page) => {
+        if (!isCurrent()) return;
         setRecords(mergeSiteRecords(base, page.records));
         setCursor(page.cursor);
         setHasMore(page.hasMore);
@@ -237,8 +245,10 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
       .catch((error) => {
         if ((error as Error).name !== "AbortError") console.warn("[organizations] load more failed", error);
       })
-      .finally(() => setLoadingMore(false));
-  }, [cursor, hasMore, loading, loadingMore, records]);
+      .finally(() => {
+        if (isCurrent()) setLoadingMore(false);
+      });
+  }, [countryFilter, cursor, deferredQuery, hasMore, loading, loadingMore, quickFilters, records, sort, sourceFilter, typeFilter]);
 
   const openMapRecord = (record: ExplorerRecord) => {
     if (record.kind === "site") setDrawer(record);
@@ -250,11 +260,11 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
         <OrganizationsHero />
 
         <div className="mx-auto max-w-6xl px-6">
-          <div className="relative z-20 -mt-10 px-3">
+          <div className="relative z-20 -mt-10">
             <StatsBand stats={stats} loading={statsLoading || (loading && records.length === 0)} />
           </div>
 
-          <div className="relative z-20 mt-4 mb-0 space-y-3 px-3">
+          <div className="relative z-20 mt-4 mb-0 space-y-3">
             <div className="flex flex-wrap items-center gap-3 animate-in" style={{ animationDelay: "80ms" }}>
               <div className="group/input-group border-input relative flex h-10 min-w-[220px] flex-1 items-center rounded-full border bg-background/50 shadow-xs backdrop-blur transition-[color,box-shadow] outline-none focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
                 <div className="flex h-auto cursor-text items-center justify-center gap-2 py-1.5 pl-3 text-sm font-medium text-muted-foreground select-none">

@@ -30,7 +30,7 @@ import {
 } from "../_lib/indexer";
 import { isPdsBlobUrl } from "../_lib/pds";
 
-type FilterKey = "images" | "locations" | "contributors" | "active";
+type FilterKey = "images" | "locations" | "contributors" | "active" | "donations";
 type SortMode = "newest" | "oldest" | "az" | "za";
 type ViewMode = "cards" | "map";
 
@@ -45,6 +45,7 @@ const FILTER_CHIPS: FilterChip[] = [
   { key: "locations", label: "Project places", predicate: (record) => record.locationCount > 0 },
   { key: "contributors", label: "Contributors", predicate: (record) => record.contributorCount > 0 },
   { key: "active", label: "Active period", predicate: (record) => Boolean(record.startDate || record.endDate) },
+  { key: "donations", label: "Accepting Donations", predicate: () => true },
 ];
 
 const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
@@ -80,6 +81,7 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
   const [totalStats, setTotalStats] = useState<BumicertStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const filtersMenuRef = useRef<HTMLDivElement | null>(null);
+  const requestSeqRef = useRef(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -98,35 +100,32 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
   useEffect(() => {
     if (initialRecords.length > 0) return;
     const controller = new AbortController();
+    const requestSeq = ++requestSeqRef.current;
+    const options = { query: deferredQuery, filters, sort };
+    const isCurrent = () => requestSeqRef.current === requestSeq && !controller.signal.aborted;
     setLoading(true);
-    fetchBumicerts(BUMICERTS_PAGE_SIZE, null, controller.signal, (running) => {
-      setRecords(running);
-      setLoading(false);
-    })
+    setLoadingMore(false);
+    setRecords([]);
+    setCursor(null);
+    setHasMore(true);
+    fetchBumicerts(BUMICERTS_PAGE_SIZE, null, controller.signal, undefined, options)
       .then((page) => {
+        if (!isCurrent()) return;
         setRecords(page.records);
         setCursor(page.cursor);
         setHasMore(page.hasMore);
-        setLoading(false);
       })
       .catch((error) => {
-        if ((error as Error).name === "AbortError") return;
-        setLoading(false);
+        if ((error as Error).name !== "AbortError") console.warn("[bumicerts] fetch failed", error);
+      })
+      .finally(() => {
+        if (isCurrent()) setLoading(false);
       });
     return () => controller.abort();
-  }, [initialRecords.length]);
+  }, [initialRecords.length, deferredQuery, filters, sort]);
 
   const visibleRecords = useMemo(() => {
-    const q = deferredQuery.trim().toLowerCase();
-    const filtered = records.filter((record) => {
-      if (q) {
-        const haystack = `${record.title} ${record.shortDescription ?? ""} ${record.did}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-      return filters.every((key) => FILTER_CHIPS.find((chip) => chip.key === key)?.predicate(record));
-    });
-
-    return filtered.toSorted((a, b) => {
+    return records.filter((record) => filters.every((key) => FILTER_CHIPS.find((chip) => chip.key === key)?.predicate(record))).toSorted((a, b) => {
       switch (sort) {
         case "oldest":
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -209,12 +208,13 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
     if (loading || loadingMore || !hasMore) return;
 
     const controller = new AbortController();
+    const requestSeq = ++requestSeqRef.current;
+    const isCurrent = () => requestSeqRef.current === requestSeq && !controller.signal.aborted;
     const base = records;
     setLoadingMore(true);
-    fetchBumicerts(BUMICERTS_PAGE_SIZE, cursor, controller.signal, (running) => {
-      setRecords(mergeBumicertRecords(base, running));
-    })
+    fetchBumicerts(BUMICERTS_PAGE_SIZE, cursor, controller.signal, undefined, { query: deferredQuery, filters, sort })
       .then((page) => {
+        if (!isCurrent()) return;
         setRecords(mergeBumicertRecords(base, page.records));
         setCursor(page.cursor);
         setHasMore(page.hasMore);
@@ -222,8 +222,10 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
       .catch((error) => {
         if ((error as Error).name !== "AbortError") console.warn("[bumicerts] load more failed", error);
       })
-      .finally(() => setLoadingMore(false));
-  }, [cursor, hasMore, loading, loadingMore, records]);
+      .finally(() => {
+        if (isCurrent()) setLoadingMore(false);
+      });
+  }, [cursor, deferredQuery, filters, hasMore, loading, loadingMore, records, sort]);
   const openRecord = useCallback((record: BumicertRecord) => setDrawer(record), []);
   const openMapRecord = useCallback((record: ExplorerRecord) => {
     if (record.kind === "bumicert") setDrawer(record);
@@ -264,11 +266,11 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
         </div>
 
         <div className="relative z-10 mx-auto max-w-6xl px-6">
-          <div className="relative z-20 -mt-10 px-3">
+          <div className="relative z-20 -mt-10">
             <StatsBand stats={stats} loading={statsLoading || (loading && records.length === 0)} />
           </div>
 
-          <div className="relative z-20 mt-4 mb-0 space-y-3 px-3">
+          <div className="relative z-20 mt-4 mb-0 space-y-3">
             <div className="space-y-3 animate-in" style={{ animationDelay: "80ms" }}>
               <div className="flex items-center gap-3">
                 <div className="group/input-group border-input relative flex h-10 min-w-0 flex-1 items-center rounded-full border bg-background/50 shadow-xs backdrop-blur transition-[color,box-shadow] outline-none focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
@@ -424,7 +426,7 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
                       <div className="mb-3">
                         <h2 className="text-base font-medium text-foreground">All Filters</h2>
                         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                          Show projects that include photos, project places, contributors, or active dates.
+                          Show projects that include photos, project places, contributors, active dates, or open giving.
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">

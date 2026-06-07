@@ -163,6 +163,7 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
   const firstUrlSyncRef = useRef(true);
 
   const controller = useRef<AbortController | null>(null);
+  const loadSeqRef = useRef(0);
   // Latest values for the load closure without re-creating it each render.
   const stateRef = useRef({ records, cursor, hasMore, phase });
   stateRef.current = { records, cursor, hasMore, phase };
@@ -175,6 +176,8 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
         return;
 
       const ctrl = new AbortController();
+      const loadSeq = ++loadSeqRef.current;
+      const isCurrent = () => loadSeqRef.current === loadSeq && !ctrl.signal.aborted;
       controller.current?.abort();
       controller.current = ctrl;
       const after = mode === "more" ? s.cursor : null;
@@ -193,13 +196,11 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
           media: occMedia,
           target: LOAD_TARGET,
           after,
+          query: deferredQuery,
           signal: ctrl.signal,
-          onProgress: (running) => {
-            setRecords(merge(running));
-            setPhase("ready");
-          },
         })
           .then((res) => {
+            if (!isCurrent()) return;
             setRecords(merge(res.records));
             setCursor(res.cursor);
             setHasMore(res.hasMore);
@@ -208,27 +209,22 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
           .catch((err) => {
             if ((err as Error).name === "AbortError") return;
             console.warn("[explorer] occurrence walk failed", err);
-            setPhase(stateRef.current.records.length ? "ready" : "error");
+            if (isCurrent()) setPhase(stateRef.current.records.length ? "ready" : "error");
           })
           .finally(() => {
-            if (!ctrl.signal.aborted) setWalking(false);
+            if (isCurrent()) setWalking(false);
           });
         return;
       }
 
-      // Sites + Bumicerts page the cursor to the same target, emitting each
-      // page (up to 1000 records) so the grid fills progressively.
-      const onProgress = (running: ExplorerRecord[]) => {
-        setRecords(merge(running));
-        setPhase("ready");
-      };
       const request: Promise<Page<ExplorerRecord>> =
         kind === "site"
-          ? fetchSites(LOAD_TARGET, after, ctrl.signal, onProgress, siteSource)
-          : fetchBumicerts(LOAD_TARGET, after, ctrl.signal, onProgress);
+          ? fetchSites(LOAD_TARGET, after, ctrl.signal, undefined, siteSource, { query: deferredQuery, sort })
+          : fetchBumicerts(LOAD_TARGET, after, ctrl.signal, undefined, { query: deferredQuery, sort });
 
       request
         .then((page) => {
+          if (!isCurrent()) return;
           setRecords(merge(page.records));
           setCursor(page.cursor);
           setHasMore(page.hasMore);
@@ -237,13 +233,13 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
         .catch((err) => {
           if ((err as Error).name === "AbortError") return;
           console.warn(`[explorer] ${kind} fetch failed`, err);
-          setPhase(stateRef.current.records.length ? "ready" : "error");
+          if (isCurrent()) setPhase(stateRef.current.records.length ? "ready" : "error");
         })
         .finally(() => {
-          if (!ctrl.signal.aborted) setWalking(false);
+          if (isCurrent()) setWalking(false);
         });
     },
-    [kind, occMedia, siteSource],
+    [deferredQuery, kind, occMedia, siteSource, sort],
   );
 
   // Hydrate all shareable state from the URL once, before the first load, so a
@@ -338,13 +334,21 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
     setPhase("idle");
   }
 
+  useEffect(() => {
+    if (!hydrated) return;
+    controller.current?.abort();
+    setRecords([]);
+    setCursor(null);
+    setHasMore(true);
+    setPhase("idle");
+  }, [deferredQuery, hydrated, sort]);
+
   // First load (once hydrated) and any time a filter reset drops us back to
   // idle, kick off a walk. Gated on `hydrated` so the URL's filter params are
   // applied to the initial fetch.
   useEffect(() => {
     if (hydrated && phase === "idle" && records.length === 0) load("first");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, occMedia, siteSource, phase]);
+  }, [hydrated, load, occMedia, phase, records.length, siteSource]);
 
   const filtered = useMemo(
     () => sortRecords(filterRecords(records, deferredQuery), sort),
@@ -380,13 +384,13 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
       <div className="relative z-10 mx-auto max-w-6xl px-6">
         {/* Stats overview — computed live from the loaded records, matching the marketplace hero rhythm. */}
         {records.length > 0 && (
-          <div className="relative z-20 -mt-10 px-3">
+          <div className="relative z-20 -mt-10">
             <StatBand stats={stats.slice(0, 4)} />
           </div>
         )}
 
         {/* Toolbar */}
-        <div className="relative z-20 mt-5 flex flex-wrap items-center gap-3 px-3">
+        <div className="relative z-20 mt-5 flex flex-wrap items-center gap-3">
           <div className="relative flex-1" style={{ minWidth: "220px" }}>
             <SearchIcon
               aria-hidden
@@ -565,7 +569,7 @@ export function RecordExplorer({ kind }: { kind: RecordKind }) {
         )}
 
         {/* Load more */}
-        {records.length > 0 && !query && (
+        {records.length > 0 && (
           <div className="mt-10 flex flex-col items-center gap-3">
             {view === "cards" && filtered.length > renderedRecords.length && (
               <p className="text-[13px] text-foreground/55">

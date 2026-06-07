@@ -379,7 +379,7 @@ function LeaderboardShell({
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl px-6">
-        <div className="relative z-20 -mt-6 mb-0 space-y-3 px-3">
+        <div className="relative z-20 -mt-6 mb-0 space-y-3">
           <motion.div
             initial={animate ? { opacity: 0, y: 12 } : false}
             animate={{ opacity: 1, y: 0 }}
