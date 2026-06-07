@@ -268,7 +268,10 @@ function StatusSkeleton() {
             </div>
             <div className="h-4 w-16 rounded-full bg-muted/70" />
           </div>
-          <div className="mt-3 h-1.5 rounded-full bg-muted/50" />
+          <div className="mt-3 flex items-center gap-2.5">
+            <div className="h-1.5 flex-1 rounded-full bg-muted/50" />
+            <div className="h-3 w-12 shrink-0 rounded-full bg-muted/60" />
+          </div>
         </li>
       ))}
     </ul>

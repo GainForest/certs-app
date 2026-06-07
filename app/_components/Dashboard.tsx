@@ -747,12 +747,24 @@ function Skeleton({ className }: { className: string }) {
 }
 
 function TableSkeleton() {
+  // Mirrors the real table cards: an icon + uppercase label header (px-5 pt-5
+  // pb-3), then rows separated by a hairline top border like the real <tr>s.
   return (
-    <div className={`space-y-3 ${SURFACE} p-5`}>
-      <Skeleton className="h-3 w-24" />
-      {Array.from({ length: 5 }).map((_, index) => (
-        <Skeleton key={index} className="h-8 w-full" />
-      ))}
+    <div className={`overflow-hidden ${SURFACE}`}>
+      <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+        <Skeleton className="h-4 w-4 rounded-sm" />
+        <Skeleton className="h-3 w-28" />
+      </div>
+      <div>
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="flex items-center gap-3 border-t border-border/40 px-3 py-2.5">
+            <Skeleton className="h-3 w-6" />
+            <Skeleton className="h-3 flex-1" />
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-12" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -760,17 +772,27 @@ function TableSkeleton() {
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-12">
+      {/* KPI tiles — mirror StatsTile: icon chip + value on one row, detail below. */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
         {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className={`space-y-3 ${SURFACE} p-5`}>
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-3 w-32" />
+          <div key={index} className="relative overflow-hidden rounded-2xl bg-foreground/5 p-4 sm:rounded-3xl sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Skeleton className="size-4 shrink-0 rounded-sm sm:size-5" />
+              <Skeleton className="h-7 w-24 sm:h-8" />
+            </div>
+            <Skeleton className="mt-2 h-3 w-32" />
           </div>
         ))}
       </div>
-      <div className={`space-y-4 ${SURFACE} p-5`}>
-        <Skeleton className="h-3 w-40" />
+      {/* Donations volume chart — icon/label header, granularity pills, chart body. */}
+      <div className={`${SURFACE} p-5`}>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1.5">
+            <Skeleton className="h-3 w-40" />
+            <Skeleton className="h-3 w-28" />
+          </div>
+          <Skeleton className="h-9 w-56 rounded-full" />
+        </div>
         <Skeleton className="h-[240px] w-full" />
       </div>
       <div className="flex flex-col gap-6 lg:flex-row">

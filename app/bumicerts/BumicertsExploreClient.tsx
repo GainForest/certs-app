@@ -666,13 +666,30 @@ function BumicertGridSkeleton() {
   return (
     <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] items-stretch gap-6 lg:gap-8" aria-label="Loading projects">
       {Array.from({ length: 12 }).map((_, index) => (
-        <div key={index} className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div key={index} className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card">
+          {/* Image */}
           <div className="aspect-[4/3] bg-muted" />
-          <div className="space-y-2 p-4">
-            <div className="h-5 w-3/4 rounded-full bg-muted" />
-            <div className="h-3 w-full rounded-full bg-muted/70" />
-            <div className="h-3 w-2/3 rounded-full bg-muted/50" />
+
+          {/* Body (overlaps image like the real card) */}
+          <div className="-mt-6 flex flex-1 flex-col justify-between px-4 py-3">
+            <div>
+              <div className="h-6 w-3/4 rounded-full bg-muted" />
+              <div className="mt-1.5 space-y-1.5">
+                <div className="h-3.5 w-full rounded-full bg-muted/70" />
+                <div className="h-3.5 w-full rounded-full bg-muted/60" />
+                <div className="h-3.5 w-2/3 rounded-full bg-muted/50" />
+              </div>
+            </div>
+
+            {/* Pill rows */}
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <div className="h-6 w-16 rounded-full bg-muted/70" />
+              <div className="h-6 w-12 rounded-full bg-muted/60" />
+            </div>
           </div>
+
+          {/* Owner avatar pill */}
+          <div className="absolute left-2 top-2 h-8 w-8 rounded-full bg-background/70 shadow-lg backdrop-blur-lg" />
         </div>
       ))}
     </div>

@@ -511,11 +511,19 @@ function ManageSection({
 }
 
 function ManageSectionSkeleton() {
+  // Mirrors the real <ul className="flex flex-col gap-0.5"> of NavLeaf rows:
+  // each row is an h-9 button-shaped pill with a leading h-7 icon chip and a
+  // label bar. Account kind isn't known yet, so we show a representative count.
+  const labelWidths = ["w-24", "w-16", "w-20", "w-16"];
   return (
-    <div className="space-y-2 px-3 py-1" aria-hidden="true">
-      <div className="h-8 rounded-lg bg-muted/60" />
-      <div className="h-8 rounded-lg bg-muted/40" />
-    </div>
+    <ul className="flex flex-col gap-0.5" aria-hidden="true">
+      {labelWidths.map((width, index) => (
+        <li key={index} className="flex h-9 items-center gap-2 pl-1">
+          <span className="h-7 w-[42px] shrink-0 rounded-full bg-muted/60" />
+          <span className={`h-3.5 rounded-full bg-muted/50 ${width}`} />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -880,7 +888,20 @@ function BumicertHeaderAccordion({
 }
 
 function BumicertHeaderTabsSkeleton() {
-  return <div className="h-[42px] border-b border-border" />;
+  // Mirrors the real tab strip: a bottom-bordered row of px-4 py-2.5 tab links,
+  // one bar per BUMICERT_DETAIL_TABS entry sized to its label.
+  const tabWidths = ["w-16", "w-24", "w-20", "w-16"];
+  return (
+    <div className="-mx-4 overflow-x-auto px-4" aria-hidden="true">
+      <div className="flex min-w-max items-end border-b border-border">
+        {tabWidths.map((width, index) => (
+          <div key={index} className="flex items-center px-4 py-2.5">
+            <span className={`h-4 rounded-full bg-muted/50 ${width}`} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function MobileNavDrawer({

@@ -131,22 +131,60 @@ export function DeviceMonitor({ initial }: { initial?: DevicesSnapshot }) {
 // ── Card ───────────────────────────────────────────────────────────────────
 
 function DeviceCardsSkeleton() {
+  // Mirrors the real DeviceCard: header (name + handle + status pill), a
+  // "Last reported" baseline row, a "Device health" section (uppercase label +
+  // multi-column readings), a "Tainá activity" section (label + 3 stat boxes),
+  // and a tags footer separated by a top border.
   return (
     <ul role="list" className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Loading field updates">
       {Array.from({ length: 6 }).map((_, index) => (
-        <li key={index} className="rounded-2xl border border-border-soft bg-surface p-5">
+        <li key={index} className="flex h-full flex-col gap-5 rounded-2xl border border-border-soft bg-surface p-5">
+          {/* Header */}
           <div className="flex items-start justify-between gap-3">
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-1.5">
               <div className="h-4 w-32 rounded-full bg-muted" />
-              <div className="h-3 w-24 rounded-full bg-muted/70" />
+              <div className="h-3 w-24 rounded-full bg-muted/60" />
             </div>
-            <div className="h-7 w-20 rounded-full bg-muted" />
+            <div className="h-6 w-20 shrink-0 rounded-full bg-muted/70" />
           </div>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="h-12 rounded-lg bg-muted/60" />
-            <div className="h-12 rounded-lg bg-muted/60" />
+
+          {/* Last reported */}
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="h-3 w-24 rounded-full bg-muted/50" />
+            <div className="h-3 w-16 rounded-full bg-muted/60" />
           </div>
-          <div className="mt-4 h-20 rounded-lg bg-muted/40" />
+
+          {/* Device health */}
+          <div>
+            <div className="mb-2.5 h-2.5 w-24 rounded-full bg-muted/50" />
+            <div className="grid grid-cols-2 gap-x-5 gap-y-3.5 sm:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-1.5">
+                  <div className="h-2.5 w-12 rounded-full bg-muted/50" />
+                  <div className="h-3.5 w-14 rounded-full bg-muted/60" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tainá activity */}
+          <div>
+            <div className="mb-2.5 h-2.5 w-24 rounded-full bg-muted/50" />
+            <div className="grid grid-cols-3 gap-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-1.5 rounded-lg bg-surface-sunken/60 px-2.5 py-2">
+                  <div className="h-2.5 w-full rounded-full bg-muted/50" />
+                  <div className="h-4 w-8 rounded-full bg-muted/60" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tags footer */}
+          <div className="mt-auto flex flex-wrap gap-1.5 border-t border-border-soft pt-4">
+            <div className="h-5 w-14 rounded-md bg-muted/40" />
+            <div className="h-5 w-16 rounded-md bg-muted/40" />
+          </div>
         </li>
       ))}
     </ul>

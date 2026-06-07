@@ -1343,14 +1343,19 @@ function SkeletonGrid({ kind }: { kind?: RecordKind }) {
   return (
     <div className={GRID_CLS} aria-hidden>
       {Array.from({ length: 15 }).map((_, i) => (
-        <div key={i} className="overflow-hidden rounded-xl border border-border-soft">
+        <div key={i} className="flex flex-col overflow-hidden rounded-xl border border-border-soft bg-surface">
           <div className="skeleton aspect-[4/3]" />
-          <div className="space-y-2 px-3 pb-2.5 pt-2.5">
-            <div className="skeleton h-3.5 w-3/4 rounded" />
-            <div className="skeleton h-3 w-1/2 rounded" />
-            <div className="mt-2 flex items-center justify-between border-t border-border-soft pt-2">
+          {/* Mirrors GenericCard content: title, subtitle, a row of pills, then a
+              right-aligned "Shared …" footer separated by a hairline border. */}
+          <div className="flex flex-1 flex-col px-3 pb-2.5 pt-2.5">
+            <div className="skeleton h-4 w-3/4 rounded" />
+            <div className="skeleton mt-1 h-3 w-1/2 rounded" />
+            <div className="mt-2 flex gap-1">
+              <div className="skeleton h-4 w-12 rounded-full" />
+              <div className="skeleton h-4 w-10 rounded-full" />
+            </div>
+            <div className="mt-2.5 flex justify-end border-t border-border-soft pt-2">
               <div className="skeleton h-2.5 w-1/3 rounded" />
-              <div className="skeleton h-2.5 w-1/4 rounded" />
             </div>
           </div>
         </div>

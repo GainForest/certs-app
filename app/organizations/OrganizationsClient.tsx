@@ -663,12 +663,28 @@ function OrganizationsGridSkeleton() {
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-2 lg:gap-4" aria-label="Loading organizations">
       {Array.from({ length: 12 }).map((_, index) => (
-        <div key={index} className="overflow-hidden rounded-2xl border border-border/50 bg-card">
-          <div className="h-32 bg-muted" />
-          <div className="space-y-2 p-4">
-            <div className="h-5 w-3/4 rounded-full bg-muted" />
-            <div className="h-3 w-full rounded-full bg-muted/70" />
-            <div className="h-3 w-2/3 rounded-full bg-muted/50" />
+        <div key={index} className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card">
+          {/* Cover */}
+          <div className="h-28 shrink-0 bg-muted" />
+
+          {/* Body */}
+          <div className="flex flex-1 flex-col px-5 pb-5">
+            <div className="-mt-8 mb-3 flex items-end justify-between gap-2">
+              <div className="size-16 shrink-0 rounded-full bg-muted ring-4 ring-card" />
+              <div className="mb-1 h-6 w-20 rounded-full bg-muted/70" />
+            </div>
+
+            <div className="h-6 w-3/4 rounded-full bg-muted" />
+            <div className="mt-1.5 space-y-1.5">
+              <div className="h-3.5 w-full rounded-full bg-muted/70" />
+              <div className="h-3.5 w-2/3 rounded-full bg-muted/50" />
+            </div>
+
+            <div className="min-h-5 flex-1" />
+            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-2.5">
+              <div className="h-3.5 w-24 rounded-full bg-muted/60" />
+              <div className="size-8 shrink-0 rounded-full bg-muted" />
+            </div>
           </div>
         </div>
       ))}

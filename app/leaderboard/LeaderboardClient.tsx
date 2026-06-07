@@ -432,17 +432,16 @@ function LeaderboardGrid({ entries }: { entries: LeaderboardEntry[] }) {
 
 function LeaderboardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-3xl bg-card/70 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 divide-y divide-border/60">
+    <div className="overflow-hidden rounded-3xl bg-card/70 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur divide-y divide-border/60">
       {Array.from({ length: 8 }).map((_, index) => (
-        <div key={index} className="flex items-center gap-3.5 px-4 py-[18px] sm:gap-4 sm:px-5 sm:py-5">
-          <Skeleton className="size-9 rounded-full" />
-          <Skeleton className="size-11 rounded-full" />
-          <div className="min-w-0 flex-1 space-y-2.5">
-            <Skeleton className="h-4 w-40 max-w-full" />
-            <Skeleton className="h-3 w-52 max-w-full" />
+        <div key={index} className="flex items-start gap-3.5 px-4 py-[18px] sm:gap-4 sm:px-5 sm:py-5">
+          <Skeleton className="size-9 shrink-0 rounded-full" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton className="h-[18px] w-40 max-w-full" />
+            <Skeleton className="h-4 w-52 max-w-full" />
           </div>
-          <Skeleton className="h-5 w-16 shrink-0" />
-          <Skeleton className="size-5 shrink-0 rounded-full" />
+          <Skeleton className="mt-0.5 h-5 w-16 shrink-0" />
+          <Skeleton className="mt-1 size-4 shrink-0 rounded-full sm:size-5" />
         </div>
       ))}
     </div>
