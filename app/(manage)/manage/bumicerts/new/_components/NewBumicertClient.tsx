@@ -39,7 +39,11 @@ import {
 import { format } from "date-fns";
 import { localBumicertHref, hyperscanRecordHref } from "@/app/_lib/urls";
 import { createRecord, putRecord, uploadBlob } from "@/app/(manage)/manage/_lib/mutations";
-import { validateGeojsonOrThrow } from "@/app/(manage)/manage/_lib/upload/geojson";
+import { useModal } from "@/components/ui/modal/context";
+import {
+  SiteEditorModal,
+  SiteEditorModalId,
+} from "@/app/(manage)/manage/_modals/SiteEditorModal";
 import { BumicertCardVisual } from "@/components/bumicert/BumicertCard";
 import { HeaderContent } from "@/app/_components/HeaderSlots";
 import { Button } from "@/components/ui/button";
@@ -85,9 +89,7 @@ const DRAFT_STORAGE_KEY = "bumicerts:create-drafts:v1";
 const COLLECTION = "org.hypercerts.claim.activity";
 const WORK_SCOPE_TAG_COLLECTION = "org.hypercerts.workscope.tag";
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const MAX_SITE_FILE_BYTES = 10 * 1024 * 1024;
 const TITLE_MAX = 120;
-const POLYGONS_APP_URL = "https://polygons-gainforest.vercel.app";
 const TERMS_URL = "https://www.certified.app/terms";
 
 const EMPTY_FORM: FormValues = {
@@ -629,30 +631,6 @@ function BasicsStep({
   );
 }
 
-type Point = { lng: number; lat: number };
-
-function pointsToMapArea(points: Point[]): string {
-  if (points.length < 3) throw new Error("A drawn site needs at least three points.");
-  const coordinates = points.map((point) => [point.lng, point.lat] as [number, number]);
-  const first = coordinates[0];
-  const last = coordinates[coordinates.length - 1];
-  if (first && last && (first[0] !== last[0] || first[1] !== last[1])) coordinates.push([first[0], first[1]]);
-  return JSON.stringify({ type: "Feature", geometry: { type: "Polygon", coordinates: [coordinates] }, properties: {} });
-}
-
-function processMapAreaData(data: unknown): string | null {
-  if (data === null || (Array.isArray(data) && data.length === 0)) return null;
-  if (Array.isArray(data)) {
-    try { return pointsToMapArea(data as Point[]); } catch { return null; }
-  }
-  if (typeof data === "string") {
-    try { JSON.parse(data); return data; } catch { return null; }
-  }
-  if (data && typeof data === "object") {
-    try { return JSON.stringify(data); } catch { return null; }
-  }
-  return null;
-}
 
 function StoryStep({
   values,
@@ -701,182 +679,6 @@ function StoryStep({
   );
 }
 
-function siteFileFromMapArea(mapArea: string): File {
-  return new File([new Blob([mapArea], { type: "application/geo+json" })], "drawn-site.geojson", { type: "application/geo+json" });
-}
-
-async function validateSiteFile(file: File): Promise<void> {
-  if (file.size > MAX_SITE_FILE_BYTES) throw new Error("Choose a smaller site file.");
-  try {
-    validateGeojsonOrThrow(JSON.parse(await file.text()));
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : "Choose a valid site file.");
-  }
-}
-
-function DrawPolygonPanel({ onBack, onDone }: { onBack: () => void; onDone: (file: File) => void }) {
-  const [mapArea, setMapArea] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== POLYGONS_APP_URL) return;
-      if (event.data?.type === "polygon-data") setMapArea(processMapAreaData(event.data.data));
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
-  return (
-    <div className="grid gap-4 p-5">
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-muted">
-        {!loaded ? <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted"><Loader2Icon className="size-5 animate-spin text-muted-foreground" /></div> : null}
-        <iframe src={`${POLYGONS_APP_URL}/draw`} title="Draw site area" className="h-[28rem] w-full" onLoad={() => setLoaded(true)} />
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onBack}>Back</Button>
-        <Button type="button" disabled={!mapArea} onClick={() => mapArea && onDone(siteFileFromMapArea(mapArea))}>Done</Button>
-      </div>
-    </div>
-  );
-}
-
-function AddSiteModal({
-  did,
-  onClose,
-  onSaved,
-}: {
-  did: string;
-  onClose: () => void;
-  onSaved: (site: ManagedLocation) => void;
-}) {
-  const [name, setName] = useState("");
-  const [siteFile, setSiteFile] = useState<File | null>(null);
-  const [drawing, setDrawing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [siteErrors, setSiteErrors] = useState<{ name?: string; file?: string }>({});
-
-  const save = async () => {
-    const fileToSave = siteFile;
-    const nextErrors: { name?: string; file?: string } = {};
-    if (!name.trim()) nextErrors.name = "Name this site before saving.";
-    if (!fileToSave) nextErrors.file = "Upload a site file or draw a site before saving.";
-    if (nextErrors.name || nextErrors.file) {
-      setSiteErrors(nextErrors);
-      setError(null);
-      return;
-    }
-    if (!fileToSave) return;
-    setSaving(true);
-    setError(null);
-    setSiteErrors({});
-    try {
-      try {
-        await validateSiteFile(fileToSave);
-      } catch (validationError) {
-        setSiteErrors({ file: validationError instanceof Error ? validationError.message : "Choose a valid site file." });
-        return;
-      }
-      const uploaded = await uploadBlob(fileToSave);
-      const createdAt = new Date().toISOString();
-      const record: Record<string, unknown> = {
-        $type: "app.certified.location",
-        lpVersion: "1.0.0",
-        srs: "https://epsg.io/3857",
-        locationType: "geojson-point",
-        location: { $type: "org.hypercerts.defs#smallBlob", blob: uploaded.ref },
-        name: name.trim(),
-        createdAt,
-      };
-      const result = await createRecord("app.certified.location", record);
-      const rkey = result.uri.split("/").pop() ?? "site";
-      onSaved({
-        metadata: { did, uri: result.uri, rkey, cid: result.cid, createdAt },
-        record: { name: name.trim(), description: null, locationType: "map area", location: { kind: "unknown" } },
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save this site.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <motion.div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/45 p-0 backdrop-blur-sm sm:items-center sm:p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <motion.div className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-t-3xl border border-border bg-background shadow-2xl sm:rounded-3xl" initial={{ y: 28, scale: 0.98 }} animate={{ y: 0, scale: 1 }} exit={{ y: 28, scale: 0.98 }}>
-        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
-          <div>
-            <h3 className="font-instrument text-2xl italic text-foreground">Add a site</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Upload a site file, or draw a new project area.</p>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-            <XIcon className="size-5" />
-          </button>
-        </div>
-        {drawing ? (
-          <DrawPolygonPanel
-            onBack={() => setDrawing(false)}
-            onDone={(file) => {
-              setSiteFile(file);
-              setDrawing(false);
-              setError(null);
-              setSiteErrors((current) => ({ ...current, file: undefined }));
-            }}
-          />
-        ) : (
-          <div className="grid gap-4 p-5">
-            <Field label="Site name" htmlFor="new-site-name" error={siteErrors.name}>
-              <input
-                id="new-site-name"
-                value={name}
-                onChange={(event) => {
-                  setName(event.target.value);
-                  setSiteErrors((current) => ({ ...current, name: undefined }));
-                }}
-                placeholder="North restoration plot"
-                className={cn(FIELD, "px-4 py-2.5 text-sm", siteErrors.name && FIELD_ERROR)}
-              />
-            </Field>
-            <Field label="Site file" error={siteErrors.file}>
-              <label className={cn("flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/35 px-5 py-6 text-center transition-colors hover:border-primary/40 hover:bg-primary/5", siteErrors.file ? "border-2 border-destructive ring-2 ring-destructive/25" : "border-border")}>
-              <input
-                type="file"
-                accept=".geojson,.json,application/geo+json,application/json"
-                className="sr-only"
-                onChange={(event) => {
-                  setSiteFile(event.target.files?.[0] ?? null);
-                  setError(null);
-                  setSiteErrors((current) => ({ ...current, file: undefined }));
-                  event.target.value = "";
-                }}
-              />
-                <span className="text-sm font-medium text-foreground">{siteFile ? siteFile.name : "Upload a site file"}</span>
-                <span className="mt-1 text-xs text-muted-foreground">Choose a saved map boundary from your device.</span>
-              </label>
-            </Field>
-            <div className="flex items-center gap-2">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">or</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            <Button type="button" variant="outline" className="w-full" onClick={() => setDrawing(true)}>
-              <PencilIcon className="size-4" /> Draw a site instead
-            </Button>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-              <Button type="button" onClick={() => void save()} disabled={saving}>
-                {saving ? <Loader2Icon className="size-4 animate-spin" /> : <CheckIcon className="size-4" />}
-                Add site
-              </Button>
-            </div>
-          </div>
-        )}
-      </motion.div>
-    </motion.div>
-  );
-}
 
 function PeopleStep({
   did,
@@ -906,7 +708,7 @@ function PeopleStep({
   onFieldChange: (field: FormField) => void;
 }) {
   const [showAllSites, setShowAllSites] = useState(false);
-  const [addingSite, setAddingSite] = useState(false);
+  const { pushModal, show } = useModal();
   const updateContributor = (index: number, value: string) => {
     onFieldChange("contributors");
     setValues((c) => ({ ...c, contributors: c.contributors.map((v, i) => (i === index ? value : v)) }));
@@ -959,7 +761,52 @@ function PeopleStep({
 
       <Field label="Sites" hint="optional — but it makes the work easier to verify">
         <div className="mb-3 flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setAddingSite(true)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              pushModal(
+                {
+                  id: SiteEditorModalId,
+                  dialogWidth: "max-w-lg",
+                  content: (
+                    <SiteEditorModal
+                      did={did}
+                      initialData={null}
+                      onSaved={(savedRef) => {
+                        const optimisticSite: ManagedLocation = {
+                          metadata: {
+                            did,
+                            uri: savedRef.uri,
+                            rkey: savedRef.rkey,
+                            cid: savedRef.cid,
+                            createdAt: new Date().toISOString(),
+                          },
+                          record: {
+                            name: savedRef.name,
+                            description: null,
+                            locationType: "geojson-point",
+                            location: null,
+                          },
+                        };
+                        onSiteCreated(optimisticSite);
+                        setValues((current) => ({
+                          ...current,
+                          selectedLocationUris: [
+                            ...current.selectedLocationUris,
+                            savedRef.uri,
+                          ],
+                        }));
+                      }}
+                    />
+                  ),
+                },
+                true,
+              );
+              void show();
+            }}
+          >
             <PlusIcon className="size-4" /> Add a site
           </Button>
           {sites.length > 6 ? (
@@ -1009,19 +856,6 @@ function PeopleStep({
           </div>
         )}
       </Field>
-      <AnimatePresence>
-        {addingSite ? (
-          <AddSiteModal
-            did={did}
-            onClose={() => setAddingSite(false)}
-            onSaved={(site) => {
-              onSiteCreated(site);
-              setValues((current) => ({ ...current, selectedLocationUris: [...current.selectedLocationUris, site.metadata.uri] }));
-              setAddingSite(false);
-            }}
-          />
-        ) : null}
-      </AnimatePresence>
     </div>
   );
 }

@@ -54,8 +54,6 @@ export default function PreviewStep({ parsedData, mappings, koboMediaZipIndex, s
       .catch((err) => { setBoundaryError(err instanceof Error ? err.message : "Failed to load boundary."); setBoundaryLoading(false); });
   }, [siteSelection]);
 
-  const boundaryValidationReady = siteSelection !== null && siteBoundary !== null;
-
   const { validationResult, mappedHeaders, mappedRows, hasAnyPhotos } = useMemo(() => {
     const mapped = applyMappings(parsedData, mappings);
     const result = parseAndValidateRows(mapped, parsedData, mappings, {
@@ -78,7 +76,7 @@ export default function PreviewStep({ parsedData, mappings, koboMediaZipIndex, s
   const errorCount = errors.length;
   const allValid = errorCount === 0;
   const allInvalid = validCount === 0;
-  const canContinue = boundaryValidationReady && validCount > 0;
+  const canContinue = siteSelection !== null && validCount > 0 && !boundaryLoading;
 
   const photoCountByIndex = useMemo(() => {
     const map = new Map<number, number>();
@@ -128,9 +126,9 @@ export default function PreviewStep({ parsedData, mappings, koboMediaZipIndex, s
           <span>Verifying site boundary for {siteSelection.name}…</span>
         </div>
       ) : boundaryError ? (
-        <div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          <XCircle className="h-4 w-4 shrink-0" />
-          <span>Could not load site boundary: {boundaryError}</span>
+        <div className="flex items-center gap-2 rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-600 dark:text-yellow-400">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>Could not verify site boundary ({boundaryError}). Row coordinates will be checked against the boundary during upload.</span>
         </div>
       ) : allValid ? (
         <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 p-3 text-sm text-primary">
