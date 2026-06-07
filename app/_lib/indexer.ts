@@ -1047,6 +1047,10 @@ export type SiteRecord = {
   locationUri: string | null;
   createdAt: string | null;
   imageUrl: string | null;
+  /** Wide profile banner image, when the organization has one. */
+  bannerUrl: string | null;
+  /** Square logo/avatar image, when the organization has one. */
+  avatarUrl: string | null;
   coverRef: string | null;
   logoRef: string | null;
 };
@@ -1109,6 +1113,8 @@ function mapOrg(n: RawOrg): SiteRecord {
     locationUri: null,
     createdAt: n.createdAt ?? null,
     imageUrl: null,
+    bannerUrl: null,
+    avatarUrl: null,
     coverRef: normaliseRef(n.coverImage?.image?.ref),
     logoRef: normaliseRef(n.logo?.image?.ref),
   };
@@ -1194,11 +1200,15 @@ async function fetchOrgPage(
   let records = nodes.map(mapOrg);
   records = await resolveImages(
     records,
-    (r) => {
-      const ref = r.coverRef ?? r.logoRef;
-      return ref ? { did: r.did, ref } : null;
-    },
-    (r, url) => ({ ...r, imageUrl: url }),
+    (r) => (r.coverRef ? { did: r.did, ref: r.coverRef } : null),
+    (r, url) => ({ ...r, bannerUrl: url, imageUrl: url ?? r.imageUrl }),
+    signal,
+    SITE_IMAGE_RESOLVE_LIMIT,
+  );
+  records = await resolveImages(
+    records,
+    (r) => (r.logoRef ? { did: r.did, ref: r.logoRef } : null),
+    (r, url) => ({ ...r, avatarUrl: url, imageUrl: r.imageUrl ?? url }),
     signal,
     SITE_IMAGE_RESOLVE_LIMIT,
   );
@@ -1312,8 +1322,10 @@ function mapCertOrg(n: RawCertOrg, profile: CertProfileInfo | undefined): SiteRe
     locationUri: sv(n.location?.uri),
     createdAt: n.createdAt ?? null,
     imageUrl: null,
-    coverRef: profile?.avatarRef ?? null,
-    logoRef: null,
+    bannerUrl: null,
+    avatarUrl: null,
+    coverRef: null,
+    logoRef: profile?.avatarRef ?? null,
   };
 }
 
@@ -1347,8 +1359,8 @@ async function fetchCertOrgPage(
   let records = nodes.map((n) => mapCertOrg(n, profiles.get(n.did)));
   records = await resolveImages(
     records,
-    (r) => (r.coverRef ? { did: r.did, ref: r.coverRef } : null),
-    (r, url) => ({ ...r, imageUrl: url }),
+    (r) => (r.logoRef ? { did: r.did, ref: r.logoRef } : null),
+    (r, url) => ({ ...r, avatarUrl: url, imageUrl: url ?? r.imageUrl }),
     signal,
     SITE_IMAGE_RESOLVE_LIMIT,
   );
@@ -2083,9 +2095,10 @@ export async function fetchRecordByUri(
     if (!n?.did) return null;
     const profiles = await fetchCertProfiles([n.did], signal);
     const rec = mapCertOrg(n, profiles.get(n.did));
-    if (rec.coverRef) {
+    if (rec.logoRef) {
       try {
-        rec.imageUrl = await resolveBlobUrl(rec.did, rec.coverRef, signal);
+        rec.avatarUrl = await resolveBlobUrl(rec.did, rec.logoRef, signal);
+        rec.imageUrl = rec.avatarUrl;
       } catch {
         /* keep placeholder */
       }
@@ -2102,10 +2115,18 @@ export async function fetchRecordByUri(
     const n = data?.appGainforestOrganizationInfoByUri;
     if (!n?.did) return null;
     const rec = mapOrg(n);
-    const ref = rec.coverRef ?? rec.logoRef;
-    if (ref) {
+    if (rec.coverRef) {
       try {
-        rec.imageUrl = await resolveBlobUrl(rec.did, ref, signal);
+        rec.bannerUrl = await resolveBlobUrl(rec.did, rec.coverRef, signal);
+        rec.imageUrl = rec.bannerUrl;
+      } catch {
+        /* keep placeholder */
+      }
+    }
+    if (rec.logoRef) {
+      try {
+        rec.avatarUrl = await resolveBlobUrl(rec.did, rec.logoRef, signal);
+        rec.imageUrl ??= rec.avatarUrl;
       } catch {
         /* keep placeholder */
       }

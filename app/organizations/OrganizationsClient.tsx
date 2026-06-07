@@ -4,9 +4,12 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowUpDownIcon,
+  ArrowUpRightIcon,
+  CheckIcon,
   ChevronDownIcon,
   GlobeIcon,
   ImageIcon,
+  ImageOffIcon,
   LayoutGridIcon,
   LeafIcon,
   MapIcon,
@@ -16,7 +19,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RecordDrawer } from "../_components/RecordDrawer";
 import { RecordMap } from "../_components/RecordMap";
 import { StatsTileGrid } from "../_components/StatsTile";
@@ -27,7 +30,7 @@ import {
   type OrganizationStats,
   type SiteRecord,
 } from "../_lib/indexer";
-import { countryFlag, formatDate } from "../_lib/format";
+import { countryFlag } from "../_lib/format";
 
 type SortMode = "newest" | "oldest" | "az" | "za";
 type SourceFilter = "both" | "gainforest" | "certified";
@@ -202,12 +205,13 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
 
   const hasMoreCardsToShow = view === "cards" && renderedRecords.length < visibleRecords.length;
 
-  const hasActiveFilters =
-    query.trim().length > 0 ||
-    sourceFilter !== "both" ||
-    Boolean(countryFilter) ||
-    Boolean(typeFilter) ||
-    quickFilters.length > 0;
+  const activeFilterCount =
+    (sourceFilter !== "both" ? 1 : 0) +
+    (countryFilter ? 1 : 0) +
+    (typeFilter ? 1 : 0) +
+    quickFilters.length;
+
+  const hasActiveFilters = query.trim().length > 0 || activeFilterCount > 0;
 
   useEffect(() => {
     setCardLimit(INITIAL_CARD_LIMIT);
@@ -264,10 +268,10 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
             <StatsBand stats={stats} loading={statsLoading || (loading && records.length === 0)} />
           </div>
 
-          <div className="relative z-20 mt-4 mb-0 space-y-3">
-            <div className="flex flex-wrap items-center gap-3 animate-in" style={{ animationDelay: "80ms" }}>
-              <div className="group/input-group border-input relative flex h-10 min-w-[220px] flex-1 items-center rounded-full border bg-background/50 shadow-xs backdrop-blur transition-[color,box-shadow] outline-none focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
-                <div className="flex h-auto cursor-text items-center justify-center gap-2 py-1.5 pl-3 text-sm font-medium text-muted-foreground select-none">
+          <div className="relative z-20 mt-4 mb-0 space-y-2.5">
+            <div className="flex items-center gap-2 animate-in" style={{ animationDelay: "80ms" }}>
+              <div className="group/input-group border-input relative flex h-10 min-w-0 flex-1 items-center rounded-full border bg-background/50 shadow-xs backdrop-blur transition-[color,box-shadow] outline-none focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
+                <div className="flex h-auto cursor-text items-center justify-center gap-2 py-1.5 pl-3.5 text-sm font-medium text-muted-foreground select-none">
                   <SearchIcon className="h-4 w-4" />
                 </div>
                 <input
@@ -275,110 +279,73 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search organizations"
-                  className="min-w-0 flex-1 truncate border-0 bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                  className="min-w-0 flex-1 truncate border-0 bg-transparent px-2.5 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 />
               </div>
 
+              <SortControl sort={sort} setSort={setSort} open={openDropdown} setOpen={setOpenDropdown} />
+
               <ViewToggle view={view} setView={setView} />
-
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setOpenDropdown((open) => !open)}
-                  aria-expanded={openDropdown}
-                  className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground hover:shadow-sm sm:px-8 has-[>svg]:px-4"
-                >
-                  <ArrowUpDownIcon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{SORT_OPTIONS.find((option) => option.value === sort)?.label}</span>
-                  <ChevronDownIcon className={`h-4 w-4 transition-transform ${openDropdown ? "rotate-180" : ""}`} />
-                </button>
-
-                <AnimatePresence>
-                  {openDropdown && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      className="absolute top-full right-0 z-20 mt-2 w-44 rounded-2xl border border-border bg-background py-1.5 shadow-xl"
-                    >
-                      {SORT_OPTIONS.map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => {
-                            setSort(option.value);
-                            setOpenDropdown(false);
-                          }}
-                          className={`w-full px-3 py-2 text-left text-sm transition-colors ${
-                            sort === option.value
-                              ? "bg-primary/5 text-primary"
-                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
             </div>
 
-            <ChipRow delay={120}>
-              {SOURCE_CHIPS.map((chip) => (
-                <FilterChip
-                  key={chip.value}
-                  selected={sourceFilter === chip.value}
-                  onClick={() => setSourceFilter(chip.value)}
-                >
-                  {chip.label}
-                </FilterChip>
-              ))}
-              {QUICK_CHIPS.map(({ value, label, Icon }) => (
-                <FilterChip
-                  key={value}
-                  selected={quickFilters.includes(value)}
-                  onClick={() => toggleQuickFilter(value)}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </FilterChip>
-              ))}
-              {hasActiveFilters && (
-                <Button type="button" onClick={clearAll} variant="outline" size="sm" className="h-10 text-sm">
-                  <XIcon className="h-3.5 w-3.5" />
-                  Clear filters
-                </Button>
-              )}
-            </ChipRow>
-
-            {typeChips.length > 0 && (
-              <ChipRow delay={150}>
-                {typeChips.map((type) => (
+            <div
+              className="scroll-mask-right scrollbar-hidden overflow-x-auto animate-in"
+              style={{ animationDelay: "120ms" }}
+            >
+              <div className="flex items-center gap-1.5 pb-1 pr-8">
+                {SOURCE_CHIPS.map((chip) => (
                   <FilterChip
-                    key={type.value}
-                    selected={typeFilter === type.value}
-                    onClick={() => setTypeFilter(typeFilter === type.value ? null : type.value)}
+                    key={chip.value}
+                    selected={sourceFilter === chip.value}
+                    onClick={() => setSourceFilter(chip.value)}
                   >
-                    {type.label}
-                    <span className="text-[10px] opacity-60">{type.count}</span>
+                    {chip.label}
                   </FilterChip>
                 ))}
-              </ChipRow>
-            )}
 
-            {countryChips.length > 0 && (
-              <ChipRow delay={180}>
-                {countryChips.map((country) => (
+                <span className="mx-0.5 h-5 w-px shrink-0 bg-border" aria-hidden />
+
+                {QUICK_CHIPS.map(({ value, label, Icon }) => (
                   <FilterChip
-                    key={country.code}
-                    selected={countryFilter === country.code}
-                    onClick={() => setCountryFilter(countryFilter === country.code ? null : country.code)}
+                    key={value}
+                    selected={quickFilters.includes(value)}
+                    onClick={() => toggleQuickFilter(value)}
                   >
-                    {country.emoji} {country.name}
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
                   </FilterChip>
                 ))}
-              </ChipRow>
-            )}
+
+                {typeChips.length > 0 && (
+                  <FacetDropdown
+                    label="Category"
+                    value={typeFilter}
+                    options={typeChips.map((type) => ({ value: type.value, label: type.label, count: type.count }))}
+                    onChange={setTypeFilter}
+                  />
+                )}
+
+                {countryChips.length > 0 && (
+                  <FacetDropdown
+                    label="Country"
+                    value={countryFilter}
+                    options={countryChips.map((country) => ({ value: country.code, label: country.name, emoji: country.emoji }))}
+                    onChange={setCountryFilter}
+                  />
+                )}
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearAll}
+                    className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <XIcon className="h-3.5 w-3.5" />
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="my-6 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
@@ -492,7 +459,7 @@ function OrganizationsHero() {
 
 function ViewToggle({ view, setView }: { view: ViewMode; setView: (view: ViewMode) => void }) {
   return (
-    <div className="inline-flex h-10 items-center rounded-full border border-border bg-background/70 p-0.5 backdrop-blur">
+    <div className="inline-flex h-10 shrink-0 items-center rounded-full border border-border bg-background/70 p-0.5 backdrop-blur">
       {([
         { id: "cards", label: "Cards", Icon: LayoutGridIcon },
         { id: "map", label: "Map", Icon: MapIcon },
@@ -502,22 +469,75 @@ function ViewToggle({ view, setView }: { view: ViewMode; setView: (view: ViewMod
           type="button"
           onClick={() => setView(id)}
           aria-pressed={view === id}
-          className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors ${
+          aria-label={label}
+          title={label}
+          className={`inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-sm font-medium transition-colors sm:px-3 ${
             view === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Icon className="h-3.5 w-3.5" />
-          {label}
+          <Icon className="h-4 w-4" />
+          <span className="hidden sm:inline">{label}</span>
         </button>
       ))}
     </div>
   );
 }
 
-function ChipRow({ children, delay }: { children: React.ReactNode; delay: number }) {
+function SortControl({
+  sort,
+  setSort,
+  open,
+  setOpen,
+}: {
+  sort: SortMode;
+  setSort: (sort: SortMode) => void;
+  open: boolean;
+  setOpen: (updater: (open: boolean) => boolean) => void;
+}) {
   return (
-    <div className="scroll-mask-right scrollbar-hidden overflow-x-auto animate-in" style={{ animationDelay: `${delay}ms` }}>
-      <div className="flex items-center gap-2 pb-1 pr-8">{children}</div>
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        aria-label="Sort"
+        className="inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground hover:shadow-sm"
+      >
+        <ArrowUpDownIcon className="h-4 w-4" />
+        <span className="hidden md:inline">{SORT_OPTIONS.find((option) => option.value === sort)?.label}</span>
+        <ChevronDownIcon className={`hidden h-4 w-4 transition-transform md:inline ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setOpen(() => false)} aria-hidden />
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="absolute top-full right-0 z-20 mt-2 w-44 rounded-2xl border border-border bg-background py-1.5 shadow-xl"
+            >
+              {SORT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setSort(option.value);
+                    setOpen(() => false);
+                  }}
+                  className={`w-full px-3 py-2 text-left text-sm transition-colors ${
+                    sort === option.value
+                      ? "bg-primary/5 text-primary"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -532,9 +552,87 @@ function FilterChip({
   children: React.ReactNode;
 }) {
   return (
-    <Button type="button" onClick={onClick} variant={selected ? "default" : "outline"} size="sm" className="h-10 text-sm">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-sm font-medium transition-colors ${
+        selected
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground"
+      }`}
+    >
       {children}
-    </Button>
+    </button>
+  );
+}
+
+type FacetOption = { value: string; label: string; count?: number; emoji?: string };
+
+function FacetDropdown({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string | null;
+  options: FacetOption[];
+  onChange: (value: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((option) => option.value === value) ?? null;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={`inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-sm font-medium transition-colors ${
+            selected
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground"
+          }`}
+        >
+          {selected ? (
+            <span className="max-w-[140px] truncate">
+              {selected.emoji ? `${selected.emoji} ` : ""}
+              {selected.label}
+            </span>
+          ) : (
+            label
+          )}
+          <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" sideOffset={8} className="w-60 p-1.5">
+        <div className="max-h-72 space-y-0.5 overflow-y-auto">
+          {options.map((option) => {
+            const active = option.value === value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onChange(active ? null : option.value);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors ${
+                  active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                }`}
+              >
+                {option.emoji && <span>{option.emoji}</span>}
+                <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                {option.count != null && (
+                  <span className="text-[11px] tabular-nums opacity-60">{option.count}</span>
+                )}
+                {active && <CheckIcon className="h-3.5 w-3.5 shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -583,96 +681,102 @@ const OrganizationCard = memo(function OrganizationCard({ record, onOpen }: { re
   const country = normalizeCountry(record.country);
   const countryLabel = country ? countryName(country) : null;
   const types = orgTypes(record).map(titleCase);
-  const sourceLabel = record.source === "certified" ? "Bumicerts profile" : "Project profile";
-  const created = formatDate(record.createdAt);
-  const description = types.length
-    ? `${types.join(", ")} organization stewarding local impact work.`
-    : countryLabel
-      ? `Organization stewarding regenerative work in ${countryLabel}.`
-      : "Organization stewarding regenerative work with GainForest.";
+  const primaryType = types[0] ?? null;
+  const description = orgDescription(types, countryLabel);
+  const joinedYear = createdYear(record.createdAt);
+  const mapped = hasMappableLocation(record);
+  const bannerUrl = organizationBannerUrl(record);
+  const avatarUrl = organizationAvatarUrl(record);
 
   return (
-    <div className="h-full">
-      <button type="button" onClick={() => onOpen(record)} className="h-full w-full text-left">
-        <div
-          className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
-          style={{ viewTransitionName: `org-${record.did.replace(/[^a-z0-9]/gi, "-")}` }}
-        >
-          <div className="relative h-32 shrink-0 overflow-hidden">
-            {record.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={record.imageUrl}
-                alt={record.name}
-                loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-              />
-            ) : (
-              <div className="absolute inset-0 bg-muted" />
-            )}
-            <div className="absolute inset-0 bg-linear-to-t from-background via-background/80 to-transparent" />
-
-            <div className="absolute top-2 right-2 flex flex-wrap justify-end gap-1.5">
-              {countryLabel && (
-                <span className="flex items-center gap-1 rounded-full bg-background/60 px-2 py-1 text-xs backdrop-blur-sm">
-                  <span>{countryFlag(country)}</span>
-                  <span className="text-foreground/80">{countryLabel}</span>
-                </span>
-              )}
-              {hasMappableLocation(record) && (
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-background/60 text-xs text-primary backdrop-blur-sm" title="Mapped location">
-                  ●
-                </span>
-              )}
+    <button type="button" onClick={() => onOpen(record)} className="group h-full w-full text-left">
+      <article
+        className="flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-lg"
+        style={{ viewTransitionName: `org-${record.did.replace(/[^a-z0-9]/gi, "-")}` }}
+      >
+        {/* Cover */}
+        <div className="relative h-28 shrink-0 overflow-hidden">
+          {bannerUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={bannerUrl}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            />
+          ) : (
+            <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_30%_20%,color-mix(in_oklab,var(--primary)_22%,transparent),transparent_70%),linear-gradient(135deg,var(--muted),var(--card))]">
+              <ImageOffIcon className="size-12 text-muted-foreground opacity-50" aria-hidden="true" strokeWidth={1.25} />
             </div>
+          )}
+          <div className="absolute inset-0 bg-linear-to-t from-card via-card/40 to-transparent" />
 
-            <div className="absolute right-4 bottom-2 left-4 flex flex-col items-start gap-2">
-              <div className="-ml-1 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background/80">
-                <span className="text-sm font-semibold text-muted-foreground">{initials(record.name)}</span>
-              </div>
-              <h3 className="line-clamp-1 font-instrument text-2xl italic text-foreground">
-                {record.name}
-              </h3>
-            </div>
-          </div>
+          {countryLabel && (
+            <span className="absolute top-2.5 right-2.5 flex items-center gap-1 rounded-full bg-background/70 px-2 py-0.5 text-xs text-foreground/80 backdrop-blur-sm">
+              <span>{countryFlag(country)}</span>
+              <span className="max-w-[120px] truncate">{countryLabel}</span>
+            </span>
+          )}
+        </div>
 
-          <div className="flex-1 px-4 pt-3">
-            <p className="line-clamp-3 text-muted-foreground">{description}</p>
-          </div>
-
-          <div className="px-4 pt-3">
-            <div className="flex min-w-0 flex-wrap gap-1 overflow-hidden">
-              <span className="max-w-[160px] truncate rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {sourceLabel}
+        {/* Body */}
+        <div className="relative flex flex-1 flex-col px-5 pb-5">
+          <div className="-mt-8 mb-3 flex items-end justify-between gap-2">
+            <span
+              aria-hidden
+              className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[linear-gradient(135deg,color-mix(in_oklab,var(--primary)_85%,var(--card)),color-mix(in_oklab,var(--primary)_45%,var(--card)))] text-lg font-semibold text-primary-foreground shadow-sm ring-4 ring-card"
+            >
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
+              ) : (
+                initials(record.name)
+              )}
+            </span>
+            {primaryType && (
+              <span className="mb-1 max-w-[55%] truncate rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                {primaryType}
               </span>
-              {types.slice(0, 2).map((type) => (
-                <span key={type} className="max-w-[130px] truncate rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  {type}
-                </span>
-              ))}
-              {types.length > 2 && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">
-                  +{types.length - 2}
+            )}
+          </div>
+
+          <h3 className="line-clamp-1 font-instrument text-2xl italic leading-tight text-foreground">
+            {record.name}
+          </h3>
+          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
+
+          <div className="min-h-5 flex-1" />
+          <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-2.5">
+            <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+              {joinedYear && <span className="shrink-0">Joined {joinedYear}</span>}
+              {joinedYear && mapped && <span aria-hidden className="text-border">&bull;</span>}
+              {mapped && (
+                <span className="flex shrink-0 items-center gap-1 text-primary/80">
+                  <MapPinIcon className="size-3.5" />
+                  Mapped
                 </span>
               )}
             </div>
-          </div>
-
-          <div className="flex shrink-0 items-center justify-between gap-3 p-4">
-            <div className="min-w-0 font-mono text-[10px] text-muted-foreground">
-              <span className="block truncate">Shared {created}</span>
-              {created && <span className="block text-muted-foreground/70">Joined {created}</span>}
-            </div>
-            <div className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary">
-              <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-              <span>Open</span>
-            </div>
+            <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-foreground">
+              <span className="transition-colors group-hover:text-primary">Show details</span>
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+                <ArrowUpRightIcon className="size-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </span>
+            </span>
           </div>
         </div>
-      </button>
-    </div>
+      </article>
+    </button>
   );
 });
+
+function orgDescription(types: string[], countryLabel: string | null): string {
+  const where = countryLabel ? ` in ${countryLabel}` : "";
+  if (types.length) {
+    return `A ${types.join(" & ").toLowerCase()} advancing community-led environmental stewardship${where}.`;
+  }
+  return `A nature steward protecting and restoring local ecosystems${where}.`;
+}
 
 function EmptyState({ onClear, hasActiveFilters }: { onClear: () => void; hasActiveFilters: boolean }) {
   return (
@@ -727,6 +831,12 @@ function countryNameOrEmpty(country: string | null | undefined): string {
   return code ? countryName(code) : "";
 }
 
+function createdYear(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const time = Date.parse(iso);
+  return Number.isFinite(time) ? String(new Date(time).getFullYear()) : null;
+}
+
 function siteTime(iso: string | null | undefined): number {
   if (!iso) return 0;
   const time = Date.parse(iso);
@@ -742,7 +852,15 @@ function orgTypes(record: SiteRecord): string[] {
 }
 
 function hasPhoto(record: SiteRecord): boolean {
-  return Boolean(record.imageUrl || record.coverRef || record.logoRef);
+  return Boolean(record.imageUrl || record.bannerUrl || record.avatarUrl || record.coverRef || record.logoRef);
+}
+
+function organizationBannerUrl(record: SiteRecord): string | null {
+  return record.bannerUrl ?? (record.coverRef ? record.imageUrl : null);
+}
+
+function organizationAvatarUrl(record: SiteRecord): string | null {
+  return record.avatarUrl ?? (!record.coverRef && record.logoRef ? record.imageUrl : null);
 }
 
 function hasMappableLocation(record: SiteRecord): boolean {

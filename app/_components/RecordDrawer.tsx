@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRightIcon, CalendarRangeIcon, CheckIcon, HeartIcon, MapPinIcon, Share2Icon, UsersIcon, XIcon } from "lucide-react";
+import { ArrowUpRightIcon, CalendarRangeIcon, CheckIcon, HeartIcon, ImageOffIcon, MapPinIcon, Share2Icon, UsersIcon, XIcon } from "lucide-react";
 import {
   fetchRecordDetail,
   type ExplorerRecord,
@@ -89,7 +89,11 @@ export function RecordDrawer({
         ? record.title
         : record.name;
 
-  const hasHero = Boolean(record.imageUrl) && !imgError;
+  const siteBannerUrl = record.kind === "site" ? record.bannerUrl ?? (record.coverRef ? record.imageUrl : null) : null;
+  const heroUrl = record.kind === "site" ? siteBannerUrl : record.imageUrl;
+  const ownerAvatarOverride = record.kind === "site" ? record.avatarUrl ?? (!record.coverRef && record.logoRef ? record.imageUrl : null) : undefined;
+  const hasHeroImage = Boolean(heroUrl) && !imgError;
+  const showHero = record.kind === "site" || hasHeroImage;
 
   // For bumicerts the headline numbers (contributors / places / period) live in
   // the stat strip, the scope tags in the pill row, and the created date in the
@@ -124,19 +128,25 @@ export function RecordDrawer({
     >
       <div className="drawer-scrim absolute inset-0 bg-foreground/30 backdrop-blur-[2px]" onClick={onClose} />
       <div className="drawer-sheet thin-scroll relative flex h-full w-full max-w-[480px] flex-col overflow-y-auto bg-background shadow-[-24px_0_60px_-30px_rgba(20,30,15,0.5)]">
-        {hasHero ? (
+        {showHero ? (
           <div className="relative">
             <div className="relative aspect-[5/4] w-full overflow-hidden bg-surface-sunken">
-              <Image
-                src={record.imageUrl!}
-                alt={title}
-                fill
-                priority
-                sizes="480px"
-                unoptimized={!isPdsBlobUrl(record.imageUrl)}
-                onError={() => setImgError(true)}
-                className="object-cover"
-              />
+              {hasHeroImage ? (
+                <Image
+                  src={heroUrl!}
+                  alt={title}
+                  fill
+                  priority
+                  sizes="480px"
+                  unoptimized={!isPdsBlobUrl(heroUrl!)}
+                  onError={() => setImgError(true)}
+                  className="object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_28%_20%,color-mix(in_oklab,var(--primary)_14%,transparent),transparent_58%),linear-gradient(135deg,var(--muted),var(--background))]">
+                  <ImageOffIcon className="size-24 text-muted-foreground opacity-50" aria-hidden="true" strokeWidth={1.25} />
+                </div>
+              )}
               {/* Top scrim keeps the floating controls legible; bottom fade
                   blends the image into the title that overlaps it. */}
               <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-foreground/35 to-transparent" />
@@ -158,7 +168,7 @@ export function RecordDrawer({
           </div>
         )}
 
-        <div className={`px-6 pb-12 ${hasHero ? "-mt-10" : "pt-5"}`}>
+        <div className={`px-6 pb-12 ${showHero ? "-mt-10" : "pt-5"}`}>
           <h2 className="relative font-instrument text-[30px] italic leading-[1.08] tracking-[-0.01em] text-foreground">
             {title}
           </h2>
@@ -212,7 +222,7 @@ export function RecordDrawer({
             <AuthorChip
               did={record.did}
               createdAt={record.createdAt}
-              avatarOverride={record.kind === "site" ? record.imageUrl : undefined}
+              avatarOverride={ownerAvatarOverride}
             />
             <Link
               href={ownerHref}
