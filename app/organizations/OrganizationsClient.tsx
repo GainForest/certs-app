@@ -25,6 +25,7 @@ import { RecordDrawer } from "../_components/RecordDrawer";
 import { RecordMap } from "../_components/RecordMap";
 import { StatsTileGrid } from "../_components/StatsTile";
 import {
+  fetchCertifiedLocationCountriesByUri,
   fetchOrganizationStats,
   fetchSites,
   type ExplorerRecord,
@@ -72,6 +73,7 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
   const [statsLoading, setStatsLoading] = useState(true);
   const deferredQuery = useDeferredValue(query);
   const requestSeqRef = useRef(0);
+  const countryHydrationKeyRef = useRef("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -79,7 +81,10 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
     fetchOrganizationStats("both", controller.signal)
       .then((nextStats) => setTotalStats(nextStats))
       .catch((error) => {
-        if ((error as Error).name !== "AbortError") setTotalStats(null);
+        if ((error as Error).name !== "AbortError") {
+          console.warn("[organizations] stats fetch failed", error);
+          setTotalStats(null);
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setStatsLoading(false);
@@ -113,6 +118,32 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
       });
     return () => controller.abort();
   }, [countryFilter, deferredQuery, initialRecords.length, quickFilters, sort, typeFilter]);
+
+  useEffect(() => {
+    const missing = records
+      .filter((record) => !record.country && record.locationUri)
+      .map((record) => record.locationUri!);
+    if (missing.length === 0) return;
+
+    const key = Array.from(new Set(missing)).sort().join("|");
+    if (countryHydrationKeyRef.current === key) return;
+    countryHydrationKeyRef.current = key;
+
+    const controller = new AbortController();
+    fetchCertifiedLocationCountriesByUri(missing, controller.signal)
+      .then((countries) => {
+        if (countries.size === 0) return;
+        setRecords((current) => current.map((record) => {
+          if (record.country || !record.locationUri) return record;
+          const country = countries.get(record.locationUri);
+          return country ? { ...record, country } : record;
+        }));
+      })
+      .catch((error) => {
+        if ((error as Error).name !== "AbortError") console.warn("[organizations] country fetch failed", error);
+      });
+    return () => controller.abort();
+  }, [records]);
 
   const countryChips = useMemo(() => {
     const codes = records
@@ -255,7 +286,7 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
 
         <div className="mx-auto max-w-6xl px-6">
           <div className="relative z-20 -mt-10">
-            <StatsBand stats={stats} loading={statsLoading || (loading && records.length === 0)} />
+            <StatsBand stats={stats} loading={statsLoading} />
           </div>
 
           <div className="relative z-20 mt-4 mb-0 space-y-2.5">
@@ -637,7 +668,7 @@ function FacetDropdown({
 }
 
 function StatsBand({ stats, loading }: { stats: Array<{ label: string; value: number | null; detail: string }>; loading: boolean }) {
-  if (loading) return null;
+  if (loading || stats.every((stat) => stat.value === null)) return null;
 
   const icons = [
     <UsersIcon key="organizations" />,
@@ -651,7 +682,7 @@ function StatsBand({ stats, loading }: { stats: Array<{ label: string; value: nu
       columns={4}
       items={stats.map((stat, index) => ({
         label: stat.label,
-        value: formatStat(stat.value),
+        value: stat.value === null ? null : formatStat(stat.value),
         detail: stat.detail,
         icon: icons[index] ?? <LeafIcon />,
         accent: index % 2 === 0,
@@ -883,8 +914,7 @@ function hasMappableLocation(record: SiteRecord): boolean {
   return Boolean(record.locationUri);
 }
 
-function formatStat(value: number | null): string {
-  if (value === null) return "—";
+function formatStat(value: number): string {
   return new Intl.NumberFormat("en", { notation: Math.abs(value) >= 1000 ? "compact" : "standard" }).format(value);
 }
 

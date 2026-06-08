@@ -92,7 +92,10 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
     fetchBumicertStats(controller.signal)
       .then((nextStats) => setTotalStats(nextStats))
       .catch((error) => {
-        if ((error as Error).name !== "AbortError") setTotalStats(null);
+        if ((error as Error).name !== "AbortError") {
+          console.warn("[bumicerts] stats fetch failed", error);
+          setTotalStats(null);
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setStatsLoading(false);
@@ -290,7 +293,7 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
 
         <div className="relative z-10 mx-auto max-w-6xl px-6">
           <div className="relative z-20 -mt-10">
-            <StatsBand stats={stats} loading={statsLoading || (loading && records.length === 0)} />
+            <StatsBand stats={stats} loading={statsLoading} />
           </div>
 
           <div className="relative z-20 mt-4 mb-0 space-y-3">
@@ -569,7 +572,7 @@ function StatsBand({
   stats: Array<{ label: string; value: number | null; detail: string }>;
   loading: boolean;
 }) {
-  if (loading) return null;
+  if (loading || stats.every((stat) => stat.value === null)) return null;
 
   const icons = [
     <LayoutGridIcon key="projects" />,
@@ -583,7 +586,7 @@ function StatsBand({
       columns={4}
       items={stats.map((stat, index) => ({
         label: stat.label,
-        value: formatStat(stat.value),
+        value: stat.value === null ? null : formatStat(stat.value),
         detail: stat.detail,
         icon: icons[index] ?? <LeafIcon />,
         accent: index % 2 === 0,
@@ -592,8 +595,7 @@ function StatsBand({
   );
 }
 
-function formatStat(value: number | null): string {
-  if (value === null) return "—";
+function formatStat(value: number): string {
   return new Intl.NumberFormat("en", { notation: Math.abs(value) >= 1000 ? "compact" : "standard" }).format(value);
 }
 

@@ -443,7 +443,7 @@ export function RecordExplorer({
   // Bumicerts and organizations pages. Other embedded explorer uses still fall
   // back to loaded-record summaries.
   const stats = useMemo(
-    () => (kind === "occurrence" && !ownerDid && occurrenceStats ? computeOccurrenceTotalStats(occurrenceStats) : computeStats(records, kind)),
+    () => (kind === "occurrence" && !ownerDid && occurrenceStats ? computeOccurrenceTotalStats(occurrenceStats, records) : computeStats(records, kind)),
     [kind, occurrenceStats, ownerDid, records],
   );
   const showStats = kind === "occurrence" ? ownerDid ? records.length > 0 : Boolean(occurrenceStats) || (!occurrenceStatsLoading && records.length > 0) : records.length > 0;
@@ -1151,33 +1151,40 @@ function within(iso: string | null | undefined, days: number): boolean {
   return Number.isFinite(t) && t >= Date.now() - days * 86_400_000;
 }
 
-function computeOccurrenceTotalStats(stats: OccurrenceStats): Stat[] {
-  const n = (v: number | null) => (v == null ? "—" : formatCompact(v));
+function computeOccurrenceTotalStats(stats: OccurrenceStats, records: ExplorerRecord[]): Stat[] {
+  const occ = records as OccurrenceRecord[];
+  const fallback = {
+    totalSightings: occ.length,
+    photoSightings: occ.filter((record) => record.media.includes("image") || Boolean(record.imageUrl || record.imageRef)).length,
+    recentSightings: occ.filter((record) => within(record.createdAt, 30)).length,
+    mappedSightings: occ.filter((record) => record.lat != null && record.lon != null).length,
+  };
+  const n = (value: number | null, fallbackValue: number) => formatCompact(value ?? fallbackValue);
   return [
     {
       label: "Nature sightings",
-      value: n(stats.totalSightings),
-      detail: "sightings shared",
+      value: n(stats.totalSightings, fallback.totalSightings),
+      detail: stats.totalSightings == null ? "loaded sightings" : "sightings shared",
       icon: <LayoutGridIcon />,
       accent: true,
     },
     {
       label: "Photo sightings",
-      value: n(stats.photoSightings),
-      detail: "with photos",
+      value: n(stats.photoSightings, fallback.photoSightings),
+      detail: stats.photoSightings == null ? "loaded sightings with photos" : "with photos",
       icon: <ImageIcon />,
     },
     {
       label: "New sightings",
-      value: n(stats.recentSightings),
-      detail: "shared in the last 30 days",
+      value: n(stats.recentSightings, fallback.recentSightings),
+      detail: stats.recentSightings == null ? "loaded recent sightings" : "shared in the last 30 days",
       icon: <LeafIcon />,
       accent: true,
     },
     {
       label: "Mapped sightings",
-      value: n(stats.mappedSightings),
-      detail: "with map locations",
+      value: n(stats.mappedSightings, fallback.mappedSightings),
+      detail: stats.mappedSightings == null ? "loaded map locations" : "with map locations",
       icon: <MapIcon />,
     },
   ];

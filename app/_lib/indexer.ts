@@ -14,7 +14,7 @@
 
 import { cachedAsync } from "./async-cache";
 import { INDEXER_URL } from "./urls";
-import { fetchCertifiedLocationCountryCode } from "./country-location";
+import { countryCodeFromCertifiedLocation, fetchCertifiedLocationCountryCode, type CertifiedLocationLike } from "./country-location";
 import { blobUrl, resolveBlobUrl, resolvePdsHost, normaliseRef } from "./pds";
 import { asNumber, formatNumber, formatDate, formatDateTime, formatCountry } from "./format";
 
@@ -1581,24 +1581,6 @@ async function fetchDirectCertifiedOrgRecord(
   return promise;
 }
 
-async function attachCertifiedOrgCountries(records: SiteRecord[], signal?: AbortSignal): Promise<SiteRecord[]> {
-  const out = [...records];
-  let i = 0;
-  async function worker() {
-    while (i < out.length) {
-      if (signal?.aborted) return;
-      const index = i++;
-      const record = out[index]!;
-      const directOrg = await fetchDirectCertifiedOrgRecord(record.did, signal).catch(() => null);
-      const locationUri = directOrg ? directOrg.locationUri : record.locationUri;
-      const country = await fetchCertifiedLocationCountryCode(locationUri, signal).catch(() => null);
-      if (country) out[index] = { ...record, country };
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(8, out.length) }, worker));
-  return out;
-}
-
 /** Resolve many certified profiles in one aliased query (DIDs are quote-safe). */
 async function fetchCertProfiles(
   dids: string[],
@@ -1679,7 +1661,6 @@ async function fetchCertOrgPage(
     name: profileName(n.certifiedProfileData) ?? profiles.get(n.did)?.name ?? null,
     avatarRef: profileAvatarRef(n.certifiedProfileData) ?? profiles.get(n.did)?.avatarRef ?? null,
   }));
-  records = await attachCertifiedOrgCountries(records, signal);
   records = await resolveImages(
     records,
     (r) => (r.logoRef ? { did: r.did, ref: r.logoRef } : null),
@@ -1713,6 +1694,51 @@ const CERT_ORG_STATS_QUERY = `
 `;
 
 type RawCertOrgStats = Pick<RawCertOrg, "did" | "location" | "certifiedProfileData">;
+
+type CertifiedLocationStatsNode = CertifiedLocationLike & {
+  location?: {
+    __typename?: string | null;
+    string?: string | null;
+  } | null;
+};
+
+const LOCATION_COUNTRY_BATCH_SIZE = 100;
+
+export async function fetchCertifiedLocationCountriesByUri(
+  uris: string[],
+  signal?: AbortSignal,
+): Promise<Map<string, string>> {
+  const uniqueUris = Array.from(new Set(uris.filter(Boolean)));
+  const countries = new Map<string, string>();
+  if (uniqueUris.length === 0) return countries;
+
+  const fields = `{
+    name
+    location {
+      __typename
+      ... on AppCertifiedLocationString { string }
+    }
+  }`;
+
+  const batches = Array.from(
+    { length: Math.ceil(uniqueUris.length / LOCATION_COUNTRY_BATCH_SIZE) },
+    (_, index) => uniqueUris.slice(index * LOCATION_COUNTRY_BATCH_SIZE, (index + 1) * LOCATION_COUNTRY_BATCH_SIZE),
+  );
+
+  await Promise.all(batches.map(async (batch) => {
+    const query = `query CertifiedLocationCountries {\n${batch
+      .map((uri, index) => `l${index}: appCertifiedLocationByUri(uri: ${JSON.stringify(uri)}) ${fields}`)
+      .join("\n")}\n}`;
+
+    const data = await indexerQuery<Record<string, CertifiedLocationStatsNode | null>>(query, {}, signal);
+    batch.forEach((uri, index) => {
+      const country = countryCodeFromCertifiedLocation(data?.[`l${index}`]);
+      if (country) countries.set(uri, country);
+    });
+  }));
+
+  return countries;
+}
 
 function normalizeStatsCountry(country: string | null | undefined): string | null {
   if (!country) return null;
@@ -1749,23 +1775,24 @@ async function fetchCertifiedOrganizationStats(signal?: AbortSignal): Promise<Or
   const countries = new Set<string>();
 
   for (let page = 0; page < 100; page += 1) {
-    const res = await fetchCertifiedOrgStatsPage(100, after, signal);
+    const res = await fetchCertifiedOrgStatsPage(INDEXER_MAX_PAGE, after, signal);
     organizations ??= res.totalCount;
     seenRows += res.nodes.length;
     const missingProfileDids = res.nodes
       .filter((node) => !profileAvatarRef(node.certifiedProfileData))
       .map((node) => node.did);
     const profiles = await fetchCertProfiles(missingProfileDids, signal);
-    const locationEntries = await Promise.all(
-      res.nodes.map((node) => node.location?.uri
-        ? Promise.resolve(node.location.uri)
-        : fetchDirectCertifiedOrgRecord(node.did, signal).then((record) => record?.locationUri ?? null).catch(() => null)),
-    );
+    const locationEntries = res.nodes.map((node) => node.location?.uri ?? null);
+    const countryByLocation = await fetchCertifiedLocationCountriesByUri(
+      locationEntries.filter((uri): uri is string => Boolean(uri)),
+      signal,
+    ).catch(() => new Map<string, string>());
     for (const [index, node] of res.nodes.entries()) {
-      const country = await fetchCertifiedLocationCountryCode(locationEntries[index], signal).catch(() => null);
+      const locationUri = locationEntries[index];
+      const country = locationUri ? countryByLocation.get(locationUri) : null;
       if (country) countries.add(country);
       if (profileAvatarRef(node.certifiedProfileData) || profiles.get(node.did)?.avatarRef) withPhotos += 1;
-      if (node.location?.uri) mappedPlaces += 1;
+      if (locationUri) mappedPlaces += 1;
     }
     if (!res.hasMore || !res.cursor) break;
     after = res.cursor;

@@ -16,7 +16,7 @@ import {
 import { useState } from "react";
 import type { ExplorerKpis } from "../_lib/kpis";
 import { formatCompact, formatCompactUsd } from "../_lib/format";
-import { StatsTileGrid } from "./StatsTile";
+import { StatsTileGrid, type StatsTileItem } from "./StatsTile";
 import { ThemeToggle } from "./ThemeToggle";
 
 type HomeLandingProps = {
@@ -284,38 +284,48 @@ function LandingHero() {
 function HomeStats({ kpis }: { kpis: ExplorerKpis | null }) {
   if (!kpis) return null;
 
-  const stats = [
-    {
+  const stats: StatsTileItem[] = [];
+
+  if (kpis.bumicerts != null) {
+    stats.push({
       value: formatCompact(kpis.bumicerts),
       label: "Bumicerts",
       detail: "Bumicerts shared",
       href: "/bumicerts",
       icon: <CompassIcon />,
       accent: true,
-    },
-    {
+    });
+  }
+  if (kpis.sites != null) {
+    stats.push({
       value: formatCompact(kpis.sites),
       label: "Organizations",
       detail: "organization profiles",
       href: "/organizations",
       icon: <Building2Icon />,
-    },
-    {
+    });
+  }
+  if (kpis.occurrences != null) {
+    stats.push({
       value: formatCompact(kpis.occurrences),
       label: "Observations",
       detail: "nature sightings shared",
       href: "/observations",
       icon: <BinocularsIcon />,
-    },
-    {
+    });
+  }
+  if (kpis.totalRaised != null) {
+    stats.push({
       value: formatCompactUsd(kpis.totalRaised),
       label: "Funding raised",
       detail: "raised for projects",
       href: "/leaderboard",
       icon: <HandHeartIcon />,
       accent: true,
-    },
-  ];
+    });
+  }
+
+  if (stats.length === 0) return null;
 
   return (
     <section className="px-6 pb-10 pt-0 sm:px-12 sm:pb-12 md:px-6 md:pb-12">
