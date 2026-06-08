@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ActivityIcon, ArrowUpRightIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { STATUS_URL } from "../_lib/urls";
 import { formatDuration, formatRelative } from "../_lib/format";
 import {
@@ -287,14 +288,14 @@ function StatusSkeleton() {
         <li key={index} className="rounded-2xl border border-border-soft bg-surface p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-2">
-              <div className="h-4 w-32 rounded-full bg-muted" />
-              <div className="h-3 w-44 rounded-full bg-muted/70" />
+              <Skeleton className="h-4 w-32 rounded-full" />
+              <Skeleton className="h-3 w-44 rounded-full" />
             </div>
-            <div className="h-7 w-20 rounded-full bg-muted" />
+            <Skeleton className="h-7 w-20 rounded-full" />
           </div>
           <div className="mt-6 space-y-2">
-            <div className="h-3 w-24 rounded-full bg-muted/60" />
-            <div className="h-1.5 rounded-full bg-muted/50" />
+            <Skeleton className="h-3 w-24 rounded-full" />
+            <Skeleton className="h-1.5 rounded-full" />
           </div>
         </li>
       ))}

@@ -979,7 +979,7 @@ function BumicertHeaderTabsSkeleton() {
       <div className="flex min-w-max items-end border-b border-border">
         {tabWidths.map((width, index) => (
           <div key={index} className="flex items-center px-4 py-2.5">
-            <span className={`h-4 rounded-full bg-muted/50 ${width}`} />
+            <Skeleton className={`h-4 rounded-full ${width}`} />
           </div>
         ))}
       </div>

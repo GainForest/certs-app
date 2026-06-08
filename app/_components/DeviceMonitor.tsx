@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { LeafIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   deviceLabel,
   deviceTone,
@@ -142,26 +143,26 @@ function DeviceCardsSkeleton() {
           {/* Header */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-1.5">
-              <div className="h-4 w-32 rounded-full bg-muted" />
-              <div className="h-3 w-24 rounded-full bg-muted/60" />
+              <Skeleton className="h-4 w-32 rounded-full" />
+              <Skeleton className="h-3 w-24 rounded-full" />
             </div>
-            <div className="h-6 w-20 shrink-0 rounded-full bg-muted/70" />
+            <Skeleton className="h-6 w-20 shrink-0 rounded-full" />
           </div>
 
           {/* Last reported */}
           <div className="flex items-baseline justify-between gap-2">
-            <div className="h-3 w-24 rounded-full bg-muted/50" />
-            <div className="h-3 w-16 rounded-full bg-muted/60" />
+            <Skeleton className="h-3 w-24 rounded-full" />
+            <Skeleton className="h-3 w-16 rounded-full" />
           </div>
 
           {/* Device health */}
           <div>
-            <div className="mb-2.5 h-2.5 w-24 rounded-full bg-muted/50" />
+            <Skeleton className="mb-2.5 h-2.5 w-24 rounded-full" />
             <div className="grid grid-cols-2 gap-x-5 gap-y-3.5 sm:grid-cols-3">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="space-y-1.5">
-                  <div className="h-2.5 w-12 rounded-full bg-muted/50" />
-                  <div className="h-3.5 w-14 rounded-full bg-muted/60" />
+                  <Skeleton className="h-2.5 w-12 rounded-full" />
+                  <Skeleton className="h-3.5 w-14 rounded-full" />
                 </div>
               ))}
             </div>
@@ -169,12 +170,12 @@ function DeviceCardsSkeleton() {
 
           {/* Tainá activity */}
           <div>
-            <div className="mb-2.5 h-2.5 w-24 rounded-full bg-muted/50" />
+            <Skeleton className="mb-2.5 h-2.5 w-24 rounded-full" />
             <div className="grid grid-cols-3 gap-2">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="space-y-1.5 rounded-lg bg-surface-sunken/60 px-2.5 py-2">
-                  <div className="h-2.5 w-full rounded-full bg-muted/50" />
-                  <div className="h-4 w-8 rounded-full bg-muted/60" />
+                  <Skeleton className="h-2.5 w-full rounded-full" />
+                  <Skeleton className="h-4 w-8 rounded-full" />
                 </div>
               ))}
             </div>
@@ -182,8 +183,8 @@ function DeviceCardsSkeleton() {
 
           {/* Tags footer */}
           <div className="mt-auto flex flex-wrap gap-1.5 border-t border-border-soft pt-4">
-            <div className="h-5 w-14 rounded-md bg-muted/40" />
-            <div className="h-5 w-16 rounded-md bg-muted/40" />
+            <Skeleton className="h-5 w-14 rounded-md" />
+            <Skeleton className="h-5 w-16 rounded-md" />
           </div>
         </li>
       ))}

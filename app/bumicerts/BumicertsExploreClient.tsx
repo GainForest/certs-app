@@ -19,6 +19,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
 import { BumicertOwnerAvatar } from "@/components/bumicert/BumicertOwnerAvatar";
 import { BumicertPillRows, type BumicertCardPill } from "@/components/bumicert/BumicertPillRows";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { RecordDrawer } from "../_components/RecordDrawer";
 import { RecordMap } from "../_components/RecordMap";
 import { StatsTileGrid } from "../_components/StatsTile";
@@ -668,28 +669,30 @@ function BumicertGridSkeleton() {
       {Array.from({ length: 12 }).map((_, index) => (
         <div key={index} className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card">
           {/* Image */}
-          <div className="aspect-[4/3] bg-muted" />
+          <Skeleton className="aspect-[4/3] rounded-none" />
 
           {/* Body (overlaps image like the real card) */}
           <div className="-mt-6 flex flex-1 flex-col justify-between px-4 py-3">
             <div>
-              <div className="h-6 w-3/4 rounded-full bg-muted" />
+              <Skeleton className="h-6 w-3/4 rounded-full" />
               <div className="mt-1.5 space-y-1.5">
-                <div className="h-3.5 w-full rounded-full bg-muted/70" />
-                <div className="h-3.5 w-full rounded-full bg-muted/60" />
-                <div className="h-3.5 w-2/3 rounded-full bg-muted/50" />
+                <Skeleton className="h-3.5 w-full rounded-full" />
+                <Skeleton className="h-3.5 w-full rounded-full" />
+                <Skeleton className="h-3.5 w-2/3 rounded-full" />
               </div>
             </div>
 
             {/* Pill rows */}
             <div className="mt-3 flex flex-wrap gap-1.5">
-              <div className="h-6 w-16 rounded-full bg-muted/70" />
-              <div className="h-6 w-12 rounded-full bg-muted/60" />
+              <Skeleton className="h-6 w-16 rounded-full" />
+              <Skeleton className="h-6 w-12 rounded-full" />
             </div>
           </div>
 
           {/* Owner avatar pill */}
-          <div className="absolute left-2 top-2 h-8 w-8 rounded-full bg-background/70 shadow-lg backdrop-blur-lg" />
+          <div className="absolute left-2 top-2 rounded-full bg-background/70 p-1 shadow-lg backdrop-blur-lg">
+            <Skeleton className="size-6 rounded-full" />
+          </div>
         </div>
       ))}
     </div>

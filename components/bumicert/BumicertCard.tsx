@@ -244,7 +244,7 @@ function TextPill({
 export function BumicertCardSkeleton() {
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="relative aspect-4/3 overflow-hidden bg-muted" />
+      <Skeleton className="relative aspect-4/3 overflow-hidden rounded-none" />
 
       <div className="relative z-1 -mt-6 flex flex-1 flex-col justify-between px-4 py-3">
         <div>

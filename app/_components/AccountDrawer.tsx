@@ -272,7 +272,7 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
 function Shimmer({ w = "100%", h = "0.9rem" }: { w?: string; h?: string }) {
   return (
     <span
-      className="inline-block animate-pulse rounded bg-foreground/[0.08] align-middle"
+      className="skeleton inline-block rounded align-middle"
       style={{ width: w, height: h }}
     />
   );

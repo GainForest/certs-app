@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import { RecordDrawer } from "../_components/RecordDrawer";
 import { RecordMap } from "../_components/RecordMap";
 import { StatsTileGrid } from "../_components/StatsTile";
@@ -665,25 +666,25 @@ function OrganizationsGridSkeleton() {
       {Array.from({ length: 12 }).map((_, index) => (
         <div key={index} className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card">
           {/* Cover */}
-          <div className="h-28 shrink-0 bg-muted" />
+          <Skeleton className="h-28 shrink-0 rounded-none" />
 
           {/* Body */}
           <div className="flex flex-1 flex-col px-5 pb-5">
             <div className="-mt-8 mb-3 flex items-end justify-between gap-2">
-              <div className="size-16 shrink-0 rounded-full bg-muted ring-4 ring-card" />
-              <div className="mb-1 h-6 w-20 rounded-full bg-muted/70" />
+              <Skeleton className="size-16 shrink-0 rounded-full ring-4 ring-card" />
+              <Skeleton className="mb-1 h-6 w-20 rounded-full" />
             </div>
 
-            <div className="h-6 w-3/4 rounded-full bg-muted" />
+            <Skeleton className="h-6 w-3/4 rounded-full" />
             <div className="mt-1.5 space-y-1.5">
-              <div className="h-3.5 w-full rounded-full bg-muted/70" />
-              <div className="h-3.5 w-2/3 rounded-full bg-muted/50" />
+              <Skeleton className="h-3.5 w-full rounded-full" />
+              <Skeleton className="h-3.5 w-2/3 rounded-full" />
             </div>
 
             <div className="min-h-5 flex-1" />
             <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-2.5">
-              <div className="h-3.5 w-24 rounded-full bg-muted/60" />
-              <div className="size-8 shrink-0 rounded-full bg-muted" />
+              <Skeleton className="h-3.5 w-24 rounded-full" />
+              <Skeleton className="size-8 shrink-0 rounded-full" />
             </div>
           </div>
         </div>

@@ -538,7 +538,7 @@ function WalletsSection({ did }: { did: string }) {
       <div className="bg-muted rounded-xl p-1 flex flex-col items-center w-full">
         {isLoading ? (
           <div className="w-full flex flex-col gap-0.5">
-            {[1, 2].map((i) => <div key={i} className="h-[62px] rounded-lg bg-muted-foreground/10 animate-pulse" />)}
+            {[1, 2].map((i) => <Skeleton key={i} className="h-[62px] rounded-lg" />)}
           </div>
         ) : error ? (
           <p className="text-sm text-destructive py-4 text-center">{error}</p>

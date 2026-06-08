@@ -48,6 +48,7 @@ import {
   type TopDonor,
   type TxRow,
 } from "../_lib/dashboard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCompact, formatCompactUsd, formatNumber, formatUsd } from "../_lib/format";
 import { AuthorInline } from "./AuthorChip";
 import { PreferredAccountLink, PreferredBumicertLink } from "./PreferredLinks";
@@ -740,10 +741,6 @@ function formatTableDate(date: string | null | undefined): string {
   const parsed = new Date(date);
   if (Number.isNaN(parsed.getTime())) return "—";
   return parsed.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-}
-
-function Skeleton({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded bg-muted ${className}`} />;
 }
 
 function TableSkeleton() {

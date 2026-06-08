@@ -420,10 +420,10 @@ function AuthSkeleton() {
   // Mirrors the resolved AuthenticatedMenu trigger: gap-2 px-2 py-1 row with a
   // round h-7 w-7 avatar, the sm-only name label, and the sm-only chevron.
   return (
-    <div className="flex items-center gap-2 px-2 py-1 animate-pulse">
-      <div className="h-7 w-7 rounded-full bg-muted" />
-      <div className="hidden sm:block h-3.5 w-20 rounded bg-muted" />
-      <div className="hidden sm:block h-3.5 w-3.5 rounded bg-muted/70" />
+    <div className="flex items-center gap-2 px-2 py-1">
+      <div className="skeleton h-7 w-7 rounded-full" />
+      <div className="skeleton hidden h-3.5 w-20 rounded sm:block" />
+      <div className="skeleton hidden h-3.5 w-3.5 rounded sm:block" />
     </div>
   );
 }

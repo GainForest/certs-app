@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AuthorInline } from "../_components/AuthorChip";
 import { PreferredAccountLink } from "../_components/PreferredLinks";
 import { StatsTileGrid, type StatsTileItem } from "../_components/StatsTile";
@@ -446,10 +447,6 @@ function LeaderboardSkeleton() {
       ))}
     </div>
   );
-}
-
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-md bg-muted", className)} />;
 }
 
 function LeaderboardError() {
