@@ -533,16 +533,18 @@ function SidebarDonations({
       <h3 className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
         Donations
       </h3>
-      <div className="flex items-center gap-2 text-sm">
-        {donationStatus.kind === "open" ? (
-          <CircleDotIcon className="h-3.5 w-3.5 text-primary" />
-        ) : (
-          <BanIcon className="h-3.5 w-3.5 text-muted-foreground" />
-        )}
-        <span className={donationStatus.kind === "open" ? "text-primary" : "text-muted-foreground"}>
-          {donationStatus.label}
-        </span>
-      </div>
+      {!isOwner ? (
+        <div className="flex items-center gap-2 text-sm">
+          {donationStatus.kind === "open" ? (
+            <CircleDotIcon className="h-3.5 w-3.5 text-primary" />
+          ) : (
+            <BanIcon className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+          <span className={donationStatus.kind === "open" ? "text-primary" : "text-muted-foreground"}>
+            {donationStatus.label}
+          </span>
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <p className="text-xs text-muted-foreground">Raised</p>
