@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { BrowseGrid } from "./_components/BrowseGrid";
 import { HomeLanding } from "./_components/HomeLanding";
 import { fetchDevicesSummary } from "./_lib/devices";
@@ -20,7 +21,19 @@ const fetchHomeKpis = unstable_cache(fetchKpis, ["home-page-kpis"], {
   revalidate: 60 * 15,
 });
 
-export default async function HomePage() {
+// HomePage stays synchronous so the home segment never suspends at the route
+// level — that lets us drop the catch-all app/loading.tsx (which used to shadow
+// every section's tailored loading.tsx as the outermost Suspense boundary). The
+// kpis fetch is wrapped in its own Suspense with a home-shaped fallback instead.
+export default function HomePage() {
+  return (
+    <Suspense fallback={<HomeFallback />}>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+async function HomeContent() {
   const kpis = await fetchHomeKpis();
 
   return (
@@ -29,6 +42,26 @@ export default async function HomePage() {
       <Suspense fallback={<BrowseGridFallback />}>
         <HomeCollections kpis={kpis} />
       </Suspense>
+    </>
+  );
+}
+
+function HomeFallback() {
+  return (
+    <>
+      <section className="px-6 pt-16 pb-12 sm:px-12">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <Skeleton className="h-4 w-32 rounded-full" />
+          <Skeleton className="h-16 w-full max-w-2xl" />
+          <Skeleton className="h-5 w-full max-w-xl rounded-full" />
+          <Skeleton className="h-5 w-2/3 max-w-md rounded-full" />
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Skeleton className="h-11 w-44 rounded-full" />
+            <Skeleton className="h-11 w-44 rounded-full" />
+          </div>
+        </div>
+      </section>
+      <BrowseGridFallback />
     </>
   );
 }
