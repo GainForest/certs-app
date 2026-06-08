@@ -1,6 +1,6 @@
 import { fetchAuthSession } from "@/app/_lib/auth-server";
 import { fetchLocationsByDid, type ManagedLocation } from "@/app/_lib/indexer";
-import { resolvePdsHost } from "@/app/_lib/pds";
+import { resolveBlobUrl, resolvePdsHost } from "@/app/_lib/pds";
 
 export const runtime = "nodejs";
 
@@ -35,10 +35,27 @@ function rkeyFromUri(uri: string): string {
   return uri.split("/").filter(Boolean).pop() ?? "";
 }
 
-function directLocationFromRecord(did: string, record: ListedRecord): ManagedLocation | null {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function extractBlobRef(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (!isRecord(value)) return null;
+  if (typeof value.$link === "string") return value.$link;
+  if (typeof value.ref === "string") return value.ref;
+  if (isRecord(value.ref) && typeof value.ref.$link === "string") return value.ref.$link;
+  return null;
+}
+
+async function directLocationFromRecord(did: string, record: ListedRecord): Promise<ManagedLocation | null> {
   const value = record.value;
   if (!value) return null;
   const locationType = typeof value.locationType === "string" ? value.locationType : null;
+  const rawLocation = isRecord(value.location) ? value.location : null;
+  const locationUrl = typeof rawLocation?.uri === "string"
+    ? rawLocation.uri
+    : await resolveBlobUrl(did, extractBlobRef(rawLocation?.blob), undefined).catch(() => null);
   return {
     metadata: {
       did,
@@ -51,10 +68,11 @@ function directLocationFromRecord(did: string, record: ListedRecord): ManagedLoc
       name: typeof value.name === "string" && value.name.trim() ? value.name.trim() : null,
       description: typeof value.description === "string" && value.description.trim() ? value.description.trim() : null,
       locationType,
-      location: locationType && locationType !== "point" && locationType !== "coordinate-decimal"
-        ? { kind: "uri", uri: record.uri }
+      location: locationUrl
+        ? { kind: "uri", uri: locationUrl }
         : null,
     },
+    rawRecord: value,
   };
 }
 
@@ -67,15 +85,26 @@ async function fetchDirectLocations(did: string): Promise<ManagedLocation[]> {
   });
   if (!response.ok) return [];
   const data = (await response.json()) as ListedRecordsResponse;
-  return (data.records ?? [])
-    .map((record) => directLocationFromRecord(did, record))
-    .filter((location): location is ManagedLocation => Boolean(location));
+  const locations = await Promise.all(
+    (data.records ?? []).map((record) => directLocationFromRecord(did, record)),
+  );
+  return locations.filter((location): location is ManagedLocation => Boolean(location));
 }
 
 function mergeLocations(indexed: ManagedLocation[], direct: ManagedLocation[]): ManagedLocation[] {
   const merged = new Map<string, ManagedLocation>();
   for (const location of direct) merged.set(location.metadata.uri, location);
-  for (const location of indexed) merged.set(location.metadata.uri, location);
+  for (const location of indexed) {
+    const directLocation = merged.get(location.metadata.uri);
+    merged.set(location.metadata.uri, {
+      ...location,
+      rawRecord: location.rawRecord ?? directLocation?.rawRecord ?? null,
+      record: {
+        ...location.record,
+        location: location.record.location ?? directLocation?.record.location ?? null,
+      },
+    });
+  }
   return Array.from(merged.values()).sort((a, b) => {
     const aTime = a.metadata.createdAt ? Date.parse(a.metadata.createdAt) : 0;
     const bTime = b.metadata.createdAt ? Date.parse(b.metadata.createdAt) : 0;

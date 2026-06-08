@@ -1854,6 +1854,7 @@ export type ManagedLocation = {
     locationType: string | null;
     location: ManagedLocationData | null;
   };
+  rawRecord?: Record<string, unknown> | null;
 };
 
 export type ManagedLocationData =
@@ -1881,6 +1882,7 @@ const LOCATIONS_BY_DID_QUERY = `
             __typename
             ... on AppCertifiedLocationString { string }
             ... on OrgHypercertsDefsUri { uri }
+            ... on OrgHypercertsDefsSmallBlob { blob { ref } }
           }
         }
       }
@@ -1902,6 +1904,7 @@ type RawLocationNode = {
     __typename?: string;
     string?: string | null;
     uri?: string | null;
+    blob?: { ref?: string | null } | null;
   } | null;
 };
 
@@ -1913,7 +1916,7 @@ function parseLocationCoord(s: string): { lat: number; lon: number } | null {
   return null;
 }
 
-function mapLocation(raw: RawLocationNode): ManagedLocation {
+async function mapLocation(raw: RawLocationNode, signal?: AbortSignal): Promise<ManagedLocation> {
   let location: ManagedLocationData | null = null;
   const loc = raw.location;
   if (loc) {
@@ -1926,6 +1929,12 @@ function mapLocation(raw: RawLocationNode): ManagedLocation {
       }
     } else if (loc.__typename === "OrgHypercertsDefsUri" && loc.uri) {
       location = { kind: "uri", uri: loc.uri };
+    } else if (loc.__typename === "OrgHypercertsDefsSmallBlob" && loc.blob?.ref) {
+      const uri = await resolveBlobUrl(raw.did, loc.blob.ref, signal).catch((err) => {
+        if ((err as Error).name === "AbortError") throw err;
+        return null;
+      });
+      location = uri ? { kind: "uri", uri } : { kind: "unknown" };
     } else {
       location = { kind: "unknown" };
     }
@@ -1962,11 +1971,42 @@ export async function fetchLocationsByDid(
     const nodes = (conn?.edges ?? [])
       .map((e) => e?.node)
       .filter((n): n is RawLocationNode => Boolean(n?.did));
-    all.push(...nodes.map(mapLocation));
+    all.push(...(await Promise.all(nodes.map((node) => mapLocation(node, signal)))));
     if (!conn?.pageInfo?.hasNextPage || !conn?.pageInfo?.endCursor) break;
     cursor = conn.pageInfo.endCursor;
   }
   return all;
+}
+
+const DEFAULT_SITE_BY_DID_QUERY = `
+  query DefaultSiteByDid($did: String!) {
+    appGainforestOrganizationDefaultSite(
+      where: { did: { eq: $did } }
+      first: 1
+      sortDirection: DESC
+      sortBy: createdAt
+    ) {
+      edges { node { site } }
+    }
+  }
+`;
+
+type RawDefaultSiteNode = { site?: string | null };
+
+export async function fetchDefaultSiteByDid(
+  did: string,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  type DefaultSitePage = {
+    appGainforestOrganizationDefaultSite?: Connection<RawDefaultSiteNode>;
+  };
+  const data = await indexerQuery<DefaultSitePage>(
+    DEFAULT_SITE_BY_DID_QUERY,
+    { did },
+    signal,
+  );
+  const node = data?.appGainforestOrganizationDefaultSite?.edges?.[0]?.node;
+  return node?.site?.trim() || null;
 }
 
 // ── 5. Manage section — audio recordings by DID ────────────────────────────

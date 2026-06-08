@@ -35,6 +35,7 @@ type SiteEditorModalProps = {
     rkey: string;
     name: string;
     hasShapeLocation: boolean;
+    recordValue?: Record<string, unknown> | null;
   } | null;
   onSaved?: (site: SavedSiteRef) => void;
 };
@@ -114,10 +115,13 @@ export function SiteEditorModal({ did, initialData, onSaved }: SiteEditorModalPr
       } else {
         const rkey = initialData!.rkey;
         const record: Record<string, unknown> = {
+          ...(initialData?.recordValue ?? {}),
           $type: "app.certified.location",
           name: name.trim(),
-          createdAt: new Date().toISOString(),
         };
+        if (typeof record.createdAt !== "string") {
+          record.createdAt = new Date().toISOString();
+        }
         if (siteFile) {
           await validateSiteFile(siteFile);
           const uploaded = await uploadBlob(siteFile);
