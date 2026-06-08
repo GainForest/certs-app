@@ -444,19 +444,19 @@ function BumicertStatStrip({ record }: { record: Extract<ExplorerRecord, { kind:
       <StatTile
         icon={<UsersIcon />}
         value={formatCompact(record.contributorCount)}
-        label={record.contributorCount === 1 ? "Contributor" : "Contributors"}
+        label="People credited"
       />
       <StatTile
         icon={<MapPinIcon />}
         value={formatCompact(record.locationCount)}
-        label={record.locationCount === 1 ? "Site" : "Sites"}
+        label={record.locationCount === 1 ? "Project place" : "Project places"}
       />
       {period && (
         <StatTile
           className="col-span-2"
           icon={<CalendarRangeIcon />}
           value={period}
-          label="Activity period"
+          label="Work period"
           valueClassName="text-[15px] font-medium"
         />
       )}
@@ -531,7 +531,7 @@ function KindBadge({ record, floating = false }: { record: ExplorerRecord; float
     site: { label: "Project site", cls: "text-foreground/70 bg-foreground/[0.06]" },
   } as const;
   const m = map[record.kind];
-  const label = record.kind === "site" ? "Reviewed organization" : m.label;
+  const label = record.kind === "site" ? "Organization" : m.label;
   const cls = floating
     ? "bg-background/80 text-foreground shadow-sm backdrop-blur-md"
     : m.cls;
@@ -568,8 +568,8 @@ function buildFields(r: ExplorerRecord): Field[] {
       fields.push({ label: "Photos or sounds", value: r.media.map(mediaLabel).join(", "), wide: true });
     if (r.remarks) fields.push({ label: "Remarks", value: r.remarks, wide: true });
   } else if (r.kind === "bumicert") {
-    fields.push({ label: "Contributors", value: formatNumber(r.contributorCount) });
-    fields.push({ label: "Sites", value: formatNumber(r.locationCount) });
+    fields.push({ label: "People credited", value: formatNumber(r.contributorCount) });
+    fields.push({ label: "Project places", value: formatNumber(r.locationCount) });
     if (r.startDate) fields.push({ label: "Start", value: formatDate(r.startDate) });
     if (r.endDate) fields.push({ label: "End", value: formatDate(r.endDate) });
   } else {

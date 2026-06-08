@@ -393,7 +393,7 @@ function WalletModal({
           <WalletIcon className="size-6" />
         </div>
         <p className="text-sm leading-6 text-muted-foreground">
-          Your wallet will ask you to approve the donation. Any network fee is covered for you, and the completed gift will be shown publicly.
+          Your wallet will ask you to approve the donation. Any network fee is covered for you, and the completed donation will be shown publicly.
         </p>
         {error ? <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
       </div>

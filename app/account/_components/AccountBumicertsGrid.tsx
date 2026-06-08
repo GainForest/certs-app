@@ -24,8 +24,8 @@ interface OrgBumicertsGridProps {
 
 function objectivesFor(bumicert: BumicertRecord): string[] {
   return [
-    bumicert.locationCount > 0 ? "Certified site" : null,
-    bumicert.contributorCount > 0 ? "Contributors" : null,
+    bumicert.locationCount > 0 ? "Project place" : null,
+    bumicert.contributorCount > 0 ? "People credited" : null,
   ].filter((value): value is string => Boolean(value));
 }
 

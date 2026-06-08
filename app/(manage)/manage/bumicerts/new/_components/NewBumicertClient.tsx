@@ -215,7 +215,7 @@ function getFormIssues(values: FormValues): FormIssue[] {
   else if (!values.ongoing && values.endDate < values.startDate) issues.push({ field: "dates", step: "basics", message: "The end date can’t be before the start date." });
   if (clampDescription(values.shortDescription).length < 30) issues.push({ field: "shortDescription", step: "story", message: "Write at least 30 characters for the summary." });
   if (values.description.trim().length < 80) issues.push({ field: "description", step: "story", message: "Write at least 80 characters for the full description." });
-  if (contributorList(values).length === 0) issues.push({ field: "contributors", step: "people", message: "Add at least one contributor." });
+  if (contributorList(values).length === 0) issues.push({ field: "contributors", step: "people", message: "Add at least one person or group." });
   if (!values.confirmedRights) issues.push({ field: "confirmedRights", step: "review", message: "Confirm you have permission to publish this work." });
   if (!values.acceptedTerms) issues.push({ field: "acceptedTerms", step: "review", message: "Agree to the terms before publishing." });
   return issues;
@@ -467,7 +467,7 @@ function ContributorInput({
                 onChange("");
               }}
               className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Change contributor"
+              aria-label="Change person or group"
             >
               <XIcon className="size-4" />
             </button>
@@ -546,7 +546,7 @@ function ContributorInput({
         </AnimatePresence>
       </div>
 
-      <Button type="button" variant="ghost" size="icon-sm" disabled={!canRemove} onClick={onRemove} aria-label="Remove contributor" className="shrink-0 text-muted-foreground hover:text-destructive">
+      <Button type="button" variant="ghost" size="icon-sm" disabled={!canRemove} onClick={onRemove} aria-label="Remove person or group" className="shrink-0 text-muted-foreground hover:text-destructive">
         <Trash2Icon className="size-4" />
       </Button>
     </div>
@@ -729,7 +729,7 @@ function PeopleStep({
 
   return (
     <div className="space-y-8">
-      <Field label="Contributors" hint="search a name or @handle" error={issues.contributors?.message}>
+      <Field label="People credited" hint="search a name or @handle" error={issues.contributors?.message}>
         <div className="space-y-2.5">
           {values.contributors.map((contributor, index) => (
             <ContributorInput
@@ -755,7 +755,7 @@ function PeopleStep({
           }}
           className="mt-2 -ml-2 text-primary hover:text-primary"
         >
-          <PlusIcon className="size-4" /> Add contributor
+          <PlusIcon className="size-4" /> Add person or group
         </Button>
       </Field>
 

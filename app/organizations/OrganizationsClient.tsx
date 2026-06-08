@@ -46,8 +46,8 @@ const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
 ];
 
 const QUICK_CHIPS: Array<{ value: QuickFilter; label: string }> = [
-  { value: "photos", label: "With images" },
-  { value: "bumicerts", label: "With Bumicerts" },
+  { value: "photos", label: "Has photos" },
+  { value: "bumicerts", label: "Has Bumicerts" },
 ];
 
 const ORGANIZATIONS_PAGE_SIZE = 24;
@@ -198,24 +198,24 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
   const stats = useMemo(
     () => [
       {
-        label: "Total organizations",
+        label: "Organizations",
         value: totalStats?.organizations ?? null,
-        detail: "organization profiles",
+        detail: "public profiles",
       },
       {
         label: "Countries",
         value: totalStats?.countries ?? null,
-        detail: "countries represented",
+        detail: "represented",
       },
       {
-        label: "With photos",
+        label: "Photos",
         value: totalStats?.withPhotos ?? null,
-        detail: "profiles with photos",
+        detail: "organizations with photos",
       },
       {
-        label: "Mapped places",
+        label: "Map locations",
         value: totalStats?.mappedPlaces ?? null,
-        detail: "places shown on map",
+        detail: "organizations shown on map",
       },
     ],
     [totalStats],
@@ -800,7 +800,7 @@ const OrganizationCard = memo(function OrganizationCard({ record, onOpen }: { re
               {mapped && (
                 <span className="flex shrink-0 items-center gap-1 text-primary/80">
                   <MapPinIcon className="size-3.5" />
-                  Mapped
+                  Location shown
                 </span>
               )}
             </div>

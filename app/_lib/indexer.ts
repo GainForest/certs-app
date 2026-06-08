@@ -3520,8 +3520,8 @@ function buildBumicertDetail(
     section("Claim", [
       field("Published by", profileName(n.certifiedProfileData), true),
       field("Work period", period, true),
-      field("Contributors", contributors ? formatNumber(contributors) : null),
-      field("Certified sites", sites ? formatNumber(sites) : null),
+      field("People credited", contributors ? formatNumber(contributors) : null),
+      field("Project places", sites ? formatNumber(sites) : null),
       field("Created", sv(n.createdAt) ? formatDateTime(n.createdAt as string) : null, true),
     ]),
   ].filter((s) => s.fields.length > 0);

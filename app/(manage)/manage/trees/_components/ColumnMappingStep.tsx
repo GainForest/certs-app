@@ -213,7 +213,7 @@ export default function ColumnMappingStep({ headers, mappings, sampleData, onMap
       )}
 
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />Mapped</span>
+        <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />Matched</span>
         <span className="flex items-center gap-1"><CircleAlertIcon className="h-3.5 w-3.5 text-yellow-500" />Skipped — will not be saved</span>
         <span className="flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />Duplicate target</span>
         <span className="flex items-center gap-1"><span className="text-destructive font-medium">*</span>Required field</span>

@@ -551,7 +551,7 @@ function SidebarDonations({
           <p className="mt-0.5 text-lg font-medium text-foreground">{formatCompactUsd(totalUsd)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Completed gifts</p>
+          <p className="text-xs text-muted-foreground">Donations</p>
           <p className="mt-0.5 text-lg font-medium text-foreground">{formatCompact(receipts.length)}</p>
         </div>
       </div>
@@ -803,7 +803,7 @@ function DonationsPanel({
     {
       label: "Donations",
       value: formatCompact(usdReceipts.length),
-      detail: "completed gifts counted",
+      detail: "completed donations",
       icon: <GiftIcon />,
     },
     {
@@ -825,7 +825,7 @@ function DonationsPanel({
                 Support this Bumicert
               </h2>
               <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                Your gift supports {owner.displayName} and appears with this project story once completed.
+                Your donation supports {owner.displayName} and appears with this project story once completed.
               </p>
             </div>
             <div className="w-full sm:w-44 sm:shrink-0">

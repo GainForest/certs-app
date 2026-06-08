@@ -43,11 +43,11 @@ type FilterChip = {
 };
 
 const FILTER_CHIPS: FilterChip[] = [
-  { key: "images", label: "Photos", predicate: (record) => Boolean(record.imageUrl) },
-  { key: "locations", label: "Sites", predicate: (record) => record.locationCount > 0 },
-  { key: "contributors", label: "Contributors", predicate: (record) => record.contributorCount > 0 },
-  { key: "active", label: "Active period", predicate: (record) => Boolean(record.startDate || record.endDate) },
-  { key: "donations", label: "Accepting Donations", predicate: () => true },
+  { key: "images", label: "Has photos", predicate: (record) => Boolean(record.imageUrl) },
+  { key: "locations", label: "Has places", predicate: (record) => record.locationCount > 0 },
+  { key: "contributors", label: "Has people", predicate: (record) => record.contributorCount > 0 },
+  { key: "active", label: "Has dates", predicate: (record) => Boolean(record.startDate || record.endDate) },
+  { key: "donations", label: "Can receive donations", predicate: () => true },
 ];
 
 const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
@@ -160,24 +160,24 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
   const stats = useMemo(
     () => [
       {
-        label: "Total Bumicerts",
+        label: "Bumicerts",
         value: totalStats?.totalBumicerts ?? null,
-        detail: "published Bumicerts",
+        detail: "published",
       },
       {
-        label: "Certified sites",
+        label: "Project places",
         value: totalStats?.certifiedPlaces ?? null,
-        detail: "sites linked",
+        detail: "linked to Bumicerts",
       },
       {
-        label: "Contributors",
+        label: "People credited",
         value: totalStats?.contributors ?? null,
-        detail: "contributors credited",
+        detail: "named in Bumicerts",
       },
       {
-        label: "Project photos",
+        label: "Photo stories",
         value: totalStats?.projectPhotos ?? null,
-        detail: "Bumicerts with photos",
+        detail: "include photos",
       },
     ],
     [totalStats],
@@ -411,7 +411,7 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
                       size="sm"
                       className="h-10 text-sm"
                     >
-                      All Projects
+                      All Bumicerts
                     </Button>
                     {FILTER_CHIPS.map((chip) => {
                       const selected = filters.includes(chip.key);
@@ -459,9 +459,9 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
                       className="quick-popover-in absolute right-0 top-full z-[1000] mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-primary/20 bg-popover p-4 shadow-[0_18px_45px_color-mix(in_oklab,var(--primary)_16%,transparent)]"
                     >
                       <div className="mb-3">
-                        <h2 className="text-base font-medium text-foreground">All Filters</h2>
+                        <h2 className="text-base font-medium text-foreground">All filters</h2>
                         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                          Show projects that include photos, sites, contributors, active dates, or open giving.
+                          Show Bumicerts that include photos, project places, people, dates, or donations.
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -636,13 +636,13 @@ const BumicertGrid = memo(function BumicertGrid({
           className="mb-3 text-2xl font-light text-foreground md:text-3xl"
           style={{ fontFamily: "var(--font-garamond-var)" }}
         >
-          No projects found
+          No Bumicerts found
         </h3>
         <p
           className="max-w-md text-base leading-relaxed text-foreground/80"
           style={{ fontFamily: "var(--font-instrument-serif-var)", fontStyle: "italic" }}
         >
-          Try adjusting your search or filters to discover more regenerative impact projects.
+          Try adjusting your search or filters to find more project stories.
         </p>
       </div>
     );
@@ -785,7 +785,7 @@ function buildPillRows(record: BumicertRecord): {
           <span>{formatStat(record.locationCount)}</span>
         </>
       ),
-      ariaLabel: `${record.locationCount} site${record.locationCount === 1 ? "" : "s"}`,
+      ariaLabel: `${record.locationCount} project place${record.locationCount === 1 ? "" : "s"}`,
     });
   }
 
@@ -798,7 +798,7 @@ function buildPillRows(record: BumicertRecord): {
           <span>{formatStat(record.contributorCount)}</span>
         </>
       ),
-      ariaLabel: `${record.contributorCount} contributor${record.contributorCount === 1 ? "" : "s"}`,
+      ariaLabel: `${record.contributorCount} people credited`,
     });
   }
 

@@ -726,14 +726,14 @@ function NetworkStep({
 
   return (
     <div className="space-y-7">
-      <FieldShell label="Contributors" hint="Add people, teams, or community groups that should appear with this story.">
+      <FieldShell label="People credited" hint="Add people, teams, or community groups that should appear with this story.">
         <div className="space-y-3">
           {values.contributors.map((contributor, index) => (
             <div key={index} className="flex gap-2">
               <Input
                 value={contributor}
                 onChange={(event) => updateContributor(index, event.target.value)}
-                placeholder={index === 0 ? "Rufiji Mangrove Stewards" : "Contributor name"}
+                placeholder={index === 0 ? "Rufiji Mangrove Stewards" : "Person or group name"}
                 className="h-11 rounded-2xl bg-background/80"
               />
               <Button
@@ -742,7 +742,7 @@ function NetworkStep({
                 size="icon"
                 disabled={values.contributors.length === 1}
                 onClick={() => removeContributor(index)}
-                aria-label="Remove contributor"
+                aria-label="Remove person or group"
               >
                 <Trash2Icon className="size-4" />
               </Button>
@@ -756,7 +756,7 @@ function NetworkStep({
           onClick={() => setValues((current) => ({ ...current, contributors: [...current.contributors, ""] }))}
           className="mt-3"
         >
-          <PlusIcon /> Add contributor
+          <PlusIcon /> Add person or group
         </Button>
       </FieldShell>
 
@@ -821,7 +821,7 @@ function ReviewStep({ values, sites, publishError }: { values: FormValues; sites
     ["Scope", scopeSummary(values)],
     ["Dates", values.startDate ? `${values.startDate} → ${values.ongoing ? "ongoing" : values.endDate || "missing"}` : "Missing"],
     ["Summary", clampDescription(values.shortDescription) || "Missing"],
-    ["Contributors", contributorList(values).join(", ") || "Missing"],
+    ["People credited", contributorList(values).join(", ") || "Missing"],
     ["Sites", selectedLocations(values, sites).map((site) => site.record.name || "Project place").join(", ") || "None attached"],
   ];
   const validation = validateAll(values);

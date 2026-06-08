@@ -90,7 +90,7 @@ const FAQ_ITEMS = [
     key: "story",
     question: "Your place in the story",
     answer:
-      "Owning a Bumicert means you're part of that moment. A tree planted. A reef restored. An ecosystem revived. It's yours to share, hold, or gift.",
+      "Owning a Bumicert means you're part of that moment. A tree planted. A reef restored. An ecosystem revived. It's yours to share and keep."
   },
 ] as const;
 
@@ -270,7 +270,7 @@ function LandingHero() {
               <span className="hidden h-8 w-px bg-foreground/20 sm:block" />
               <span className="inline-flex items-center gap-3">
                 <MapPinIcon className="size-6 stroke-[1.5]" />
-                Mapped
+                Places shown
               </span>
             </motion.div>
           </motion.div>

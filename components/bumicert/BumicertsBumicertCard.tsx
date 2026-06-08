@@ -136,7 +136,7 @@ function buildPillRows(record: BumicertsBumicertCardRecord): {
           <span>{formatCompactCount(record.locationCount)}</span>
         </>
       ),
-      ariaLabel: `${record.locationCount} site${record.locationCount === 1 ? "" : "s"}`,
+      ariaLabel: `${record.locationCount} project place${record.locationCount === 1 ? "" : "s"}`,
     });
   }
 
@@ -149,7 +149,7 @@ function buildPillRows(record: BumicertsBumicertCardRecord): {
           <span>{formatCompactCount(record.contributorCount)}</span>
         </>
       ),
-      ariaLabel: `${record.contributorCount} contributor${record.contributorCount === 1 ? "" : "s"}`,
+      ariaLabel: `${record.contributorCount} people credited`,
     });
   }
 

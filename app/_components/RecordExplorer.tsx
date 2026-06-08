@@ -1067,12 +1067,11 @@ function cardView(record: ExplorerRecord): CardView {
     pills: (
       <>
         <Pill accent>
-          {formatCompact(record.contributorCount)} contributor
-          {record.contributorCount === 1 ? "" : "s"}
+          {formatCompact(record.contributorCount)} people credited
         </Pill>
         {record.locationCount > 0 ? (
           <Pill>
-            {formatCompact(record.locationCount)} site{record.locationCount === 1 ? "" : "s"}
+            {formatCompact(record.locationCount)} project place{record.locationCount === 1 ? "" : "s"}
           </Pill>
         ) : null}
       </>
@@ -1203,7 +1202,7 @@ function computeOccurrenceTotalStats(stats: OccurrenceStats, records: ExplorerRe
       accent: true,
     },
     {
-      label: "Mapped sightings",
+      label: "Sightings with places",
       value: n(stats.mappedSightings, fallback.mappedSightings),
       detail: stats.mappedSightings == null ? "loaded map locations" : "with map locations",
       icon: <MapIcon />,
@@ -1271,7 +1270,7 @@ function computeStats(records: ExplorerRecord[], kind: RecordKind): Stat[] {
     return [
       { label: "Bumicerts", value: n(b.length), detail: "loaded project stories", icon: <LayoutGridIcon />, accent: true },
       { label: "New in 30 days", value: n(last30), detail: "recent stories", icon: <LeafIcon /> },
-      { label: "Contributors", value: n(contributors), detail: "across stories", icon: <LeafIcon />, accent: true },
+      { label: "People credited", value: n(contributors), detail: "named in stories", icon: <LeafIcon />, accent: true },
       { label: "Project places", value: n(sites), detail: "linked places", icon: <MapIcon /> },
       { label: "With pictures", value: n(withCover), detail: "cover pictures", icon: <ImageIcon /> },
       { label: "New this week", value: n(last7), detail: "latest activity", icon: <AudioLinesIcon /> },

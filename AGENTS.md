@@ -18,16 +18,17 @@ Do not show terms like:
 
 Internal code may still use protocol names, types, route params, comments, and constants when needed, but user-facing copy must translate them.
 
-### Preferred plain-language replacements
+### Plain-language copy guidance
 
-Use replacements like:
+Use the clearest everyday term for the thing the user is seeing. Do not replace a clear word with a softer euphemism. In particular, donation and payment flows should say `donation`, `donor`, and `supporter` when those are the accurate terms.
+
+Good plain-language terms include:
 
 - `profile`, `public profile`, `organization profile`
 - `Bumicert`, `impact story`, `project story`, `checked certificate`
 - `project place`, `project area`, `drawn map area`, `map location`
 - `nature sighting`, `tree information`, `field sound recording`
-- In general copy: `payment details`, `completed gift`, `public donation note`
-- In donation and wallet flows: use exact terms like `wallet`, `wallet address`, `USDC`, `Base`, and `transaction hash` when they are accurate
+- In donation and wallet flows: `donation`, `donor`, `payment details`, `public donation note`, plus exact terms like `wallet`, `wallet address`, `USDC`, `Base`, and `transaction hash` when they are accurate
 - `site health`, `services running`, `working`, `slow`, `not working`
 - `file`, `spreadsheet export`, `file heading`, `tree group`, `photo folder`
 

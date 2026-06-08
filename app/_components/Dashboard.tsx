@@ -257,19 +257,19 @@ function KPISummary({ kpis, geoStats }: { kpis: DashboardKpis; geoStats: GeoStat
         icon={<CoinsIcon className="h-4 w-4" />}
         label="Total Raised"
         value={formatCompactUsd(kpis.totalRaised)}
-        sub="Raised from completed donations"
+        sub="Total donated"
       />
       <StatCard
         icon={<HandHeartIcon className="h-4 w-4" />}
         label="Total Donations"
         value={formatCompact(kpis.totalDonations)}
-        sub="Completed donations"
+        sub="Donations completed"
       />
       <StatCard
         icon={<UsersRoundIcon className="h-4 w-4" />}
         label="Supporters"
         value={formatCompact(kpis.uniqueDonors)}
-        sub="Supporters counted"
+        sub="Unique donors"
       />
       <StatCard
         icon={<SproutIcon className="h-4 w-4" />}
@@ -281,13 +281,13 @@ function KPISummary({ kpis, geoStats }: { kpis: DashboardKpis; geoStats: GeoStat
         icon={<GaugeIcon className="h-4 w-4" />}
         label="Average Donation"
         value={formatCompactUsd(kpis.avgDonation)}
-        sub="Average donation size"
+        sub="Average donation amount"
       />
       <StatCard
         icon={<GlobeIcon className="h-4 w-4" />}
         label="Places Reached"
         value={formatCompact(geoStats.countriesRepresented)}
-        sub="Countries with organizations"
+        sub="Countries with Bumicerts"
       />
     </div>
   );
