@@ -455,11 +455,21 @@ function UnauthenticatedButtons() {
   );
 }
 
-function AuthenticatedMenu({ session }: { session: Extract<AuthSession, { isLoggedIn: true }> }) {
+function AuthenticatedMenu({
+  session,
+  profileName,
+  isProfileNameLoading = false,
+}: {
+  session: Extract<AuthSession, { isLoggedIn: true }>;
+  profileName?: string | null;
+  isProfileNameLoading?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const displayLabel = session.handle || shortDid(session.did);
-  const secondaryLabel = session.handle ? session.handle : "User account";
+  const cleanProfileName = profileName?.trim() || null;
+  const profileNameLoading = isProfileNameLoading && profileName === undefined;
+  const displayLabel = cleanProfileName ?? (profileNameLoading ? "Account" : session.handle || shortDid(session.did));
+  const secondaryLabel = cleanProfileName ? "Signed in" : profileNameLoading ? "Loading profile" : "User account";
 
   const handleBlur = (event: React.FocusEvent) => {
     if (!containerRef.current?.contains(event.relatedTarget as Node)) {
@@ -562,13 +572,21 @@ function AuthenticatedMenu({ session }: { session: Extract<AuthSession, { isLogg
   );
 }
 
-export function AuthButton({ session }: { session: AuthSession | null }) {
+export function AuthButton({
+  session,
+  profileName,
+  isProfileNameLoading,
+}: {
+  session: AuthSession | null;
+  profileName?: string | null;
+  isProfileNameLoading?: boolean;
+}) {
   if (!session) {
     return <AuthSkeleton />;
   }
 
   if (session.isLoggedIn) {
-    return <AuthenticatedMenu session={session} />;
+    return <AuthenticatedMenu session={session} profileName={profileName} isProfileNameLoading={isProfileNameLoading} />;
   }
 
   return <UnauthenticatedButtons />;

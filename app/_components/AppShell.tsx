@@ -125,7 +125,11 @@ type DocWithViewTransitions = Document & {
 
 type ShellSessionResponse = {
   session: AuthSession;
+};
+
+type ShellProfileResponse = {
   manageAccountKind: ManageAccountKind;
+  profileName: string | null;
 };
 
 export function AppShell({
@@ -141,19 +145,52 @@ export function AppShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [resolvedAuthSession, setResolvedAuthSession] = useState<AuthSession | null>(authSession);
   const [resolvedManageAccountKind, setResolvedManageAccountKind] = useState<ManageAccountKind>(manageAccountKind);
+  const [resolvedProfileName, setResolvedProfileName] = useState<string | null | undefined>(
+    authSession?.isLoggedIn ? undefined : null,
+  );
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/session", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() as Promise<ShellSessionResponse> : null))
-      .then((next) => {
-        if (cancelled || !next) return;
-        setResolvedAuthSession(next.session);
-        setResolvedManageAccountKind(next.manageAccountKind);
-      })
-      .catch(() => {
-        if (!cancelled) setResolvedAuthSession({ isLoggedIn: false });
-      });
+
+    async function refreshShellSession() {
+      try {
+        const response = await fetch("/api/session", { cache: "no-store" });
+        const next = response.ok ? await response.json() as ShellSessionResponse : null;
+        if (cancelled) return;
+
+        const nextSession = next?.session ?? { isLoggedIn: false as const };
+        setResolvedAuthSession(nextSession);
+
+        if (!nextSession.isLoggedIn) {
+          setResolvedManageAccountKind("user");
+          setResolvedProfileName(null);
+          return;
+        }
+
+        setResolvedProfileName(undefined);
+
+        try {
+          const profileResponse = await fetch("/api/session/profile", { cache: "no-store" });
+          const profile = profileResponse.ok ? await profileResponse.json() as ShellProfileResponse : null;
+          if (cancelled || !profile) return;
+
+          setResolvedManageAccountKind(profile.manageAccountKind);
+          setResolvedProfileName(profile.profileName);
+        } catch {
+          if (cancelled) return;
+          setResolvedManageAccountKind("user");
+          setResolvedProfileName(null);
+        }
+      } catch {
+        if (cancelled) return;
+        setResolvedAuthSession({ isLoggedIn: false });
+        setResolvedManageAccountKind("user");
+        setResolvedProfileName(null);
+      }
+    }
+
+    void refreshShellSession();
+
     return () => {
       cancelled = true;
     };
@@ -168,7 +205,7 @@ export function AppShell({
       <div className="hidden md:flex h-screen overflow-hidden">
         <UnifiedSidebar authSession={resolvedAuthSession} manageAccountKind={resolvedManageAccountKind} />
         <main className="relative flex-1 overflow-y-auto">
-          <Header authSession={resolvedAuthSession} onOpenMobileNav={() => setMobileNavOpen(true)} />
+          <Header authSession={resolvedAuthSession} profileName={resolvedProfileName} onOpenMobileNav={() => setMobileNavOpen(true)} />
           {children}
         </main>
       </div>
@@ -178,7 +215,7 @@ export function AppShell({
           <UnifiedSidebar authSession={resolvedAuthSession} manageAccountKind={resolvedManageAccountKind} />
         </MobileNavDrawer>
         <div className="relative flex-1 overflow-y-auto">
-          <Header authSession={resolvedAuthSession} onOpenMobileNav={() => setMobileNavOpen(true)} />
+          <Header authSession={resolvedAuthSession} profileName={resolvedProfileName} onOpenMobileNav={() => setMobileNavOpen(true)} />
           {children}
         </div>
       </div>
@@ -634,9 +671,11 @@ function CreateBumicertHeaderButton({ isUnauthenticated }: { isUnauthenticated: 
 
 function Header({
   authSession,
+  profileName,
   onOpenMobileNav,
 }: {
   authSession: AuthSession | null;
+  profileName?: string | null;
   onOpenMobileNav: () => void;
 }) {
   const pathname = usePathname() ?? "/";
@@ -705,7 +744,7 @@ function Header({
                 </motion.div>
               ) : null}
             </AnimatePresence>
-            <AuthButton session={authSession} />
+            <AuthButton session={authSession} profileName={profileName} isProfileNameLoading={profileName === undefined} />
           </div>
         </div>
 
