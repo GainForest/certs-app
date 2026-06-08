@@ -444,7 +444,7 @@ function BumicertStatStrip({ record }: { record: Extract<ExplorerRecord, { kind:
       <StatTile
         icon={<UsersIcon />}
         value={formatCompact(record.contributorCount)}
-        label="People credited"
+        label="People named"
       />
       <StatTile
         icon={<MapPinIcon />}
@@ -568,7 +568,7 @@ function buildFields(r: ExplorerRecord): Field[] {
       fields.push({ label: "Photos or sounds", value: r.media.map(mediaLabel).join(", "), wide: true });
     if (r.remarks) fields.push({ label: "Remarks", value: r.remarks, wide: true });
   } else if (r.kind === "bumicert") {
-    fields.push({ label: "People credited", value: formatNumber(r.contributorCount) });
+    fields.push({ label: "People named", value: formatNumber(r.contributorCount) });
     fields.push({ label: "Project places", value: formatNumber(r.locationCount) });
     if (r.startDate) fields.push({ label: "Start", value: formatDate(r.startDate) });
     if (r.endDate) fields.push({ label: "End", value: formatDate(r.endDate) });

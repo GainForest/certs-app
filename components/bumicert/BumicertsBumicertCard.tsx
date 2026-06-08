@@ -149,7 +149,7 @@ function buildPillRows(record: BumicertsBumicertCardRecord): {
           <span>{formatCompactCount(record.contributorCount)}</span>
         </>
       ),
-      ariaLabel: `${record.contributorCount} people credited`,
+      ariaLabel: `${record.contributorCount} people named`,
     });
   }
 

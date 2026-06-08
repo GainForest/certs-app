@@ -270,7 +270,7 @@ function LandingHero() {
               <span className="hidden h-8 w-px bg-foreground/20 sm:block" />
               <span className="inline-flex items-center gap-3">
                 <MapPinIcon className="size-6 stroke-[1.5]" />
-                Places shown
+                Locations shown
               </span>
             </motion.div>
           </motion.div>

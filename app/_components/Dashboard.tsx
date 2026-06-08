@@ -255,21 +255,21 @@ function KPISummary({ kpis, geoStats }: { kpis: DashboardKpis; geoStats: GeoStat
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
       <StatCard
         icon={<CoinsIcon className="h-4 w-4" />}
-        label="Total Raised"
+        label="Total raised"
         value={formatCompactUsd(kpis.totalRaised)}
         sub="Total donated"
       />
       <StatCard
         icon={<HandHeartIcon className="h-4 w-4" />}
-        label="Total Donations"
+        label="Donations"
         value={formatCompact(kpis.totalDonations)}
-        sub="Donations completed"
+        sub="Completed donations"
       />
       <StatCard
         icon={<UsersRoundIcon className="h-4 w-4" />}
-        label="Supporters"
+        label="Unique donors"
         value={formatCompact(kpis.uniqueDonors)}
-        sub="Unique donors"
+        sub="People who donated"
       />
       <StatCard
         icon={<SproutIcon className="h-4 w-4" />}
@@ -279,13 +279,13 @@ function KPISummary({ kpis, geoStats }: { kpis: DashboardKpis; geoStats: GeoStat
       />
       <StatCard
         icon={<GaugeIcon className="h-4 w-4" />}
-        label="Average Donation"
+        label="Average donation"
         value={formatCompactUsd(kpis.avgDonation)}
         sub="Average donation amount"
       />
       <StatCard
         icon={<GlobeIcon className="h-4 w-4" />}
-        label="Places Reached"
+        label="Bumicert countries"
         value={formatCompact(geoStats.countriesRepresented)}
         sub="Countries with Bumicerts"
       />
@@ -294,7 +294,7 @@ function KPISummary({ kpis, geoStats }: { kpis: DashboardKpis; geoStats: GeoStat
 }
 
 function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub: string }) {
-  return <StatsTile icon={icon} label={label} value={value} detail={sub} accent={label === "Total Raised" || label === "Active Bumicerts"} />;
+  return <StatsTile icon={icon} label={label} value={value} detail={sub} accent={label === "Total raised" || label === "Active Bumicerts"} />;
 }
 
 function TopCountriesTable({ stats }: { stats: GeoStats }) {
@@ -554,7 +554,7 @@ function OrganizationsTable({ rows }: { rows: OrgRow[] }) {
               <thead>
                 <tr className="border-t border-border/60">
                   <th className="px-3 py-2 text-left text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">Organization</th>
-                  <SortableCol col="totalRaised" sortKey={sortKey} sortDir={sortDir} onSort={sort}>Total Raised</SortableCol>
+                  <SortableCol col="totalRaised" sortKey={sortKey} sortDir={sortDir} onSort={sort}>Total raised</SortableCol>
                   <SortableCol col="bumicertCount" sortKey={sortKey} sortDir={sortDir} onSort={sort}>Bumicerts</SortableCol>
                   <SortableCol col="donorCount" sortKey={sortKey} sortDir={sortDir} onSort={sort}>Donors</SortableCol>
                 </tr>

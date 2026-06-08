@@ -807,9 +807,9 @@ function DonationsPanel({
       icon: <GiftIcon />,
     },
     {
-      label: "Supporters",
+      label: "Donors",
       value: formatCompact(donorCount),
-      detail: "people in this list",
+      detail: "unique donors",
       icon: <UsersRoundIcon />,
       accent: true,
     },

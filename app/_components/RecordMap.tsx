@@ -201,7 +201,7 @@ export function RecordMap({
   const mappedNote =
     resolving && points.length === 0
       ? "Finding map locations…"
-      : `${formatNumber(points.length)} ${kind === "site" ? "sites" : "items"} shown on map`;
+      : `${formatNumber(points.length)} ${kind === "site" ? "sites" : "items"} with a map location`;
 
   return (
     <div className="relative">

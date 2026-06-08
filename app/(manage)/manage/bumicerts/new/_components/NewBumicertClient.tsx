@@ -729,7 +729,7 @@ function PeopleStep({
 
   return (
     <div className="space-y-8">
-      <Field label="People credited" hint="search a name or @handle" error={issues.contributors?.message}>
+      <Field label="People named" hint="search a name or @handle" error={issues.contributors?.message}>
         <div className="space-y-2.5">
           {values.contributors.map((contributor, index) => (
             <ContributorInput

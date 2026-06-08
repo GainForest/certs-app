@@ -43,11 +43,11 @@ type FilterChip = {
 };
 
 const FILTER_CHIPS: FilterChip[] = [
-  { key: "images", label: "Has photos", predicate: (record) => Boolean(record.imageUrl) },
-  { key: "locations", label: "Has places", predicate: (record) => record.locationCount > 0 },
-  { key: "contributors", label: "Has people", predicate: (record) => record.contributorCount > 0 },
-  { key: "active", label: "Has dates", predicate: (record) => Boolean(record.startDate || record.endDate) },
-  { key: "donations", label: "Can receive donations", predicate: () => true },
+  { key: "images", label: "Shows photos", predicate: (record) => Boolean(record.imageUrl) },
+  { key: "locations", label: "Shows project places", predicate: (record) => record.locationCount > 0 },
+  { key: "contributors", label: "Shows named people", predicate: (record) => record.contributorCount > 0 },
+  { key: "active", label: "Shows work dates", predicate: (record) => Boolean(record.startDate || record.endDate) },
+  { key: "donations", label: "Accepts donations", predicate: () => true },
 ];
 
 const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
@@ -170,14 +170,14 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
         detail: "linked to Bumicerts",
       },
       {
-        label: "People credited",
+        label: "People named",
         value: totalStats?.contributors ?? null,
         detail: "named in Bumicerts",
       },
       {
-        label: "Photo stories",
+        label: "Stories with photos",
         value: totalStats?.projectPhotos ?? null,
-        detail: "include photos",
+        detail: "include a project photo",
       },
     ],
     [totalStats],
@@ -461,7 +461,7 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
                       <div className="mb-3">
                         <h2 className="text-base font-medium text-foreground">All filters</h2>
                         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                          Show Bumicerts that include photos, project places, people, dates, or donations.
+                          Show Bumicerts with photos, project places, named people, work dates, or donations.
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -798,7 +798,7 @@ function buildPillRows(record: BumicertRecord): {
           <span>{formatStat(record.contributorCount)}</span>
         </>
       ),
-      ariaLabel: `${record.contributorCount} people credited`,
+      ariaLabel: `${record.contributorCount} people named`,
     });
   }
 

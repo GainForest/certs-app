@@ -46,7 +46,7 @@ const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
 ];
 
 const QUICK_CHIPS: Array<{ value: QuickFilter; label: string }> = [
-  { value: "photos", label: "Has photos" },
+  { value: "photos", label: "Has profile photos" },
   { value: "bumicerts", label: "Has Bumicerts" },
 ];
 
@@ -146,14 +146,15 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
   }, [records]);
 
   const countryChips = useMemo(() => {
-    const codes = records
+    const loadedCodes = records
       .map((record) => normalizeCountry(record.country))
       .filter((code): code is string => Boolean(code));
+    const statsCodes = totalStats?.countryCodes ?? [];
 
-    return Array.from(new Set(codes))
+    return Array.from(new Set([...statsCodes, ...loadedCodes]))
       .map((code) => ({ code, name: countryName(code), emoji: countryFlag(code) }))
       .sort((a, b) => Number(b.code === countryFilter) - Number(a.code === countryFilter) || a.name.localeCompare(b.name));
-  }, [records, countryFilter]);
+  }, [records, countryFilter, totalStats?.countryCodes]);
 
   const typeChips = useMemo(() => {
     const counts = new Map<string, number>();
@@ -208,14 +209,14 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
         detail: "represented",
       },
       {
-        label: "Photos",
+        label: "Profile photos",
         value: totalStats?.withPhotos ?? null,
-        detail: "organizations with photos",
+        detail: "organizations with a profile photo",
       },
       {
-        label: "Map locations",
+        label: "Locations shown",
         value: totalStats?.mappedPlaces ?? null,
-        detail: "organizations shown on map",
+        detail: "organization locations on map",
       },
     ],
     [totalStats],

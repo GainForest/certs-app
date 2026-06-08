@@ -224,7 +224,7 @@ function buildSidebarData(account: AccountRouteData, bumicertCount: number, dona
         icon: "bumicert",
       },
       {
-        label: account.kind === "organization" ? "Donations Received" : "Total Donations",
+        label: account.kind === "organization" ? "Donations received" : "Donations",
         value: formatCompact(donationCount),
         icon: "donation",
       },

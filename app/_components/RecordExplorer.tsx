@@ -1048,7 +1048,7 @@ function cardView(record: ExplorerRecord): CardView {
         ) : undefined,
       badge: (
         <span className="inline-flex items-center rounded-full bg-background/85 px-2 py-0.5 text-[9.5px] font-medium uppercase tracking-[0.1em] text-foreground/70 backdrop-blur-md">
-          {certified ? "Reviewed" : "GainForest"}
+          {certified ? "Checked" : "GainForest"}
         </span>
       ),
       placeholder: (
@@ -1067,7 +1067,7 @@ function cardView(record: ExplorerRecord): CardView {
     pills: (
       <>
         <Pill accent>
-          {formatCompact(record.contributorCount)} people credited
+          {formatCompact(record.contributorCount)} people named
         </Pill>
         {record.locationCount > 0 ? (
           <Pill>
@@ -1204,7 +1204,7 @@ function computeOccurrenceTotalStats(stats: OccurrenceStats, records: ExplorerRe
     {
       label: "Sightings with places",
       value: n(stats.mappedSightings, fallback.mappedSightings),
-      detail: stats.mappedSightings == null ? "loaded map locations" : "with map locations",
+      detail: stats.mappedSightings == null ? "loaded sightings with a location" : "with a location shown",
       icon: <MapIcon />,
     },
   ];
@@ -1270,9 +1270,9 @@ function computeStats(records: ExplorerRecord[], kind: RecordKind): Stat[] {
     return [
       { label: "Bumicerts", value: n(b.length), detail: "loaded project stories", icon: <LayoutGridIcon />, accent: true },
       { label: "New in 30 days", value: n(last30), detail: "recent stories", icon: <LeafIcon /> },
-      { label: "People credited", value: n(contributors), detail: "named in stories", icon: <LeafIcon />, accent: true },
+      { label: "People named", value: n(contributors), detail: "named in stories", icon: <LeafIcon />, accent: true },
       { label: "Project places", value: n(sites), detail: "linked places", icon: <MapIcon /> },
-      { label: "With pictures", value: n(withCover), detail: "cover pictures", icon: <ImageIcon /> },
+      { label: "Stories with pictures", value: n(withCover), detail: "include a cover picture", icon: <ImageIcon /> },
       { label: "New this week", value: n(last7), detail: "latest activity", icon: <AudioLinesIcon /> },
     ];
   }
@@ -1284,7 +1284,7 @@ function computeStats(records: ExplorerRecord[], kind: RecordKind): Stat[] {
     { label: "Organizations", value: n(s.length), detail: "loaded profiles", icon: <LayoutGridIcon />, accent: true },
     { label: "New in 30 days", value: n(last30), detail: "recent profiles", icon: <LeafIcon /> },
     { label: "Countries", value: n(countries), detail: "places reached", icon: <MapIcon />, accent: true },
-    { label: "With pictures", value: n(withImg), detail: "cover or logo pictures", icon: <ImageIcon /> },
+    { label: "Profile pictures", value: n(withImg), detail: "profiles with a cover or logo", icon: <ImageIcon /> },
     { label: "New this week", value: n(last7), detail: "latest activity", icon: <AudioLinesIcon /> },
   ];
 }

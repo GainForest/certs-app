@@ -726,7 +726,7 @@ function NetworkStep({
 
   return (
     <div className="space-y-7">
-      <FieldShell label="People credited" hint="Add people, teams, or community groups that should appear with this story.">
+      <FieldShell label="People named" hint="Add people, teams, or community groups that should appear with this story.">
         <div className="space-y-3">
           {values.contributors.map((contributor, index) => (
             <div key={index} className="flex gap-2">
@@ -821,7 +821,7 @@ function ReviewStep({ values, sites, publishError }: { values: FormValues; sites
     ["Scope", scopeSummary(values)],
     ["Dates", values.startDate ? `${values.startDate} → ${values.ongoing ? "ongoing" : values.endDate || "missing"}` : "Missing"],
     ["Summary", clampDescription(values.shortDescription) || "Missing"],
-    ["People credited", contributorList(values).join(", ") || "Missing"],
+    ["People named", contributorList(values).join(", ") || "Missing"],
     ["Sites", selectedLocations(values, sites).map((site) => site.record.name || "Project place").join(", ") || "None attached"],
   ];
   const validation = validateAll(values);

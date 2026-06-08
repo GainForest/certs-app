@@ -1461,7 +1461,7 @@ function siteMatchesOptions(record: SiteRecord, options?: SiteQueryOptions): boo
     if (!types.includes(options.orgType.toLowerCase())) return false;
   }
   const quick = options?.quickFilters ?? [];
-  if (quick.includes("photos") && !record.imageUrl && !record.coverRef && !record.logoRef) return false;
+  if (quick.includes("photos") && !record.imageUrl && !record.bannerUrl && !record.avatarUrl && !record.coverRef && !record.logoRef) return false;
   if (quick.includes("locations") && !record.locationUri) return false;
   if (quick.includes("bumicerts") && (record.bumicertCount ?? 0) <= 0) return false;
   return true;
@@ -1661,6 +1661,14 @@ async function fetchCertOrgPage(
     name: profileName(n.certifiedProfileData) ?? profiles.get(n.did)?.name ?? null,
     avatarRef: profileAvatarRef(n.certifiedProfileData) ?? profiles.get(n.did)?.avatarRef ?? null,
   }));
+  const countryByLocation = await fetchCertifiedLocationCountriesByUri(
+    records.map((record) => record.locationUri).filter((uri): uri is string => Boolean(uri)),
+    signal,
+  ).catch(() => new Map<string, string>());
+  records = records.map((record) => ({
+    ...record,
+    country: record.locationUri ? countryByLocation.get(record.locationUri) ?? record.country : record.country,
+  }));
   records = await resolveImages(
     records,
     (r) => (r.logoRef ? { did: r.did, ref: r.logoRef } : null),
@@ -1679,6 +1687,7 @@ async function fetchCertOrgPage(
 export type OrganizationStats = {
   organizations: number | null;
   countries: number;
+  countryCodes: string[];
   withPhotos: number;
   mappedPlaces: number;
 };
@@ -1801,6 +1810,7 @@ async function fetchCertifiedOrganizationStats(signal?: AbortSignal): Promise<Or
   return {
     organizations: organizations ?? seenRows,
     countries: countries.size,
+    countryCodes: [...countries].sort(),
     withPhotos,
     mappedPlaces,
   };
@@ -1856,14 +1866,28 @@ export async function fetchSites(
   });
 
   const includeBumicertCounts = options?.quickFilters?.includes("bumicerts") ?? false;
+  const collectAllForNameSort = options?.sort === "az" || options?.sort === "za";
+  const records: SiteRecord[] = [];
+  let cursor = after;
+  let hasMore = true;
 
-  return collectPaged(
-    (first, nextCursor, nextSignal) => fetchCertOrgPage(first, nextCursor, nextSignal, certifiedWhere(options), options?.sort, includeBumicertCounts),
-    target,
-    after,
-    signal,
-    (running) => onProgress?.(sortSites(running)),
-  ).then((page) => ({ ...page, records: sortSites(page.records) }));
+  while (hasMore && (collectAllForNameSort || sortSites(records).length < target)) {
+    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    const matchedCount = sortSites(records).length;
+    const first = collectAllForNameSort ? INDEXER_MAX_PAGE : Math.min(INDEXER_MAX_PAGE, Math.max(1, target - matchedCount));
+    const page = await fetchCertOrgPage(first, cursor, signal, certifiedWhere(options), options?.sort, includeBumicertCounts);
+    records.push(...page.records);
+    cursor = page.cursor;
+    hasMore = page.hasMore && Boolean(page.cursor);
+    onProgress?.(sortSites(records).slice(0, target));
+    if (!cursor) break;
+  }
+
+  return {
+    records: sortSites(records).slice(0, target),
+    cursor,
+    hasMore,
+  };
 }
 
 // ── 4. Manage section — certified locations by DID ─────────────────────────
@@ -3520,7 +3544,7 @@ function buildBumicertDetail(
     section("Claim", [
       field("Published by", profileName(n.certifiedProfileData), true),
       field("Work period", period, true),
-      field("People credited", contributors ? formatNumber(contributors) : null),
+      field("People named", contributors ? formatNumber(contributors) : null),
       field("Project places", sites ? formatNumber(sites) : null),
       field("Created", sv(n.createdAt) ? formatDateTime(n.createdAt as string) : null, true),
     ]),

@@ -59,9 +59,9 @@ const DONOR_FILTERS: Array<{ value: DonorFilter; Icon: typeof UsersRoundIcon; la
   { value: "known", Icon: UserRoundCheckIcon, label: "Known Only", shortLabel: "Known" },
 ];
 const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
-  { value: "total-raised", label: "Total Raised" },
-  { value: "donation-count", label: "Donation Count" },
-  { value: "recent-donation", label: "Recent Donation" },
+  { value: "total-raised", label: "Total raised" },
+  { value: "donation-count", label: "Donation count" },
+  { value: "recent-donation", label: "Recent donation" },
 ];
 const PERIOD_LABELS: Record<Period, string> = {
   all: "All Time",
@@ -288,29 +288,29 @@ function StatsSummary({
 
   const stats: StatsTileItem[] = [
     {
-      label: "Total Raised",
+      label: "Total raised",
       value: formatCompactUsd(totalRaised),
       detail: "given in this view",
       icon: <LeafIcon />,
       accent: true,
     },
     {
-      label: "Total Donors",
+      label: "Unique donors",
       value: formatCompact(totalDonors),
-      detail: "supporters included",
+      detail: "people who donated",
       icon: <UsersRoundIcon />,
     },
     {
-      label: "Projects Supported",
+      label: "Bumicerts supported",
       value: formatCompact(totalProjectsSupported),
       detail: "project stories helped",
       icon: <SproutIcon />,
       accent: true,
     },
     {
-      label: "No. of Donations",
+      label: "Donations",
       value: formatCompact(totalDonationCount),
-      detail: "completed donations counted",
+      detail: "completed donations",
       icon: <GiftIcon />,
     },
   ];
