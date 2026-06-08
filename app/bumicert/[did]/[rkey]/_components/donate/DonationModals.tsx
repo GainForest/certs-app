@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRightIcon, BadgeCheckIcon, CheckIcon, CopyIcon, HeartIcon, WalletIcon } from "lucide-react";
+import { ArrowUpRightIcon, BadgeCheckIcon, CheckIcon, CompassIcon, CopyIcon, Share2Icon, TrophyIcon, WalletIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { useModal } from "@/components/ui/modal/context";
 import { ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal/modal";
 import type { AuthSession } from "@/app/_lib/auth";
-import { blockExplorerUrl, localBumicertHref } from "@/app/_lib/urls";
+import { SocialGlyph } from "@/app/_components/SocialIcon";
+import { SITE_URL, blockExplorerUrl, localBumicertHref } from "@/app/_lib/urls";
 import {
   BASE_CHAIN_NAME,
   BASE_RPC_URL,
@@ -80,6 +82,18 @@ function parseBound(value: string | null | undefined): number | null {
 
 function shortWallet(value: string): string {
   return `${value.slice(0, 6)}…${value.slice(-4)}`;
+}
+
+function absoluteLocalUrl(path: string): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : SITE_URL;
+  return `${origin}${path}`;
+}
+
+function socialShareUrl(platform: "x" | "bluesky" | "telegram", text: string): string {
+  const encoded = encodeURIComponent(text);
+  if (platform === "x") return `https://x.com/intent/tweet?text=${encoded}`;
+  if (platform === "bluesky") return `https://bsky.app/intent/compose?text=${encoded}`;
+  return `tg://msg?text=${encoded}`;
 }
 
 function getEthereum(): EthereumProvider | null {
@@ -591,11 +605,22 @@ function SuccessModal({
   const [copied, setCopied] = useState(false);
   const txHref = blockExplorerUrl(transactionHash, "base");
   const sharePath = localBumicertHref(bumicert.organizationDid, bumicert.rkey);
-  const shareText = `I donated $${amount.toFixed(2)} to support a Bumicert: ${typeof window !== "undefined" ? `${window.location.origin}${sharePath}` : sharePath}`;
+  const shareUrl = absoluteLocalUrl(sharePath);
+  const shareText = `I donated $${amount.toFixed(2)} to support a Bumicert: ${shareUrl}`;
+  const shareLinks = [
+    { platform: "x", label: "Share on X", href: socialShareUrl("x", shareText), className: "text-black dark:text-white" },
+    { platform: "bluesky", label: "Share on Bluesky", href: socialShareUrl("bluesky", shareText), className: "text-blue-600" },
+    { platform: "telegram", label: "Share on Telegram", href: socialShareUrl("telegram", shareText), className: "text-blue-500" },
+  ] as const;
 
   const handleDone = async () => {
     await hide();
     clear();
+  };
+
+  const handleCopyShareText = async () => {
+    await navigator.clipboard?.writeText(shareText);
+    setCopied(true);
   };
 
   return (
@@ -605,21 +630,23 @@ function SuccessModal({
         <ModalDescription className="sr-only">Your donation has been completed.</ModalDescription>
       </ModalHeader>
 
-      <div className="space-y-5 text-center">
-        <div className="mx-auto grid size-16 place-items-center rounded-full bg-primary/10 text-primary">
-          <BadgeCheckIcon className="size-8" />
-        </div>
-        <div>
-          <p className="font-instrument text-4xl italic text-primary">Thank you</p>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Your <span className="font-medium text-foreground">${amount.toFixed(2)}</span> donation to <span className="font-medium text-foreground">{bumicert.organizationName}</span> was successful.
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {donorRecordedAs === "did" ? "This gift is linked to your Bumicerts profile." : "This gift appears as anonymous."}
-          </p>
-        </div>
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <div className="relative flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-primary blur-xl animate-pulse" />
+            <BadgeCheckIcon className="relative size-12 text-primary" />
+          </div>
 
-        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1">
+            <p className="font-instrument text-4xl font-medium italic text-primary">Thank you</p>
+            <p className="mt-2 text-pretty font-medium text-muted-foreground">
+              Your <span className="text-nowrap text-foreground">${amount.toFixed(2)}</span> donation to <span className="text-foreground">{bumicert.organizationName}</span> was successful.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {donorRecordedAs === "did" ? "Recorded with your Bumicerts profile." : "Recorded as anonymous."}
+            </p>
+          </div>
+
           {txHref ? (
             <Button variant="secondary" asChild>
               <Link href={txHref} target="_blank" rel="noreferrer">
@@ -627,22 +654,57 @@ function SuccessModal({
               </Link>
             </Button>
           ) : null}
-          <Button
-            variant="secondary"
-            onClick={async () => {
-              await navigator.clipboard?.writeText(shareText);
-              setCopied(true);
-            }}
-          >
-            {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />} Share
-          </Button>
+        </div>
+
+        <div className="flex w-full flex-col gap-2 rounded-3xl bg-muted p-3 pt-2">
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Share2Icon className="size-3.5" />
+            <span className="text-sm">Share this with others</span>
+          </div>
+          <div className="grid grid-cols-4 gap-1">
+            {shareLinks.map((item) => (
+              <Button key={item.platform} variant="outline" className="shadow-none" asChild>
+                <Link href={item.href} target="_blank" rel="noreferrer" aria-label={item.label}>
+                  <span className={item.className}>
+                    <SocialGlyph platform={item.platform} />
+                  </span>
+                </Link>
+              </Button>
+            ))}
+            <Button variant="outline" className="shadow-none" onClick={handleCopyShareText} aria-label="Copy share text">
+              {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
+            </Button>
+          </div>
+        </div>
+
+        <Separator className="my-2 opacity-0" />
+
+        <div className="flex w-full flex-col gap-2 rounded-2xl">
+          <div className="flex items-center gap-1.5 px-3 text-muted-foreground">
+            <CompassIcon className="size-3.5" />
+            <span className="text-sm">What's next?</span>
+          </div>
+          <div className="min-w-full w-0 overflow-x-auto">
+            <div className="flex items-center gap-1">
+              <Button variant="secondary" className="h-16 flex-1 flex-col items-start rounded-2xl" onClick={handleDone} asChild>
+                <Link href="/leaderboard">
+                  <TrophyIcon className="opacity-40" />
+                  <span>See Leaderboard</span>
+                </Link>
+              </Button>
+              <Button variant="secondary" className="h-16 flex-col items-start rounded-2xl" onClick={handleDone} asChild>
+                <Link href="/bumicerts">
+                  <CompassIcon className="opacity-40" />
+                  <span>Explore more Bumicerts</span>
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
       <ModalFooter className="mt-5">
-        <Button className="w-full" onClick={handleDone}>
-          <HeartIcon className="size-4" /> Done
-        </Button>
+        <Button className="w-full" onClick={handleDone}>Done</Button>
       </ModalFooter>
     </ModalContent>
   );
