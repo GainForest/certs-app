@@ -44,6 +44,7 @@ type NavLeaf = {
   Icon: React.ComponentType<{ className?: string }>;
   href: string;
   pathCheck: { equals?: string; startsWith?: string };
+  tabCheck?: string;
 };
 
 type NavSection = {
@@ -201,7 +202,9 @@ function UnifiedSidebar({ authSession, manageAccountKind }: { authSession: AuthS
           {authSession?.isLoggedIn && <BumicertCreationCard />}
 
           <LayoutGroup id="unified-sidebar-nav-manage">
-            <ManageSection authSession={authSession} manageAccountKind={manageAccountKind} />
+            <Suspense fallback={<ManageSectionSkeleton />}>
+              <ManageSection authSession={authSession} manageAccountKind={manageAccountKind} />
+            </Suspense>
           </LayoutGroup>
         </div>
       </div>
@@ -393,6 +396,7 @@ function ManageSection({
   manageAccountKind: ManageAccountKind;
 }) {
   const pathname = usePathname() ?? "/";
+  const searchParams = useSearchParams();
   const organizationItems: NavLeaf[] = [
     {
       kind: "leaf",
@@ -439,8 +443,9 @@ function ManageSection({
       id: "settings",
       text: "Settings",
       Icon: SettingsIcon,
-      href: "/manage/settings",
-      pathCheck: { startsWith: "/manage/settings" },
+      href: "/manage?tab=settings",
+      pathCheck: { equals: "/manage" },
+      tabCheck: "settings",
     },
   ];
   const userItems: NavLeaf[] = [
@@ -465,8 +470,9 @@ function ManageSection({
       id: "settings",
       text: "Settings",
       Icon: SettingsIcon,
-      href: "/manage/settings",
-      pathCheck: { startsWith: "/manage/settings" },
+      href: "/manage?tab=settings",
+      pathCheck: { equals: "/manage" },
+      tabCheck: "settings",
     },
   ];
   const items: NavLeaf[] = authSession?.isLoggedIn
@@ -498,7 +504,7 @@ function ManageSection({
             <NavLeaf
               key={item.id}
               item={item}
-              isActive={isLeafActive(item.pathCheck, pathname)}
+              isActive={isManageLeafActive(item, pathname, searchParams.get("tab"))}
               index={index + 1}
             />
           ))}
@@ -1039,6 +1045,11 @@ function isLeafActive(pathCheck: { equals?: string; startsWith?: string }, pathn
   if (pathCheck.equals) return pathname === pathCheck.equals;
   if (pathCheck.startsWith) return pathname.startsWith(pathCheck.startsWith);
   return false;
+}
+
+function isManageLeafActive(item: NavLeaf, pathname: string, activeTab: string | null): boolean {
+  if (item.tabCheck) return pathname === item.pathCheck.equals && activeTab === item.tabCheck;
+  return isLeafActive(item.pathCheck, pathname) && !(pathname === "/manage" && activeTab === "settings");
 }
 
 function getEventOrigin(event: MouseEvent<HTMLButtonElement>) {

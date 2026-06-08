@@ -234,7 +234,7 @@ async function createSiteByDrawing(page: Page, testInfo: TestInfo): Promise<stri
 }
 
 async function checkSettings(page: Page, testInfo: TestInfo): Promise<void> {
-  await page.goto("/manage/settings", { waitUntil: "networkidle" });
+  await page.goto("/manage?tab=settings", { waitUntil: "networkidle" });
   await screenshotStep(page, testInfo, "settings-open");
   const text = await bodyText(page);
   for (const disallowedVisibleText of ["DID", "pdsls.dev", "atproto.at", "Linked Wallets", "Connect wallet", "No linked wallets"]) {

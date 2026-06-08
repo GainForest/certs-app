@@ -537,7 +537,7 @@ function AuthenticatedMenu({ session }: { session: Extract<AuthSession, { isLogg
               </Link>
 
               <Link
-                href="/manage/settings"
+                href="/manage?tab=settings"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted/60 transition-colors w-full text-left"
               >
