@@ -4,9 +4,9 @@ import { RecordExplorer } from "../_components/RecordExplorer";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Species observations",
+  title: "Nature sightings",
   description:
-    "Browse GainForest nature sightings with photos, sounds, species names, and map locations.",
+    "Browse GainForest nature sightings with photos, field sound recordings, common names, and map locations.",
   alternates: { canonical: "/observations" },
 };
 

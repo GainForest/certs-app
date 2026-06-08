@@ -538,19 +538,19 @@ async function resolveAudioBlob(record: RawAudioRecord, signal?: AbortSignal): P
 
 function mapAudioRecord(n: RawAudioRecord, audioRef: string | null, audioUrl: string | null): OccurrenceRecord {
   const duration = n.metadata?.duration ? `${Math.round(Number(n.metadata.duration))} seconds` : null;
-  const format = n.metadata?.fileFormat ? `${n.metadata.fileFormat} recording` : "Sound recording";
+  const format = n.metadata?.fileFormat ? `${n.metadata.fileFormat} field sound` : "Nature sound recording";
   return {
     kind: "occurrence",
     id: `${n.did}-audio-${n.rkey}`,
     did: n.did,
     rkey: n.rkey,
     atUri: n.uri || `at://${n.did}/app.gainforest.ac.audio/${n.rkey}`,
-    scientificName: n.name?.trim() || "Field sound recording",
-    vernacularName: null,
+    scientificName: n.name?.trim() || null,
+    vernacularName: "Nature sound recording",
     kingdom: null,
     family: null,
     genus: null,
-    basisOfRecord: "Sound recording",
+    basisOfRecord: "Field sound recording",
     recordedBy: n.recordedBy?.trim() || null,
     individualCount: null,
     country: null,
@@ -3171,52 +3171,52 @@ function buildOccurrenceDetail(n: OccDetailNode): RecordDetail {
   const eventWhen = [f("eventDate"), f("eventTime")].filter(Boolean).join(" ");
 
   const sections = [
-    section("Taxonomy", [
+    section("Name details", [
       field("Scientific name", sciName || null, true),
       field("Common name", f("vernacularName")),
-      field("Rank", f("taxonRank") ? cap(f("taxonRank")!) : null),
-      field("Lineage", lineage || null, true),
+      field("Name rank", f("taxonRank") ? cap(f("taxonRank")!) : null),
+      field("Nature group", lineage || null, true),
     ]),
-    section("Occurrence", [
-      field("Basis of record", f("basisOfRecord")),
-      field("Individuals", individuals),
+    section("Sighting details", [
+      field("Sighting type", f("basisOfRecord")),
+      field("Count", individuals),
       field("Life stage", f("lifeStage") ? cap(f("lifeStage")!) : null),
       field("Sex", f("sex") ? cap(f("sex")!) : null),
-      field("Reproductive", f("reproductiveCondition")),
+      field("Reproductive condition", f("reproductiveCondition")),
       field("Behavior", f("behavior")),
     ]),
-    section("Location", [
-      field("Locality", f("locality") ?? f("verbatimLocality"), true),
-      field("Municipality", f("municipality")),
-      field("County", f("county")),
+    section("Place", [
+      field("Place name", f("locality") ?? f("verbatimLocality"), true),
+      field("City or town", f("municipality")),
+      field("Area", f("county")),
       field("State / province", f("stateProvince")),
       field("Country", [countryFlagSafe(f("countryCode")), f("country")].filter(Boolean).join(" ") || null),
-      field("Coordinates", coords, true),
+      field("Map location", coords, true),
       field("Elevation", elevation),
       field("Habitat", f("habitat"), true),
     ]),
-    section("Record", [
+    section("Shared details", [
       field("Shared by", profileName(n.certifiedProfileData)),
-      field("Recorded by", f("recordedBy")),
+      field("Observed by", f("recordedBy")),
       field("Observed", eventWhen || null),
-      field("Identified by", f("identifiedBy")),
-      field("Date identified", f("dateIdentified")),
-      field("Created", f("createdAt") ? formatDateTime(f("createdAt")!) : null, true),
+      field("Named by", f("identifiedBy")),
+      field("Date named", f("dateIdentified")),
+      field("Shared", f("createdAt") ? formatDateTime(f("createdAt")!) : null, true),
     ]),
-    section("Provenance", [
-      field("Dataset", f("datasetName")),
-      field("Institution", f("institutionCode")),
-      field("Collection", f("collectionCode")),
-      field("Sampling protocol", f("samplingProtocol")),
+    section("Source details", [
+      field("Source name", f("datasetName")),
+      field("Organization code", f("institutionCode")),
+      field("Source group", f("collectionCode")),
+      field("Survey method", f("samplingProtocol")),
       field("License", f("license")),
       field("Rights holder", f("rightsHolder")),
-      field("Occurrence ID", f("occurrenceID"), true),
+      field("Sighting ID", f("occurrenceID"), true),
     ]),
   ].filter((s) => s.fields.length > 0);
 
   const links: DetailLink[] = [];
   const gbif = f("gbifTaxonKey");
-  if (gbif) links.push({ label: "View taxon on GBIF", href: `https://www.gbif.org/species/${gbif}` });
+  if (gbif) links.push({ label: "Open outside reference", href: `https://www.gbif.org/species/${gbif}` });
   const ref = f("references");
   if (ref && /^https?:\/\//.test(ref)) links.push({ label: "Reference", href: ref });
 

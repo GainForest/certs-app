@@ -115,7 +115,7 @@ export function RecordDrawer({
 
   const title =
     record.kind === "occurrence"
-      ? record.scientificName || record.vernacularName || "Unidentified specimen"
+      ? occurrenceDisplayName(record)
       : record.kind === "bumicert"
         ? record.title
         : record.name;
@@ -222,8 +222,8 @@ export function RecordDrawer({
               ))}
             </div>
           )}
-          {record.kind === "occurrence" && record.vernacularName && record.scientificName && (
-            <p className="mt-1.5 text-[14px] italic text-foreground/65">{record.vernacularName}</p>
+          {record.kind === "occurrence" && occurrenceSecondaryName(record) && (
+            <p className="mt-1.5 text-[14px] italic text-foreground/65">{occurrenceSecondaryName(record)}</p>
           )}
           {record.kind === "bumicert" && record.shortDescription && (
             <p className="mt-2.5 text-[14.5px] leading-[1.55] text-foreground/72">
@@ -509,7 +509,7 @@ function mediaLabel(kind: string): string {
     case "image":
       return "Photo";
     case "audio":
-      return "Audio";
+      return "Field sound";
     case "video":
       return "Video";
     case "spectrogram":
@@ -517,6 +517,21 @@ function mediaLabel(kind: string): string {
     default:
       return kind;
   }
+}
+
+function occurrenceDisplayName(record: Extract<ExplorerRecord, { kind: "occurrence" }>): string {
+  if (record.media.includes("audio") && record.vernacularName === "Nature sound recording" && record.scientificName) {
+    return record.scientificName;
+  }
+  return record.vernacularName || record.scientificName || (record.media.includes("audio") ? "Nature sound recording" : "Unidentified sighting");
+}
+
+function occurrenceSecondaryName(record: Extract<ExplorerRecord, { kind: "occurrence" }>): string | null {
+  if (!record.vernacularName || !record.scientificName) return null;
+  if (record.media.includes("audio") && record.vernacularName === "Nature sound recording") return record.vernacularName;
+  return record.vernacularName.toLowerCase() === record.scientificName.toLowerCase()
+    ? null
+    : record.scientificName;
 }
 
 function formatScopeTag(tag: string): string {
@@ -565,7 +580,7 @@ function buildFields(r: ExplorerRecord): Field[] {
       fields.push({ label: "Map location", value: `${r.lat.toFixed(4)}, ${r.lon.toFixed(4)}`, wide: true });
     if (r.eventDate) fields.push({ label: "Observed", value: formatDate(r.eventDate) });
     if (r.media.length)
-      fields.push({ label: "Photos or sounds", value: r.media.map(mediaLabel).join(", "), wide: true });
+      fields.push({ label: "Photos or field sounds", value: r.media.map(mediaLabel).join(", "), wide: true });
     if (r.remarks) fields.push({ label: "Remarks", value: r.remarks, wide: true });
   } else if (r.kind === "bumicert") {
     fields.push({ label: "People named", value: formatNumber(r.contributorCount) });

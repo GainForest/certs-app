@@ -60,11 +60,11 @@ type KindMeta = {
 
 const KIND_META: Record<RecordKind, KindMeta> = {
   occurrence: {
-    eyebrow: "Observations",
-    title: "Species",
-    accent: "observations",
-    lede: "Browse nature sightings from GainForest: photos, sounds, species names, and map locations.",
-    search: "Filter by species, family, or country",
+    eyebrow: "Nature sightings",
+    title: "Browse",
+    accent: "nature sightings",
+    lede: "Explore plants, animals, photos, and field sound recordings shared from project places.",
+    search: "Search by common name, place, or plant/animal",
     heroLight: "/assets/media/images/observations/observations-hero-light@2x.webp",
     heroDark: "/assets/media/images/observations/observations-hero-dark@2x.webp",
   },
@@ -129,6 +129,7 @@ function paramToUri(value: string, kind: RecordKind): string | null {
 }
 
 type Phase = "idle" | "loading" | "ready" | "error" | "more";
+type OccurrenceCategory = "all" | "plants" | "trees" | "birds" | "flowers";
 
 type InitialExplorerPage = {
   records: ExplorerRecord[];
@@ -145,6 +146,13 @@ const OCCURRENCE_LOAD_TARGET = 24;
 const INITIAL_CARD_LIMIT = 96;
 const CARD_BATCH_SIZE = 96;
 const DEFAULT_OCCURRENCE_MEDIA: OccurrenceFilter = "image";
+const OCCURRENCE_CATEGORY_OPTIONS: Array<{ id: OccurrenceCategory; label: string }> = [
+  { id: "all", label: "All nature" },
+  { id: "plants", label: "Plants" },
+  { id: "trees", label: "Trees" },
+  { id: "birds", label: "Birds" },
+  { id: "flowers", label: "Flowers" },
+];
 
 export function RecordExplorer({
   kind,
@@ -168,6 +176,7 @@ export function RecordExplorer({
   const deferredQuery = useDeferredValue(query);
   const [sort, setSort] = useState<SortMode>("newest");
   const [occMedia, setOccMedia] = useState<OccurrenceFilter>(DEFAULT_OCCURRENCE_MEDIA);
+  const [occCategory, setOccCategory] = useState<OccurrenceCategory>("all");
   const [siteSource, setSiteSource] = useState<SiteSourceFilter>("both");
   const [view, setView] = useState<"cards" | "map">("cards");
   const [walking, setWalking] = useState(false);
@@ -320,6 +329,8 @@ export function RecordExplorer({
         setOccMedia(m);
         shouldClientLoad = true;
       }
+      const category = sp.get("category");
+      if (isOccurrenceCategory(category)) setOccCategory(category);
     }
     if (kind === "site") {
       const src = sp.get("source");
@@ -381,8 +392,11 @@ export function RecordExplorer({
       if (kind === "occurrence") {
         if (occMedia !== DEFAULT_OCCURRENCE_MEDIA) params.set("media", occMedia);
         else params.delete("media");
+        if (occCategory !== "all") params.set("category", occCategory);
+        else params.delete("category");
       } else {
         params.delete("media");
+        params.delete("category");
       }
 
       if (kind === "site") {
@@ -401,7 +415,7 @@ export function RecordExplorer({
       window.history.replaceState(null, "", url);
     }, 200);
     return () => clearTimeout(t);
-  }, [query, view, sort, occMedia, siteSource, drawer, pendingRecord, kind]);
+  }, [query, view, sort, occMedia, occCategory, siteSource, drawer, pendingRecord, kind]);
 
   // Changing the occurrence media filter resets and re-walks.
   function changeMedia(next: OccurrenceFilter) {
@@ -409,6 +423,11 @@ export function RecordExplorer({
     controller.current?.abort();
     setOccMedia(next);
     resetStream();
+  }
+
+  function changeCategory(next: OccurrenceCategory) {
+    if (next === occCategory) return;
+    setOccCategory(next);
   }
 
   // Changing the organization source resets + re-walks.
@@ -447,10 +466,13 @@ export function RecordExplorer({
     if (hydrated && phase === "idle" && records.length === 0) load("first");
   }, [hydrated, load, occMedia, phase, records.length, siteSource]);
 
-  const filtered = useMemo(
-    () => sortRecords(filterRecords(records, deferredQuery), sort),
-    [deferredQuery, records, sort],
-  );
+  const filtered = useMemo(() => {
+    const searched = filterRecords(records, deferredQuery);
+    const categorized = kind === "occurrence"
+      ? filterOccurrenceCategory(searched as OccurrenceRecord[], occCategory)
+      : searched;
+    return sortRecords(categorized, sort);
+  }, [deferredQuery, kind, occCategory, records, sort]);
   const renderedRecords = useMemo(
     () => (view === "cards" ? filtered.slice(0, cardLimit) : filtered),
     [cardLimit, filtered, view],
@@ -459,7 +481,7 @@ export function RecordExplorer({
 
   useEffect(() => {
     setCardLimit(INITIAL_CARD_LIMIT);
-  }, [deferredQuery, kind, occMedia, siteSource, sort, view]);
+  }, [deferredQuery, kind, occCategory, occMedia, siteSource, sort, view]);
   // Observations use fast total counters from the index, matching the dedicated
   // Bumicerts and organizations pages. Other embedded explorer uses still fall
   // back to loaded-record summaries.
@@ -554,29 +576,49 @@ export function RecordExplorer({
           </div>
 
           {kind === "occurrence" && (
-            <div className="inline-flex h-10 items-center rounded-full border border-border-soft bg-surface p-0.5">
-              {(
-                [
-                  { id: "image", label: "Photos" },
-                  { id: "audio", label: "Audio" },
-                  { id: "all", label: "All" },
-                ] as Array<{ id: OccurrenceFilter; label: string }>
-              ).map((o) => (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => changeMedia(o.id)}
-                  aria-pressed={occMedia === o.id}
-                  className={`inline-flex h-9 items-center rounded-full px-3 text-sm font-medium transition-colors ${
-                    occMedia === o.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground/60 hover:text-foreground"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="inline-flex h-10 items-center rounded-full border border-border-soft bg-surface p-0.5" aria-label="Choose sighting media">
+                {(
+                  [
+                    { id: "image", label: "Photos" },
+                    { id: "audio", label: "Field sounds" },
+                    { id: "all", label: "All" },
+                  ] as Array<{ id: OccurrenceFilter; label: string }>
+                ).map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => changeMedia(o.id)}
+                    aria-pressed={occMedia === o.id}
+                    className={`inline-flex h-9 items-center rounded-full px-3 text-sm font-medium transition-colors ${
+                      occMedia === o.id
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground/60 hover:text-foreground"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="inline-flex min-h-10 flex-wrap items-center gap-1 rounded-full border border-border-soft bg-surface p-0.5" aria-label="Choose sighting type">
+                {OCCURRENCE_CATEGORY_OPTIONS.map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => changeCategory(o.id)}
+                    aria-pressed={occCategory === o.id}
+                    className={`inline-flex h-9 items-center rounded-full px-3 text-sm font-medium transition-colors ${
+                      occCategory === o.id
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground/60 hover:text-foreground"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
 
         </div>
@@ -600,14 +642,21 @@ export function RecordExplorer({
             query ? (
               <EmptyState
                 title="No matches here"
-                body="Try a different name, family, or country; or show more to widen the search."
+                body="Try a different name, place, or country; or show more to widen the search."
                 onRetry={() => setQuery("")}
                 retryLabel="Clear search"
               />
+            ) : kind === "occurrence" && occCategory !== "all" ? (
+              <EmptyState
+                title={`No ${occurrenceCategoryLabel(occCategory).toLowerCase()} sightings in this view`}
+                body="Try all nature sightings or show more results to widen the view."
+                onRetry={() => changeCategory("all")}
+                retryLabel="Show all nature"
+              />
             ) : kind === "occurrence" && occMedia !== "all" ? (
               <EmptyState
-                title={`No ${occMedia === "image" ? "photo" : "audio"} sightings found nearby`}
-                body="The newest sightings do not always include photos or sounds. Remove filters to browse everything."
+                title={`No ${occMedia === "image" ? "photo" : "field sound"} sightings found nearby`}
+                body="The newest sightings do not always include photos or field sound recordings. Remove filters to browse everything."
                 onRetry={() => changeMedia("all")}
                 retryLabel="Remove filters"
               />
@@ -722,9 +771,9 @@ const OccurrenceCard = memo(function OccurrenceCard({
   const imageUrl = resolvedImageUrl ?? record.imageUrl;
   const hasImage = Boolean(imageUrl) && !imgError;
   const hasAudio = Boolean(record.audioRef || record.audioUrl);
-  const name = record.scientificName || record.vernacularName || "Unidentified";
-  const subtitle =
-    record.scientificName && record.vernacularName ? record.vernacularName : null;
+  const name = occurrenceDisplayName(record);
+  const subtitle = occurrenceSecondaryName(record);
+  const place = occurrencePlace(record);
   const creatorLabel = record.creatorName ?? profile?.handle ?? profile?.displayName ?? null;
   const date = record.eventDate || record.createdAt;
 
@@ -808,7 +857,7 @@ const OccurrenceCard = memo(function OccurrenceCard({
           open();
         }
       }}
-      aria-label={`Open ${name}`}
+      aria-label={`Open nature sighting: ${name}`}
       className="group relative block aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-surface-sunken text-left outline-none transition-all duration-300 hover:z-10 hover:shadow-[0_18px_40px_-22px_rgba(20,30,15,0.55)] focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-primary/60"
     >
       {hasImage ? (
@@ -882,13 +931,17 @@ const OccurrenceCard = memo(function OccurrenceCard({
           {name}
         </h3>
 
+        {place ? (
+          <p className="mt-0.5 truncate text-[11.5px] leading-snug text-white/80">{place}</p>
+        ) : null}
+
         {/* Secondary details slide open only on hover/focus, keeping the resting
-            tile to just the species + creator. */}
+            tile to the name, place, and creator. */}
         {subtitle || date ? (
           <div className="grid grid-rows-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:grid-rows-[1fr] group-hover:opacity-100 group-focus-visible:grid-rows-[1fr] group-focus-visible:opacity-100">
             <div className="overflow-hidden">
               {subtitle ? (
-                <p className="mt-0.5 truncate text-[12px] leading-snug text-white/80">{subtitle}</p>
+                <p className="mt-0.5 truncate text-[12px] italic leading-snug text-white/78">{subtitle}</p>
               ) : null}
               {date ? (
                 <p className="mt-0.5 text-[10.5px] text-white/65">{formatDate(date)}</p>
@@ -975,24 +1028,44 @@ function Pill({ children, accent }: { children: ReactNode; accent?: boolean }) {
   );
 }
 
+function occurrenceDisplayName(record: OccurrenceRecord): string {
+  if (record.media.includes("audio") && record.vernacularName === "Nature sound recording" && record.scientificName) {
+    return record.scientificName;
+  }
+  return record.vernacularName || record.scientificName || (record.media.includes("audio") ? "Nature sound recording" : "Unidentified sighting");
+}
+
+function occurrenceSecondaryName(record: OccurrenceRecord): string | null {
+  if (!record.vernacularName || !record.scientificName) return null;
+  if (record.media.includes("audio") && record.vernacularName === "Nature sound recording") return record.vernacularName;
+  return record.vernacularName.toLowerCase() === record.scientificName.toLowerCase()
+    ? null
+    : record.scientificName;
+}
+
+function occurrencePlace(record: OccurrenceRecord): string | null {
+  const country = record.country
+    ? [countryFlag(record.countryCode), record.country].filter(Boolean).join(" ")
+    : formatCountry(record.countryCode);
+  const place = [record.locality, country].filter(Boolean).join(", ");
+  return place || country || null;
+}
+
 function cardView(record: ExplorerRecord): CardView {
   if (record.kind === "occurrence") {
-    const name = record.scientificName || record.vernacularName || "Unidentified";
-    const country = record.country
-      ? [countryFlag(record.countryCode), record.country].filter(Boolean).join(" ")
-      : formatCountry(record.countryCode);
-    const taxon = record.family || record.genus || record.kingdom || null;
+    const name = occurrenceDisplayName(record);
+    const place = occurrencePlace(record);
+    const taxon = occurrenceSecondaryName(record) || record.family || record.genus || record.kingdom || null;
     return {
       alt: name,
       title: name,
-      subtitle:
-        record.scientificName && record.vernacularName ? record.vernacularName : undefined,
+      subtitle: place ?? undefined,
       pills: (
         <>
           {taxon ? <Pill>{taxon}</Pill> : null}
-          {country ? (
+          {place ? (
             <Pill>
-              {country}
+              {place}
             </Pill>
           ) : null}
         </>
@@ -1003,7 +1076,7 @@ function cardView(record: ExplorerRecord): CardView {
             {record.media.map((m) => (
               <span
                 key={m}
-                title={m}
+                title={mediaLabel(m)}
                 className="grid h-5 w-5 place-items-center rounded-full bg-background/85 text-foreground/70 backdrop-blur-md"
               >
                 <MediaIcon kind={m} />
@@ -1098,6 +1171,43 @@ function filterRecords(records: ExplorerRecord[], query: string): ExplorerRecord
   return records.filter((r) => haystack(r).includes(q));
 }
 
+function isOccurrenceCategory(value: string | null): value is OccurrenceCategory {
+  return value === "all" || value === "plants" || value === "trees" || value === "birds" || value === "flowers";
+}
+
+function occurrenceCategoryLabel(category: OccurrenceCategory): string {
+  return OCCURRENCE_CATEGORY_OPTIONS.find((option) => option.id === category)?.label ?? "Nature";
+}
+
+function occurrenceTaxonText(record: OccurrenceRecord): string {
+  return [record.vernacularName, record.scientificName, record.family, record.genus, record.kingdom, record.basisOfRecord, record.remarks]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function occurrenceCategory(record: OccurrenceRecord): Exclude<OccurrenceCategory, "all"> | null {
+  const text = occurrenceTaxonText(record);
+  const kingdom = record.kingdom?.toLowerCase() ?? "";
+
+  if (/\b(flower|flowers|bloom|blossom|orchid|rose|hibiscus|daisy|sunflower)\b/.test(text)) return "flowers";
+  if (/\b(tree|trees|palm|oak|cedar|mahogany|mangrove|sapling|seedling)\b/.test(text)) return "trees";
+  if (/\b(bird|birds|aves|parrot|hummingbird|toucan|tanager|flycatcher|antbird|thrush|owl|hawk|eagle)\b/.test(text)) return "birds";
+  if (kingdom === "plantae" || /\b(plant|plants|flora|grass|fern|moss|shrub|vine)\b/.test(text)) return "plants";
+  return null;
+}
+
+function filterOccurrenceCategory(records: OccurrenceRecord[], category: OccurrenceCategory): OccurrenceRecord[] {
+  if (category === "all") return records;
+  if (category === "plants") {
+    return records.filter((record) => {
+      const match = occurrenceCategory(record);
+      return match === "plants" || match === "trees" || match === "flowers";
+    });
+  }
+  return records.filter((record) => occurrenceCategory(record) === category);
+}
+
 // ── Sorting ──────────────────────────────────────────────────────────────
 //
 // Records arrive newest-first (createdAt DESC) from the indexer; this lets the
@@ -1113,7 +1223,7 @@ function sortTimestamp(iso: string | null | undefined): number {
 
 /** Title used for alphabetical sort, per record kind. */
 function sortKey(r: ExplorerRecord): string {
-  if (r.kind === "occurrence") return (r.scientificName || r.vernacularName || "").toLowerCase();
+  if (r.kind === "occurrence") return occurrenceDisplayName(r).toLowerCase();
   if (r.kind === "site") return (r.name || "").toLowerCase();
   return (r.title || "").toLowerCase();
 }
@@ -1235,9 +1345,9 @@ function computeStats(records: ExplorerRecord[], kind: RecordKind): Stat[] {
         icon: <LeafIcon />,
       },
       {
-        label: "Species",
+        label: "Kinds found",
         value: n(species),
-        detail: "different kinds found",
+        detail: "different plants and animals",
         icon: <LeafIcon />,
         accent: true,
       },
@@ -1318,6 +1428,14 @@ function MediaIcon({ kind }: { kind: OccurrenceRecord["media"][number] }) {
     return <PlayIcon width={11} height={11} aria-hidden />;
   }
   return <ImageIcon width={11} height={11} aria-hidden />;
+}
+
+function mediaLabel(kind: OccurrenceRecord["media"][number]): string {
+  if (kind === "audio") return "Field sound";
+  if (kind === "spectrogram") return "Sound view";
+  if (kind === "image") return "Photo";
+  if (kind === "video") return "Video";
+  return kind;
 }
 
 
