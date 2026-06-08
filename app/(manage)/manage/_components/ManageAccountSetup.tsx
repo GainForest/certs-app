@@ -35,7 +35,8 @@ import { countryFlag } from "@/app/_lib/format";
 import { cn } from "@/lib/utils";
 import { putRecord, uploadBlob } from "../_lib/mutations";
 import { createCountryLocationStrongRef } from "../_lib/country-location";
-import { ImageEditorModal, CountrySelectorModal } from "../_modals/DashboardEditModals";
+import { ImageEditorModal } from "@/components/modals/image-editor";
+import CountrySelectorModal from "@/components/modals/country-selector";
 import type { ManageMode } from "./manageDashboardMode";
 import { HeaderContent } from "@/app/_components/HeaderSlots";
 
@@ -238,11 +239,10 @@ function OnboardingMediaField({
                 ? `Choose a clear ${primaryLabel.toLowerCase()} for your profile.`
                 : "Choose a banner that sets the tone for your profile."
             }
-            currentUrl={isPrimary ? primaryImageUrl : bannerImageUrl}
-            onConfirm={(file) => (isPrimary ? onPrimaryImageChange(file) : onBannerImageChange(file))}
+            initialImage={isPrimary ? primaryImage : bannerImage}
+            onImageChange={(image) => (isPrimary ? onPrimaryImageChange(image) : onBannerImageChange(image))}
           />
         ),
-        dialogWidth: isPrimary ? "max-w-sm" : "max-w-2xl",
       },
       true,
     );
@@ -346,7 +346,7 @@ function OrganizationSetupDetailsPanel({
     modal.pushModal(
       {
         id: "onboarding-country-selector",
-        content: <CountrySelectorModal currentCountry={country} onConfirm={onCountryChange} />,
+        content: <CountrySelectorModal initialCountryCode={country ?? ""} onCountryChange={onCountryChange} />,
       },
       true,
     );

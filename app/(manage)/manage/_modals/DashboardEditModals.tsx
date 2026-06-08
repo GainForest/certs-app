@@ -1,296 +1,290 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { CheckIcon, GlobeIcon, ImageIcon, LockIcon, UploadIcon, XIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal/modal";
+import { useState } from "react";
 import { useModal } from "@/components/ui/modal/context";
-import { countryEntries } from "@/app/_lib/countries";
-import { countryFlag } from "@/app/_lib/format";
+import {
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+  ModalFooter,
+} from "@/components/ui/modal/modal";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { GlobeIcon, LockIcon, CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+import { parseOrganizationDate } from "@/lib/date";
 
 type Visibility = "Public" | "Unlisted";
 
-type CloseOptions = { clear?: boolean };
-
-function useModalClose() {
-  const modal = useModal();
-  return async (options?: CloseOptions) => {
-    await modal.hide();
-    if (options?.clear) modal.clear();
-    else modal.popModal();
-  };
-}
-
-function formatBytes(bytes: number) {
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function normalizeWebsite(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
-}
-
-function isValidWebsite(value: string) {
-  if (!value.trim()) return true;
-  try {
-    const url = new URL(normalizeWebsite(value) ?? "");
-    return url.hostname.includes(".");
-  } catch {
-    return false;
-  }
-}
-
-const COUNTRY_OPTIONS = countryEntries.filter(([code]) => code.length === 2);
-
-export function ImageEditorModal({
-  title,
-  description,
-  currentUrl,
-  onConfirm,
-}: {
-  title: string;
-  description: string;
+interface WebsiteEditorModalProps {
   currentUrl: string | null;
-  onConfirm: (file: File) => void;
-}) {
-  const close = useModalClose();
-  const [file, setFile] = useState<File | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
-
-  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
-
-  function handleFile(nextFile: File | null) {
-    setError(null);
-    if (!nextFile) {
-      setFile(null);
-      return;
-    }
-    if (!nextFile.type.startsWith("image/")) {
-      setError("Choose a PNG, JPG, or WebP image.");
-      return;
-    }
-    if (nextFile.size > MAX_IMAGE_SIZE_BYTES) {
-      setError(`Image must be smaller than ${formatBytes(MAX_IMAGE_SIZE_BYTES)}.`);
-      return;
-    }
-    setFile(nextFile);
-  }
-
-  return (
-    <ModalContent className="space-y-4">
-      <ModalHeader>
-        <ModalTitle>{title}</ModalTitle>
-        <ModalDescription>{description}</ModalDescription>
-      </ModalHeader>
-
-      <label className="relative flex min-h-48 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-muted/30 text-center transition-colors hover:border-primary/60 hover:bg-primary/5">
-        {previewUrl || currentUrl ? (
-          <Image src={previewUrl ?? currentUrl ?? ""} alt="Selected image preview" fill unoptimized className="object-cover" />
-        ) : (
-          <span className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-            <ImageIcon className="h-6 w-6" />
-            Drop an image here or click to browse
-          </span>
-        )}
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="sr-only"
-          onChange={(event) => handleFile(event.target.files?.[0] ?? null)}
-        />
-        <span className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-background/80 px-3 py-1 text-xs font-medium shadow-sm backdrop-blur">
-          <UploadIcon className="h-3.5 w-3.5" /> Choose image
-        </span>
-      </label>
-
-      {file ? <p className="text-xs text-muted-foreground">{file.name} · {formatBytes(file.size)}</p> : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-      <ModalFooter>
-        <Button type="button" variant="outline" onClick={() => void close()}>Cancel</Button>
-        <Button
-          type="button"
-          disabled={!file}
-          onClick={() => {
-            if (!file) return;
-            onConfirm(file);
-            void close({ clear: true });
-          }}
-        >
-          Save image
-        </Button>
-      </ModalFooter>
-    </ModalContent>
-  );
+  onConfirm: (url: string | null) => void;
 }
 
 export function WebsiteEditorModal({
-  currentWebsite,
+  currentUrl,
   onConfirm,
-}: {
-  currentWebsite: string;
-  onConfirm: (website: string) => void;
-}) {
-  const close = useModalClose();
-  const [website, setWebsite] = useState(currentWebsite);
-  const valid = isValidWebsite(website);
+}: WebsiteEditorModalProps) {
+  const { hide, popModal, stack } = useModal();
+  const [value, setValue] = useState(currentUrl ?? "");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleClose = async () => {
+    if (stack.length === 1) {
+      await hide();
+      popModal();
+    } else {
+      popModal();
+    }
+  };
+
+  const validate = (url: string): boolean => {
+    if (!url) return true; // empty = remove website
+    try {
+      const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+      return parsed.hostname.includes(".");
+    } catch {
+      return false;
+    }
+  };
+
+  const handleConfirm = async () => {
+    const trimmed = value.trim();
+    if (trimmed && !validate(trimmed)) {
+      setError("Please enter a valid URL (e.g. https://yourorg.com)");
+      return;
+    }
+    const normalised = trimmed
+      ? trimmed.startsWith("http")
+        ? trimmed
+        : `https://${trimmed}`
+      : null;
+    onConfirm(normalised);
+    await handleClose();
+  };
 
   return (
-    <ModalContent className="space-y-4">
-      <ModalHeader>
-        <ModalTitle>Edit website</ModalTitle>
-        <ModalDescription>Add a public website for this profile, or remove it entirely.</ModalDescription>
+    <ModalContent>
+      <ModalHeader backAction={stack.length > 1 ? handleClose : undefined}>
+        <ModalTitle>Website</ModalTitle>
+        <ModalDescription>Enter your organization&apos;s website address.</ModalDescription>
       </ModalHeader>
-      <div className="space-y-1.5">
-        <label htmlFor="manage-website" className="text-sm font-medium">Website address</label>
-        <Input id="manage-website" value={website} onChange={(event) => setWebsite(event.target.value)} placeholder="https://example.org" aria-invalid={!valid} autoFocus />
-        {!valid ? <p className="text-xs text-destructive">Enter a valid website address.</p> : null}
+
+      <div className="py-4 flex flex-col gap-2">
+        <input
+          type="url"
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void handleConfirm();
+          }}
+          placeholder="https://yourorganization.com"
+          className="w-full h-10 px-3 text-sm bg-muted/40 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors"
+          autoFocus
+        />
+        {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
-      <ModalFooter>
-        <Button type="button" variant="outline" onClick={() => void close()}>Cancel</Button>
-        <Button type="button" variant="secondary" onClick={() => { onConfirm(""); void close({ clear: true }); }}>Remove</Button>
-        <Button type="button" disabled={!valid} onClick={() => { onConfirm(normalizeWebsite(website) ?? ""); void close({ clear: true }); }}>Save</Button>
+
+      <ModalFooter className="flex justify-end gap-2">
+        <Button onClick={handleConfirm}>Save</Button>
+        <div className="flex items-center gap-1">
+          {value && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setValue("");
+                setError(null);
+              }}
+              className="text-destructive hover:text-destructive flex-1"
+            >
+              Remove
+            </Button>
+          )}
+          <Button variant="outline" onClick={handleClose} className="flex-1">
+            Cancel
+          </Button>
+        </div>
       </ModalFooter>
     </ModalContent>
   );
+}
+
+interface StartDateSelectorModalProps {
+  currentDate: string | null;
+  onConfirm: (date: string | null) => void;
 }
 
 export function StartDateSelectorModal({
   currentDate,
   onConfirm,
-}: {
-  currentDate: string;
-  onConfirm: (date: string) => void;
-}) {
-  const close = useModalClose();
-  const [date, setDate] = useState(currentDate);
-
-  return (
-    <ModalContent className="space-y-4">
-      <ModalHeader>
-        <ModalTitle>Edit founding date</ModalTitle>
-        <ModalDescription>Choose when this organization started its work.</ModalDescription>
-      </ModalHeader>
-      <div className="space-y-1.5">
-        <label htmlFor="manage-start-date" className="text-sm font-medium">Founding date</label>
-        <Input id="manage-start-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} autoFocus />
-      </div>
-      <ModalFooter>
-        <Button type="button" variant="outline" onClick={() => void close()}>Cancel</Button>
-        <Button type="button" variant="secondary" onClick={() => { onConfirm(""); void close({ clear: true }); }}>Clear</Button>
-        <Button type="button" onClick={() => { onConfirm(date); void close({ clear: true }); }}>Save</Button>
-      </ModalFooter>
-    </ModalContent>
+}: StartDateSelectorModalProps) {
+  const { hide, popModal, stack } = useModal();
+  const parsedCurrentDate = parseOrganizationDate(currentDate);
+  const [selected, setSelected] = useState<Date | undefined>(
+    parsedCurrentDate.state === "valid" && parsedCurrentDate.date
+      ? parsedCurrentDate.date
+      : undefined,
   );
-}
 
-export function CountrySelectorModal({
-  currentCountry,
-  onConfirm,
-}: {
-  currentCountry: string;
-  onConfirm: (country: string) => void;
-}) {
-  const close = useModalClose();
-  const [query, setQuery] = useState(currentCountry);
-  const normalized = query.trim().toUpperCase().slice(0, 2);
-  const selectedCountry = COUNTRY_OPTIONS.find(([code]) => code === normalized);
-  const valid = normalized.length === 0 || Boolean(selectedCountry);
+  const handleClose = async () => {
+    if (stack.length === 1) {
+      await hide();
+      popModal();
+    } else {
+      popModal();
+    }
+  };
 
-  const countries = COUNTRY_OPTIONS.filter(([code, country]) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    return code.toLowerCase().includes(q) || country.name.toLowerCase().includes(q);
-  });
+  const handleConfirm = async () => {
+    const iso = selected ? selected.toISOString().slice(0, 10) : null;
+    onConfirm(iso);
+    await handleClose();
+  };
 
   return (
-    <ModalContent className="space-y-4">
-      <ModalHeader>
-        <ModalTitle>Edit country</ModalTitle>
-        <ModalDescription>Select the organization country. You can search by country name or code.</ModalDescription>
+    <ModalContent>
+      <ModalHeader backAction={stack.length > 1 ? handleClose : undefined}>
+        <ModalTitle>Founding Date</ModalTitle>
+        <ModalDescription>Select the date your organization was founded or began operations.</ModalDescription>
       </ModalHeader>
-      <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search or type country code…" autoFocus />
-      {!valid ? <p className="text-xs text-destructive">Choose a country from the list.</p> : null}
-      <div className="grid max-h-64 gap-1 overflow-auto rounded-xl border border-border p-1">
-        {countries.map(([code, country]) => (
-          <button
-            key={code}
-            type="button"
-            onClick={() => setQuery(code)}
-            className={cn("flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted", normalized === code && "bg-primary/10 text-primary")}
+
+      <div className="flex justify-center py-2">
+        <Calendar
+          captionLayout="dropdown"
+          mode="single"
+          selected={selected}
+          onSelect={setSelected}
+          hidden={{ after: new Date() }}
+          autoFocus
+        />
+      </div>
+
+      <ModalFooter className="flex justify-end gap-2">
+        <Button onClick={handleConfirm}>Confirm</Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            onClick={() => setSelected(undefined)}
+            className="text-destructive hover:text-destructive flex-1"
+            disabled={!selected}
           >
-            <span className="text-base">{country.emoji || countryFlag(code)}</span>
-            <span className="flex-1">{country.name}</span>
-            <span className="text-xs text-muted-foreground">{code}</span>
-          </button>
-        ))}
-      </div>
-      <ModalFooter>
-        <Button type="button" variant="outline" onClick={() => void close()}>Cancel</Button>
-        <Button type="button" variant="secondary" onClick={() => { onConfirm(""); void close({ clear: true }); }}>Remove</Button>
-        <Button type="button" disabled={!valid} onClick={() => { onConfirm(normalized); void close({ clear: true }); }}>Save</Button>
+            Clear
+          </Button>
+          <Button variant="outline" onClick={handleClose} className="flex-1">
+            Cancel
+          </Button>
+        </div>
       </ModalFooter>
     </ModalContent>
   );
 }
 
-const VISIBILITY_OPTIONS: Array<{ value: Visibility; title: string; description: string; Icon: typeof GlobeIcon }> = [
-  { value: "Public", title: "Public", description: "Visible in public organization lists and profile surfaces.", Icon: GlobeIcon },
-  { value: "Unlisted", title: "Unlisted", description: "Accessible by direct link, but hidden from public discovery surfaces.", Icon: LockIcon },
+interface VisibilityOption {
+  value: Visibility;
+  label: string;
+  description: string;
+  Icon: typeof GlobeIcon;
+}
+
+const OPTIONS: VisibilityOption[] = [
+  {
+    value: "Public",
+    label: "Public",
+    description: "Visible to everyone. Appears in organization listings and search results.",
+    Icon: GlobeIcon,
+  },
+  {
+    value: "Unlisted",
+    label: "Unlisted",
+    description: "Only accessible via direct link. Not listed publicly or in search.",
+    Icon: LockIcon,
+  },
 ];
 
+interface VisibilitySelectorModalProps {
+  current: Visibility;
+  onConfirm: (value: Visibility) => void;
+}
+
 export function VisibilitySelectorModal({
-  currentVisibility,
+  current,
   onConfirm,
-}: {
-  currentVisibility: Visibility;
-  onConfirm: (visibility: Visibility) => void;
-}) {
-  const close = useModalClose();
-  const [visibility, setVisibility] = useState<Visibility>(currentVisibility);
+}: VisibilitySelectorModalProps) {
+  const { hide, popModal, stack } = useModal();
+  const [selected, setSelected] = useState<Visibility>(current);
+
+  const handleClose = async () => {
+    if (stack.length === 1) {
+      await hide();
+      popModal();
+    } else {
+      popModal();
+    }
+  };
+
+  const handleConfirm = async () => {
+    onConfirm(selected);
+    await handleClose();
+  };
 
   return (
-    <ModalContent className="space-y-4">
-      <ModalHeader>
-        <ModalTitle>Edit visibility</ModalTitle>
-        <ModalDescription>Choose how this organization should appear on Bumicerts.</ModalDescription>
+    <ModalContent>
+      <ModalHeader backAction={stack.length > 1 ? handleClose : undefined}>
+        <ModalTitle>Discoverability</ModalTitle>
+        <ModalDescription>Choose who can discover your organization.</ModalDescription>
       </ModalHeader>
-      <div className="grid gap-2">
-        {VISIBILITY_OPTIONS.map((option) => (
+
+      <div className="flex flex-col gap-2 py-4">
+        {OPTIONS.map((opt) => (
           <button
-            key={option.value}
+            key={opt.value}
             type="button"
-            onClick={() => setVisibility(option.value)}
-            className={cn("flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors hover:bg-muted/40", visibility === option.value ? "border-primary bg-primary/5" : "border-border")}
+            onClick={() => setSelected(opt.value)}
+            className={cn(
+              "flex items-start gap-3 w-full px-4 py-3 rounded-xl border text-left transition-colors cursor-pointer",
+              selected === opt.value
+                ? "border-primary/40 bg-primary/5"
+                : "border-border hover:bg-muted/60",
+            )}
           >
-            <span className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary"><option.Icon className="h-4 w-4" /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-medium">{option.title}</span>
-              <span className="mt-1 block text-sm text-muted-foreground">{option.description}</span>
-            </span>
-            {visibility === option.value ? <CheckIcon className="h-5 w-5 text-primary" /> : null}
+            <opt.Icon
+              className={cn(
+                "h-4 w-4 mt-0.5 shrink-0",
+                selected === opt.value
+                  ? "text-primary"
+                  : "text-muted-foreground",
+              )}
+            />
+            <div className="flex-1 min-w-0">
+              <p
+                className={cn(
+                  "text-sm font-medium",
+                  selected === opt.value ? "text-primary" : "text-foreground",
+                )}
+              >
+                {opt.label}
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                {opt.description}
+              </p>
+            </div>
+            {selected === opt.value && (
+              <CheckIcon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            )}
           </button>
         ))}
       </div>
-      <ModalFooter>
-        <Button type="button" variant="outline" onClick={() => void close()}>Cancel</Button>
-        <Button type="button" onClick={() => { onConfirm(visibility); void close({ clear: true }); }}>Save</Button>
+
+      <ModalFooter className="flex justify-end gap-2">
+        <Button variant="outline" onClick={handleClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleConfirm}>Save</Button>
       </ModalFooter>
     </ModalContent>
-  );
-}
-
-export function RemoveChip({ onClick }: { onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
-      <XIcon className="h-3 w-3" />
-    </button>
   );
 }

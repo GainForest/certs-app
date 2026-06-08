@@ -39,12 +39,12 @@ import { createCountryLocationStrongRef, normalizeCountryCode } from "../_lib/co
 import Container from "@/components/ui/container";
 import { useModal } from "@/components/ui/modal/context";
 import {
-  CountrySelectorModal,
-  ImageEditorModal,
   StartDateSelectorModal,
   VisibilitySelectorModal,
   WebsiteEditorModal,
 } from "../_modals/DashboardEditModals";
+import CountrySelectorModal from "@/components/modals/country-selector";
+import { ImageEditorModal } from "@/components/modals/image-editor";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -484,8 +484,8 @@ export function ManageDashboardClient({
     router.push("/manage");
   };
 
-  const openDashboardModal = (id: string, content: React.ReactNode, dialogWidth = "max-w-sm") => {
-    modal.pushModal({ id, content, dialogWidth }, true);
+  const openDashboardModal = (id: string, content: React.ReactNode) => {
+    modal.pushModal({ id, content }, true);
     void modal.show();
   };
 
@@ -494,8 +494,8 @@ export function ManageDashboardClient({
     <ImageEditorModal
       title={account.kind === "organization" ? "Edit logo" : "Edit photo"}
       description={account.kind === "organization" ? "Choose a square logo for this profile." : "Choose a square photo for this profile."}
-      currentUrl={account.avatarUrl}
-      onConfirm={setLogoFile}
+      initialImage={account.avatarUrl ?? undefined}
+      onImageChange={(image) => setLogoFile(image ?? null)}
     />,
   );
 
@@ -504,30 +504,29 @@ export function ManageDashboardClient({
     <ImageEditorModal
       title="Edit cover image"
       description="Choose a wide banner image for the top of your profile."
-      currentUrl={account.coverUrl}
-      onConfirm={setCoverFile}
+      initialImage={account.coverUrl ?? undefined}
+      onImageChange={(image) => setCoverFile(image ?? null)}
     />,
-    "max-w-2xl",
   );
 
   const openCountryModal = () => openDashboardModal(
     "manage-country-editor",
-    <CountrySelectorModal currentCountry={editCountry} onConfirm={setEditCountry} />,
+    <CountrySelectorModal initialCountryCode={editCountry} onCountryChange={setEditCountry} />,
   );
 
   const openWebsiteModal = () => openDashboardModal(
     "manage-website-editor",
-    <WebsiteEditorModal currentWebsite={editWebsite} onConfirm={setEditWebsite} />,
+    <WebsiteEditorModal currentUrl={editWebsite || null} onConfirm={(url) => setEditWebsite(url ?? "")} />,
   );
 
   const openStartDateModal = () => openDashboardModal(
     "manage-start-date-editor",
-    <StartDateSelectorModal currentDate={editStartDate} onConfirm={setEditStartDate} />,
+    <StartDateSelectorModal currentDate={editStartDate || null} onConfirm={(date) => setEditStartDate(date ?? "")} />,
   );
 
   const openVisibilityModal = () => openDashboardModal(
     "manage-visibility-editor",
-    <VisibilitySelectorModal currentVisibility={editVisibility} onConfirm={setEditVisibility} />,
+    <VisibilitySelectorModal current={editVisibility} onConfirm={setEditVisibility} />,
   );
 
   const handleSave = async () => {
