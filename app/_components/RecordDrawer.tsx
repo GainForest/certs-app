@@ -11,7 +11,7 @@ import {
   type DetailSection,
   type DetailBadge,
 } from "../_lib/indexer";
-import { formatCompact, formatDate, formatNumber, countryFlag } from "../_lib/format";
+import { formatCompact, formatDate, formatNumber, countryFlag, formatCountry } from "../_lib/format";
 import { AuthorChip } from "./AuthorChip";
 import { usePreferredDidIdentifier } from "./PreferredLinks";
 import { RecordLocationMap } from "./RecordLocationMap";
@@ -573,7 +573,7 @@ function buildFields(r: ExplorerRecord): Field[] {
     if (r.startDate) fields.push({ label: "Start", value: formatDate(r.startDate) });
     if (r.endDate) fields.push({ label: "End", value: formatDate(r.endDate) });
   } else {
-    if (r.country) fields.push({ label: "Country", value: `${countryFlag(r.country)} ${r.country}`.trim() });
+    if (r.country) fields.push({ label: "Country", value: formatCountry(r.country) });
     if (r.orgType) fields.push({ label: "Type", value: r.orgType });
   }
   return fields;

@@ -16,7 +16,7 @@ import { cachedAsync } from "./async-cache";
 import { INDEXER_URL } from "./urls";
 import { fetchCertifiedLocationCountryCode } from "./country-location";
 import { blobUrl, resolveBlobUrl, resolvePdsHost, normaliseRef } from "./pds";
-import { asNumber, formatNumber, formatDate, formatDateTime } from "./format";
+import { asNumber, formatNumber, formatDate, formatDateTime, formatCountry } from "./format";
 
 // ── Generic GraphQL helper ────────────────────────────────────────────────
 
@@ -1589,7 +1589,8 @@ async function attachCertifiedOrgCountries(records: SiteRecord[], signal?: Abort
       if (signal?.aborted) return;
       const index = i++;
       const record = out[index]!;
-      const locationUri = record.locationUri ?? (await fetchDirectCertifiedOrgRecord(record.did, signal).catch(() => null))?.locationUri ?? null;
+      const directOrg = await fetchDirectCertifiedOrgRecord(record.did, signal).catch(() => null);
+      const locationUri = directOrg ? directOrg.locationUri : record.locationUri;
       const country = await fetchCertifiedLocationCountryCode(locationUri, signal).catch(() => null);
       if (country) out[index] = { ...record, country };
     }
@@ -2830,8 +2831,8 @@ function buildOccurrenceDetail(n: OccDetailNode): RecordDetail {
   };
 }
 
-// `countryFlag` lives in format.ts but importing it here would be circular for
-// some bundlers; inline a tiny safe version for the detail builder only.
+// Tiny local helper for occurrence detail rows where the country name already
+// comes from the source record.
 function countryFlagSafe(code: string | null): string {
   if (!code || code.length !== 2 || !/^[A-Za-z]{2}$/.test(code)) return "";
   return String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
@@ -3307,7 +3308,7 @@ function buildCertOrgDetail(d: CertOrgDetailNode, createdAt: string | null, coun
   const sections = [
     section("Organization", [
       field("Type", types.join(", ") || null, true),
-      field("Country", [countryFlagSafe(country), country].filter(Boolean).join(" ") || null),
+      field("Country", country ? formatCountry(country) : null),
       field("Founded", sv(org.foundedDate) ? formatDate(sv(org.foundedDate)!) : null),
       field("Visibility", sv(org.visibility) ? cap(sv(org.visibility)!) : null),
       field("Created", createdAt ? formatDateTime(createdAt) : null, true),
@@ -3386,7 +3387,7 @@ export async function fetchRecordDetail(
       fetchDirectCertifiedOrgRecord(did, signal).catch(() => null),
     ]);
     if (!data?.org) return null;
-    const locationUri = sv(data.org.location?.uri) ?? directOrg?.locationUri ?? null;
+    const locationUri = directOrg ? directOrg.locationUri : sv(data.org.location?.uri) ?? null;
     const country = await fetchCertifiedLocationCountryCode(locationUri, signal).catch(() => null);
     return buildCertOrgDetail(
       data,
@@ -3533,7 +3534,8 @@ export async function fetchAccountSummary(
   }
 
   const rawVisibility = sv(certOrg?.visibility);
-  const country = await fetchCertifiedLocationCountryCode(sv(certOrg?.location?.uri) ?? directCertOrg?.locationUri ?? null, signal).catch(() => null);
+  const locationUri = directCertOrg ? directCertOrg.locationUri : sv(certOrg?.location?.uri) ?? null;
+  const country = await fetchCertifiedLocationCountryCode(locationUri, signal).catch(() => null);
 
   return {
     did,
@@ -3547,7 +3549,7 @@ export async function fetchAccountSummary(
     foundedDate: sv(certOrg?.foundedDate) ?? directCertOrg?.foundedDate ?? null,
     visibility: rawVisibility === "unlisted" || rawVisibility === "Unlisted" ? "Unlisted" : rawVisibility ? "Public" : directCertOrg?.visibility === "unlisted" ? "Unlisted" : directCertOrg?.visibility ? "Public" : null,
     hasCertifiedProfile: Boolean(profile),
-    hasCertifiedOrg: Boolean(certOrg),
+    hasCertifiedOrg: Boolean(certOrg) || Boolean(directCertOrg),
     certOrgType: certType,
     bumicertCount: data?.bumi?.totalCount ?? 0,
     observationCount: data?.occ?.totalCount ?? 0,

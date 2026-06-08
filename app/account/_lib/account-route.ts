@@ -139,7 +139,7 @@ export const getAccountRouteData = cache(async (
     avatarUrl: baseSummary.avatarUrl ?? directCertifiedProfile?.avatarUrl ?? null,
     bio: baseSummary.bio ?? directCertifiedProfile?.description ?? null,
     website: baseSummary.website ?? directCertifiedProfile?.website ?? null,
-    country: baseSummary.country ?? directCertifiedOrganization?.country ?? null,
+    country: directCertifiedOrganization ? directCertifiedOrganization.country : baseSummary.country ?? null,
     createdAt: baseSummary.createdAt ?? directCertifiedOrganization?.createdAt ?? directCertifiedProfile?.createdAt ?? null,
     foundedDate: baseSummary.foundedDate ?? directCertifiedOrganization?.foundedDate ?? null,
     visibility: baseSummary.visibility ?? directCertifiedOrganization?.visibility ?? null,

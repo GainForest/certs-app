@@ -20,7 +20,7 @@ import {
   formatCompact,
   formatDate,
   formatRelative,
-  countryFlag,
+  formatCountry,
 } from "../_lib/format";
 
 // A second, higher-stacked drawer that profiles an *account* (a did:plc) rather
@@ -223,7 +223,7 @@ function AccountDrawer({ did, onClose }: { did: string | null; onClose: () => vo
               {summary === null ? (
                 <Shimmer w="3rem" />
               ) : summary.country ? (
-                `${countryFlag(summary.country)} ${summary.country}`.trim()
+                formatCountry(summary.country)
               ) : (
                 "—"
               )}

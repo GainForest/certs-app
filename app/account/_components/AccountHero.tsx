@@ -11,7 +11,7 @@ import {
   CheckIcon,
 } from "lucide-react";
 import type { AccountRouteData } from "../_lib/account-route";
-import { countryFlag } from "../../_lib/format";
+import { formatCountry } from "../../_lib/format";
 
 function formatWebsite(url: string): string {
   return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
@@ -27,22 +27,13 @@ function formatSinceDate(value: string | null): { label: string | null; state: "
   };
 }
 
-function countryName(code: string): string {
-  try {
-    return new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase()) ?? code;
-  } catch {
-    return code;
-  }
-}
-
 export function AccountHero({ account }: { account: AccountRouteData }) {
   const [copied, setCopied] = useState(false);
 
   const initial = account.displayName.charAt(0).toUpperCase();
   const sinceDate = formatSinceDate(account.createdAt);
   const sinceLabel = sinceDate.label;
-  const countryCode = account.country;
-  const country = countryCode ? { emoji: countryFlag(countryCode), name: countryName(countryCode) } : null;
+  const country = account.country ? formatCountry(account.country) : null;
   const objectives = account.kind === "organization" ? [account.summary.certOrgType].filter((v): v is string => Boolean(v)) : [];
   const hasPillRow =
     sinceDate.state === "valid" ||
@@ -160,10 +151,7 @@ export function AccountHero({ account }: { account: AccountRouteData }) {
 
             {country && (
               <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.08em] text-foreground/60 bg-background/40 backdrop-blur-md border border-border/50 rounded-full px-2.5 py-1 font-medium">
-                <span className="text-sm leading-none" aria-hidden="true">
-                  {country.emoji}
-                </span>
-                {country.name}
+                {country}
               </span>
             )}
 

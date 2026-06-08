@@ -36,7 +36,7 @@ import { StatsTileGrid } from "./StatsTile";
 import { isPdsBlobUrl, resolveBlobUrl } from "../_lib/pds";
 import { pauseOtherAudio, playExclusiveAudio, registerAudioElement } from "../_lib/audio-coordinator";
 import { resolveDidProfile, getCachedProfile } from "../_lib/did-profile";
-import { formatCompact, countryFlag, formatDate } from "../_lib/format";
+import { formatCompact, countryFlag, formatCountry, formatDate } from "../_lib/format";
 import { PictureHero } from "./PictureHero";
 
 // Single-stream record explorer. One of the three GainForest record types
@@ -957,8 +957,9 @@ function Pill({ children, accent }: { children: ReactNode; accent?: boolean }) {
 function cardView(record: ExplorerRecord): CardView {
   if (record.kind === "occurrence") {
     const name = record.scientificName || record.vernacularName || "Unidentified";
-    const cc =
-      record.countryCode || (record.country ? record.country.slice(0, 2).toUpperCase() : "");
+    const country = record.country
+      ? [countryFlag(record.countryCode), record.country].filter(Boolean).join(" ")
+      : formatCountry(record.countryCode);
     const taxon = record.family || record.genus || record.kingdom || null;
     return {
       alt: name,
@@ -968,9 +969,9 @@ function cardView(record: ExplorerRecord): CardView {
       pills: (
         <>
           {taxon ? <Pill>{taxon}</Pill> : null}
-          {cc ? (
+          {country ? (
             <Pill>
-              {countryFlag(record.countryCode)} {cc}
+              {country}
             </Pill>
           ) : null}
         </>
@@ -1018,7 +1019,7 @@ function cardView(record: ExplorerRecord): CardView {
           <>
             {record.country ? (
               <Pill>
-                {countryFlag(record.country)} {record.country}
+                {formatCountry(record.country)}
               </Pill>
             ) : null}
             {record.orgType ? <Pill>{record.orgType}</Pill> : null}

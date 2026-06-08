@@ -151,7 +151,7 @@ export function shortWallet(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
-/** ISO country code → flag emoji (best effort; falls back to the code). */
+/** ISO country code → flag emoji (best effort). */
 export function countryFlag(code: string | null | undefined): string {
   if (!code || code.length !== 2) return "";
   const cc = code.toUpperCase();
@@ -159,4 +159,27 @@ export function countryFlag(code: string | null | undefined): string {
   return String.fromCodePoint(
     ...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65),
   );
+}
+
+const specialCountryNames: Record<string, string> = {
+  ENGLAND: "England",
+  SCOTLAND: "Scotland",
+  WALES: "Wales",
+};
+
+export function countryName(code: string | null | undefined): string {
+  const raw = code?.trim();
+  if (!raw) return "";
+  const normalized = raw.toUpperCase();
+  if (specialCountryNames[normalized]) return specialCountryNames[normalized];
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(normalized) ?? raw;
+  } catch {
+    return raw;
+  }
+}
+
+export function formatCountry(code: string | null | undefined): string {
+  const name = countryName(code);
+  return [countryFlag(code), name].filter(Boolean).join(" ");
 }

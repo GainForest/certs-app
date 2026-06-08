@@ -25,7 +25,7 @@ import { RichText } from "../../../_components/RichText";
 import { SocialGlyph } from "../../../_components/SocialIcon";
 import { StatsTileGrid, type StatsTileItem } from "../../../_components/StatsTile";
 import { fetchReceipts, type DonorRef, type FundingReceipt } from "../../../_lib/dashboard";
-import { formatCompact, formatCompactUsd, formatDate, formatDateTime, formatNumber, formatRelative } from "../../../_lib/format";
+import { formatCompact, formatCompactUsd, formatCountry, formatDate, formatDateTime, formatNumber, formatRelative } from "../../../_lib/format";
 import {
   fetchAudioByDid,
   fetchBumicertsByDid,
@@ -468,7 +468,7 @@ function AboutOrganizationSection({
         <dl className="text-sm">
           <div className="flex justify-between gap-3">
             <dt className="text-muted-foreground">Country</dt>
-            <dd className="truncate text-foreground">{owner.country}</dd>
+            <dd className="truncate text-foreground">{formatCountry(owner.country)}</dd>
           </div>
         </dl>
       ) : null}
