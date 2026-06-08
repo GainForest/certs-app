@@ -1,15 +1,29 @@
 "use client";
 
+import { useTranslations } from "./_components/audio-copy";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/ui/container";
 
-export default function AudioError({ error, reset }: { error: Error; reset: () => void }) {
+interface AudioErrorProps {
+  error: Error & { digest?: string };
+  reset: () => void;
+}
+
+export default function AudioError({ error, reset }: AudioErrorProps) {
+  const t = useTranslations("upload.errors");
+  console.error("Audio route error:", error);
   return (
-    <Container className="pt-4 pb-8">
-      <div className="flex min-h-52 flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-muted/30 p-8 text-center">
-        <h1 className="text-2xl font-semibold font-garamond">Could not load audio</h1>
-        <p className="max-w-md text-sm text-muted-foreground">{error.message || "Refresh the page and try again."}</p>
-        <Button onClick={reset} variant="outline" size="sm">Retry</Button>
+    <Container className="pt-8 pb-8">
+      <div className="flex flex-col items-center justify-center h-48 gap-4 text-center">
+        <p className="text-xl font-semibold text-destructive">
+          {t("audioTitle")}
+        </p>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          {t("audioDescription")}
+        </p>
+        <Button variant="outline" onClick={reset}>
+          {t("tryAgain")}
+        </Button>
       </div>
     </Container>
   );
