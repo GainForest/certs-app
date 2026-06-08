@@ -6,6 +6,7 @@ import { readDisposableAccountMetadata } from "./disposable-email";
 export const E2E_PDS_COLLECTIONS = {
   claimActivity: "org.hypercerts.claim.activity",
   certifiedLocation: "app.certified.location",
+  audioRecording: "app.gainforest.ac.audio",
 } as const;
 
 export const createdRecordsPath = "e2e/.auth/created-records.jsonl";
@@ -235,6 +236,21 @@ export async function waitForCertifiedLocationByName(name: string): Promise<PdsR
   }
 
   throw new Error(`Timed out waiting for direct PDS location named ${name}. Last count: ${latestCount}.`);
+}
+
+export async function waitForAudioRecordingByName(name: string): Promise<PdsRepoRecord> {
+  const deadline = Date.now() + 60_000;
+  let latestCount = 0;
+
+  while (Date.now() <= deadline) {
+    const records = await listPdsRecords(E2E_PDS_COLLECTIONS.audioRecording);
+    latestCount = records.length;
+    const match = records.find((record) => record.value.name === name);
+    if (match) return match;
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+  }
+
+  throw new Error(`Timed out waiting for direct PDS audio recording named ${name}. Last count: ${latestCount}.`);
 }
 
 export function getRecordArray(record: PdsRepoRecord, key: string): Record<string, unknown>[] {

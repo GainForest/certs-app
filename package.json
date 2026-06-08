@@ -9,7 +9,9 @@
     "build": "next build",
     "start": "next start --port 3040",
     "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "publish:e2e-report": "node scripts/publish-e2e-report.mjs",
+    "test:e2e:publish-report": "pnpm test:e2e && pnpm publish:e2e-report"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

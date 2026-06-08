@@ -16,15 +16,38 @@ export type CreatedBumicert = {
   record: PdsRepoRecord;
 };
 
+export async function expectBumicertPublishValidationEdgeCases(page: Page, testInfo: TestInfo): Promise<void> {
+  await page.getByRole("button", { name: /publish bumicert/i }).click();
+  await expect(page.getByText(/add a title with at least 4 characters/i).first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/pick at least one type of work/i).first()).toBeVisible();
+  await expect(page.getByText(/write at least 30 characters for the summary/i).first()).toBeVisible();
+  await expect(page.getByText(/write at least 80 characters for the full description/i).first()).toBeVisible();
+  await expect(page.getByText(/add at least one contributor/i).first()).toBeVisible();
+  await expect(page.getByText(/confirm you have permission/i).first()).toBeVisible();
+  await expect(page.getByText(/agree to the terms before publishing/i).first()).toBeVisible();
+  await screenshotStep(page, testInfo, "create-empty-publish-errors");
+
+  await page.locator("#bumicert-title").first().fill("Bad");
+  await page.getByRole("button", { name: E2E_BUMICERT_SCOPE }).first().click();
+  await page.locator("#summary").first().fill("Too short");
+  await page.locator("#description").first().fill("Also too short.");
+  await page.getByPlaceholder(/search e\.g\.|name or/i).first().fill("");
+  await page.getByRole("button", { name: /publish bumicert/i }).click();
+  await expect(page.getByText(/add a title with at least 4 characters/i).first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/write at least 30 characters for the summary/i).first()).toBeVisible();
+  await expect(page.getByText(/write at least 80 characters for the full description/i).first()).toBeVisible();
+  await screenshotStep(page, testInfo, "create-short-content-publish-errors");
+}
+
 export async function fillBumicertForm(page: Page, testInfo: TestInfo): Promise<CreatedBumicert> {
   const title = `E2E Bumicert ${Date.now()}-${testInfo.workerIndex}-${testInfo.retry}`;
 
   await page.goto("/manage/bumicerts/new", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: /the basics/i }).first()).toBeVisible({ timeout: 60_000 });
   await screenshotStep(page, testInfo, "create-form-empty");
+  await expectBumicertPublishValidationEdgeCases(page, testInfo);
 
   await page.locator("#bumicert-title").first().fill(title);
-  await page.getByRole("button", { name: E2E_BUMICERT_SCOPE }).first().click();
   await screenshotStep(page, testInfo, "create-basics-complete");
 
   await page.locator("#summary").first().fill(E2E_BUMICERT_SHORT_DESCRIPTION);
