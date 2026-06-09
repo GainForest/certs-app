@@ -40,6 +40,7 @@ import { isPdsBlobUrl, resolveBlobUrl } from "../_lib/pds";
 import { pauseOtherAudio, playExclusiveAudio, registerAudioElement } from "../_lib/audio-coordinator";
 import { resolveDidProfile, getCachedProfile } from "../_lib/did-profile";
 import { formatCompact, countryFlag, formatCountry, formatDate } from "../_lib/format";
+import { AutoLoadMoreButton } from "./AutoLoadMoreButton";
 import { PictureHero } from "./PictureHero";
 
 // Single-stream record explorer. One of the three GainForest record types
@@ -230,6 +231,7 @@ export function RecordExplorer({
   const [hydrated, setHydrated] = useState(false);
   const [drawer, setDrawer] = useState<ExplorerRecord | null>(null);
   const [cardLimit, setCardLimit] = useState(INITIAL_CARD_LIMIT);
+  const [autoLoadMore, setAutoLoadMore] = useState(false);
   // `?record=` value awaiting resolution, so the URL keeps it while we fetch.
   const [pendingRecord, setPendingRecord] = useState<string | null>(null);
   // Server-rendered first pages should stay visible after the URL hydrate pass.
@@ -635,15 +637,14 @@ export function RecordExplorer({
                 Show more
               </button>
             ) : hasMore ? (
-              <button
-                type="button"
-                onClick={() => load("more")}
-                disabled={phase === "more" || walking}
-                aria-busy={phase === "more" || walking}
+              <AutoLoadMoreButton
+                hasMore={hasMore}
+                loading={phase === "more" || walking}
+                onLoadMore={() => load("more")}
+                autoLoad={autoLoadMore}
+                onAutoLoadChange={setAutoLoadMore}
                 className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface px-6 py-3 text-[14px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-sunken disabled:opacity-60"
-              >
-                {phase === "more" || walking ? "Loading" : "Load more"}
-              </button>
+              />
             ) : (
               <span className="text-[13px] italic text-foreground/50">You have reached the end.</span>
             )}

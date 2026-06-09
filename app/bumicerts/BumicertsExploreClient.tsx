@@ -22,6 +22,7 @@ import { BumicertOwnerAvatar } from "@/components/bumicert/BumicertOwnerAvatar";
 import { BumicertPillRows, type BumicertCardPill } from "@/components/bumicert/BumicertPillRows";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AutoLoadMoreButton } from "../_components/AutoLoadMoreButton";
 import { RecordDrawer } from "../_components/RecordDrawer";
 import { RecordMap } from "../_components/RecordMap";
 import { StatsTileGrid } from "../_components/StatsTile";
@@ -103,6 +104,7 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
   const [openFilters, setOpenFilters] = useState(false);
   const [drawer, setDrawer] = useState<BumicertRecord | null>(null);
   const [cardLimit, setCardLimit] = useState(INITIAL_CARD_LIMIT);
+  const [autoLoadMore, setAutoLoadMore] = useState(false);
   const [totalStats, setTotalStats] = useState<BumicertStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const sortMenuRef = useRef<HTMLDivElement | null>(null);
@@ -568,15 +570,14 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
                   Show more
                 </button>
               ) : hasMore ? (
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  aria-busy={loadingMore}
+                <AutoLoadMoreButton
+                  hasMore={hasMore}
+                  loading={loadingMore}
+                  onLoadMore={loadMore}
+                  autoLoad={autoLoadMore}
+                  onAutoLoadChange={setAutoLoadMore}
                   className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
-                >
-                  {loadingMore ? "Loading" : "Load more"}
-                </button>
+                />
               ) : (
                 <span className="text-sm italic text-muted-foreground">You have reached the end.</span>
               )}

@@ -362,11 +362,11 @@ function FeaturesSection() {
                 index === FEATURE_ITEMS.length - 1 && "sm:pr-0",
               )}
             >
-              <span className="font-garamond block text-5xl leading-none font-light tracking-tight text-primary/45">
+              <span className="font-garamond block text-5xl leading-none font-light tracking-tight text-primary/65 dark:text-primary/90">
                 {feature.number}.
               </span>
               <h3 className="font-instrument mt-4 text-lg leading-tight text-foreground">{feature.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
+              <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground dark:text-foreground/75">{feature.description}</p>
             </motion.div>
           ))}
         </div>
@@ -419,7 +419,14 @@ function UserOptionCards() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-card via-card/88 to-card/0" />
                   <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
-                    <span className="inline-flex rounded-full bg-background/80 px-3 py-1 text-xs font-bold tracking-[0.12em] text-primary uppercase shadow-sm backdrop-blur">
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full text-xs font-bold tracking-[0.12em] uppercase backdrop-blur",
+                        card.key === "funders"
+                          ? "bg-primary px-4 py-1.5 text-primary-foreground shadow-lg shadow-primary/25 ring-1 ring-primary/30"
+                          : "bg-background/75 px-3 py-1 text-foreground/70 shadow-sm",
+                      )}
+                    >
                       {card.label}
                     </span>
                     <h3 className="font-garamond mt-4 text-4xl leading-[1.05] font-light tracking-[-0.015em] text-foreground">
@@ -427,7 +434,7 @@ function UserOptionCards() {
                       <br />
                       <span className="font-instrument text-primary italic">{card.emphasis}</span>
                     </h3>
-                    <p className="mt-4 max-w-sm text-base leading-relaxed text-muted-foreground">{card.description}</p>
+                    <p className="mt-4 max-w-sm text-base leading-relaxed text-muted-foreground dark:text-foreground/75">{card.description}</p>
                     <motion.div
                       className="mt-5 flex items-center gap-2 text-sm font-semibold text-foreground transition-colors group-hover:text-primary"
                       whileHover={{ x: 4 }}
@@ -530,8 +537,8 @@ function AccordionItem({
         className="group flex w-full cursor-pointer items-center justify-between gap-4 py-3 text-left"
       >
         <div className="flex items-center gap-4">
-          <span className="font-garamond text-2xl font-light text-primary/45">0{index + 1}</span>
-          <span className="font-instrument text-base leading-snug text-foreground transition-colors duration-200 group-hover:text-primary">
+          <span className="font-garamond text-2xl font-light text-primary/70 dark:text-primary/95">0{index + 1}</span>
+          <span className="font-instrument text-[17px] leading-snug text-foreground transition-colors duration-200 group-hover:text-primary">
             {item.question}
           </span>
         </div>
@@ -549,7 +556,7 @@ function AccordionItem({
             transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
             className="overflow-hidden"
           >
-            <p className="max-w-lg pb-4 pl-11 text-sm leading-relaxed text-muted-foreground">{item.answer}</p>
+            <p className="max-w-lg pb-4 pl-11 text-[15px] leading-relaxed text-muted-foreground dark:text-foreground/75">{item.answer}</p>
           </motion.div>
         )}
       </AnimatePresence>

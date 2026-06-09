@@ -43,7 +43,7 @@ Key issues:
 - Hide test Bumicerts from public browse.
 - Fix A→Z and newest/oldest sorting.
 
-### 3. Several labels are confusing
+### 3. Several labels are confusing — Done
 
 A lot of feedback is about wording not being clear enough.
 
@@ -79,7 +79,7 @@ Key issues:
   - Documents
 - Documents should support file uploads and described links.
 
-### 5. Browse/filter behavior has bugs
+### 5. Browse/filter behavior has bugs — Done
 
 Several reviewers hit broken or confusing filtering.
 
@@ -93,7 +93,7 @@ Key issues:
 
 These are probably high-priority because they make the app feel broken.
 
-### 6. Observations page should feel less technical
+### 6. Observations page should feel less technical — Done
 
 The observations page is liked, but the content presentation is intimidating.
 
@@ -103,7 +103,7 @@ Key issues:
 - Add filters like plants, trees, birds, flowers.
 - Clarify that audio items are field/nature sound recordings, not meeting recordings.
 
-### 7. Some pages/sections may not belong
+### 7. Some pages/sections may not belong — Done
 
 Reviewers questioned whether some areas are useful to users.
 

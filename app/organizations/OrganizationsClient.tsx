@@ -21,6 +21,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AutoLoadMoreButton } from "../_components/AutoLoadMoreButton";
 import { RecordDrawer } from "../_components/RecordDrawer";
 import { RecordMap } from "../_components/RecordMap";
 import { StatsTileGrid } from "../_components/StatsTile";
@@ -94,6 +95,7 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
   const [openDropdown, setOpenDropdown] = useState(false);
   const [drawer, setDrawer] = useState<SiteRecord | null>(null);
   const [cardLimit, setCardLimit] = useState(INITIAL_CARD_LIMIT);
+  const [autoLoadMore, setAutoLoadMore] = useState(false);
   const [totalStats, setTotalStats] = useState<OrganizationStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const deferredQuery = useDeferredValue(query);
@@ -414,15 +416,14 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
                   Show more
                 </button>
               ) : hasMore ? (
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  aria-busy={loadingMore}
+                <AutoLoadMoreButton
+                  hasMore={hasMore}
+                  loading={loadingMore}
+                  onLoadMore={loadMore}
+                  autoLoad={autoLoadMore}
+                  onAutoLoadChange={setAutoLoadMore}
                   className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
-                >
-                  {loadingMore ? "Loading" : "Load more"}
-                </button>
+                />
               ) : (
                 <span className="text-sm italic text-muted-foreground">You have reached the end.</span>
               )}

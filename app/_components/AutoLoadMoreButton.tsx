@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function AutoLoadMoreButton({
   hasMore,
@@ -11,6 +11,8 @@ export function AutoLoadMoreButton({
   idleLabel = "Load more",
   loadingLabel = "Loading",
   endLabel = "You have reached the end.",
+  autoLoad,
+  onAutoLoadChange,
 }: {
   hasMore: boolean;
   loading: boolean;
@@ -20,11 +22,20 @@ export function AutoLoadMoreButton({
   idleLabel?: string;
   loadingLabel?: string;
   endLabel?: string;
+  autoLoad?: boolean;
+  onAutoLoadChange?: (enabled: boolean) => void;
 }) {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const lockedRef = useRef(false);
-  const latestRef = useRef({ hasMore, loading, onLoadMore });
-  latestRef.current = { hasMore, loading, onLoadMore };
+  const [uncontrolledAutoLoad, setUncontrolledAutoLoad] = useState(false);
+  const autoLoadEnabled = autoLoad ?? uncontrolledAutoLoad;
+  const latestRef = useRef({ hasMore, loading, onLoadMore, autoLoadEnabled });
+  latestRef.current = { hasMore, loading, onLoadMore, autoLoadEnabled };
+
+  const enableAutoLoad = () => {
+    setUncontrolledAutoLoad(true);
+    onAutoLoadChange?.(true);
+  };
 
   useEffect(() => {
     if (!loading) lockedRef.current = false;
@@ -32,13 +43,13 @@ export function AutoLoadMoreButton({
 
   useEffect(() => {
     const button = buttonRef.current;
-    if (!button || !hasMore || loading || lockedRef.current) return;
+    if (!button || !autoLoadEnabled || !hasMore || loading || lockedRef.current) return;
     const rect = button.getBoundingClientRect();
     const inRange = rect.top <= window.innerHeight + 320 && rect.bottom >= -320;
     if (!inRange) return;
     lockedRef.current = true;
     onLoadMore();
-  }, [hasMore, loading, onLoadMore]);
+  }, [autoLoadEnabled, hasMore, loading, onLoadMore]);
 
   useEffect(() => {
     const button = buttonRef.current;
@@ -47,7 +58,7 @@ export function AutoLoadMoreButton({
     const observer = new IntersectionObserver(
       ([entry]) => {
         const latest = latestRef.current;
-        if (!entry?.isIntersecting || !latest.hasMore || latest.loading || lockedRef.current) return;
+        if (!entry?.isIntersecting || !latest.autoLoadEnabled || !latest.hasMore || latest.loading || lockedRef.current) return;
         lockedRef.current = true;
         latest.onLoadMore();
       },
@@ -64,6 +75,7 @@ export function AutoLoadMoreButton({
 
   const handleClick = () => {
     if (loading || lockedRef.current) return;
+    enableAutoLoad();
     lockedRef.current = true;
     onLoadMore();
   };
