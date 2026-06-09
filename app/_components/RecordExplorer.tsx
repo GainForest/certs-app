@@ -1432,7 +1432,6 @@ function haystack(r: ExplorerRecord): string {
 type Stat = {
   label: string;
   value: string;
-  detail: string;
   icon: ReactNode;
   accent?: boolean;
 };
@@ -1454,29 +1453,25 @@ function computeOccurrenceTotalStats(stats: OccurrenceStats, records: ExplorerRe
   const n = (value: number | null, fallbackValue: number) => formatCompact(value ?? fallbackValue);
   return [
     {
-      label: "Nature sightings",
+      label: stats.totalSightings == null ? "Loaded nature sightings" : "Nature sightings shared",
       value: n(stats.totalSightings, fallback.totalSightings),
-      detail: stats.totalSightings == null ? "loaded sightings" : "sightings shared",
       icon: <LayoutGridIcon />,
       accent: true,
     },
     {
-      label: "Photo sightings",
+      label: stats.photoSightings == null ? "Loaded sightings with photos" : "Sightings with photos",
       value: n(stats.photoSightings, fallback.photoSightings),
-      detail: stats.photoSightings == null ? "loaded sightings with photos" : "with photos",
       icon: <ImageIcon />,
     },
     {
-      label: "New sightings",
+      label: "Sightings in last 30 days",
       value: n(stats.recentSightings, fallback.recentSightings),
-      detail: stats.recentSightings == null ? "loaded recent sightings" : "shared in the last 30 days",
       icon: <LeafIcon />,
       accent: true,
     },
     {
-      label: "Sightings with places",
+      label: "Locations across sightings",
       value: n(stats.mappedSightings, fallback.mappedSightings),
-      detail: stats.mappedSightings == null ? "loaded sightings with a location" : "with a location shown",
       icon: <MapIcon />,
     },
   ];
@@ -1494,41 +1489,35 @@ function computeStats(records: ExplorerRecord[], kind: RecordKind): Stat[] {
     const withMedia = occ.filter((r) => r.media.length > 0).length;
     return [
       {
-        label: "Nature sightings",
+        label: "Loaded nature sightings",
         value: n(occ.length),
-        detail: "loaded from recent field reports",
         icon: <LayoutGridIcon />,
         accent: true,
       },
       {
-        label: "New in 30 days",
+        label: "Sightings from last 30 days",
         value: n(last30),
-        detail: "recent sightings in this view",
         icon: <LeafIcon />,
       },
       {
-        label: "Kinds found",
+        label: "Different plants and animals",
         value: n(species),
-        detail: "different plants and animals",
         icon: <LeafIcon />,
         accent: true,
       },
       {
-        label: "With photos or sounds",
+        label: "Sightings with photos or sounds",
         value: n(withMedia),
-        detail: "media-rich sightings",
         icon: <ImageIcon />,
       },
       {
-        label: "Countries",
+        label: "Countries in these sightings",
         value: n(countries),
-        detail: "places reached",
         icon: <MapIcon />,
       },
       {
-        label: "New this week",
+        label: "Sightings from this week",
         value: n(last7),
-        detail: "latest activity",
         icon: <AudioLinesIcon />,
       },
     ];
@@ -1540,12 +1529,12 @@ function computeStats(records: ExplorerRecord[], kind: RecordKind): Stat[] {
     const sites = b.reduce((s, r) => s + r.locationCount, 0);
     const withCover = b.filter((r) => r.imageUrl).length;
     return [
-      { label: "Bumicerts", value: n(b.length), detail: "loaded project stories", icon: <LayoutGridIcon />, accent: true },
-      { label: "New in 30 days", value: n(last30), detail: "recent stories", icon: <LeafIcon /> },
-      { label: "People named", value: n(contributors), detail: "named in stories", icon: <LeafIcon />, accent: true },
-      { label: "Project places", value: n(sites), detail: "linked places", icon: <MapIcon /> },
-      { label: "Stories with pictures", value: n(withCover), detail: "include a cover picture", icon: <ImageIcon /> },
-      { label: "New this week", value: n(last7), detail: "latest activity", icon: <AudioLinesIcon /> },
+      { label: "Loaded Bumicerts", value: n(b.length), icon: <LayoutGridIcon />, accent: true },
+      { label: "Bumicerts from last 30 days", value: n(last30), icon: <LeafIcon /> },
+      { label: "People named in loaded Bumicerts", value: n(contributors), icon: <LeafIcon />, accent: true },
+      { label: "Project places in loaded Bumicerts", value: n(sites), icon: <MapIcon /> },
+      { label: "Loaded Bumicerts with pictures", value: n(withCover), icon: <ImageIcon /> },
+      { label: "Bumicerts from this week", value: n(last7), icon: <AudioLinesIcon /> },
     ];
   }
 
@@ -1553,11 +1542,11 @@ function computeStats(records: ExplorerRecord[], kind: RecordKind): Stat[] {
   const countries = new Set(s.map((r) => r.country).filter(Boolean)).size;
   const withImg = s.filter((r) => r.imageUrl).length;
   return [
-    { label: "Organizations", value: n(s.length), detail: "loaded profiles", icon: <LayoutGridIcon />, accent: true },
-    { label: "New in 30 days", value: n(last30), detail: "recent profiles", icon: <LeafIcon /> },
-    { label: "Countries", value: n(countries), detail: "places reached", icon: <MapIcon />, accent: true },
-    { label: "Profile pictures", value: n(withImg), detail: "profiles with a cover or logo", icon: <ImageIcon /> },
-    { label: "New this week", value: n(last7), detail: "latest activity", icon: <AudioLinesIcon /> },
+    { label: "Loaded organization profiles", value: n(s.length), icon: <LayoutGridIcon />, accent: true },
+    { label: "Profiles from last 30 days", value: n(last30), icon: <LeafIcon /> },
+    { label: "Countries in loaded profiles", value: n(countries), icon: <MapIcon />, accent: true },
+    { label: "Profiles with cover or logo", value: n(withImg), icon: <ImageIcon /> },
+    { label: "Profiles from this week", value: n(last7), icon: <AudioLinesIcon /> },
   ];
 }
 
@@ -1568,7 +1557,6 @@ function StatBand({ stats }: { stats: Stat[] }) {
       items={stats.map((stat) => ({
         label: stat.label,
         value: stat.value,
-        detail: stat.detail,
         icon: stat.icon,
         accent: stat.accent,
       }))}

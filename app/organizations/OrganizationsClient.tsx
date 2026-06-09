@@ -224,24 +224,20 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
   const stats = useMemo(
     () => [
       {
-        label: "Organizations",
+        label: "Public organization profiles",
         value: totalStats?.organizations ?? null,
-        detail: "public profiles",
       },
       {
-        label: "With Bumicerts",
+        label: "Organizations with project stories",
         value: totalStats?.withBumicerts ?? null,
-        detail: "organizations with project stories",
       },
       {
-        label: "With observations",
+        label: "Organizations with nature sightings",
         value: totalStats?.withObservations ?? null,
-        detail: "organizations with nature sightings",
       },
       {
-        label: "Locations shown",
+        label: "Locations across organizations",
         value: totalStats?.mappedPlaces ?? null,
-        detail: "organization locations on map",
       },
     ],
     [totalStats],
@@ -698,7 +694,7 @@ function FacetDropdown({
   );
 }
 
-function StatsBand({ stats, loading }: { stats: Array<{ label: string; value: number | null; detail: string }>; loading: boolean }) {
+function StatsBand({ stats, loading }: { stats: Array<{ label: string; value: number | null }>; loading: boolean }) {
   if (loading || stats.every((stat) => stat.value === null)) return null;
 
   const icons = [
@@ -714,7 +710,6 @@ function StatsBand({ stats, loading }: { stats: Array<{ label: string; value: nu
       items={stats.map((stat, index) => ({
         label: stat.label,
         value: stat.value === null ? null : formatStat(stat.value),
-        detail: stat.detail,
         icon: icons[index] ?? <LeafIcon />,
         accent: index % 2 === 0,
       }))}

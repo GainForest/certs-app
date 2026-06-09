@@ -4,12 +4,19 @@ import type { ReactNode } from "react";
 export type StatsTileItem = {
   label: string;
   value: ReactNode;
-  detail: string;
   icon: ReactNode;
   href?: string;
   accent?: boolean;
   /** Extra classes for the tile wrapper, e.g. grid-column spanning. */
   className?: string;
+};
+
+export type RecordDrawerStatsTileItem = {
+  icon: ReactNode;
+  value: string;
+  label: string;
+  className?: string;
+  valueClassName?: string;
 };
 
 const GRID_COLUMNS: Record<3 | 4 | 5 | 6, string> = {
@@ -37,7 +44,7 @@ export function StatsTileGrid({
   );
 }
 
-export function StatsTile({ label, value, detail, icon, accent = false, href, className: extraClassName }: StatsTileItem) {
+export function StatsTile({ label, value, icon, accent = false, href, className: extraClassName }: StatsTileItem) {
   if (value == null) return null;
 
   const content = (
@@ -48,7 +55,6 @@ export function StatsTile({ label, value, detail, icon, accent = false, href, cl
           <span className="flex shrink-0 items-center justify-center text-primary transition-transform duration-300 group-hover:scale-105 [&_svg]:size-4 sm:[&_svg]:size-5">
             {icon}
           </span>
-          <span className="sr-only">{label}</span>
           <div
             className={[
               "min-w-0 truncate text-xl font-semibold tracking-[-0.02em] tabular-nums sm:text-2xl lg:text-3xl",
@@ -58,7 +64,7 @@ export function StatsTile({ label, value, detail, icon, accent = false, href, cl
             {value}
           </div>
         </div>
-        <p className="mt-1 text-xs leading-snug text-muted-foreground first-letter:uppercase sm:text-sm sm:leading-normal">{detail}</p>
+        <p className="mt-1 text-xs leading-snug text-muted-foreground first-letter:uppercase sm:text-sm sm:leading-normal">{label}</p>
       </div>
     </>
   );
@@ -79,4 +85,21 @@ export function StatsTile({ label, value, detail, icon, accent = false, href, cl
   }
 
   return <div className={className}>{content}</div>;
+}
+
+export function RecordDrawerStatsTile({
+  icon,
+  value,
+  label,
+  className = "",
+  valueClassName = "text-2xl font-semibold tabular-nums",
+}: RecordDrawerStatsTileItem) {
+  return (
+    <div className={`relative overflow-hidden rounded-2xl bg-foreground/5 px-4 py-3 ${className}`}>
+      <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
+      <span className="flex items-center text-primary [&_svg]:size-4">{icon}</span>
+      <div className={`mt-1.5 tracking-[-0.02em] text-foreground ${valueClassName}`}>{value}</div>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">{label}</p>
+    </div>
+  );
 }

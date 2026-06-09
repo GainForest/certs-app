@@ -289,8 +289,7 @@ function HomeStats({ kpis }: { kpis: ExplorerKpis | null }) {
   if (kpis.bumicerts != null) {
     stats.push({
       value: formatCompact(kpis.bumicerts),
-      label: "Bumicerts",
-      detail: "Bumicerts shared",
+      label: "Bumicerts shared",
       href: "/bumicerts",
       icon: <CompassIcon />,
       accent: true,
@@ -299,8 +298,7 @@ function HomeStats({ kpis }: { kpis: ExplorerKpis | null }) {
   if (kpis.sites != null) {
     stats.push({
       value: formatCompact(kpis.sites),
-      label: "Organizations",
-      detail: "organization profiles",
+      label: "Organization profiles",
       href: "/organizations",
       icon: <Building2Icon />,
     });
@@ -308,8 +306,7 @@ function HomeStats({ kpis }: { kpis: ExplorerKpis | null }) {
   if (kpis.occurrences != null) {
     stats.push({
       value: formatCompact(kpis.occurrences),
-      label: "Observations",
-      detail: "nature sightings shared",
+      label: "Nature sightings shared",
       href: "/observations",
       icon: <BinocularsIcon />,
     });
@@ -317,8 +314,7 @@ function HomeStats({ kpis }: { kpis: ExplorerKpis | null }) {
   if (kpis.totalRaised != null) {
     stats.push({
       value: formatCompactUsd(kpis.totalRaised),
-      label: "Funding raised",
-      detail: "raised for projects",
+      label: "Raised for projects",
       href: "/leaderboard",
       icon: <HandHeartIcon />,
       accent: true,

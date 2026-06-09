@@ -111,6 +111,11 @@ export function LeaderboardClient() {
     return aggregateToLeaderboard(receipts, { period, limit: 100, donorFilter, sortBy });
   }, [receipts, period, donorFilter, sortBy]);
 
+  const defaultTotals = useMemo(() => {
+    if (!receipts) return null;
+    return aggregateToLeaderboard(receipts, { period: "all", limit: 100, donorFilter: "all", sortBy: "total-raised" });
+  }, [receipts]);
+
   return (
     <LeaderboardShell
       animate={false}
@@ -121,10 +126,10 @@ export function LeaderboardClient() {
       sortBy={sortBy}
       onSortChange={(nextSort) => void setSortBy(nextSort)}
       loading={receipts === null && !error}
-      totalDonors={leaderboard?.totalDonorsCount ?? 0}
-      totalRaised={leaderboard?.totalAmountSum ?? 0}
-      totalProjectsSupported={leaderboard?.totalProjectsSupported ?? 0}
-      totalDonationCount={leaderboard?.totalDonationCount ?? 0}
+      totalDonors={defaultTotals?.totalDonorsCount ?? 0}
+      totalRaised={defaultTotals?.totalAmountSum ?? 0}
+      totalProjectsSupported={defaultTotals?.totalProjectsSupported ?? 0}
+      totalDonationCount={defaultTotals?.totalDonationCount ?? 0}
     >
       {error ? (
         <LeaderboardError />
@@ -277,29 +282,25 @@ function StatsSummary({
 
   const stats: StatsTileItem[] = [
     {
-      label: "Total raised",
+      label: "Total Raised",
       value: formatCompactUsd(totalRaised),
-      detail: "given in this view",
       icon: <LeafIcon />,
       accent: true,
     },
     {
-      label: "Unique donors",
+      label: "Unique Donors",
       value: formatCompact(totalDonors),
-      detail: "people who donated",
       icon: <UsersRoundIcon />,
     },
     {
-      label: "Bumicerts supported",
+      label: "Bumicerts Funded",
       value: formatCompact(totalProjectsSupported),
-      detail: "project stories helped",
       icon: <SproutIcon />,
       accent: true,
     },
     {
-      label: "Donations",
+      label: "No. of Donations",
       value: formatCompact(totalDonationCount),
-      detail: "completed donations",
       icon: <GiftIcon />,
     },
   ];

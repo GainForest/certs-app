@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRightIcon, CalendarRangeIcon, CheckIcon, HeartIcon, ImageOffIcon, MapPinIcon, Share2Icon, UsersIcon, XIcon } from "lucide-react";
@@ -17,6 +17,7 @@ import { usePreferredDidIdentifier } from "./PreferredLinks";
 import { RecordLocationMap } from "./RecordLocationMap";
 import { RichText } from "./RichText";
 import { SocialGlyph, socialLabel } from "./SocialIcon";
+import { RecordDrawerStatsTile } from "./StatsTile";
 import { isPdsBlobUrl, resolveBlobUrl } from "../_lib/pds";
 import { pauseOtherAudio } from "../_lib/audio-coordinator";
 import {
@@ -441,18 +442,18 @@ function BumicertStatStrip({ record }: { record: Extract<ExplorerRecord, { kind:
 
   return (
     <div className="mt-5 grid grid-cols-2 gap-2.5">
-      <StatTile
+      <RecordDrawerStatsTile
         icon={<UsersIcon />}
         value={formatCompact(record.contributorCount)}
         label="People named"
       />
-      <StatTile
+      <RecordDrawerStatsTile
         icon={<MapPinIcon />}
         value={formatCompact(record.locationCount)}
-        label={record.locationCount === 1 ? "Project place" : "Project places"}
+        label="Locations"
       />
       {period && (
-        <StatTile
+        <RecordDrawerStatsTile
           className="col-span-2"
           icon={<CalendarRangeIcon />}
           value={period}
@@ -460,29 +461,6 @@ function BumicertStatStrip({ record }: { record: Extract<ExplorerRecord, { kind:
           valueClassName="text-[15px] font-medium"
         />
       )}
-    </div>
-  );
-}
-
-function StatTile({
-  icon,
-  value,
-  label,
-  className = "",
-  valueClassName = "text-2xl font-semibold tabular-nums",
-}: {
-  icon: ReactNode;
-  value: string;
-  label: string;
-  className?: string;
-  valueClassName?: string;
-}) {
-  return (
-    <div className={`relative overflow-hidden rounded-2xl bg-foreground/5 px-4 py-3 ${className}`}>
-      <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
-      <span className="flex items-center text-primary [&_svg]:size-4">{icon}</span>
-      <div className={`mt-1.5 tracking-[-0.02em] text-foreground ${valueClassName}`}>{value}</div>
-      <p className="mt-0.5 text-[11px] text-muted-foreground">{label}</p>
     </div>
   );
 }

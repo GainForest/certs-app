@@ -247,46 +247,40 @@ function KPISummary({ kpis, geoStats }: { kpis: DashboardKpis; geoStats: GeoStat
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
       <StatCard
         icon={<CoinsIcon className="h-4 w-4" />}
-        label="Total raised"
+        label="Total donated"
         value={formatCompactUsd(kpis.totalRaised)}
-        sub="Total donated"
       />
       <StatCard
         icon={<HandHeartIcon className="h-4 w-4" />}
-        label="Donations"
+        label="Completed donations"
         value={formatCompact(kpis.totalDonations)}
-        sub="Completed donations"
       />
       <StatCard
         icon={<UsersRoundIcon className="h-4 w-4" />}
-        label="Unique donors"
+        label="donors"
         value={formatCompact(kpis.uniqueDonors)}
-        sub="People who donated"
       />
       <StatCard
         icon={<SproutIcon className="h-4 w-4" />}
-        label="Active Bumicerts"
+        label="Bumicerts with donations"
         value={formatCompact(kpis.activeBumicerts)}
-        sub="Bumicerts with funding"
       />
       <StatCard
         icon={<GaugeIcon className="h-4 w-4" />}
-        label="Average donation"
+        label="Average donation amount"
         value={formatCompactUsd(kpis.avgDonation)}
-        sub="Average donation amount"
       />
       <StatCard
         icon={<GlobeIcon className="h-4 w-4" />}
-        label="Bumicert countries"
+        label="Countries with Bumicerts"
         value={formatCompact(geoStats.countriesRepresented)}
-        sub="Countries with Bumicerts"
       />
     </div>
   );
 }
 
-function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub: string }) {
-  return <StatsTile icon={icon} label={label} value={value} detail={sub} accent={label === "Total raised" || label === "Active Bumicerts"} />;
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return <StatsTile icon={icon} label={label} value={value} accent={label === "Total donated" || label === "Bumicerts with donations"} />;
 }
 
 function TopCountriesTable({ stats }: { stats: GeoStats }) {
@@ -775,7 +769,7 @@ function TableSkeleton() {
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-12">
-      {/* KPI tiles — mirror StatsTile: icon chip + value on one row, detail below. */}
+      {/* KPI tiles — mirror StatsTile: icon chip + value on one row, label below. */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
         {Array.from({ length: 6 }).map((_, index) => (
           <div key={index} className="relative overflow-hidden rounded-2xl bg-foreground/5 p-4 sm:rounded-3xl sm:p-6">

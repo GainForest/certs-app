@@ -794,22 +794,19 @@ function DonationsPanel({
   const isOwner = authSession.isLoggedIn && authSession.did === record.did;
   const stats: StatsTileItem[] = [
     {
-      label: "Total raised",
+      label: "raised",
       value: formatCompactUsd(totalUsd),
-      detail: "given to this project story",
       icon: <LeafIcon />,
       accent: true,
     },
     {
-      label: "Donations",
+      label: "Completed donations",
       value: formatCompact(usdReceipts.length),
-      detail: "completed donations",
       icon: <GiftIcon />,
     },
     {
-      label: "Donors",
+      label: "donors",
       value: formatCompact(donorCount),
-      detail: "unique donors",
       icon: <UsersRoundIcon />,
       accent: true,
     },

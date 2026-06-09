@@ -194,24 +194,20 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
   const stats = useMemo(
     () => [
       {
-        label: "Bumicerts",
+        label: "Published Bumicerts",
         value: totalStats?.totalBumicerts ?? null,
-        detail: "published",
       },
       {
-        label: "Project places",
+        label: "Bumicerts with locations",
         value: totalStats?.certifiedPlaces ?? null,
-        detail: "linked to Bumicerts",
       },
       {
-        label: "People named",
+        label: "Contributors across Bumicerts",
         value: totalStats?.contributors ?? null,
-        detail: "named in Bumicerts",
       },
       {
-        label: "Stories with photos",
+        label: "Bumicerts with a cover",
         value: totalStats?.projectPhotos ?? null,
-        detail: "include a project photo",
       },
     ],
     [totalStats],
@@ -625,7 +621,7 @@ function StatsBand({
   stats,
   loading,
 }: {
-  stats: Array<{ label: string; value: number | null; detail: string }>;
+  stats: Array<{ label: string; value: number | null }>;
   loading: boolean;
 }) {
   if (loading || stats.every((stat) => stat.value === null)) return null;
@@ -643,7 +639,6 @@ function StatsBand({
       items={stats.map((stat, index) => ({
         label: stat.label,
         value: stat.value === null ? null : formatStat(stat.value),
-        detail: stat.detail,
         icon: icons[index] ?? <LeafIcon />,
         accent: index % 2 === 0,
       }))}
