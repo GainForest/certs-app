@@ -151,9 +151,9 @@ function TainaChatCard({
         const reason = err.error || "Something went wrong.";
         const friendly =
           res.status === 503
-            ? "I'm not wired up yet; the AI service is not configured on this server."
+            ? "I'm not wired up yet; Taina's chat is not set up on this server."
             : res.status === 502
-              ? "The AI service is briefly unreachable. Try again in a moment."
+              ? "Taina's chat is briefly unreachable. Try again in a moment."
               : reason;
         setMessages((prev) => [
           ...prev,
@@ -165,7 +165,7 @@ function TainaChatCard({
       if (!reader) {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: "⚠️ No response stream" },
+          { role: "assistant", content: "⚠️ I couldn't start a reply." },
         ]);
         return;
       }
@@ -220,7 +220,7 @@ function TainaChatCard({
         {
           role: "assistant",
           content:
-            "⚠️ Could not reach the AI service; check your connection and try again.",
+            "⚠️ Could not reach Taina's chat; check your connection and try again.",
         },
       ]);
     } finally {

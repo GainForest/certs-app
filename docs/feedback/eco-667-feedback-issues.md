@@ -1,7 +1,7 @@
 # ECO-667 team feedback issues
 
-Source: Linear issue `ECO-667` — “Collect team feedback for Bumicerts rewrite”  
-App reviewed: <https://certs-rewrite.gainforest.app>  
+Source: Linear issue `ECO-667` — “Collect team feedback for Bumicerts rewrite”
+App reviewed: <https://certs-rewrite.gainforest.app>
 Created from comments by Fatin, Niña, and Karma on 2026-06-08.
 
 Screenshots downloaded for review are in [`docs/feedback/eco-667/screenshots/`](./eco-667/screenshots/).
@@ -151,7 +151,7 @@ This is a practical delivery sequence, not the product story. The product story 
 
 ### 1. Rework the current organization management page into a Manage page
 
-**Source:** Fatin  
+**Source:** Fatin
 **Screenshots:**
 - Current page: [`fatin-01-org-manage-current.png`](./eco-667/screenshots/fatin-01-org-manage-current.png)
 - Proposed layout: [`fatin-02-manage-data-flow.png`](./eco-667/screenshots/fatin-02-manage-data-flow.png)
@@ -207,7 +207,7 @@ Since Bumicerts is being positioned as a data upload platform, including for Ma 
 
 ### 3. Replace “Profile Ready” achievement with evidence-linking achievement
 
-**Source:** Fatin  
+**Source:** Fatin
 **Screenshots:**
 - Current achievements: [`fatin-03-achievements-current.png`](./eco-667/screenshots/fatin-03-achievements-current.png)
 - Proposed achievements: [`fatin-04-achievements-proposed.png`](./eco-667/screenshots/fatin-04-achievements-proposed.png)
@@ -228,7 +228,7 @@ Final achievements list should be:
 
 ### 4. Add programme/funding tags to Bumicerts
 
-**Source:** Fatin  
+**Source:** Fatin
 **Screenshot:** [`fatin-05-programme-tags.png`](./eco-667/screenshots/fatin-05-programme-tags.png)
 
 **Feedback / issue:**
@@ -249,7 +249,7 @@ Each Bumicert should show which programme or funding initiative it belongs to, f
 
 ### 5. Make public timeline filters match Manage upload categories
 
-**Source:** Fatin  
+**Source:** Fatin
 **Screenshot:** [`fatin-06-timeline-tabs-current.png`](./eco-667/screenshots/fatin-06-timeline-tabs-current.png)
 
 **Feedback / issue:**
@@ -281,7 +281,7 @@ The current public timeline filters do not match the upload categories stewards 
 
 ### 6. Fix organization country filters
 
-**Sources:** Niña, Karma  
+**Sources:** Niña, Karma
 **Screenshot:** related search/filter context in [`karma-06-observations-country-filter-context.png`](./eco-667/screenshots/karma-06-observations-country-filter-context.png)
 
 **Feedback / issue:**
@@ -298,7 +298,7 @@ The current public timeline filters do not match the upload categories stewards 
 
 ### 7. Fix “With images” organization filter
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`karma-05-org-filter-empty-state.png`](./eco-667/screenshots/karma-05-org-filter-empty-state.png)
 
 **Feedback / issue:**
@@ -313,7 +313,7 @@ The “With images” filter appears not to return organizations even though met
 
 ### 8. Fix sorting on Bumicerts and organizations
 
-**Sources:** Niña, Karma  
+**Sources:** Niña, Karma
 **Screenshot:** [`nina-09-az-filter-messy.png`](./eco-667/screenshots/nina-09-az-filter-messy.png)
 
 **Feedback / issue:**
@@ -332,7 +332,7 @@ The “With images” filter appears not to return organizations even though met
 
 ### 9. Hide or remove test Bumicerts from the public browse page
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-08-test-bumicerts.png`](./eco-667/screenshots/nina-08-test-bumicerts.png)
 
 **Feedback / issue:**
@@ -347,7 +347,7 @@ Public browse currently shows obvious test items like “test” and “My aweso
 
 ### 10. Fix awkward empty grid slot / invalid returned items
 
-**Source:** Karma  
+**Source:** Karma
 **Screenshot note:** Karma attached a screenshot in this part of the thread, but the downloaded image appears to show the map “Load more” state rather than the grid gap. The issue below comes from the written feedback.
 
 **Feedback / issue:**
@@ -362,7 +362,7 @@ An empty-looking space in the grid makes it feel like an item failed to render o
 
 ### 11. Improve map pagination UX
 
-**Source:** Karma  
+**Source:** Karma
 **Screenshot:** [`karma-04-map-load-more.png`](./eco-667/screenshots/karma-04-map-load-more.png)
 
 **Feedback / issue:**
@@ -379,7 +379,7 @@ The “Load more” button under the map is unintuitive. It looks like leftover 
 
 ### 12. Keep Bumicert card titles visible for at least two lines
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-02-card-title-clamped.png`](./eco-667/screenshots/nina-02-card-title-clamped.png)
 
 **Feedback / issue:**
@@ -394,7 +394,7 @@ Many Bumicert titles are cut off too aggressively. Reviewers want enough title c
 
 ### 13. Add location to Bumicert cards
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-05-card-logos-location-tags.png`](./eco-667/screenshots/nina-05-card-logos-location-tags.png)
 
 **Feedback / issue:**
@@ -409,7 +409,7 @@ Bumicert cards need clearer place context.
 
 ### 14. Explain or remove unclear logos/icons under Bumicert cards
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-05-card-logos-location-tags.png`](./eco-667/screenshots/nina-05-card-logos-location-tags.png)
 
 **Feedback / issue:**
@@ -424,7 +424,7 @@ Logos/icons under Bumicert cards are not intuitive.
 
 ### 15. Rework Bumicert browse filters
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-04-bumicert-filters-unclear.png`](./eco-667/screenshots/nina-04-bumicert-filters-unclear.png)
 
 **Feedback / issue:**
@@ -439,7 +439,7 @@ Current filters do not make sense to the reviewer: “All Projects”, “Photos
 
 ### 16. Rework top metrics on Bumicerts page
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-03-unclear-bumicert-metrics.png`](./eco-667/screenshots/nina-03-unclear-bumicert-metrics.png)
 
 **Feedback / issue:**
@@ -454,7 +454,7 @@ Current filters do not make sense to the reviewer: “All Projects”, “Photos
 
 ### 17. Reduce oversized project description text on Bumicert detail pages
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-06-description-font-large.png`](./eco-667/screenshots/nina-06-description-font-large.png)
 
 **Feedback / issue:**
@@ -469,7 +469,7 @@ The project description font feels too large and inconsistent.
 
 ### 18. Rename “Completed gifts” in Bumicert donation panels
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-07-completed-gifts-unclear.png`](./eco-667/screenshots/nina-07-completed-gifts-unclear.png)
 
 **Feedback / issue:**
@@ -487,7 +487,7 @@ Use clearer donation wording, for example:
 
 ### 19. Improve organization metrics labels and color consistency
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshots:**
 - Light mode: [`nina-10-org-metrics-copy-colors-light.png`](./eco-667/screenshots/nina-10-org-metrics-copy-colors-light.png)
 - Dark mode: [`nina-11-org-metrics-copy-colors-dark.png`](./eco-667/screenshots/nina-11-org-metrics-copy-colors-dark.png)
@@ -506,7 +506,7 @@ Use clearer donation wording, for example:
 
 ### 20. Explain or rename “Reviewed organization”
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-12-reviewed-organization-unclear.png`](./eco-667/screenshots/nina-12-reviewed-organization-unclear.png)
 
 **Feedback / issue:**
@@ -521,7 +521,7 @@ The label “Reviewed organization” is unclear.
 
 ### 21. Fix organization cover photos and “Mapped” wording
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-13-org-cover-photos-mapped.png`](./eco-667/screenshots/nina-13-org-cover-photos-mapped.png)
 
 **Feedback / issue:**
@@ -539,7 +539,7 @@ The label “Reviewed organization” is unclear.
 
 ### 22. Clarify audio recordings on observations page
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-14-observations-recordings.png`](./eco-667/screenshots/nina-14-observations-recordings.png)
 
 **Feedback / issue:**
@@ -566,7 +566,7 @@ Observation filters should support categories like plants, trees, birds, flowers
 
 ### 24. Use common/local names by default for observations and add location
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-15-observation-scientific-name-location.png`](./eco-667/screenshots/nina-15-observation-scientific-name-location.png)
 
 **Feedback / issue:**
@@ -583,7 +583,7 @@ Scientific names are intimidating as the main card title. Common/local names are
 
 ### 25. Rename donation metrics
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-16-donation-metrics-copy.png`](./eco-667/screenshots/nina-16-donation-metrics-copy.png)
 
 **Feedback / issue:**
@@ -613,7 +613,7 @@ The homepage should keep the language option.
 
 ### 27. Highlight key homepage role phrases in green
 
-**Source:** Niña  
+**Source:** Niña
 **Screenshot:** [`nina-01-homepage-highlight-roles.png`](./eco-667/screenshots/nina-01-homepage-highlight-roles.png)
 
 **Feedback / issue:**
@@ -655,7 +655,7 @@ The Site Health page/section is unclear: reviewer did not understand what it is 
 
 ### 30. Improve dark mode contrast for step numbers and small text
 
-**Source:** Karma  
+**Source:** Karma
 **Screenshots:**
 - Step numbers: [`karma-01-dark-mode-number-contrast.png`](./eco-667/screenshots/karma-01-dark-mode-number-contrast.png)
 - Accordion/number text: [`karma-02-dark-mode-small-font.png`](./eco-667/screenshots/karma-02-dark-mode-small-font.png)
@@ -672,7 +672,7 @@ The numbers “01”, “02”, “03”, etc. are too dark in dark mode. Some t
 
 ### 31. Improve homepage performance
 
-**Source:** Karma  
+**Source:** Karma
 **Screenshot:** [`karma-03-performance-report.png`](./eco-667/screenshots/karma-03-performance-report.png)
 
 **Feedback / issue:**

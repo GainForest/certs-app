@@ -45,14 +45,14 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") {
-      return Response.json({ error: "Invalid request body" }, { status: 400 });
+      return Response.json({ error: "I could not read that message." }, { status: 400 });
     }
 
     const rawMessages = (body as {
       messages?: Array<{ role: string; content: string }>;
     }).messages;
     if (!rawMessages || !Array.isArray(rawMessages) || rawMessages.length === 0) {
-      return Response.json({ error: "No messages provided" }, { status: 400 });
+      return Response.json({ error: "Please write a message first." }, { status: 400 });
     }
 
     const messages = rawMessages
@@ -69,8 +69,7 @@ export async function POST(request: Request) {
     if (!process.env.OPENROUTER_API_KEY) {
       return Response.json(
         {
-          error:
-            "Chat is not configured on this server; set OPENROUTER_API_KEY in .env.local.",
+          error: "Taina is not set up on this server yet.",
         },
         { status: 503 },
       );
@@ -86,7 +85,7 @@ export async function POST(request: Request) {
     if (!res.ok) {
       const err = await res.text().catch(() => "");
       console.error("[sim-chat] OpenRouter error", res.status, err);
-      return Response.json({ error: "AI service unavailable" }, { status: 502 });
+      return Response.json({ error: "Taina is briefly unreachable." }, { status: 502 });
     }
 
     return new Response(res.body, {
@@ -98,6 +97,6 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error("[sim-chat] failed", err);
-    return Response.json({ error: "Chat failed" }, { status: 500 });
+    return Response.json({ error: "Taina could not reply right now." }, { status: 500 });
   }
 }
