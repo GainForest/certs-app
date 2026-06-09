@@ -17,7 +17,6 @@ import {
   CheckIcon,
   EyeIcon,
   LeafIcon,
-  LightbulbIcon,
   Loader2Icon,
   MapPinIcon,
   PencilIcon,
@@ -45,6 +44,7 @@ import {
   SiteEditorModalId,
 } from "@/app/(manage)/manage/_modals/SiteEditorModal";
 import { BumicertCardVisual } from "@/components/bumicert/BumicertCard";
+import { TainaChatDock, TainaMobileTrigger } from "./Taina";
 import { HeaderContent } from "@/app/_components/HeaderSlots";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -121,15 +121,6 @@ const STEPS: Array<{ id: StepId; label: string; title: string; subtitle: string 
   { id: "people", label: "People & places", title: "people & places", subtitle: "Credit who did the work and link the sites involved." },
   { id: "review", label: "Review", title: "review & publish", subtitle: "Verify it all reads well, then make it public." },
 ];
-
-const TIPS = [
-  "A clear, recognisable title travels further than a clever one.",
-  "Lead the summary with the outcome, not the method.",
-  "Name your evidence in the description: counts, plots, dates.",
-  "Credit communities and teams, not only individuals.",
-  "Linked sites make a Bumicert much easier to verify.",
-  "A single honest photo builds more trust than none.",
-] as const;
 
 const FIELD =
   "w-full rounded-xl border border-border bg-background text-foreground shadow-none outline-none transition-colors placeholder:text-muted-foreground/65 focus:border-primary/45 focus:bg-background focus:ring-2 focus:ring-primary/20";
@@ -1005,19 +996,6 @@ function PreviewContent({
   );
 }
 
-function TipsContent() {
-  return (
-    <ul className="space-y-2.5">
-      {TIPS.map((tip) => (
-        <li key={tip} className="flex gap-2.5 text-[13px] leading-5 text-muted-foreground">
-          <LeafIcon className="mt-0.5 size-3.5 shrink-0 text-primary/55" />
-          {tip}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function DraftsSubheader({
   drafts,
   activeDraftId,
@@ -1105,7 +1083,7 @@ export function NewBumicertClient({ did, ownerIdentifier, profile }: { did: stri
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState<PublishResult | null>(null);
-  const [mobileSheet, setMobileSheet] = useState<"preview" | "tips" | null>(null);
+  const [mobileSheet, setMobileSheet] = useState<"preview" | null>(null);
   const autosaveTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -1421,17 +1399,15 @@ export function NewBumicertClient({ did, ownerIdentifier, profile }: { did: stri
                 </div>
               </div>
 
-              {/* Desktop sidebar: separate Preview and Tips sections */}
+              {/* Desktop sidebar: live preview, with Taina's chat docked
+                  just below it (where the static Tips list used to be). */}
               <aside className="hidden xl:sticky xl:top-20 xl:block xl:self-start">
                 <div className="space-y-8">
                   <div>
                     <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground/70">Live preview</p>
                     <PreviewContent {...previewProps} />
                   </div>
-                  <div>
-                    <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground/70">Tips</p>
-                    <TipsContent />
-                  </div>
+                  <TainaChatDock />
                 </div>
               </aside>
             </form>
@@ -1439,13 +1415,13 @@ export function NewBumicertClient({ did, ownerIdentifier, profile }: { did: stri
         )}
       </div>
 
-      {/* Mobile floating buttons (left) + sheets */}
+      {/* Mobile floating Preview button + sheet */}
       {!publishResult ? (
         <>
-          <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2 xl:hidden">
-            <Button type="button" variant="outline" size="sm" onClick={() => setMobileSheet("tips")} className="shadow-lg">
-              <LightbulbIcon className="size-4" /> Tips
-            </Button>
+          <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-3 xl:hidden">
+            {/* Taina sits just above the Preview button — where the old
+                "Tips" button used to be. Tapping opens her chat in a sheet. */}
+            <TainaMobileTrigger />
             <Button type="button" variant="outline" size="sm" onClick={() => setMobileSheet("preview")} className="shadow-lg">
               <EyeIcon className="size-4" /> Preview
             </Button>
@@ -1470,18 +1446,14 @@ export function NewBumicertClient({ did, ownerIdentifier, profile }: { did: stri
                 >
                   <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-muted-foreground/25" />
                   <div className="mb-5 flex items-center justify-between">
-                    <span className="font-instrument text-2xl italic text-foreground">{mobileSheet === "preview" ? "Preview" : "Tips"}</span>
+                    <span className="font-instrument text-2xl italic text-foreground">Preview</span>
                     <button type="button" onClick={() => setMobileSheet(null)} aria-label="Close" className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted">
                       <XIcon className="size-5" />
                     </button>
                   </div>
-                  {mobileSheet === "preview" ? (
-                    <div className="mx-auto max-w-[18rem]">
-                      <PreviewContent {...previewProps} />
-                    </div>
-                  ) : (
-                    <TipsContent />
-                  )}
+                  <div className="mx-auto max-w-[18rem]">
+                    <PreviewContent {...previewProps} />
+                  </div>
                 </motion.div>
               </motion.div>
             ) : null}
