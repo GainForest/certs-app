@@ -72,7 +72,6 @@ const SORT_LABELS: Record<SortMode, string> = Object.fromEntries(
 const BUMICERTS_PAGE_SIZE = 48;
 const INITIAL_CARD_LIMIT = 96;
 const CARD_BATCH_SIZE = 96;
-let bumicertsDebugInstanceCounter = 0;
 
 export function BumicertsExploreClient({ records: initialRecords = [] }: { records?: BumicertRecord[] }) {
   const [records, setRecords] = useState<BumicertRecord[]>(initialRecords);
@@ -109,76 +108,23 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
   const sortMenuRef = useRef<HTMLDivElement | null>(null);
   const filtersMenuRef = useRef<HTMLDivElement | null>(null);
   const requestSeqRef = useRef(0);
-  const instanceIdRef = useRef<string | null>(null);
-  const renderCountRef = useRef(0);
-  if (instanceIdRef.current === null) {
-    bumicertsDebugInstanceCounter += 1;
-    instanceIdRef.current = `bumicerts-${bumicertsDebugInstanceCounter}`;
-  }
-  const instanceId = instanceIdRef.current;
-  renderCountRef.current += 1;
-
-  debugBumicerts("render", {
-    instanceId,
-    render: renderCountRef.current,
-    href: typeof window === "undefined" ? "server" : window.location.href,
-    query,
-    deferredQuery,
-    sort,
-    filtersParam,
-    filters,
-    queryView,
-    locationView: readViewFromLocation(),
-    pendingView: pendingViewRef.current,
-    view,
-    records: records.length,
-    loading,
-    loadingMore,
-    hasMore,
-    cursor,
-  });
 
   useLayoutEffect(() => {
     const locationView = readViewFromLocation();
     const canonicalLocationView = locationView ?? "cards";
     const pendingView = pendingViewRef.current;
     if (pendingView !== null && canonicalLocationView === pendingView) {
-      debugBumicerts("view:pending-confirmed", { instanceId, pendingView, locationView, queryView });
       pendingViewRef.current = null;
     }
     const nextView = pendingViewRef.current ?? locationView ?? queryView;
-    setLocalView((currentView) => {
-      if (currentView === nextView) return currentView;
-      debugBumicerts("view:sync-local", {
-        instanceId,
-        from: currentView,
-        to: nextView,
-        locationView,
-        queryView,
-        pendingView: pendingViewRef.current,
-      });
-      return nextView;
-    });
-  }, [instanceId, queryView]);
-
-  useEffect(() => {
-    debugBumicerts("mount", { instanceId, href: window.location.href });
-    return () => debugBumicerts("unmount", { instanceId, href: window.location.href });
-  }, [instanceId]);
-
-  useEffect(() => {
-    debugBumicerts("view:committed", { instanceId, view, queryView, locationView: readViewFromLocation() });
-  }, [instanceId, queryView, view]);
+    setLocalView((currentView) => currentView === nextView ? currentView : nextView);
+  }, [queryView]);
 
   useEffect(() => {
     const controller = new AbortController();
     setStatsLoading(true);
-    debugBumicerts("stats:start", { instanceId });
     fetchBumicertStats(controller.signal)
-      .then((nextStats) => {
-        debugBumicerts("stats:success", { instanceId, nextStats });
-        setTotalStats(nextStats);
-      })
+      .then((nextStats) => setTotalStats(nextStats))
       .catch((error) => {
         if ((error as Error).name !== "AbortError") {
           console.warn("[bumicerts] stats fetch failed", error);
@@ -187,13 +133,9 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
       })
       .finally(() => {
         if (!controller.signal.aborted) setStatsLoading(false);
-        debugBumicerts("stats:done", { instanceId, aborted: controller.signal.aborted });
       });
-    return () => {
-      debugBumicerts("stats:abort", { instanceId });
-      controller.abort();
-    };
-  }, [instanceId]);
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (initialRecords.length > 0) return;
@@ -201,7 +143,6 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
     const requestSeq = ++requestSeqRef.current;
     const options = { query: deferredQuery, filters, sort };
     const isCurrent = () => requestSeqRef.current === requestSeq && !controller.signal.aborted;
-    debugBumicerts("fetch:start", { instanceId, requestSeq, options, href: window.location.href });
     setLoading(true);
     setLoadingMore(false);
     setRecords([]);
@@ -209,14 +150,6 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
     setHasMore(true);
     fetchBumicerts(BUMICERTS_PAGE_SIZE, null, controller.signal, undefined, options)
       .then((page) => {
-        debugBumicerts("fetch:success", {
-          instanceId,
-          requestSeq,
-          current: isCurrent(),
-          received: page.records.length,
-          cursor: page.cursor,
-          hasMore: page.hasMore,
-        });
         if (!isCurrent()) return;
         setRecords(page.records);
         setCursor(page.cursor);
@@ -226,14 +159,10 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
         if ((error as Error).name !== "AbortError") console.warn("[bumicerts] fetch failed", error);
       })
       .finally(() => {
-        debugBumicerts("fetch:done", { instanceId, requestSeq, current: isCurrent(), aborted: controller.signal.aborted });
         if (isCurrent()) setLoading(false);
       });
-    return () => {
-      debugBumicerts("fetch:abort", { instanceId, requestSeq });
-      controller.abort();
-    };
-  }, [initialRecords.length, deferredQuery, filters, sort, instanceId]);
+    return () => controller.abort();
+  }, [initialRecords.length, deferredQuery, filters, sort]);
 
   const visibleRecords = useMemo(() => {
     return records.filter((record) => filters.every((key) => FILTER_CHIPS.find((chip) => chip.key === key)?.predicate(record))).toSorted((a, b) => {
@@ -329,14 +258,6 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
   }, [openFilters]);
 
   const setView = useCallback((nextView: ViewMode) => {
-    debugBumicerts("view:set", {
-      instanceId,
-      from: view,
-      to: nextView,
-      queryView,
-      locationView: readViewFromLocation(),
-      href: typeof window === "undefined" ? "server" : window.location.href,
-    });
     pendingViewRef.current = nextView;
     setLocalView(nextView);
     void setQueryView(nextView)
@@ -345,19 +266,16 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
         const settledView = locationView ?? "cards";
         if (pendingViewRef.current === nextView && settledView === nextView) {
           pendingViewRef.current = null;
-          debugBumicerts("view:pending-cleared", { instanceId, nextView, locationView, href: window.location.href });
         }
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (pendingViewRef.current === nextView) pendingViewRef.current = null;
-        debugBumicerts("view:set-error", { instanceId, nextView, error });
       });
-  }, [instanceId, queryView, setQueryView, view]);
+  }, [setQueryView]);
 
   const updateFilters = useCallback((nextFilters: FilterKey[]) => {
-    debugBumicerts("filters:set", { instanceId, from: filters, to: nextFilters, serialized: serializeFilterParam(nextFilters) });
     void setFiltersParam(serializeFilterParam(nextFilters));
-  }, [filters, instanceId, setFiltersParam]);
+  }, [setFiltersParam]);
 
   const toggleFilter = useCallback((key: FilterKey) => {
     updateFilters(filters.includes(key) ? filters.filter((value) => value !== key) : [...filters, key]);
@@ -365,20 +283,15 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
 
   const clearFilters = useCallback(() => updateFilters([]), [updateFilters]);
   const loadMore = useCallback(() => {
-    if (loading || loadingMore || !hasMore) {
-      debugBumicerts("load-more:skip", { instanceId, loading, loadingMore, hasMore });
-      return;
-    }
+    if (loading || loadingMore || !hasMore) return;
 
     const controller = new AbortController();
     const requestSeq = ++requestSeqRef.current;
     const isCurrent = () => requestSeqRef.current === requestSeq && !controller.signal.aborted;
     const base = records;
-    debugBumicerts("load-more:start", { instanceId, requestSeq, cursor, query: deferredQuery, filters, sort, baseCount: base.length });
     setLoadingMore(true);
     fetchBumicerts(BUMICERTS_PAGE_SIZE, cursor, controller.signal, undefined, { query: deferredQuery, filters, sort })
       .then((page) => {
-        debugBumicerts("load-more:success", { instanceId, requestSeq, current: isCurrent(), received: page.records.length, cursor: page.cursor, hasMore: page.hasMore });
         if (!isCurrent()) return;
         setRecords(mergeBumicertRecords(base, page.records));
         setCursor(page.cursor);
@@ -388,10 +301,9 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
         if ((error as Error).name !== "AbortError") console.warn("[bumicerts] load more failed", error);
       })
       .finally(() => {
-        debugBumicerts("load-more:done", { instanceId, requestSeq, current: isCurrent(), aborted: controller.signal.aborted });
         if (isCurrent()) setLoadingMore(false);
       });
-  }, [cursor, deferredQuery, filters, hasMore, instanceId, loading, loadingMore, records, sort]);
+  }, [cursor, deferredQuery, filters, hasMore, loading, loadingMore, records, sort]);
   const openRecord = useCallback((record: BumicertRecord) => setDrawer(record), []);
   const openMapRecord = useCallback((record: ExplorerRecord) => {
     if (record.kind === "bumicert") setDrawer(record);
@@ -446,11 +358,7 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
                   <input
                     type="text"
                     value={query}
-                    onChange={(event) => {
-                      const nextQuery = event.target.value;
-                      debugBumicerts("query:set", { instanceId, from: query, to: nextQuery, href: window.location.href });
-                      void setQuery(nextQuery);
-                    }}
+                    onChange={(event) => void setQuery(event.target.value)}
                     aria-label="Search projects"
                     placeholder="Search projects by name, keyword, or location"
                     className="min-w-0 flex-1 truncate border-0 bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
@@ -505,7 +413,6 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
                           key={option.value}
                           type="button"
                           onClick={() => {
-                            debugBumicerts("sort:set", { instanceId, from: sort, to: option.value, href: window.location.href });
                             void setSort(option.value);
                             setOpenSort(false);
                           }}
@@ -1057,22 +964,6 @@ function readViewFromLocation(): ViewMode | null {
   if (typeof window === "undefined") return null;
   const value = new URLSearchParams(window.location.search).get("view");
   return VIEW_MODES.includes(value as ViewMode) ? (value as ViewMode) : null;
-}
-
-function debugBumicerts(event: string, details: Record<string, unknown> = {}) {
-  if (!shouldDebugBumicerts()) return;
-  const time = typeof performance === "undefined" ? Date.now() : performance.now().toFixed(1);
-  console.log(`[bumicerts-debug] ${event}`, { time, ...details });
-}
-
-function shouldDebugBumicerts(): boolean {
-  if (process.env.NODE_ENV !== "production") return true;
-  if (typeof window === "undefined") return false;
-  try {
-    return new URLSearchParams(window.location.search).get("debug") === "bumicerts" || window.localStorage.getItem("debug")?.includes("bumicerts") === true;
-  } catch {
-    return new URLSearchParams(window.location.search).get("debug") === "bumicerts";
-  }
 }
 
 const orgLabelTextVariants = {

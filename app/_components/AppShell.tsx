@@ -209,19 +209,14 @@ export function AppShell({
 
   return (
     <HeaderSlotsProvider>
-      <div className="hidden md:flex h-screen overflow-hidden">
-        <UnifiedSidebar
-          authSession={resolvedAuthSession}
-          manageAccountKind={resolvedManageAccountKind}
-          isProfileLoading={isProfileLoading}
-        />
-        <main className="relative flex-1 overflow-y-auto">
-          <Header authSession={resolvedAuthSession} profileName={resolvedProfileName} onOpenMobileNav={() => setMobileNavOpen(true)} />
-          {children}
-        </main>
-      </div>
-
-      <div className="flex h-screen flex-col overflow-hidden md:hidden">
+      <div className="flex h-screen overflow-hidden">
+        <div className="hidden md:block">
+          <UnifiedSidebar
+            authSession={resolvedAuthSession}
+            manageAccountKind={resolvedManageAccountKind}
+            isProfileLoading={isProfileLoading}
+          />
+        </div>
         <MobileNavDrawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
           <UnifiedSidebar
             authSession={resolvedAuthSession}
@@ -229,10 +224,10 @@ export function AppShell({
             isProfileLoading={isProfileLoading}
           />
         </MobileNavDrawer>
-        <div className="relative flex-1 overflow-y-auto">
+        <main className="relative flex-1 overflow-y-auto">
           <Header authSession={resolvedAuthSession} profileName={resolvedProfileName} onOpenMobileNav={() => setMobileNavOpen(true)} />
           {children}
-        </div>
+        </main>
       </div>
     </HeaderSlotsProvider>
   );
