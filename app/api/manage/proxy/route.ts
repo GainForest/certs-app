@@ -1,3 +1,5 @@
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 import { headers } from "next/headers";
 import { fetchAuthSession } from "@/app/_lib/auth-server";
 import { getAuthBaseUrl } from "@/app/_lib/auth";
@@ -35,6 +37,7 @@ const MULTIMEDIA_COLLECTION = "app.gainforest.ac.multimedia";
 const DATASET_COLLECTION = "app.gainforest.dwc.dataset";
 const MAX_URL_IMAGE_BYTES = 4.5 * 1024 * 1024;
 const PHOTO_FETCH_TIMEOUT_MS = 30_000;
+const MAX_PHOTO_REDIRECTS = 5;
 const ACCEPTED_URL_IMAGE_MIME_TYPES = new Set([
   "image/jpeg",
   "image/jpg",
@@ -59,6 +62,120 @@ function isHttpUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+function isBlockedHostname(hostname: string): boolean {
+  const normalized = hostname.replace(/^\[|\]$/g, "").replace(/\.$/, "").toLowerCase();
+  return normalized === "localhost" || normalized.endsWith(".localhost");
+}
+
+function isBlockedIpAddress(address: string): boolean {
+  const normalized = address.replace(/^\[|\]$/g, "").toLowerCase();
+  const ipv4Mapped = normalized.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (ipv4Mapped?.[1]) return isBlockedIpAddress(ipv4Mapped[1]);
+
+  if (isIP(normalized) === 4) {
+    const parts = normalized.split(".").map((part) => Number(part));
+    const [a = 0, b = 0] = parts;
+    return (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      a >= 224
+    );
+  }
+
+  if (isIP(normalized) === 6) {
+    return (
+      normalized === "::" ||
+      normalized === "::1" ||
+      normalized.startsWith("fc") ||
+      normalized.startsWith("fd") ||
+      normalized.startsWith("fe8") ||
+      normalized.startsWith("fe9") ||
+      normalized.startsWith("fea") ||
+      normalized.startsWith("feb")
+    );
+  }
+
+  return true;
+}
+
+async function assertFetchablePhotoUrl(url: string): Promise<void> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error("Could not open this photo link.");
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("Could not open this photo link.");
+  }
+
+  const hostname = parsed.hostname;
+  if (isBlockedHostname(hostname)) throw new Error("Could not open this photo link.");
+
+  if (isIP(hostname.replace(/^\[|\]$/g, ""))) {
+    if (isBlockedIpAddress(hostname)) throw new Error("Could not open this photo link.");
+    return;
+  }
+
+  let addresses: { address: string; family: number }[];
+  try {
+    addresses = await lookup(hostname, { all: true, verbatim: true });
+  } catch {
+    throw new Error("Could not open this photo link.");
+  }
+
+  if (addresses.length === 0 || addresses.some((address) => isBlockedIpAddress(address.address))) {
+    throw new Error("Could not open this photo link.");
+  }
+}
+
+function photoTooLargeError(sizeBytes: number): Error {
+  const sizeMb = (sizeBytes / (1024 * 1024)).toFixed(1);
+  return new Error(`This photo is too large: ${sizeMb} MB. Maximum is 4.5 MB.`);
+}
+
+async function readPhotoResponseBytes(response: Response): Promise<Uint8Array> {
+  if (!response.body) throw new Error("Could not open this photo link.");
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_URL_IMAGE_BYTES) {
+        await reader.cancel().catch(() => undefined);
+        throw photoTooLargeError(totalBytes);
+      }
+      chunks.push(value);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Photo link took too long to open.");
+    }
+    throw error;
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
 }
 
 function isMutationBody(value: unknown): value is MutationBody {
@@ -293,22 +410,45 @@ async function incrementDatasetRecordCount(
 }
 
 async function fetchPhotoBytes(url: string): Promise<{ bytes: Uint8Array; mimeType: string }> {
-  const directUrl = transformPhotoUrl(url);
+  let directUrl = transformPhotoUrl(url);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PHOTO_FETCH_TIMEOUT_MS);
 
   try {
     let response: Response;
-    try {
-      response = await fetch(directUrl, { signal: controller.signal, redirect: "follow" });
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error("Photo link took too long to open.");
+    for (let redirectCount = 0; ; redirectCount++) {
+      await assertFetchablePhotoUrl(directUrl);
+
+      try {
+        response = await fetch(directUrl, { signal: controller.signal, redirect: "manual" });
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          throw new Error("Photo link took too long to open.");
+        }
+        throw new Error("Could not open this photo link.");
       }
-      throw new Error("Could not open this photo link.");
+
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get("location");
+        if (!location || redirectCount >= MAX_PHOTO_REDIRECTS) throw new Error("Could not open this photo link.");
+        try {
+          directUrl = new URL(location, directUrl).toString();
+        } catch {
+          throw new Error("Could not open this photo link.");
+        }
+        continue;
+      }
+
+      break;
     }
 
     if (!response.ok) throw new Error("Could not open this photo link.");
+
+    const contentLength = response.headers.get("content-length");
+    const contentLengthBytes = contentLength ? Number(contentLength) : NaN;
+    if (Number.isFinite(contentLengthBytes) && contentLengthBytes > MAX_URL_IMAGE_BYTES) {
+      throw photoTooLargeError(contentLengthBytes);
+    }
 
     const rawContentType = response.headers.get("content-type") ?? "";
     const mimeType = rawContentType.split(";")[0]?.trim().toLowerCase() ?? "";
@@ -318,19 +458,15 @@ async function fetchPhotoBytes(url: string): Promise<{ bytes: Uint8Array; mimeTy
 
     let bytes: Uint8Array;
     try {
-      bytes = new Uint8Array(await response.arrayBuffer());
+      bytes = await readPhotoResponseBytes(response);
     } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error("Photo link took too long to open.");
-      }
-      throw new Error("Could not open this photo link.");
+      if (error instanceof Error && error.message.startsWith("This photo is too large")) throw error;
+      throw error instanceof Error && error.message === "Photo link took too long to open."
+        ? error
+        : new Error("Could not open this photo link.");
     }
 
     if (bytes.byteLength === 0) throw new Error("This photo link returned an empty photo.");
-    if (bytes.byteLength > MAX_URL_IMAGE_BYTES) {
-      const sizeMb = (bytes.byteLength / (1024 * 1024)).toFixed(1);
-      throw new Error(`This photo is too large: ${sizeMb} MB. Maximum is 4.5 MB.`);
-    }
 
     return { bytes, mimeType };
   } finally {

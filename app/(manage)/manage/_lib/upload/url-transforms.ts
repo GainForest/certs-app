@@ -15,10 +15,15 @@ function transformGoogleDriveUrl(url: string): string | null {
   return fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : null;
 }
 
+function isExactOrSubdomain(hostname: string, domain: string): boolean {
+  return hostname === domain || hostname.endsWith(`.${domain}`);
+}
+
 function transformDropboxUrl(url: string): string | null {
   try {
     const parsed = new URL(url);
-    if (!parsed.hostname.includes("dropbox.com") && !parsed.hostname.includes("dl.dropboxusercontent.com")) {
+    const hostname = parsed.hostname.toLowerCase();
+    if (!isExactOrSubdomain(hostname, "dropbox.com") && hostname !== "dl.dropboxusercontent.com") {
       return null;
     }
 
@@ -32,14 +37,19 @@ function transformDropboxUrl(url: string): string | null {
 export function transformPhotoUrl(url: string): string {
   const trimmed = url.trim();
 
-  if (trimmed.includes("drive.google.com") || trimmed.includes("docs.google.com")) {
-    const transformed = transformGoogleDriveUrl(trimmed);
-    if (transformed) return transformed;
-  }
+  try {
+    const hostname = new URL(trimmed).hostname.toLowerCase();
+    if (hostname === "drive.google.com" || hostname === "docs.google.com") {
+      const transformed = transformGoogleDriveUrl(trimmed);
+      if (transformed) return transformed;
+    }
 
-  if (trimmed.includes("dropbox.com")) {
-    const transformed = transformDropboxUrl(trimmed);
-    if (transformed) return transformed;
+    if (isExactOrSubdomain(hostname, "dropbox.com") || hostname === "dl.dropboxusercontent.com") {
+      const transformed = transformDropboxUrl(trimmed);
+      if (transformed) return transformed;
+    }
+  } catch {
+    // Keep the unmodified fallback below.
   }
 
   return trimmed;

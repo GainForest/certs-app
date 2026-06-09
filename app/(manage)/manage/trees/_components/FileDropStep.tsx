@@ -591,7 +591,7 @@ export default function FileDropStep({
 
       <div className="flex items-center justify-end pt-2 border-t border-border">
         <Button onClick={handleContinue} disabled={!canContinue}>
-          Continue to Column Mapping
+          Continue to match headings
         </Button>
       </div>
     </div>

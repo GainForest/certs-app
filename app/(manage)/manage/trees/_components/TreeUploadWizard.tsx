@@ -72,7 +72,7 @@ function initWizard(did: string): { state: WizardState; uploadId: string } {
 
 const STEPS = [
   { number: 1, label: "Choose File" },
-  { number: 2, label: "Map Columns" },
+  { number: 2, label: "Match Headings" },
   { number: 3, label: "Preview" },
   { number: 4, label: "Save" },
 ] as const;

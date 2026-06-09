@@ -312,13 +312,15 @@ export default function UploadStep({
         return;
       }
     } else if (datasetSelection.mode === "existing") {
+      datasetUri = datasetSelection.dataset.uri;
+      datasetRkey = datasetSelection.dataset.rkey;
+      datasetCreatedAt = datasetSelection.dataset.createdAt ?? undefined;
       try {
         const currentTreeGroup = await getDatasetRecord(datasetSelection.dataset.rkey);
         datasetUri = currentTreeGroup.uri;
-        datasetRkey = datasetSelection.dataset.rkey;
-        datasetCreatedAt = typeof currentTreeGroup.record.createdAt === "string" ? currentTreeGroup.record.createdAt : undefined;
+        datasetCreatedAt = typeof currentTreeGroup.record.createdAt === "string" ? currentTreeGroup.record.createdAt : datasetCreatedAt;
       } catch {
-        setDatasetUpdateWarning("The selected tree group could not be checked, so saved trees will be kept without that group.");
+        setDatasetUpdateWarning("The selected tree group could not be checked, so its tree count may not update.");
       }
     }
 
