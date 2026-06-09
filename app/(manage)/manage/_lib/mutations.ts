@@ -12,7 +12,7 @@ import type {
   AppendExistingDatasetRowInput,
 } from "./upload/append-existing-dataset";
 
-type FloraMeasurementFields = {
+export type FloraMeasurementFields = {
   dbh?: string;
   totalHeight?: string;
   basalDiameter?: string;
@@ -23,10 +23,22 @@ type UpdateOccurrenceData = {
   scientificName?: string;
   vernacularName?: string;
   eventDate?: string;
+  recordedBy?: string;
   decimalLatitude?: string;
   decimalLongitude?: string;
   locality?: string;
+  country?: string;
+  habitat?: string;
+  establishmentMeans?: string;
   occurrenceRemarks?: string;
+};
+
+type UpdateMeasurementData = {
+  result?: Record<string, unknown>;
+};
+
+type UpdateMultimediaData = {
+  caption?: string;
 };
 
 type MutationPayload =
@@ -37,7 +49,10 @@ type MutationPayload =
   | { operation: "getDatasetRecord"; rkey: string }
   | { operation: "incrementDatasetRecordCount"; rkey: string; increment: number }
   | { operation: "createMeasurement"; occurrenceRef: string; flora: FloraMeasurementFields }
+  | { operation: "updateMeasurement"; rkey: string; data: UpdateMeasurementData; unset?: string[]; resultUnset?: string[] }
   | { operation: "updateOccurrence"; rkey: string; data: UpdateOccurrenceData; unset?: string[] }
+  | { operation: "updateMultimedia"; rkey: string; data: UpdateMultimediaData; unset?: string[] }
+  | { operation: "deleteOccurrenceCascade"; rkey: string }
   | { operation: "detachOccurrenceFromDataset"; rkey: string }
   | {
       operation: "appendExistingDataset";
@@ -59,6 +74,14 @@ type RecordMutationResult = { uri: string; cid: string; rkey: string; record?: R
 type UploadBlobResult = { ref: unknown; mimeType: string; size: number; blob?: unknown };
 type MultimediaResult = { uri: string; cid: string; rkey: string; record?: Record<string, unknown> };
 type DatasetRecordResult = { uri: string; cid: string; rkey: string; record: Record<string, unknown> };
+type CascadeDeleteResult = {
+  deletedOccurrenceRkey: string;
+  deletedMeasurementRkeys: string[];
+  deletedMultimediaRkeys: string[];
+  treeGroupCountUpdated?: boolean;
+  treeGroupCountError?: string | null;
+  cleanupError?: string | null;
+};
 
 type CreateMultimediaInput = {
   occurrenceRef: string;
@@ -126,6 +149,19 @@ export async function createMeasurement(input: {
   return callProxy({ operation: "createMeasurement", ...input });
 }
 
+export async function updateMeasurement(input: {
+  rkey: string;
+  data: UpdateMeasurementData;
+  unset?: string[];
+  resultUnset?: string[];
+}): Promise<RecordMutationResult> {
+  return callProxy({ operation: "updateMeasurement", ...input });
+}
+
+export async function deleteMeasurement(rkey: string): Promise<void> {
+  await deleteRecord("app.gainforest.dwc.measurement", rkey);
+}
+
 export async function updateOccurrence(input: {
   rkey: string;
   data: UpdateOccurrenceData;
@@ -144,6 +180,22 @@ export async function appendExistingDataset(input: {
 
 export async function detachOccurrenceFromDataset(rkey: string): Promise<RecordMutationResult> {
   return callProxy({ operation: "detachOccurrenceFromDataset", rkey });
+}
+
+export async function updateMultimedia(input: {
+  rkey: string;
+  data: UpdateMultimediaData;
+  unset?: string[];
+}): Promise<RecordMutationResult> {
+  return callProxy({ operation: "updateMultimedia", ...input });
+}
+
+export async function deleteMultimedia(rkey: string): Promise<void> {
+  await deleteRecord(MULTIMEDIA_COLLECTION, rkey);
+}
+
+export async function deleteOccurrenceCascade(rkey: string): Promise<CascadeDeleteResult> {
+  return callProxy({ operation: "deleteOccurrenceCascade", rkey });
 }
 
 function bytesToBase64(bytes: Uint8Array): string {

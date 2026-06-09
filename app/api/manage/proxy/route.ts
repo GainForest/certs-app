@@ -20,10 +20,22 @@ type UpdateOccurrenceData = {
   scientificName?: string;
   vernacularName?: string;
   eventDate?: string;
+  recordedBy?: string;
   decimalLatitude?: string;
   decimalLongitude?: string;
   locality?: string;
+  country?: string;
+  habitat?: string;
+  establishmentMeans?: string;
   occurrenceRemarks?: string;
+};
+
+type UpdateMeasurementData = {
+  result?: Record<string, unknown>;
+};
+
+type UpdateMultimediaData = {
+  caption?: string;
 };
 
 type AppendExistingDatasetOccurrenceInput = {
@@ -67,7 +79,10 @@ type MutationBody =
   | { operation: "getDatasetRecord"; rkey: string }
   | { operation: "incrementDatasetRecordCount"; rkey: string; increment: number }
   | { operation: "createMeasurement"; occurrenceRef: string; flora: FloraMeasurementFields }
+  | { operation: "updateMeasurement"; rkey: string; data: UpdateMeasurementData; unset?: string[]; resultUnset?: string[] }
   | { operation: "updateOccurrence"; rkey: string; data: UpdateOccurrenceData; unset?: string[] }
+  | { operation: "updateMultimedia"; rkey: string; data: UpdateMultimediaData; unset?: string[] }
+  | { operation: "deleteOccurrenceCascade"; rkey: string }
   | { operation: "detachOccurrenceFromDataset"; rkey: string }
   | {
       operation: "appendExistingDataset";
@@ -90,7 +105,10 @@ type ForwardableMutationBody = Exclude<
   | { operation: "getDatasetRecord" }
   | { operation: "incrementDatasetRecordCount" }
   | { operation: "createMeasurement" }
+  | { operation: "updateMeasurement" }
   | { operation: "updateOccurrence" }
+  | { operation: "updateMultimedia" }
+  | { operation: "deleteOccurrenceCascade" }
   | { operation: "detachOccurrenceFromDataset" }
   | { operation: "appendExistingDataset" }
 >;
@@ -276,8 +294,23 @@ function isFloraMeasurementFields(value: unknown): value is FloraMeasurementFiel
 
 const UPDATE_OCCURRENCE_UNSET_FIELDS = new Set([
   "vernacularName",
+  "recordedBy",
   "locality",
+  "country",
+  "habitat",
+  "establishmentMeans",
   "occurrenceRemarks",
+]);
+
+const UPDATE_MULTIMEDIA_UNSET_FIELDS = new Set([
+  "caption",
+]);
+
+const UPDATE_FLORA_MEASUREMENT_RESULT_UNSET_FIELDS = new Set([
+  "dbh",
+  "totalHeight",
+  "basalDiameter",
+  "canopyCoverPercent",
 ]);
 
 function isUpdateOccurrenceData(value: unknown): value is UpdateOccurrenceData {
@@ -286,17 +319,35 @@ function isUpdateOccurrenceData(value: unknown): value is UpdateOccurrenceData {
     isOptionalString(value.scientificName) &&
     isOptionalString(value.vernacularName) &&
     isOptionalString(value.eventDate) &&
+    isOptionalString(value.recordedBy) &&
     isOptionalString(value.decimalLatitude) &&
     isOptionalString(value.decimalLongitude) &&
     isOptionalString(value.locality) &&
+    isOptionalString(value.country) &&
+    isOptionalString(value.habitat) &&
+    isOptionalString(value.establishmentMeans) &&
     isOptionalString(value.occurrenceRemarks)
   );
 }
 
-function isUpdateOccurrenceUnset(value: unknown): value is string[] | undefined {
+function isUpdateMeasurementData(value: unknown): value is UpdateMeasurementData {
+  if (!isRecord(value)) return false;
+  return typeof value.result === "undefined" || isRecord(value.result);
+}
+
+function isUpdateMultimediaData(value: unknown): value is UpdateMultimediaData {
+  if (!isRecord(value)) return false;
+  return isOptionalString(value.caption);
+}
+
+function isStringUnsetList(value: unknown, allowed: Set<string>): value is string[] | undefined {
   return typeof value === "undefined" || (
-    Array.isArray(value) && value.every((field) => typeof field === "string" && UPDATE_OCCURRENCE_UNSET_FIELDS.has(field))
+    Array.isArray(value) && value.every((field) => typeof field === "string" && allowed.has(field))
   );
+}
+
+function isUpdateOccurrenceUnset(value: unknown): value is string[] | undefined {
+  return isStringUnsetList(value, UPDATE_OCCURRENCE_UNSET_FIELDS);
 }
 
 function isAppendExistingDatasetOccurrenceInput(value: unknown): value is AppendExistingDatasetOccurrenceInput {
@@ -355,6 +406,15 @@ function isMutationBody(value: unknown): value is MutationBody {
   if (body.operation === "createMeasurement") {
     return typeof body.occurrenceRef === "string" && body.occurrenceRef.length > 0 && isFloraMeasurementFields(body.flora);
   }
+  if (body.operation === "updateMeasurement") {
+    return (
+      typeof body.rkey === "string" &&
+      body.rkey.length > 0 &&
+      isUpdateMeasurementData(body.data) &&
+      isStringUnsetList(body.unset, new Set()) &&
+      isStringUnsetList(body.resultUnset, UPDATE_FLORA_MEASUREMENT_RESULT_UNSET_FIELDS)
+    );
+  }
   if (body.operation === "updateOccurrence") {
     return (
       typeof body.rkey === "string" &&
@@ -362,6 +422,17 @@ function isMutationBody(value: unknown): value is MutationBody {
       isUpdateOccurrenceData(body.data) &&
       isUpdateOccurrenceUnset(body.unset)
     );
+  }
+  if (body.operation === "updateMultimedia") {
+    return (
+      typeof body.rkey === "string" &&
+      body.rkey.length > 0 &&
+      isUpdateMultimediaData(body.data) &&
+      isStringUnsetList(body.unset, UPDATE_MULTIMEDIA_UNSET_FIELDS)
+    );
+  }
+  if (body.operation === "deleteOccurrenceCascade") {
+    return typeof body.rkey === "string" && body.rkey.length > 0;
   }
   if (body.operation === "detachOccurrenceFromDataset") {
     return typeof body.rkey === "string" && body.rkey.length > 0;
@@ -788,8 +859,8 @@ async function updateDatasetRecordCount(options: {
       ? current.record.recordCount
       : null;
     const nextRecordCount = storedCount !== null
-      ? storedCount + options.incrementBy
-      : await countDatasetOccurrences({ did: options.did, datasetUri: current.uri });
+      ? Math.max(0, storedCount + options.incrementBy)
+      : Math.max(0, await countDatasetOccurrences({ did: options.did, datasetUri: current.uri }));
     const nextRecord = {
       ...current.record,
       $type: typeof current.record.$type === "string" ? current.record.$type : DATASET_COLLECTION,
@@ -882,16 +953,22 @@ async function detachOccurrenceFromDatasetByRkey(options: {
   }
 }
 
-function assertCoordinatePair(data: UpdateOccurrenceData): void {
-  const hasLat = data.decimalLatitude !== undefined;
-  const hasLon = data.decimalLongitude !== undefined;
-  if (hasLat !== hasLon) {
-    throw new Error("Enter both latitude and longitude, or leave both unchanged.");
-  }
-  if (!hasLat || !hasLon) return;
+function hasCoordinateValue(value: unknown): boolean {
+  return value !== undefined && value !== null && !(typeof value === "string" && value.trim().length === 0);
+}
 
-  const lat = Number(data.decimalLatitude);
-  const lon = Number(data.decimalLongitude);
+function assertCoordinatePair(record: Record<string, unknown>): void {
+  const hasLat = hasCoordinateValue(record.decimalLatitude);
+  const hasLon = hasCoordinateValue(record.decimalLongitude);
+  if (hasLat !== hasLon) {
+    throw new Error("Enter both latitude and longitude.");
+  }
+  if (!hasLat || !hasLon) {
+    throw new Error("Latitude and longitude are required.");
+  }
+
+  const lat = Number(record.decimalLatitude);
+  const lon = Number(record.decimalLongitude);
   if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lon) || lon < -180 || lon > 180) {
     throw new Error("Enter a valid latitude and longitude.");
   }
@@ -902,7 +979,6 @@ async function updateOccurrenceByRkey(
   did: string,
   cookie: string | null,
 ): Promise<CreatedRecord> {
-  assertCoordinatePair(body.data);
   const current = await fetchRepoRecord({
     did,
     collection: OCCURRENCE_COLLECTION,
@@ -929,6 +1005,7 @@ async function updateOccurrenceByRkey(
   }
   if (typeof nextRecord.decimalLatitude === "number") nextRecord.decimalLatitude = String(nextRecord.decimalLatitude);
   if (typeof nextRecord.decimalLongitude === "number") nextRecord.decimalLongitude = String(nextRecord.decimalLongitude);
+  assertCoordinatePair(nextRecord);
 
   try {
     const result = await executeForwardableMutation<{ uri: string; cid: string }>({
@@ -943,6 +1020,225 @@ async function updateOccurrenceByRkey(
   } catch {
     throw new Error("Tree could not be saved.");
   }
+}
+
+function mergeMeasurementResult(
+  currentResult: unknown,
+  patchResult: Record<string, unknown> | undefined,
+  resultUnset: string[],
+): unknown {
+  if (!patchResult && resultUnset.length === 0) return currentResult ?? null;
+
+  const nextResult: Record<string, unknown> = isRecord(currentResult) ? { ...currentResult } : {};
+  if (patchResult) {
+    Object.assign(nextResult, patchResult);
+    if (typeof currentResult === "object" && currentResult !== null && isRecord(currentResult) && typeof currentResult.$type === "string" && typeof nextResult.$type !== "string") {
+      nextResult.$type = currentResult.$type;
+    }
+  }
+
+  for (const field of resultUnset) {
+    delete nextResult[field];
+  }
+
+  return Object.keys(nextResult).length > 0 ? nextResult : null;
+}
+
+async function updateMeasurementByRkey(
+  body: Extract<MutationBody, { operation: "updateMeasurement" }>,
+  did: string,
+  cookie: string | null,
+): Promise<CreatedRecord> {
+  const current = await fetchRepoRecord({
+    did,
+    collection: MEASUREMENT_COLLECTION,
+    rkey: body.rkey,
+    missingMessage: "Could not check the measurement.",
+  });
+  const resultUnset = body.resultUnset ?? [];
+  const nextRecord: Record<string, unknown> = {
+    ...current.record,
+    ...body.data,
+    $type: typeof current.record.$type === "string" ? current.record.$type : MEASUREMENT_COLLECTION,
+    createdAt: typeof current.record.createdAt === "string" ? current.record.createdAt : new Date().toISOString(),
+  };
+
+  if (body.data.result !== undefined || resultUnset.length > 0) {
+    nextRecord.result = mergeMeasurementResult(current.record.result, body.data.result, resultUnset);
+  }
+
+  for (const field of body.unset ?? []) {
+    delete nextRecord[field];
+  }
+
+  try {
+    const result = await executeForwardableMutation<{ uri: string; cid: string }>({
+      operation: "putRecord",
+      collection: MEASUREMENT_COLLECTION,
+      rkey: body.rkey,
+      record: nextRecord,
+      swapRecord: current.cid,
+    }, did, cookie, "Measurement could not be saved.");
+
+    return { ...result, rkey: body.rkey, record: nextRecord };
+  } catch {
+    throw new Error("Measurement could not be saved.");
+  }
+}
+
+async function updateMultimediaByRkey(
+  body: Extract<MutationBody, { operation: "updateMultimedia" }>,
+  did: string,
+  cookie: string | null,
+): Promise<CreatedRecord> {
+  const current = await fetchRepoRecord({
+    did,
+    collection: MULTIMEDIA_COLLECTION,
+    rkey: body.rkey,
+    missingMessage: "Could not check the photo.",
+  });
+  const nextRecord: Record<string, unknown> = {
+    ...current.record,
+    ...body.data,
+    $type: typeof current.record.$type === "string" ? current.record.$type : MULTIMEDIA_COLLECTION,
+    createdAt: typeof current.record.createdAt === "string" ? current.record.createdAt : new Date().toISOString(),
+  };
+
+  for (const field of body.unset ?? []) {
+    delete nextRecord[field];
+  }
+
+  try {
+    const result = await executeForwardableMutation<{ uri: string; cid: string }>({
+      operation: "putRecord",
+      collection: MULTIMEDIA_COLLECTION,
+      rkey: body.rkey,
+      record: nextRecord,
+      swapRecord: current.cid,
+    }, did, cookie, "Photo could not be saved.");
+
+    return { ...result, rkey: body.rkey, record: nextRecord };
+  } catch {
+    throw new Error("Photo could not be saved.");
+  }
+}
+
+function recordOccurrenceRef(value: unknown): string | null {
+  if (!isRecord(value)) return null;
+  return typeof value.occurrenceRef === "string" ? value.occurrenceRef : null;
+}
+
+async function listLinkedRecordRkeys(options: {
+  did: string;
+  collection: string;
+  occurrenceUri: string;
+}): Promise<string[]> {
+  const rkeys: string[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const page = await listRepoRecords({
+      did: options.did,
+      collection: options.collection,
+      cursor,
+    });
+
+    for (const record of page.records) {
+      if (recordOccurrenceRef(record.value) === options.occurrenceUri) {
+        rkeys.push(rkeyFromUri(record.uri));
+      }
+    }
+
+    cursor = page.cursor;
+  } while (cursor);
+
+  return rkeys.filter(Boolean);
+}
+
+async function deleteOccurrenceCascadeByRkey(
+  body: Extract<MutationBody, { operation: "deleteOccurrenceCascade" }>,
+  did: string,
+  cookie: string | null,
+): Promise<{
+  deletedOccurrenceRkey: string;
+  deletedMeasurementRkeys: string[];
+  deletedMultimediaRkeys: string[];
+  treeGroupCountUpdated: boolean;
+  treeGroupCountError: string | null;
+  cleanupError: string | null;
+}> {
+  const current = await fetchRepoRecord({
+    did,
+    collection: OCCURRENCE_COLLECTION,
+    rkey: body.rkey,
+    missingMessage: "Could not check the saved tree.",
+  });
+  const occurrenceUri = current.uri;
+  const datasetRef = getOccurrenceDatasetRef(current.record);
+  const datasetRkey = datasetRef ? rkeyFromUri(datasetRef) : null;
+
+  const [measurementRkeys, multimediaRkeys] = await Promise.all([
+    listLinkedRecordRkeys({ did, collection: MEASUREMENT_COLLECTION, occurrenceUri }),
+    listLinkedRecordRkeys({ did, collection: MULTIMEDIA_COLLECTION, occurrenceUri }),
+  ]).catch(() => {
+    throw new Error("Could not check linked photos and measurements.");
+  });
+
+  await deleteStoredRecord({
+    did,
+    cookie,
+    collection: OCCURRENCE_COLLECTION,
+    rkey: body.rkey,
+  }).catch(() => {
+    throw new Error("Tree could not be deleted.");
+  });
+
+  const deletedMeasurementRkeys: string[] = [];
+  const deletedMultimediaRkeys: string[] = [];
+  let linkedCleanupFailed = false;
+
+  for (const rkey of measurementRkeys) {
+    try {
+      await deleteStoredRecord({ did, cookie, collection: MEASUREMENT_COLLECTION, rkey });
+      deletedMeasurementRkeys.push(rkey);
+    } catch {
+      linkedCleanupFailed = true;
+    }
+  }
+
+  for (const rkey of multimediaRkeys) {
+    try {
+      await deleteStoredRecord({ did, cookie, collection: MULTIMEDIA_COLLECTION, rkey });
+      deletedMultimediaRkeys.push(rkey);
+    } catch {
+      linkedCleanupFailed = true;
+    }
+  }
+
+  let treeGroupCountUpdated = true;
+  let treeGroupCountError: string | null = null;
+  if (datasetRkey) {
+    try {
+      await updateDatasetRecordCount({
+        did,
+        cookie,
+        datasetRkey,
+        incrementBy: -1,
+      });
+    } catch (error) {
+      treeGroupCountUpdated = false;
+      treeGroupCountError = error instanceof Error ? error.message : "Tree group count could not be updated.";
+    }
+  }
+
+  return {
+    deletedOccurrenceRkey: body.rkey,
+    deletedMeasurementRkeys,
+    deletedMultimediaRkeys,
+    treeGroupCountUpdated,
+    treeGroupCountError,
+    cleanupError: linkedCleanupFailed ? "Some linked photos or measurements could not be removed automatically." : null,
+  };
 }
 
 async function rollbackCreatedRecords(options: {
@@ -1463,12 +1759,39 @@ export async function POST(request: Request) {
     }
   }
 
+  if (body.operation === "updateMeasurement") {
+    try {
+      const result = await updateMeasurementByRkey(body, session.did, cookie);
+      return Response.json(result);
+    } catch (error) {
+      return Response.json({ error: error instanceof Error ? error.message : "Measurement could not be saved." }, { status: 502 });
+    }
+  }
+
   if (body.operation === "updateOccurrence") {
     try {
       const result = await updateOccurrenceByRkey(body, session.did, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Tree could not be saved." }, { status: 502 });
+    }
+  }
+
+  if (body.operation === "updateMultimedia") {
+    try {
+      const result = await updateMultimediaByRkey(body, session.did, cookie);
+      return Response.json(result);
+    } catch (error) {
+      return Response.json({ error: error instanceof Error ? error.message : "Photo could not be saved." }, { status: 502 });
+    }
+  }
+
+  if (body.operation === "deleteOccurrenceCascade") {
+    try {
+      const result = await deleteOccurrenceCascadeByRkey(body, session.did, cookie);
+      return Response.json(result);
+    } catch (error) {
+      return Response.json({ error: error instanceof Error ? error.message : "Tree could not be deleted." }, { status: 502 });
     }
   }
 

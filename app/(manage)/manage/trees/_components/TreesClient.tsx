@@ -1,18 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { parseAsInteger, parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangleIcon,
   CalendarIcon,
+  CameraIcon,
+  CheckIcon,
+  ChevronLeftIcon,
   CloudUploadIcon,
-  CrosshairIcon,
   DatabaseIcon,
-  LayoutGridIcon,
-  ListIcon,
+  ImageIcon,
+  InfoIcon,
   Loader2Icon,
-  MoreVerticalIcon,
+  MapPinIcon,
   PencilIcon,
+  RefreshCcwIcon,
   SearchIcon,
   Trash2Icon,
   TreesIcon,
@@ -22,472 +24,906 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import Container from "@/components/ui/container";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { deleteRecord, updateOccurrence } from "../../_lib/mutations";
-import type { OccurrenceRecord, UploadTreeDatasetRecord } from "@/app/_lib/indexer";
-import { TreesManageSkeleton } from "./TreesManageSkeleton";
 import { cn } from "@/lib/utils";
+import type {
+  OccurrenceRecord,
+  TreeMeasurementRecord,
+  TreeMultimediaRecord,
+  UploadTreeDatasetRecord,
+} from "@/app/_lib/indexer";
+import { TreesManageSkeleton } from "./TreesManageSkeleton";
+import { TreeListPagination } from "./TreeListPagination";
+import { ManageConfirmModal } from "./ManageConfirmModal";
+import {
+  CANOPY_COVER_PERCENT_MAX,
+  buildTreeManagerItems,
+  capCanopyCoverPercentInput,
+  formatEventDate,
+  formatTreeSubtitle,
+  getClearedFloraMeasurementFields,
+  getPhotoUrl,
+  getTreeDeletionTarget,
+  getTreeMeasurementDraft,
+  getTreeOccurrenceDraft,
+  hasAnyMeasurementValue,
+  isDraftEqual,
+  toFloraMeasurementPayload,
+  validateMeasurementDraft,
+  validateOccurrenceDraft,
+  type TreeManagerItem,
+  type TreeMeasurementDraft,
+  type TreeOccurrenceDraft,
+} from "./tree-manager-utils";
+import {
+  createMeasurement,
+  createMultimediaFromFile,
+  createMultimediaFromUrl,
+  deleteMultimedia,
+  deleteOccurrenceCascade,
+  updateMeasurement,
+  updateMultimedia,
+  updateOccurrence,
+} from "../../_lib/mutations";
+import { PARTNER_ESTABLISHMENT_MEANS_OPTIONS } from "../../_lib/upload/establishment-means";
+import {
+  getBoundedPage,
+  getTotalPages,
+  getTreePageFromQuery,
+  toNullableQueryValue,
+  TREE_ITEMS_PER_PAGE,
+  useTreesManageUrlState,
+} from "./useTreesManageUrlState";
 
-// ── TreeCard ──────────────────────────────────────────────────────────────────
+type TreesClientProps = {
+  did: string;
+  onUpload?: () => void;
+};
 
-function TreeCard({
-  tree,
-  onEdit,
-  onDeleted,
-}: {
-  tree: OccurrenceRecord;
-  onEdit: (tree: OccurrenceRecord) => void;
-  onDeleted: (rkey: string) => void;
-}) {
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+type ManagedSite = {
+  metadata: { uri: string };
+  record: { name: string | null };
+};
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    setDeleteError(null);
-    try {
-      await deleteRecord("app.gainforest.dwc.occurrence", tree.rkey);
-      onDeleted(tree.rkey);
-    } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : "Failed to delete tree.");
-      setIsDeleting(false);
-      setIsConfirming(false);
-    }
-  };
+type ConfirmTarget =
+  | { type: "tree"; item: TreeManagerItem }
+  | { type: "photo"; photo: TreeMultimediaRecord };
 
-  const dateLabel = tree.eventDate
-    ? (() => {
-        try {
-          return new Date(tree.eventDate).toLocaleDateString("en-US", { dateStyle: "medium" });
-        } catch {
-          return tree.eventDate;
-        }
-      })()
-    : null;
+const EMPTY_OCCURRENCE_DRAFT: TreeOccurrenceDraft = {
+  scientificName: "",
+  vernacularName: "",
+  eventDate: "",
+  recordedBy: "",
+  locality: "",
+  country: "",
+  decimalLatitude: "",
+  decimalLongitude: "",
+  occurrenceRemarks: "",
+  habitat: "",
+  establishmentMeans: "",
+};
 
+const EMPTY_MEASUREMENT_DRAFT: TreeMeasurementDraft = {
+  dbh: "",
+  totalHeight: "",
+  diameter: "",
+  canopyCoverPercent: "",
+};
+
+const OPTIONAL_OCCURRENCE_FIELDS: Array<keyof TreeOccurrenceDraft> = [
+  "vernacularName",
+  "recordedBy",
+  "locality",
+  "country",
+  "occurrenceRemarks",
+  "habitat",
+  "establishmentMeans",
+];
+
+function isErrorPayload(value: unknown): value is { error: string } {
+  return typeof value === "object" && value !== null && "error" in value;
+}
+
+async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(url, { signal });
+  const payload = (await response.json().catch(() => null)) as T | { error: string } | null;
+  if (!response.ok || !payload || isErrorPayload(payload)) {
+    throw new Error(isErrorPayload(payload) ? payload.error : "Could not load trees.");
+  }
+  return payload as T;
+}
+
+function normalizeDraftValue(value: string): string {
+  return value.trim();
+}
+
+function shortCount(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function formatSubjectPart(value: string | null): string {
+  if (!value) return "Tree photo";
+  return value
+    .replace(/([A-Z])/g, " $1")
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
+function getPhotoAltText(treeName: string | null | undefined, subjectPart: string | null, caption: string | null): string {
+  if (caption) return caption;
+  const part = subjectPart ? formatSubjectPart(subjectPart).toLowerCase() : "tree";
+  return treeName ? `${part} photo of ${treeName}` : `${part} photo`;
+}
+
+function establishmentMeansLabel(value: string | null | undefined): string {
+  const trimmed = value?.trim();
+  if (!trimmed) return "Not set";
+  return PARTNER_ESTABLISHMENT_MEANS_OPTIONS.find((option) => option.value === trimmed)?.label ?? trimmed;
+}
+
+function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "good" | "warn" }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-      className="flex items-start justify-between rounded-2xl px-4 py-3 transition-colors duration-300 hover:bg-surface-sunken"
-    >
-      <div className="min-w-0 flex-1">
-        <p className="font-medium text-sm truncate">
-          {tree.scientificName ?? <span className="italic text-muted-foreground">Unknown species</span>}
-        </p>
-        {tree.vernacularName && (
-          <p className="text-xs text-muted-foreground truncate">{tree.vernacularName}</p>
-        )}
-        <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
-          {dateLabel && (
-            <span className="inline-flex items-center gap-1">
-              <CalendarIcon className="h-3 w-3 shrink-0" />
-              {dateLabel}
-            </span>
-          )}
-          {tree.lat != null && tree.lon != null && (
-            <span className="inline-flex items-center gap-1">
-              <CrosshairIcon className="h-3 w-3 shrink-0" />
-              {tree.lat.toFixed(3)}°, {tree.lon.toFixed(3)}°
-            </span>
-          )}
-          {tree.locality && (
-            <span className="truncate max-w-[160px]">{tree.locality}</span>
-          )}
-        </div>
-      </div>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 ml-2 shrink-0" disabled={isDeleting}>
-            {isDeleting ? (
-              <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <MoreVerticalIcon className="h-3.5 w-3.5" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => onEdit(tree)} disabled={isDeleting}>
-            <PencilIcon className="h-3.5 w-3.5 mr-2" />
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            onClick={() => setIsConfirming(true)}
-            disabled={isDeleting}
-          >
-            <Trash2Icon className="h-3.5 w-3.5 mr-2" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {isConfirming && (
-        <div className="absolute left-0 right-0 bottom-0 mx-3 mb-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg z-10">
-          <p className="text-sm text-destructive font-medium mb-1">Delete this tree?</p>
-          <p className="text-xs text-muted-foreground mb-3">This cannot be undone.</p>
-          <div className="flex gap-2">
-            <Button variant="destructive" size="sm" onClick={() => void handleDelete()} disabled={isDeleting}>
-              {isDeleting && <Loader2Icon className="animate-spin h-3 w-3 mr-1" />}
-              Delete
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsConfirming(false)} disabled={isDeleting}>
-              Cancel
-            </Button>
-          </div>
-          {deleteError && <p className="text-xs text-destructive mt-2">{deleteError}</p>}
-        </div>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs",
+        tone === "good" && "border-primary/25 bg-primary/5 text-primary",
+        tone === "warn" && "border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300",
+        tone === "neutral" && "border-border bg-background text-muted-foreground",
       )}
-    </motion.div>
-  );
-}
-
-// ── TreeEditor ────────────────────────────────────────────────────────────────
-
-function TreeEditor({
-  tree,
-  onClose,
-  onSaved,
-}: {
-  tree: OccurrenceRecord;
-  onClose: () => void;
-  onSaved: (updated: OccurrenceRecord) => void;
-}) {
-  const [scientificName, setScientificName] = useState(tree.scientificName ?? "");
-  const [vernacularName, setVernacularName] = useState(tree.vernacularName ?? "");
-  const [eventDate, setEventDate] = useState(tree.eventDate ?? "");
-  const [lat, setLat] = useState(tree.lat != null ? String(tree.lat) : "");
-  const [lon, setLon] = useState(tree.lon != null ? String(tree.lon) : "");
-  const [locality, setLocality] = useState(tree.locality ?? "");
-  const [remarks, setRemarks] = useState(tree.remarks ?? "");
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSave = async () => {
-    if (!scientificName.trim()) { setError("Scientific name is required."); return; }
-    setIsPending(true);
-    setError(null);
-    try {
-      const trimmedScientificName = scientificName.trim();
-      const trimmedEventDate = eventDate.trim();
-      const trimmedVernacularName = vernacularName.trim();
-      const trimmedLocality = locality.trim();
-      const trimmedRemarks = remarks.trim();
-      const trimmedLat = lat.trim();
-      const trimmedLon = lon.trim();
-      const data: Parameters<typeof updateOccurrence>[0]["data"] = {
-        scientificName: trimmedScientificName,
-      };
-      const unset: string[] = [];
-
-      if (trimmedEventDate) data.eventDate = trimmedEventDate;
-      if (trimmedVernacularName) data.vernacularName = trimmedVernacularName;
-      else unset.push("vernacularName");
-      if (trimmedLocality) data.locality = trimmedLocality;
-      else unset.push("locality");
-      if (trimmedRemarks) data.occurrenceRemarks = trimmedRemarks;
-      else unset.push("occurrenceRemarks");
-
-      if ((trimmedLat && !trimmedLon) || (!trimmedLat && trimmedLon)) {
-        setError("Enter both latitude and longitude, or leave both unchanged.");
-        setIsPending(false);
-        return;
-      }
-      if (trimmedLat && trimmedLon) {
-        const nextLat = Number(trimmedLat);
-        const nextLon = Number(trimmedLon);
-        if (!Number.isFinite(nextLat) || nextLat < -90 || nextLat > 90 || !Number.isFinite(nextLon) || nextLon < -180 || nextLon > 180) {
-          setError("Enter a valid latitude and longitude.");
-          setIsPending(false);
-          return;
-        }
-        data.decimalLatitude = String(nextLat);
-        data.decimalLongitude = String(nextLon);
-      }
-
-      await updateOccurrence({ rkey: tree.rkey, data, unset });
-
-      onSaved({
-        ...tree,
-        scientificName: trimmedScientificName || null,
-        vernacularName: trimmedVernacularName || null,
-        eventDate: trimmedEventDate || tree.eventDate,
-        lat: trimmedLat && trimmedLon ? Number(trimmedLat) : tree.lat,
-        lon: trimmedLat && trimmedLon ? Number(trimmedLon) : tree.lon,
-        locality: trimmedLocality || null,
-        remarks: trimmedRemarks || null,
-      });
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Tree could not be saved.");
-    } finally {
-      setIsPending(false);
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-      className="rounded-2xl border border-border bg-card p-5 space-y-5"
     >
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Edit tree</h2>
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onClose}>
-          <XIcon className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <Separator />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="tree-sci">
-            Scientific name <span className="text-destructive">*</span>
-          </Label>
-          <Input id="tree-sci" value={scientificName} onChange={(e) => { setScientificName(e.target.value); setError(null); }} placeholder="e.g. Cedrela odorata" />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="tree-vern">Common name</Label>
-          <Input id="tree-vern" value={vernacularName} onChange={(e) => setVernacularName(e.target.value)} placeholder="e.g. Spanish cedar" />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="tree-date">Event date</Label>
-          <Input id="tree-date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} placeholder="YYYY-MM-DD" />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="tree-locality">Locality</Label>
-          <Input id="tree-locality" value={locality} onChange={(e) => setLocality(e.target.value)} placeholder="e.g. Amazon Reserve" />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="tree-lat">Latitude</Label>
-          <Input id="tree-lat" type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="-3.4653" />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="tree-lon">Longitude</Label>
-          <Input id="tree-lon" type="number" step="any" value={lon} onChange={(e) => setLon(e.target.value)} placeholder="-62.2159" />
-        </div>
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label htmlFor="tree-remarks">Remarks</Label>
-          <Textarea
-            id="tree-remarks"
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            placeholder="Field notes…"
-            rows={2}
-            className="resize-none"
-          />
-        </div>
-      </div>
-
-      {error && <p className="text-sm text-destructive">{error}</p>}
-
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onClose} disabled={isPending}>Cancel</Button>
-        <Button onClick={() => void handleSave()} disabled={isPending}>
-          {isPending && <Loader2Icon className="animate-spin h-3.5 w-3.5" />}
-          Save changes
-        </Button>
-      </div>
-    </motion.div>
+      {children}
+    </span>
   );
 }
 
-// ── TreesClient ───────────────────────────────────────────────────────────────
-
-const PAGE_SIZE = 50;
-type DatasetViewMode = "cards" | "list";
-
-const DATASET_VIEW_MODES: DatasetViewMode[] = ["cards", "list"];
-const QUERY_STATE_OPTIONS = { history: "replace", scroll: false, shallow: true } as const;
-const SEARCH_QUERY_STATE_OPTIONS = { ...QUERY_STATE_OPTIONS, throttleMs: 200 } as const;
-
-function DatasetViewToggle({ view, setView }: { view: DatasetViewMode; setView: (view: DatasetViewMode) => void }) {
+function SectionCard({
+  title,
+  description,
+  children,
+  className,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="inline-flex h-10 shrink-0 items-center rounded-full border border-border bg-background/70 p-0.5 backdrop-blur">
-      {([
-        { id: "cards", label: "Cards", Icon: LayoutGridIcon },
-        { id: "list", label: "List", Icon: ListIcon },
-      ] as const).map(({ id, label, Icon }) => (
-        <button
-          key={id}
-          type="button"
-          onClick={() => setView(id)}
-          aria-pressed={view === id}
-          aria-label={label}
-          title={label}
-          className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors ${
-            view === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Icon className="h-4 w-4" />
-          <span className="hidden sm:inline">{label}</span>
-        </button>
-      ))}
+    <section className={cn("rounded-2xl border border-border bg-background p-4 md:p-5 space-y-4", className)}>
+      <div className="space-y-1">
+        <h3 className="text-lg font-semibold font-garamond">{title}</h3>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Field({
+  label,
+  children,
+  required = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  required?: boolean;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+      <span>
+        {label}
+        {required ? <span className="ml-0.5 text-destructive">*</span> : null}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function DetailFact({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border bg-muted/20 px-3 py-2">
+      <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+      <div className="mt-1 text-sm text-foreground break-words">{value}</div>
     </div>
   );
 }
 
-export function TreesClient({ did, onUpload }: { did: string; onUpload?: () => void }) {
+function measurementItemFromResult(
+  did: string,
+  occurrenceUri: string,
+  result: { uri: string; cid: string; rkey: string; record?: Record<string, unknown> },
+): TreeMeasurementRecord {
+  const record = result.record ?? {};
+  return {
+    metadata: {
+      did,
+      uri: result.uri,
+      rkey: result.rkey,
+      cid: result.cid,
+      createdAt: typeof record.createdAt === "string" ? record.createdAt : new Date().toISOString(),
+    },
+    record: {
+      occurrenceRef: typeof record.occurrenceRef === "string" ? record.occurrenceRef : occurrenceUri,
+      result: record.result ?? null,
+      measuredBy: typeof record.measuredBy === "string" ? record.measuredBy : null,
+      measuredByID: typeof record.measuredByID === "string" ? record.measuredByID : null,
+      measurementDate: typeof record.measurementDate === "string" ? record.measurementDate : null,
+      measurementMethod: typeof record.measurementMethod === "string" ? record.measurementMethod : null,
+      measurementRemarks: typeof record.measurementRemarks === "string" ? record.measurementRemarks : null,
+      createdAt: typeof record.createdAt === "string" ? record.createdAt : new Date().toISOString(),
+      legacyMeasurementType: null,
+      legacyMeasurementValue: null,
+      legacyMeasurementUnit: null,
+      schemaVersion: "bundled",
+    },
+  };
+}
+
+function photoItemFromResult(
+  did: string,
+  occurrenceUri: string,
+  result: { uri: string; cid: string; rkey: string; record?: Record<string, unknown> },
+  previewUrl: string | null,
+): TreeMultimediaRecord {
+  const record = result.record ?? {};
+  return {
+    metadata: {
+      did,
+      uri: result.uri,
+      rkey: result.rkey,
+      cid: result.cid,
+      createdAt: typeof record.createdAt === "string" ? record.createdAt : new Date().toISOString(),
+    },
+    record: {
+      occurrenceRef: typeof record.occurrenceRef === "string" ? record.occurrenceRef : occurrenceUri,
+      siteRef: typeof record.siteRef === "string" ? record.siteRef : null,
+      subjectPart: typeof record.subjectPart === "string" ? record.subjectPart : "wholeTree",
+      subjectPartUri: typeof record.subjectPartUri === "string" ? record.subjectPartUri : null,
+      subjectOrientation: typeof record.subjectOrientation === "string" ? record.subjectOrientation : null,
+      file: record.file ?? null,
+      format: typeof record.format === "string" ? record.format : null,
+      accessUri: previewUrl ?? (typeof record.accessUri === "string" ? record.accessUri : null),
+      variantLiteral: typeof record.variantLiteral === "string" ? record.variantLiteral : null,
+      caption: typeof record.caption === "string" ? record.caption : null,
+      creator: typeof record.creator === "string" ? record.creator : null,
+      createDate: typeof record.createDate === "string" ? record.createDate : null,
+      createdAt: typeof record.createdAt === "string" ? record.createdAt : new Date().toISOString(),
+    },
+  };
+}
+
+function mergeTreeDetail(existing: OccurrenceRecord, detail: Partial<OccurrenceRecord>): OccurrenceRecord {
+  return {
+    ...existing,
+    ...detail,
+    kind: "occurrence",
+    id: existing.id,
+    did: existing.did,
+    rkey: existing.rkey,
+    atUri: detail.atUri ?? existing.atUri,
+    createdAt: detail.createdAt ?? existing.createdAt,
+    imageUrl: detail.imageUrl ?? existing.imageUrl,
+    imageRef: detail.imageRef ?? existing.imageRef,
+    audioRef: detail.audioRef ?? existing.audioRef,
+    audioUrl: detail.audioUrl ?? existing.audioUrl,
+    media: detail.media ?? existing.media,
+  };
+}
+
+export function TreesClient({ did, onUpload }: TreesClientProps) {
+  const {
+    searchQuery,
+    selectedTreeRkey,
+    datasetFilter,
+    treePageQuery,
+    setQueryValues,
+  } = useTreesManageUrlState();
+
   const [trees, setTrees] = useState<OccurrenceRecord[]>([]);
   const [datasets, setDatasets] = useState<UploadTreeDatasetRecord[]>([]);
-  const [selectedDatasetUri, setSelectedDatasetUri] = useQueryState(
-    "dataset",
-    parseAsString.withOptions(QUERY_STATE_OPTIONS),
-  );
+  const [measurements, setMeasurements] = useState<TreeMeasurementRecord[]>([]);
+  const [photos, setPhotos] = useState<TreeMultimediaRecord[]>([]);
+  const [sites, setSites] = useState<ManagedSite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [search, setSearch] = useQueryState(
-    "q",
-    parseAsString.withDefault("").withOptions(SEARCH_QUERY_STATE_OPTIONS),
-  );
-  const [page, setPage] = useQueryState(
-    "page",
-    parseAsInteger.withDefault(1).withOptions(QUERY_STATE_OPTIONS),
-  );
-  const [editingTree, setEditingTree] = useState<OccurrenceRecord | null>(null);
-  const [datasetView, setDatasetView] = useQueryState(
-    "treeView",
-    parseAsStringEnum<DatasetViewMode>(DATASET_VIEW_MODES).withDefault("cards").withOptions(QUERY_STATE_OPTIONS),
-  );
+  const [detailLoadingRkey, setDetailLoadingRkey] = useState<string | null>(null);
+  const [occurrenceDraft, setOccurrenceDraft] = useState<TreeOccurrenceDraft>(EMPTY_OCCURRENCE_DRAFT);
+  const [initialOccurrenceDraft, setInitialOccurrenceDraft] = useState<TreeOccurrenceDraft>(EMPTY_OCCURRENCE_DRAFT);
+  const [measurementDraft, setMeasurementDraft] = useState<TreeMeasurementDraft>(EMPTY_MEASUREMENT_DRAFT);
+  const [initialMeasurementDraft, setInitialMeasurementDraft] = useState<TreeMeasurementDraft>(EMPTY_MEASUREMENT_DRAFT);
+  const [occurrenceError, setOccurrenceError] = useState<string | null>(null);
+  const [occurrenceFeedback, setOccurrenceFeedback] = useState<string | null>(null);
+  const [measurementError, setMeasurementError] = useState<string | null>(null);
+  const [measurementFeedback, setMeasurementFeedback] = useState<string | null>(null);
+  const [savingOccurrence, setSavingOccurrence] = useState(false);
+  const [savingMeasurement, setSavingMeasurement] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null);
+  const [newPhotoCaption, setNewPhotoCaption] = useState("");
+  const [newPhotoUrl, setNewPhotoUrl] = useState("");
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoFeedback, setPhotoFeedback] = useState<string | null>(null);
+  const [savingPhoto, setSavingPhoto] = useState(false);
+  const [editingPhotoRkey, setEditingPhotoRkey] = useState<string | null>(null);
+  const [photoCaptionDraft, setPhotoCaptionDraft] = useState("");
+  const [savingPhotoCaptionRkey, setSavingPhotoCaptionRkey] = useState<string | null>(null);
+  const [photoCaptionError, setPhotoCaptionError] = useState<string | null>(null);
+  const [deletedFeedback, setDeletedFeedback] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const lastDraftResetKeyRef = useRef<string | null>(null);
 
-  const loadTrees = useCallback(async () => {
+  const loadAll = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
     setFetchError(null);
     try {
-      const [treeRes, datasetRes] = await Promise.all([
-        fetch("/api/manage/trees"),
-        fetch("/api/manage/trees/datasets"),
+      const [treeData, datasetData, measurementData, photoData, siteData] = await Promise.all([
+        fetchJson<OccurrenceRecord[]>("/api/manage/trees", signal),
+        fetchJson<UploadTreeDatasetRecord[]>("/api/manage/trees/datasets", signal),
+        fetchJson<TreeMeasurementRecord[]>("/api/manage/trees/measurements", signal),
+        fetchJson<TreeMultimediaRecord[]>("/api/manage/trees/photos", signal),
+        fetchJson<ManagedSite[]>("/api/manage/sites", signal).catch(() => []),
       ]);
-      const data = (await treeRes.json()) as OccurrenceRecord[] | { error: string };
-      const datasetData = (await datasetRes.json()) as UploadTreeDatasetRecord[] | { error: string };
-      if (!treeRes.ok || "error" in data) {
-        setFetchError(("error" in data ? data.error : null) ?? "Failed to load trees.");
-      } else {
-        setTrees(data);
-      }
-      if (datasetRes.ok && !("error" in datasetData)) {
-        setDatasets(datasetData);
-      }
-    } catch {
-      setFetchError("Could not reach the server.");
+      setTrees(treeData);
+      setDatasets(datasetData);
+      setMeasurements(measurementData);
+      setPhotos(photoData);
+      setSites(siteData);
+    } catch (error) {
+      if ((error as Error).name === "AbortError") return;
+      setFetchError(error instanceof Error ? error.message : "Could not load trees.");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => { void loadTrees(); }, [loadTrees]);
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadAll(controller.signal);
+    return () => controller.abort();
+  }, [loadAll]);
 
-  const treesInDataset = selectedDatasetUri
-    ? trees.filter((tree) => tree.datasetRef === selectedDatasetUri)
-    : trees;
+  const datasetLookup = useMemo(() => {
+    const map = new Map<string, UploadTreeDatasetRecord>();
+    for (const dataset of datasets) map.set(dataset.uri, dataset);
+    return map;
+  }, [datasets]);
 
-  const filtered = treesInDataset.filter((t) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (t.scientificName ?? "").toLowerCase().includes(q) ||
-      (t.vernacularName ?? "").toLowerCase().includes(q) ||
-      (t.locality ?? "").toLowerCase().includes(q);
-  });
+  const siteLookup = useMemo(() => {
+    const map = new Map<string, ManagedSite>();
+    for (const site of sites) map.set(site.metadata.uri, site);
+    return map;
+  }, [sites]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(Math.max(1, page), totalPages);
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const treeItems = useMemo(
+    () => buildTreeManagerItems(trees, measurements, photos),
+    [measurements, photos, trees],
+  );
 
-  const handleSearchChange = (val: string) => {
-    void setSearch(val);
-    void setPage(1);
+  const datasetScopedTrees = useMemo(() => {
+    if (!datasetFilter) return treeItems;
+    return treeItems.filter((item) => item.occurrence.datasetRef === datasetFilter);
+  }, [datasetFilter, treeItems]);
+
+  const filteredTrees = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return datasetScopedTrees;
+    return datasetScopedTrees.filter((item) => {
+      const tree = item.occurrence;
+      const groupName = tree.datasetRef ? datasetLookup.get(tree.datasetRef)?.name : null;
+      const haystack = [
+        tree.scientificName,
+        tree.vernacularName,
+        tree.locality,
+        tree.country,
+        tree.recordedBy,
+        tree.eventDate,
+        groupName,
+      ].filter((value): value is string => typeof value === "string" && value.length > 0).join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [datasetLookup, datasetScopedTrees, searchQuery]);
+
+  const requestedTreePage = useMemo(() => getTreePageFromQuery(treePageQuery), [treePageQuery]);
+  const totalTreePages = getTotalPages(filteredTrees.length, TREE_ITEMS_PER_PAGE);
+  const currentTreePage = getBoundedPage(requestedTreePage, totalTreePages);
+  const paginatedTrees = useMemo(() => {
+    const startIndex = (currentTreePage - 1) * TREE_ITEMS_PER_PAGE;
+    return filteredTrees.slice(startIndex, startIndex + TREE_ITEMS_PER_PAGE);
+  }, [currentTreePage, filteredTrees]);
+
+  const selectedTree = useMemo(() => {
+    if (selectedTreeRkey) {
+      return treeItems.find((item) => item.occurrence.rkey === selectedTreeRkey) ?? null;
+    }
+    return paginatedTrees[0] ?? null;
+  }, [paginatedTrees, selectedTreeRkey, treeItems]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    const selectedRkey = selectedTree?.occurrence.rkey ?? "";
+    if (!selectedRkey || selectedTreeRkey === selectedRkey) return;
+    setQueryValues({ tree: selectedRkey });
+  }, [isLoading, selectedTree?.occurrence.rkey, selectedTreeRkey, setQueryValues]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    const canonicalPage = currentTreePage === 1 ? null : String(currentTreePage);
+    if (treePageQuery !== canonicalPage) {
+      setQueryValues({ "tree-page": canonicalPage });
+    }
+  }, [currentTreePage, isLoading, setQueryValues, treePageQuery]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!selectedTreeRkey) return;
+    const stillVisible = filteredTrees.some((item) => item.occurrence.rkey === selectedTreeRkey);
+    if (!stillVisible) {
+      setQueryValues({ tree: paginatedTrees[0]?.occurrence.rkey ?? null });
+    }
+  }, [filteredTrees, isLoading, paginatedTrees, selectedTreeRkey, setQueryValues]);
+
+  useEffect(() => {
+    const rkey = selectedTree?.occurrence.rkey;
+    if (!rkey) return;
+    let cancelled = false;
+    setDetailLoadingRkey(rkey);
+    fetchJson<Partial<OccurrenceRecord>>(`/api/manage/trees/${encodeURIComponent(rkey)}`)
+      .then((detail) => {
+        if (cancelled) return;
+        setTrees((current) => current.map((tree) => tree.rkey === rkey ? mergeTreeDetail(tree, detail) : tree));
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setDetailLoadingRkey(null);
+      });
+    return () => { cancelled = true; };
+  }, [selectedTree?.occurrence.rkey]);
+
+  const activeTreeResetKey = selectedTree
+    ? [
+        selectedTree.occurrence.rkey,
+        selectedTree.occurrence.scientificName,
+        selectedTree.occurrence.vernacularName,
+        selectedTree.occurrence.eventDate,
+        selectedTree.occurrence.recordedBy,
+        selectedTree.occurrence.locality,
+        selectedTree.occurrence.country,
+        selectedTree.occurrence.lat,
+        selectedTree.occurrence.lon,
+        selectedTree.occurrence.remarks,
+        selectedTree.occurrence.habitat,
+        selectedTree.occurrence.establishmentMeans,
+        selectedTree.preferredMeasurement?.metadata.rkey,
+        selectedTree.floraMeasurement?.dbh,
+        selectedTree.floraMeasurement?.totalHeight,
+        selectedTree.floraMeasurement?.basalDiameter,
+        selectedTree.floraMeasurement?.canopyCoverPercent,
+      ].map((value) => String(value ?? "")).join("|")
+    : null;
+  useEffect(() => {
+    if (lastDraftResetKeyRef.current === activeTreeResetKey) return;
+    lastDraftResetKeyRef.current = activeTreeResetKey;
+    const nextOccurrenceDraft = selectedTree ? getTreeOccurrenceDraft(selectedTree.occurrence) : EMPTY_OCCURRENCE_DRAFT;
+    const nextMeasurementDraft = getTreeMeasurementDraft(selectedTree?.floraMeasurement ?? null);
+    setOccurrenceDraft(nextOccurrenceDraft);
+    setInitialOccurrenceDraft(nextOccurrenceDraft);
+    setMeasurementDraft(nextMeasurementDraft);
+    setInitialMeasurementDraft(nextMeasurementDraft);
+    setOccurrenceError(null);
+    setOccurrenceFeedback(null);
+    setMeasurementError(null);
+    setMeasurementFeedback(null);
+    setPhotoError(null);
+    setPhotoFeedback(null);
+    setEditingPhotoRkey(null);
+    setPhotoCaptionDraft("");
+  }, [activeTreeResetKey, selectedTree]);
+
+  const occurrenceHasChanges = !isDraftEqual(occurrenceDraft, initialOccurrenceDraft);
+  const measurementHasChanges = !isDraftEqual(measurementDraft, initialMeasurementDraft);
+  const occurrenceValidationError = occurrenceHasChanges ? validateOccurrenceDraft(occurrenceDraft) : null;
+  const measurementValidationError = measurementHasChanges ? validateMeasurementDraft(measurementDraft) : null;
+  const measurementEditingBlocked = Boolean(
+    selectedTree?.hasLegacyMeasurements ||
+    selectedTree?.hasUnsupportedMeasurements ||
+    selectedTree?.hasDuplicateBundledMeasurements,
+  );
+  const selectedTreeHasShownMeasurement = selectedTree
+    ? hasAnyMeasurementValue(getTreeMeasurementDraft(selectedTree.floraMeasurement))
+    : false;
+
+  const activeDatasetName = selectedTree?.occurrence.datasetRef
+    ? datasetLookup.get(selectedTree.occurrence.datasetRef)?.name ?? selectedTree.occurrence.datasetName
+    : null;
+  const activeSiteName = selectedTree?.occurrence.siteRef
+    ? siteLookup.get(selectedTree.occurrence.siteRef)?.record.name ?? "Connected project place"
+    : null;
+
+  const handleTreeSearchChange = useCallback((value: string) => {
+    setQueryValues({ q: toNullableQueryValue(value), "tree-page": null, tree: null });
+  }, [setQueryValues]);
+
+  const handleDatasetChange = useCallback((uri: string | null) => {
+    setQueryValues({ dataset: uri, "tree-page": null, tree: null });
+  }, [setQueryValues]);
+
+  const handleTreePageChange = useCallback((nextPage: number) => {
+    const bounded = getBoundedPage(nextPage, totalTreePages);
+    setQueryValues({ "tree-page": bounded === 1 ? null : String(bounded), tree: null });
+  }, [setQueryValues, totalTreePages]);
+
+  const handleOccurrenceFieldChange = (field: keyof TreeOccurrenceDraft, value: string) => {
+    setOccurrenceDraft((current) => ({ ...current, [field]: value }));
+    setOccurrenceError(null);
+    setOccurrenceFeedback(null);
   };
 
-  const handleDatasetChange = (uri: string | null) => {
-    void setSelectedDatasetUri(uri);
-    void setPage(1);
-    void setSearch("");
+  const handleMeasurementFieldChange = (field: keyof TreeMeasurementDraft, value: string) => {
+    const nextValue = field === "canopyCoverPercent" ? capCanopyCoverPercentInput(value) : value;
+    setMeasurementDraft((current) => ({ ...current, [field]: nextValue }));
+    setMeasurementError(null);
+    setMeasurementFeedback(null);
   };
 
-  const handleDeleted = (rkey: string) => {
-    setTrees((prev) => prev.filter((t) => t.rkey !== rkey));
+  const handleSaveOccurrence = async () => {
+    const tree = selectedTree?.occurrence;
+    if (!tree) return;
+    const validationError = validateOccurrenceDraft(occurrenceDraft);
+    if (validationError) {
+      setOccurrenceError(validationError);
+      return;
+    }
+
+    const normalizedCurrent = Object.fromEntries(
+      Object.entries(occurrenceDraft).map(([key, value]) => [key, normalizeDraftValue(value)]),
+    ) as TreeOccurrenceDraft;
+    const normalizedInitial = Object.fromEntries(
+      Object.entries(initialOccurrenceDraft).map(([key, value]) => [key, normalizeDraftValue(value)]),
+    ) as TreeOccurrenceDraft;
+    const data: Record<string, string> = {};
+    const unset: string[] = [];
+
+    (Object.keys(normalizedCurrent) as Array<keyof TreeOccurrenceDraft>).forEach((field) => {
+      if (normalizedCurrent[field] === normalizedInitial[field]) return;
+      if (OPTIONAL_OCCURRENCE_FIELDS.includes(field) && normalizedCurrent[field] === "") {
+        unset.push(field);
+        return;
+      }
+      data[field] = normalizedCurrent[field];
+    });
+
+    if (
+      normalizedCurrent.decimalLatitude !== normalizedInitial.decimalLatitude ||
+      normalizedCurrent.decimalLongitude !== normalizedInitial.decimalLongitude
+    ) {
+      data.decimalLatitude = normalizedCurrent.decimalLatitude;
+      data.decimalLongitude = normalizedCurrent.decimalLongitude;
+    }
+
+    if (Object.keys(data).length === 0 && unset.length === 0) {
+      setOccurrenceFeedback("No changes to save.");
+      return;
+    }
+
+    setSavingOccurrence(true);
+    try {
+      await updateOccurrence({ rkey: tree.rkey, data, unset });
+      setTrees((current) => current.map((item) => item.rkey === tree.rkey ? {
+        ...item,
+        scientificName: normalizedCurrent.scientificName || null,
+        vernacularName: normalizedCurrent.vernacularName || null,
+        eventDate: normalizedCurrent.eventDate || null,
+        recordedBy: normalizedCurrent.recordedBy || null,
+        locality: normalizedCurrent.locality || null,
+        country: normalizedCurrent.country || null,
+        lat: normalizedCurrent.decimalLatitude ? Number(normalizedCurrent.decimalLatitude) : null,
+        lon: normalizedCurrent.decimalLongitude ? Number(normalizedCurrent.decimalLongitude) : null,
+        remarks: normalizedCurrent.occurrenceRemarks || null,
+        habitat: normalizedCurrent.habitat || null,
+        establishmentMeans: normalizedCurrent.establishmentMeans || null,
+      } : item));
+      setInitialOccurrenceDraft(normalizedCurrent);
+      setOccurrenceDraft(normalizedCurrent);
+      setOccurrenceFeedback("Tree information saved.");
+      setOccurrenceError(null);
+    } catch (error) {
+      setOccurrenceError(error instanceof Error ? error.message : "Tree could not be saved.");
+    } finally {
+      setSavingOccurrence(false);
+    }
   };
 
-  const handleSaved = (updated: OccurrenceRecord) => {
-    setTrees((prev) => prev.map((t) => t.rkey === updated.rkey ? updated : t));
-    setEditingTree(null);
+  const handleSaveMeasurement = async () => {
+    const tree = selectedTree;
+    if (!tree) return;
+    const occurrenceUri = tree.occurrence.atUri;
+    const measurementRkey = tree.preferredMeasurement?.metadata.rkey ?? null;
+
+    if (measurementEditingBlocked) {
+      setMeasurementError("These measurements need manual review before editing here.");
+      return;
+    }
+
+    const validationError = validateMeasurementDraft(measurementDraft);
+    if (validationError) {
+      setMeasurementError(validationError);
+      return;
+    }
+
+    const normalizedCurrent = Object.fromEntries(
+      Object.entries(measurementDraft).map(([key, value]) => [key, normalizeDraftValue(value)]),
+    ) as TreeMeasurementDraft;
+
+    if (isDraftEqual(normalizedCurrent, initialMeasurementDraft)) {
+      setMeasurementFeedback("No changes to save.");
+      return;
+    }
+
+    const floraPayload = toFloraMeasurementPayload(normalizedCurrent);
+    const resultUnset = getClearedFloraMeasurementFields(normalizedCurrent);
+    setSavingMeasurement(true);
+    try {
+      if (measurementRkey) {
+        const result = await updateMeasurement({
+          rkey: measurementRkey,
+          data: { result: floraPayload ?? toFloraMeasurementPayload(normalizedCurrent, { includeEmpty: true }) ?? undefined },
+          resultUnset,
+        });
+        const nextItem = measurementItemFromResult(did, occurrenceUri, result);
+        setMeasurements((current) => current.map((item) => item.metadata.rkey === measurementRkey ? nextItem : item));
+        setMeasurementFeedback(floraPayload ? "Measurements saved." : "Shown measurements removed.");
+      } else {
+        if (!floraPayload) {
+          setMeasurementError("Add at least one measurement before saving.");
+          return;
+        }
+        const result = await createMeasurement({
+          occurrenceRef: occurrenceUri,
+          flora: {
+            dbh: floraPayload.dbh,
+            totalHeight: floraPayload.totalHeight,
+            basalDiameter: floraPayload.basalDiameter,
+            canopyCoverPercent: floraPayload.canopyCoverPercent,
+          },
+        });
+        setMeasurements((current) => [measurementItemFromResult(did, occurrenceUri, result), ...current]);
+        setMeasurementFeedback("Measurements added.");
+      }
+      setInitialMeasurementDraft(normalizedCurrent);
+      setMeasurementDraft(normalizedCurrent);
+      setMeasurementError(null);
+    } catch (error) {
+      setMeasurementError(error instanceof Error ? error.message : "Measurement could not be saved.");
+    } finally {
+      setSavingMeasurement(false);
+    }
   };
 
-  if (isLoading) {
-    return <TreesManageSkeleton />;
+  const handleAddPhotoFile = async (file: File | null) => {
+    const tree = selectedTree;
+    if (!tree || !file) return;
+    setSavingPhoto(true);
+    setPhotoError(null);
+    setPhotoFeedback(null);
+    const previewUrl = URL.createObjectURL(file);
+    try {
+      const result = await createMultimediaFromFile({
+        imageFile: file,
+        occurrenceRef: tree.occurrence.atUri,
+        siteRef: tree.occurrence.siteRef ?? undefined,
+        subjectPart: "wholeTree",
+        caption: newPhotoCaption.trim() || undefined,
+      });
+      setPhotos((current) => [photoItemFromResult(did, tree.occurrence.atUri, result, previewUrl), ...current]);
+      setNewPhotoCaption("");
+      setPhotoFeedback("Photo added.");
+    } catch (error) {
+      URL.revokeObjectURL(previewUrl);
+      setPhotoError(error instanceof Error ? error.message : "Photo could not be saved.");
+    } finally {
+      setSavingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAddPhotoUrl = async () => {
+    const tree = selectedTree;
+    const url = newPhotoUrl.trim();
+    if (!tree || !url) return;
+    setSavingPhoto(true);
+    setPhotoError(null);
+    setPhotoFeedback(null);
+    try {
+      const result = await createMultimediaFromUrl({
+        url,
+        occurrenceRef: tree.occurrence.atUri,
+        siteRef: tree.occurrence.siteRef ?? undefined,
+        subjectPart: "wholeTree",
+        caption: newPhotoCaption.trim() || undefined,
+      });
+      setPhotos((current) => [photoItemFromResult(did, tree.occurrence.atUri, result, url), ...current]);
+      setNewPhotoUrl("");
+      setNewPhotoCaption("");
+      setPhotoFeedback("Photo added.");
+    } catch (error) {
+      setPhotoError(error instanceof Error ? error.message : "Photo could not be saved.");
+    } finally {
+      setSavingPhoto(false);
+    }
+  };
+
+  const handleSavePhotoCaption = async (photo: TreeMultimediaRecord) => {
+    const rkey = photo.metadata.rkey;
+    const normalizedCaption = photoCaptionDraft.trim();
+    const currentCaption = (photo.record.caption ?? "").trim();
+    if (normalizedCaption === currentCaption) {
+      setEditingPhotoRkey(null);
+      setPhotoCaptionDraft("");
+      return;
+    }
+    setSavingPhotoCaptionRkey(rkey);
+    setPhotoCaptionError(null);
+    try {
+      await updateMultimedia({
+        rkey,
+        data: normalizedCaption ? { caption: normalizedCaption } : {},
+        unset: normalizedCaption ? [] : ["caption"],
+      });
+      setPhotos((current) => current.map((item) => item.metadata.rkey === rkey ? {
+        ...item,
+        record: { ...item.record, caption: normalizedCaption || null },
+      } : item));
+      setEditingPhotoRkey(null);
+      setPhotoCaptionDraft("");
+      setPhotoFeedback("Caption saved.");
+    } catch (error) {
+      setPhotoCaptionError(error instanceof Error ? error.message : "Caption could not be saved.");
+    } finally {
+      setSavingPhotoCaptionRkey(null);
+    }
+  };
+
+  const handleConfirmDeletePhoto = async (photo: TreeMultimediaRecord) => {
+    await deleteMultimedia(photo.metadata.rkey);
+    setPhotos((current) => current.filter((item) => item.metadata.rkey !== photo.metadata.rkey));
+    if (editingPhotoRkey === photo.metadata.rkey) {
+      setEditingPhotoRkey(null);
+      setPhotoCaptionDraft("");
+    }
+    setPhotoFeedback("Photo deleted.");
+  };
+
+  const handleConfirmDeleteTree = async (item: TreeManagerItem) => {
+    const target = getTreeDeletionTarget(item);
+    if (!target) throw new Error("Choose a tree to delete.");
+    const result = await deleteOccurrenceCascade(target.occurrenceRkey);
+    const deletedMeasurementRkeys = new Set(result.deletedMeasurementRkeys);
+    const deletedPhotoRkeys = new Set(result.deletedMultimediaRkeys);
+    setTrees((current) => current.filter((tree) => tree.rkey !== target.occurrenceRkey));
+    setMeasurements((current) => current.filter((measurement) => (
+      measurement.record.occurrenceRef !== target.occurrenceUri && !deletedMeasurementRkeys.has(measurement.metadata.rkey)
+    )));
+    setPhotos((current) => current.filter((photo) => (
+      photo.record.occurrenceRef !== target.occurrenceUri && !deletedPhotoRkeys.has(photo.metadata.rkey)
+    )));
+    setQueryValues({ tree: null });
+    const deleteNotes = [
+      result.cleanupError,
+      result.treeGroupCountUpdated === false ? "The tree group count may update later." : null,
+    ].filter((note): note is string => Boolean(note));
+    setDeletedFeedback(deleteNotes.length > 0 ? `Tree deleted. ${deleteNotes.join(" ")}` : "Tree deleted.");
+  };
+
+  const activeDeletionTarget = selectedTree ? getTreeDeletionTarget(selectedTree) : null;
+  const confirmDescription = confirmTarget?.type === "tree"
+    ? (() => {
+        const target = getTreeDeletionTarget(confirmTarget.item);
+        const linked = target
+          ? [
+              target.photoCount > 0 ? shortCount(target.photoCount, "photo", "photos") : null,
+              target.measurementCount > 0 ? shortCount(target.measurementCount, "measurement", "measurements") : null,
+            ].filter(Boolean).join(" and ")
+          : "";
+        return linked
+          ? `This will delete the tree and its linked ${linked}. This cannot be undone.`
+          : "This will delete the tree and any linked photos or measurements found at that time. This cannot be undone.";
+      })()
+    : "This will delete this photo from the selected tree. This cannot be undone.";
+
+  if (isLoading) return <TreesManageSkeleton />;
+
+  if (fetchError) {
+    return (
+      <Container className="pt-4 pb-8">
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center space-y-4">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-destructive/20 bg-background">
+            <AlertTriangleIcon className="size-5 text-destructive" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-garamond">Could not load trees</h1>
+            <p className="text-sm text-muted-foreground">{fetchError}</p>
+          </div>
+          <Button variant="outline" onClick={() => void loadAll()}>
+            <RefreshCcwIcon />
+            Try again
+          </Button>
+        </div>
+      </Container>
+    );
   }
 
   return (
     <Container className="pt-4 pb-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-1">
           <h1 className="text-2xl font-bold font-garamond">Trees</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Manage tree groups and saved tree information.
+          <p className="text-sm text-muted-foreground max-w-2xl">
+            Review saved tree information, measurements, and photos in one place.
           </p>
         </div>
-        {onUpload && (
-          <Button variant="outline" size="sm" onClick={onUpload}>
-            <CloudUploadIcon className="h-3.5 w-3.5" />
+        {onUpload ? (
+          <Button variant="outline" onClick={onUpload}>
+            <CloudUploadIcon />
             Upload tree data
           </Button>
-        )}
+        ) : null}
       </div>
 
-      {datasets.length > 0 && !editingTree && (
+      {deletedFeedback ? (
+        <div className="flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
+          <InfoIcon className="mt-0.5 size-4 shrink-0 text-primary" />
+          <p className="text-sm text-foreground">{deletedFeedback}</p>
+        </div>
+      ) : null}
+
+      {datasets.length > 0 ? (
         <section className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold font-garamond">Tree groups</h2>
-              <p className="text-sm text-muted-foreground">Browse trees by group.</p>
+              <p className="text-sm text-muted-foreground">Choose a group or review all trees.</p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <DatasetViewToggle view={datasetView} setView={(nextView) => void setDatasetView(nextView)} />
-              {selectedDatasetUri && (
-                <Button variant="ghost" size="sm" onClick={() => handleDatasetChange(null)}>
-                  Back to groups
-                </Button>
-              )}
-            </div>
+            {datasetFilter ? (
+              <Button variant="ghost" size="sm" onClick={() => handleDatasetChange(null)}>
+                <ChevronLeftIcon />
+                Show all groups
+              </Button>
+            ) : null}
           </div>
-          <div className={datasetView === "list" ? "[&>*]:relative [&>*:not(:last-child)]:after:absolute [&>*:not(:last-child)]:after:inset-x-4 [&>*:not(:last-child)]:after:bottom-0 [&>*:not(:last-child)]:after:h-px [&>*:not(:last-child)]:after:bg-border" : "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => handleDatasetChange(null)}
+              className={cn(
+                "rounded-2xl border p-4 text-left transition-colors hover:border-primary/40 hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                !datasetFilter ? "border-primary bg-primary/5" : "border-border bg-background",
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <span className="rounded-full bg-primary/10 p-2 text-primary"><TreesIcon className="h-4 w-4" /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium">All trees</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">Review every saved tree.</span>
+                  <span className="mt-3 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{trees.length} trees</span>
+                </span>
+              </div>
+            </button>
             {datasets.map((dataset) => {
+              const selected = datasetFilter === dataset.uri;
               const count = trees.filter((tree) => tree.datasetRef === dataset.uri).length;
-              const selected = selectedDatasetUri === dataset.uri;
               return (
                 <button
                   key={dataset.uri}
                   type="button"
                   onClick={() => handleDatasetChange(selected ? null : dataset.uri)}
                   className={cn(
-                    "group text-left outline-none transition-colors duration-300 hover:bg-surface-sunken focus-visible:ring-2 focus-visible:ring-primary/60",
-                    datasetView === "list" ? "w-full rounded-2xl px-1 py-3 sm:px-2" : "rounded-2xl border p-4 hover:border-primary/40",
-                    selected && datasetView === "list" ? "bg-primary/5" : null,
-                    selected && datasetView === "cards" ? "border-primary bg-primary/5" : null,
-                    !selected && datasetView === "cards" ? "border-border bg-background" : null,
+                    "rounded-2xl border p-4 text-left transition-colors hover:border-primary/40 hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                    selected ? "border-primary bg-primary/5" : "border-border bg-background",
                   )}
                 >
                   <div className="flex items-start gap-3">
                     <span className="rounded-full bg-primary/10 p-2 text-primary"><DatabaseIcon className="h-4 w-4" /></span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{dataset.name}</span>
-                      <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">{dataset.description ?? "No description"}</span>
+                      <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">{dataset.description ?? "No description added"}</span>
                       <span className="mt-3 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{dataset.recordCount ?? count} trees</span>
                     </span>
                   </div>
@@ -496,111 +932,381 @@ export function TreesClient({ did, onUpload }: { did: string; onUpload?: () => v
             })}
           </div>
         </section>
-      )}
+      ) : null}
 
-      {/* Editor */}
-      <AnimatePresence>
-        {editingTree && (
-          <TreeEditor
-            key={editingTree.rkey}
-            tree={editingTree}
-            onClose={() => setEditingTree(null)}
-            onSaved={handleSaved}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full lg:max-w-sm">
+          <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(event) => handleTreeSearchChange(event.target.value)}
+            placeholder="Search by species, place, or person…"
+            className="pl-9"
           />
-        )}
-      </AnimatePresence>
-
-      {/* Error */}
-      {fetchError && (
-        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive flex items-center justify-between gap-4">
-          <span>{fetchError}</span>
-          <Button variant="outline" size="sm" onClick={() => void loadTrees()}>Retry</Button>
         </div>
-      )}
+        <p className="text-sm text-muted-foreground">
+          {filteredTrees.length} of {datasetScopedTrees.length} tree{datasetScopedTrees.length === 1 ? "" : "s"}
+        </p>
+      </div>
 
-      {/* Toolbar */}
-      {!fetchError && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <div className="relative flex-1 sm:max-w-sm">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by species or locality…"
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <p className="text-sm text-muted-foreground shrink-0">
-            {filtered.length} of {trees.length} record{trees.length !== 1 ? "s" : ""}
+      {treeItems.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 gap-4 rounded-2xl border border-dashed border-border text-center px-6">
+          <p className="text-2xl text-muted-foreground font-garamond">No trees uploaded yet</p>
+          <p className="text-sm text-muted-foreground max-w-md">
+            Upload your first tree file to start managing tree information, measurements, and photos.
           </p>
+          {onUpload ? (
+            <Button onClick={onUpload}>
+              <CloudUploadIcon />
+              Upload tree data
+            </Button>
+          ) : null}
+        </div>
+      ) : filteredTrees.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-56 gap-3 rounded-2xl border border-dashed border-border text-center px-6">
+          <p className="text-2xl text-muted-foreground font-garamond">No trees match your search</p>
+          <p className="text-sm text-muted-foreground">Try a different species, place, or person.</p>
+          <Button variant="outline" onClick={() => handleTreeSearchChange("")}>Clear search</Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+          <section className="rounded-2xl border border-border bg-background overflow-hidden">
+            <div className="border-b border-border px-4 py-3">
+              <p className="text-sm font-medium text-foreground">Saved trees</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Select a tree to review details, photos, and measurements.</p>
+            </div>
+            <div className="divide-y divide-border">
+              {paginatedTrees.map((item) => {
+                const tree = item.occurrence;
+                const selected = selectedTree?.occurrence.rkey === tree.rkey;
+                const groupName = tree.datasetRef ? datasetLookup.get(tree.datasetRef)?.name ?? tree.datasetName : null;
+                return (
+                  <button
+                    key={tree.atUri}
+                    type="button"
+                    onClick={() => setQueryValues({ tree: tree.rkey })}
+                    className={cn(
+                      "block w-full px-4 py-3 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                      selected && "bg-primary/5",
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-1">
+                        <p className="truncate text-lg leading-none font-garamond">{tree.scientificName ?? "Unnamed tree"}</p>
+                        {tree.vernacularName ? <p className="truncate text-xs italic text-muted-foreground">{tree.vernacularName}</p> : null}
+                        <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+                          <MapPinIcon className="size-3" />
+                          {formatTreeSubtitle(item)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{formatEventDate(tree.eventDate)}</p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        {groupName ? <Badge><DatabaseIcon className="size-3" />{groupName}</Badge> : null}
+                        {item.photos.length > 0 ? <Badge><ImageIcon className="size-3" />{item.photos.length}</Badge> : null}
+                        {item.hasDuplicateBundledMeasurements ? <Badge tone="warn">Review needed</Badge> : hasAnyMeasurementValue(getTreeMeasurementDraft(item.floraMeasurement)) ? <Badge tone="good">Measured</Badge> : null}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <TreeListPagination
+              currentPage={currentTreePage}
+              totalPages={totalTreePages}
+              totalItems={filteredTrees.length}
+              pageSize={TREE_ITEMS_PER_PAGE}
+              onPageChange={handleTreePageChange}
+            />
+          </section>
+
+          {selectedTree ? (
+            <div className="space-y-4">
+              <section className="rounded-2xl border border-border bg-background p-4 md:p-5 space-y-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 space-y-2">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Selected tree</p>
+                    <h2 className="truncate text-3xl leading-none font-garamond">{selectedTree.occurrence.scientificName ?? "Unnamed tree"}</h2>
+                    {selectedTree.occurrence.vernacularName ? (
+                      <p className="text-sm italic text-muted-foreground">{selectedTree.occurrence.vernacularName}</p>
+                    ) : null}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge><MapPinIcon className="size-3" />{formatTreeSubtitle(selectedTree)}</Badge>
+                      <Badge><CalendarIcon className="size-3" />{formatEventDate(selectedTree.occurrence.eventDate)}</Badge>
+                      {activeDatasetName ? <Badge><DatabaseIcon className="size-3" />{activeDatasetName}</Badge> : null}
+                      {detailLoadingRkey === selectedTree.occurrence.rkey ? <Badge><Loader2Icon className="size-3 animate-spin" />Loading details</Badge> : null}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge>{shortCount(selectedTree.photos.length, "photo", "photos")}</Badge>
+                    {selectedTree.hasDuplicateBundledMeasurements ? (
+                      <Badge tone="warn">Measurement review needed</Badge>
+                    ) : selectedTreeHasShownMeasurement ? (
+                      <Badge tone="good">Measurements ready</Badge>
+                    ) : selectedTree.hasLegacyMeasurements || selectedTree.hasUnsupportedMeasurements ? (
+                      <Badge tone="warn">Measurement review needed</Badge>
+                    ) : (
+                      <Badge>No measurements yet</Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <DetailFact label="Tree group" value={activeDatasetName ?? "No tree group"} />
+                  <DetailFact label="Project place" value={activeSiteName ?? "Not linked"} />
+                  <DetailFact label="How it got here" value={establishmentMeansLabel(selectedTree.occurrence.establishmentMeans)} />
+                </div>
+              </section>
+
+              <SectionCard title="Tree information" description="Review and update the details saved for this tree.">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Field label="Scientific name" required>
+                    <Input value={occurrenceDraft.scientificName} onChange={(event) => handleOccurrenceFieldChange("scientificName", event.target.value)} />
+                  </Field>
+                  <Field label="Common name">
+                    <Input value={occurrenceDraft.vernacularName} onChange={(event) => handleOccurrenceFieldChange("vernacularName", event.target.value)} />
+                  </Field>
+                  <Field label="Event date" required>
+                    <Input value={occurrenceDraft.eventDate} onChange={(event) => handleOccurrenceFieldChange("eventDate", event.target.value)} placeholder="YYYY-MM-DD" />
+                  </Field>
+                  <Field label="Recorded by">
+                    <Input value={occurrenceDraft.recordedBy} onChange={(event) => handleOccurrenceFieldChange("recordedBy", event.target.value)} />
+                  </Field>
+                  <Field label="Latitude" required>
+                    <Input inputMode="decimal" value={occurrenceDraft.decimalLatitude} onChange={(event) => handleOccurrenceFieldChange("decimalLatitude", event.target.value)} />
+                  </Field>
+                  <Field label="Longitude" required>
+                    <Input inputMode="decimal" value={occurrenceDraft.decimalLongitude} onChange={(event) => handleOccurrenceFieldChange("decimalLongitude", event.target.value)} />
+                  </Field>
+                  <Field label="Country">
+                    <Input value={occurrenceDraft.country} onChange={(event) => handleOccurrenceFieldChange("country", event.target.value)} />
+                  </Field>
+                  <Field label="Locality">
+                    <Input value={occurrenceDraft.locality} onChange={(event) => handleOccurrenceFieldChange("locality", event.target.value)} />
+                  </Field>
+                  <Field label="How the tree got here">
+                    <select
+                      value={occurrenceDraft.establishmentMeans}
+                      onChange={(event) => handleOccurrenceFieldChange("establishmentMeans", event.target.value)}
+                      className="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 rounded-md border px-3 py-1 text-sm shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="">Not specified</option>
+                      {PARTNER_ESTABLISHMENT_MEANS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <div className="hidden md:block" />
+                  <Field label="Habitat">
+                    <Textarea value={occurrenceDraft.habitat} onChange={(event) => handleOccurrenceFieldChange("habitat", event.target.value)} rows={3} />
+                  </Field>
+                  <Field label="Remarks">
+                    <Textarea value={occurrenceDraft.occurrenceRemarks} onChange={(event) => handleOccurrenceFieldChange("occurrenceRemarks", event.target.value)} rows={3} />
+                  </Field>
+                </div>
+
+                <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-h-5 text-sm">
+                    {occurrenceError || occurrenceValidationError ? (
+                      <span className="text-destructive">{occurrenceError ?? occurrenceValidationError}</span>
+                    ) : occurrenceFeedback ? (
+                      <span className="text-muted-foreground">{occurrenceFeedback}</span>
+                    ) : null}
+                  </div>
+                  <Button onClick={() => void handleSaveOccurrence()} disabled={!occurrenceHasChanges || Boolean(occurrenceValidationError) || savingOccurrence}>
+                    {savingOccurrence ? <Loader2Icon className="animate-spin" /> : <CheckIcon />}
+                    Save tree information
+                  </Button>
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Measurements" description="Track trunk, height, base diameter, and canopy cover values.">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                  <DetailFact label="Linked measurements" value={selectedTree.measurements.length} />
+                  <DetailFact label="Trunk diameter" value={selectedTree.floraMeasurement?.dbh ? `${selectedTree.floraMeasurement.dbh} cm` : "Not set"} />
+                  <DetailFact label="Height" value={selectedTree.floraMeasurement?.totalHeight ? `${selectedTree.floraMeasurement.totalHeight} m` : "Not set"} />
+                  <DetailFact label="Canopy cover" value={selectedTree.floraMeasurement?.canopyCoverPercent ? `${selectedTree.floraMeasurement.canopyCoverPercent}%` : "Not set"} />
+                </div>
+
+                {measurementEditingBlocked ? (
+                  <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-700 dark:text-yellow-300">
+                    {selectedTree.hasDuplicateBundledMeasurements
+                      ? "More than one editable measurement was found for this tree. Editing is paused so the wrong value is not changed."
+                      : "These measurements need manual review before editing here."}
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <Field label="Trunk diameter (cm)">
+                        <Input value={measurementDraft.dbh} inputMode="decimal" onChange={(event) => handleMeasurementFieldChange("dbh", event.target.value)} />
+                      </Field>
+                      <Field label="Height (m)">
+                        <Input value={measurementDraft.totalHeight} inputMode="decimal" onChange={(event) => handleMeasurementFieldChange("totalHeight", event.target.value)} />
+                      </Field>
+                      <Field label="Base diameter (cm)">
+                        <Input value={measurementDraft.diameter} inputMode="decimal" onChange={(event) => handleMeasurementFieldChange("diameter", event.target.value)} />
+                      </Field>
+                      <Field label="Canopy cover (%)">
+                        <Input type="number" min={0} max={CANOPY_COVER_PERCENT_MAX} step="any" value={measurementDraft.canopyCoverPercent} onChange={(event) => handleMeasurementFieldChange("canopyCoverPercent", event.target.value)} />
+                      </Field>
+                    </div>
+                    <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-h-5 text-sm">
+                        {measurementError || measurementValidationError ? (
+                          <span className="text-destructive">{measurementError ?? measurementValidationError}</span>
+                        ) : measurementFeedback ? (
+                          <span className="text-muted-foreground">{measurementFeedback}</span>
+                        ) : !selectedTree.preferredMeasurement ? (
+                          <span className="text-muted-foreground">Add one or more values to save a measurement.</span>
+                        ) : null}
+                      </div>
+                      <Button
+                        onClick={() => void handleSaveMeasurement()}
+                        disabled={
+                          !measurementHasChanges ||
+                          Boolean(measurementValidationError) ||
+                          savingMeasurement ||
+                          (!selectedTree.preferredMeasurement && !hasAnyMeasurementValue(measurementDraft))
+                        }
+                      >
+                        {savingMeasurement ? <Loader2Icon className="animate-spin" /> : <CheckIcon />}
+                        {selectedTree.preferredMeasurement && !hasAnyMeasurementValue(measurementDraft)
+                          ? "Remove measurements"
+                          : selectedTree.preferredMeasurement
+                            ? "Save measurements"
+                            : "Add measurements"}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </SectionCard>
+
+              <SectionCard title="Photos" description="See and manage photos linked to this tree.">
+                <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="new-photo-caption">Caption for new photo</Label>
+                      <Input id="new-photo-caption" value={newPhotoCaption} onChange={(event) => setNewPhotoCaption(event.target.value)} placeholder="Optional caption" />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(event) => void handleAddPhotoFile(event.currentTarget.files?.[0] ?? null)}
+                      />
+                      <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={savingPhoto}>
+                        {savingPhoto ? <Loader2Icon className="animate-spin" /> : <CameraIcon />}
+                        Choose photo
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 md:flex-row">
+                    <Input value={newPhotoUrl} onChange={(event) => setNewPhotoUrl(event.target.value)} placeholder="Or paste a photo link" />
+                    <Button type="button" variant="outline" onClick={() => void handleAddPhotoUrl()} disabled={savingPhoto || !newPhotoUrl.trim()}>
+                      Add linked photo
+                    </Button>
+                  </div>
+                  {photoError ? <p className="text-sm text-destructive">{photoError}</p> : null}
+                  {photoFeedback ? <p className="text-sm text-muted-foreground">{photoFeedback}</p> : null}
+                </div>
+
+                {selectedTree.photos.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border px-6 py-10 text-center">
+                    <CameraIcon className="size-8 text-muted-foreground" />
+                    <p className="text-muted-foreground">No photos linked to this tree yet.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {selectedTree.photos.map((photo) => {
+                      const photoUrl = getPhotoUrl(photo);
+                      const isEditing = editingPhotoRkey === photo.metadata.rkey;
+                      const isSavingCaption = savingPhotoCaptionRkey === photo.metadata.rkey;
+                      return (
+                        <article key={photo.metadata.uri} className="overflow-hidden rounded-xl border border-border">
+                          <div className="flex h-48 w-full items-center justify-center overflow-hidden bg-muted">
+                            {photoUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={photoUrl} alt={getPhotoAltText(selectedTree.occurrence.scientificName, photo.record.subjectPart, photo.record.caption)} className="h-full w-full object-cover" />
+                            ) : (
+                              <CameraIcon className="size-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="space-y-3 p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1 space-y-2">
+                                <Badge>{formatSubjectPart(photo.record.subjectPart)}</Badge>
+                                {isEditing ? (
+                                  <div className="space-y-2">
+                                    <Textarea value={photoCaptionDraft} onChange={(event) => { setPhotoCaptionDraft(event.target.value); setPhotoCaptionError(null); }} rows={3} className="resize-none text-sm" />
+                                    {photoCaptionError ? <p className="text-xs text-destructive">{photoCaptionError}</p> : null}
+                                    <div className="flex flex-wrap gap-2">
+                                      <Button size="sm" onClick={() => void handleSavePhotoCaption(photo)} disabled={isSavingCaption}>
+                                        {isSavingCaption ? <Loader2Icon className="animate-spin" /> : <CheckIcon />}
+                                        Save caption
+                                      </Button>
+                                      <Button size="sm" variant="outline" onClick={() => { setEditingPhotoRkey(null); setPhotoCaptionDraft(""); setPhotoCaptionError(null); }} disabled={isSavingCaption}>
+                                        <XIcon />
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <p className={cn("text-sm break-words", !photo.record.caption && "text-muted-foreground")}>{photo.record.caption ?? "No caption added."}</p>
+                                    <Button type="button" variant="outline" size="sm" onClick={() => { setEditingPhotoRkey(photo.metadata.rkey); setPhotoCaptionDraft(photo.record.caption ?? ""); setPhotoCaptionError(null); }} disabled={savingPhotoCaptionRkey !== null}>
+                                      <PencilIcon />
+                                      {photo.record.caption ? "Edit caption" : "Add caption"}
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                              <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-destructive" aria-label="Delete photo" onClick={() => setConfirmTarget({ type: "photo", photo })}>
+                                <Trash2Icon />
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Added {formatEventDate(photo.metadata.createdAt)}</p>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </SectionCard>
+
+              <SectionCard title="Delete tree" description="Delete this tree and anything linked to it." className="border-destructive/20">
+                <div className="flex flex-col gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">Delete this tree permanently</p>
+                    <p className="text-sm text-muted-foreground">
+                      {activeDeletionTarget
+                        ? `This will also remove ${shortCount(activeDeletionTarget.photoCount, "photo", "photos")} and ${shortCount(activeDeletionTarget.measurementCount, "measurement", "measurements")} linked to this tree.`
+                        : "This tree cannot be deleted until its details finish loading."}
+                    </p>
+                  </div>
+                  <Button variant="destructive" disabled={!activeDeletionTarget} onClick={() => setConfirmTarget({ type: "tree", item: selectedTree })}>
+                    <Trash2Icon />
+                    Delete tree
+                  </Button>
+                </div>
+              </SectionCard>
+            </div>
+          ) : null}
         </div>
       )}
 
-      {/* List */}
-      {!fetchError && (
-        <>
-          {filtered.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-              className="flex flex-col items-center justify-center h-48 gap-4 rounded-xl border border-dashed border-border text-center"
-            >
-              {trees.length === 0 ? (
-                <>
-                  <p className="text-xl font-semibold text-muted-foreground font-garamond">No tree records yet</p>
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    Upload a CSV of tree occurrences to get started.
-                  </p>
-                  {onUpload && (
-                    <Button variant="outline" size="sm" onClick={onUpload}>
-                      <TreesIcon />
-                      Upload tree data
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <p className="text-muted-foreground text-sm">No records match your search.</p>
-              )}
-            </motion.div>
-          ) : (
-            <div className="rounded-xl border border-border p-1">
-              {paginated.map((tree) => (
-                <div key={`${tree.did}-${tree.rkey}`} className="relative after:absolute after:inset-x-4 after:bottom-0 after:h-px after:bg-border last:after:hidden">
-                  <TreeCard
-                    tree={tree}
-                    onEdit={setEditingTree}
-                    onDeleted={handleDeleted}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between text-sm text-muted-foreground pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage <= 1}
-                onClick={() => void setPage(Math.max(1, currentPage - 1))}
-              >
-                Previous
-              </Button>
-              <span>Page {currentPage} of {totalPages}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages}
-                onClick={() => void setPage(Math.min(totalPages, currentPage + 1))}
-              >
-                Next
-              </Button>
-            </div>
-          )}
-        </>
-      )}
+      <ManageConfirmModal
+        open={confirmTarget !== null}
+        title={confirmTarget?.type === "tree" ? "Delete tree?" : "Delete photo?"}
+        description={confirmDescription}
+        confirmLabel={confirmTarget?.type === "tree" ? "Delete tree" : "Delete photo"}
+        onOpenChange={(open) => { if (!open) setConfirmTarget(null); }}
+        onConfirm={async () => {
+          if (!confirmTarget) return;
+          if (confirmTarget.type === "tree") await handleConfirmDeleteTree(confirmTarget.item);
+          else await handleConfirmDeletePhoto(confirmTarget.photo);
+        }}
+      />
     </Container>
   );
 }

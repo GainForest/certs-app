@@ -164,6 +164,7 @@ export type OccurrenceRecord = {
   id: string;
   did: string;
   rkey: string;
+  cid: string | null;
   atUri: string;
   scientificName: string | null;
   vernacularName: string | null;
@@ -175,12 +176,17 @@ export type OccurrenceRecord = {
   individualCount: number | null;
   country: string | null;
   countryCode: string | null;
+  stateProvince: string | null;
   locality: string | null;
   lat: number | null;
   lon: number | null;
   eventDate: string | null;
+  habitat: string | null;
   siteRef: string | null;
   datasetRef: string | null;
+  datasetName: string | null;
+  dynamicProperties: string | null;
+  establishmentMeans: string | null;
   createdAt: string;
   creatorName: string | null;
   creatorAvatarRef: string | null;
@@ -199,12 +205,12 @@ export type OccurrenceRecord = {
 };
 
 const OCCURRENCE_NODE_FIELDS = `
-  did rkey uri createdAt eventDate
+  did rkey uri cid createdAt eventDate
   ${CERTIFIED_PROFILE_DATA_FIELDS}
   scientificName vernacularName kingdom family genus
   basisOfRecord recordedBy individualCount
-  country countryCode locality decimalLatitude decimalLongitude
-  siteRef datasetRef
+  datasetName country countryCode stateProvince locality decimalLatitude decimalLongitude
+  habitat siteRef datasetRef dynamicProperties
   occurrenceRemarks fieldNotes
   thumbnailUrl speciesImageUrl associatedMedia
   imageEvidence { file { ref } }
@@ -232,6 +238,7 @@ type RawOccurrence = {
   did: string;
   rkey: string;
   uri: string;
+  cid?: string | null;
   createdAt: string;
   eventDate?: string | null;
   scientificName?: string | null;
@@ -242,13 +249,17 @@ type RawOccurrence = {
   basisOfRecord?: string | null;
   recordedBy?: string | null;
   individualCount?: number | null;
+  datasetName?: string | null;
   country?: string | null;
   countryCode?: string | null;
+  stateProvince?: string | null;
   locality?: string | null;
   decimalLatitude?: number | string | null;
   decimalLongitude?: number | string | null;
+  habitat?: string | null;
   siteRef?: string | null;
   datasetRef?: string | null;
+  dynamicProperties?: string | null;
   occurrenceRemarks?: string | null;
   fieldNotes?: string | null;
   thumbnailUrl?: string | null;
@@ -300,6 +311,7 @@ function mapOccurrence(n: RawOccurrence): OccurrenceRecord {
     id: `${n.did}-${n.rkey}`,
     did: n.did,
     rkey: n.rkey,
+    cid: n.cid ?? null,
     atUri: n.uri || `at://${n.did}/app.gainforest.dwc.occurrence/${n.rkey}`,
     scientificName: n.scientificName?.trim() || null,
     vernacularName: n.vernacularName?.trim() || null,
@@ -311,12 +323,17 @@ function mapOccurrence(n: RawOccurrence): OccurrenceRecord {
     individualCount: typeof n.individualCount === "number" ? n.individualCount : null,
     country: n.country?.trim() || null,
     countryCode: n.countryCode?.trim() || null,
+    stateProvince: n.stateProvince?.trim() || null,
     locality: n.locality?.trim() || null,
     lat: asNumber(n.decimalLatitude),
     lon: asNumber(n.decimalLongitude),
     eventDate: n.eventDate?.trim() || null,
+    habitat: n.habitat?.trim() || null,
     siteRef: n.siteRef?.trim() || null,
     datasetRef: n.datasetRef?.trim() || null,
+    datasetName: n.datasetName?.trim() || null,
+    dynamicProperties: n.dynamicProperties?.trim() || null,
+    establishmentMeans: null,
     createdAt: n.createdAt,
     creatorName: profileName(n.certifiedProfileData),
     creatorAvatarRef: profileAvatarRef(n.certifiedProfileData),
@@ -544,6 +561,7 @@ function mapAudioRecord(n: RawAudioRecord, audioRef: string | null, audioUrl: st
     id: `${n.did}-audio-${n.rkey}`,
     did: n.did,
     rkey: n.rkey,
+    cid: n.cid ?? null,
     atUri: n.uri || `at://${n.did}/app.gainforest.ac.audio/${n.rkey}`,
     scientificName: n.name?.trim() || null,
     vernacularName: "Nature sound recording",
@@ -555,12 +573,17 @@ function mapAudioRecord(n: RawAudioRecord, audioRef: string | null, audioUrl: st
     individualCount: null,
     country: null,
     countryCode: null,
+    stateProvince: null,
     locality: null,
     lat: null,
     lon: null,
     eventDate: n.metadata?.recordedAt ?? null,
+    habitat: null,
     siteRef: n.siteRef?.trim() || null,
     datasetRef: null,
+    datasetName: null,
+    dynamicProperties: null,
+    establishmentMeans: null,
     createdAt: n.createdAt,
     creatorName: profileName(n.certifiedProfileData),
     creatorAvatarRef: profileAvatarRef(n.certifiedProfileData),
@@ -2652,7 +2675,299 @@ export async function fetchTreeDatasetsByDid(
   return all;
 }
 
-// ── 8. Bumicert evidence timeline attachments ─────────────────────────────
+// ── 8. Manage section — tree measurements and photos by DID ───────────────
+
+export type TreeMeasurementRecord = {
+  metadata: {
+    did: string;
+    uri: string;
+    rkey: string;
+    cid: string | null;
+    createdAt: string | null;
+  };
+  record: {
+    occurrenceRef: string | null;
+    result: unknown | null;
+    measuredBy: string | null;
+    measuredByID: string | null;
+    measurementDate: string | null;
+    measurementMethod: string | null;
+    measurementRemarks: string | null;
+    createdAt: string | null;
+    legacyMeasurementType: string | null;
+    legacyMeasurementValue: string | null;
+    legacyMeasurementUnit: string | null;
+    schemaVersion: "bundled" | "legacy";
+  };
+};
+
+const TREE_MEASUREMENTS_BY_DID_QUERY = `
+  query TreeMeasurementsByDid($did: String!, $first: Int!, $after: String) {
+    appGainforestDwcMeasurement(
+      where: { did: { eq: $did } }
+      first: $first
+      after: $after
+      sortDirection: DESC
+      sortBy: createdAt
+    ) {
+      pageInfo { hasNextPage endCursor }
+      edges {
+        node {
+          did uri rkey cid createdAt occurrenceRef measuredBy measuredByID measurementDate measurementMethod measurementRemarks
+          result {
+            __typename
+            ... on AppGainforestDwcMeasurementFloraMeasurement {
+              dbh totalHeight basalDiameter canopyCoverPercent
+              dbhMeasurementHeight girth basalArea stemCount heightToFirstBranch buttressHeight heightMeasurementMethod crownDiameter crownDepth crownPosition crownDieback abovegroundBiomass belowgroundBiomass carbonContent woodDensity biomassAllometricEquation annualDiameterIncrement estimatedAge growthForm vitalityStatus healthScore damageType damageCause decayClass floweringStatus phenology leafAreaIndex colonyDiameter colonyHeight colonyMorphology bleachingStatus liveTissueCoverPercent depthBelowSurface
+            }
+            ... on AppGainforestDwcMeasurementFaunaMeasurement { bodyMass totalLength groupSize }
+            ... on AppGainforestDwcMeasurementGenericMeasurement { measurements { measurementType measurementValue measurementUnit measurementMethod measurementRemarks measurementAccuracy } }
+          }
+        }
+      }
+    }
+  }
+`;
+
+type RawTreeMeasurementNode = {
+  did: string;
+  uri: string;
+  rkey: string;
+  cid?: string | null;
+  createdAt?: string | null;
+  occurrenceRef?: string | null;
+  measuredBy?: string | null;
+  measuredByID?: string | null;
+  measurementDate?: string | null;
+  measurementMethod?: string | null;
+  measurementRemarks?: string | null;
+  result?: (Record<string, unknown> & { __typename?: string | null }) | null;
+};
+
+function omitUndefinedFields<T extends Record<string, unknown>>(record: T): T {
+  for (const key of Object.keys(record)) {
+    if (record[key] === undefined || record[key] === null) delete record[key];
+  }
+  return record;
+}
+
+function normalizeTreeMeasurementResult(result: RawTreeMeasurementNode["result"]): unknown | null {
+  if (!result) return null;
+  const { __typename, ...rest } = result;
+  if (__typename === "AppGainforestDwcMeasurementFloraMeasurement") {
+    return omitUndefinedFields({
+      $type: "app.gainforest.dwc.measurement#floraMeasurement",
+      ...rest,
+    });
+  }
+  if (__typename === "AppGainforestDwcMeasurementFaunaMeasurement") {
+    return omitUndefinedFields({
+      $type: "app.gainforest.dwc.measurement#faunaMeasurement",
+      ...rest,
+    });
+  }
+  if (__typename === "AppGainforestDwcMeasurementGenericMeasurement") {
+    return omitUndefinedFields({
+      $type: "app.gainforest.dwc.measurement#genericMeasurement",
+      ...rest,
+    });
+  }
+  return omitUndefinedFields({ ...rest });
+}
+
+function mapTreeMeasurement(node: RawTreeMeasurementNode): TreeMeasurementRecord {
+  return {
+    metadata: {
+      did: node.did,
+      uri: node.uri,
+      rkey: node.rkey,
+      cid: node.cid ?? null,
+      createdAt: node.createdAt ?? null,
+    },
+    record: {
+      occurrenceRef: node.occurrenceRef?.trim() || null,
+      result: normalizeTreeMeasurementResult(node.result ?? null),
+      measuredBy: node.measuredBy?.trim() || null,
+      measuredByID: node.measuredByID?.trim() || null,
+      measurementDate: node.measurementDate?.trim() || null,
+      measurementMethod: node.measurementMethod?.trim() || null,
+      measurementRemarks: node.measurementRemarks?.trim() || null,
+      createdAt: node.createdAt ?? null,
+      legacyMeasurementType: null,
+      legacyMeasurementValue: null,
+      legacyMeasurementUnit: null,
+      schemaVersion: "bundled",
+    },
+  };
+}
+
+export async function fetchMeasurementsByDid(
+  did: string,
+  signal?: AbortSignal,
+): Promise<TreeMeasurementRecord[]> {
+  const all: TreeMeasurementRecord[] = [];
+  let cursor: string | null = null;
+
+  for (let page = 0; page < 50; page += 1) {
+    type MeasurementPage = { appGainforestDwcMeasurement?: Connection<RawTreeMeasurementNode> };
+    const data: MeasurementPage | null = await indexerQuery<MeasurementPage>(
+      TREE_MEASUREMENTS_BY_DID_QUERY,
+      { did, first: 200, after: cursor },
+      signal,
+    );
+    const conn: Connection<RawTreeMeasurementNode> | undefined = data?.appGainforestDwcMeasurement;
+    const nodes = (conn?.edges ?? [])
+      .map((edge) => edge?.node)
+      .filter((node): node is RawTreeMeasurementNode => Boolean(node?.did && node?.uri && node?.rkey));
+    all.push(...nodes.map(mapTreeMeasurement));
+    if (!conn?.pageInfo?.hasNextPage || !conn.pageInfo.endCursor) break;
+    cursor = conn.pageInfo.endCursor;
+  }
+
+  return all;
+}
+
+export type TreeMultimediaRecord = {
+  metadata: {
+    did: string;
+    uri: string;
+    rkey: string;
+    cid: string | null;
+    createdAt: string | null;
+  };
+  record: {
+    occurrenceRef: string | null;
+    siteRef: string | null;
+    subjectPart: string | null;
+    subjectPartUri: string | null;
+    subjectOrientation: string | null;
+    file: unknown | null;
+    format: string | null;
+    accessUri: string | null;
+    variantLiteral: string | null;
+    caption: string | null;
+    creator: string | null;
+    createDate: string | null;
+    createdAt: string | null;
+  };
+};
+
+const TREE_MULTIMEDIA_BY_DID_QUERY = `
+  query TreeMultimediaByDid($did: String!, $first: Int!, $after: String) {
+    appGainforestAcMultimedia(
+      where: { did: { eq: $did } }
+      first: $first
+      after: $after
+      sortDirection: DESC
+      sortBy: createdAt
+    ) {
+      pageInfo { hasNextPage endCursor }
+      edges {
+        node {
+          did uri rkey cid createdAt occurrenceRef siteRef subjectPart subjectPartUri subjectOrientation
+          file { ref mimeType size }
+          format accessUri variantLiteral caption creator createDate
+        }
+      }
+    }
+  }
+`;
+
+type RawTreeMultimediaNode = {
+  did: string;
+  uri: string;
+  rkey: string;
+  cid?: string | null;
+  createdAt?: string | null;
+  occurrenceRef?: string | null;
+  siteRef?: string | null;
+  subjectPart?: string | null;
+  subjectPartUri?: string | null;
+  subjectOrientation?: string | null;
+  file?: { ref?: string | null; mimeType?: string | null; size?: number | null } | null;
+  format?: string | null;
+  accessUri?: string | null;
+  variantLiteral?: string | null;
+  caption?: string | null;
+  creator?: string | null;
+  createDate?: string | null;
+};
+
+async function mapTreeMultimedia(node: RawTreeMultimediaNode, signal?: AbortSignal): Promise<TreeMultimediaRecord> {
+  const ref = normaliseRef(node.file?.ref);
+  const resolvedUrl = ref ? await resolveBlobUrl(node.did, ref, signal).catch(() => null) : null;
+  const accessUri = resolvedUrl ?? node.accessUri?.trim() ?? null;
+  return {
+    metadata: {
+      did: node.did,
+      uri: node.uri,
+      rkey: node.rkey,
+      cid: node.cid ?? null,
+      createdAt: node.createdAt ?? null,
+    },
+    record: {
+      occurrenceRef: node.occurrenceRef?.trim() || null,
+      siteRef: node.siteRef?.trim() || null,
+      subjectPart: node.subjectPart?.trim() || null,
+      subjectPartUri: node.subjectPartUri?.trim() || null,
+      subjectOrientation: node.subjectOrientation?.trim() || null,
+      file: ref
+        ? {
+            $type: "blob",
+            uri: accessUri,
+            cid: ref,
+            mimeType: node.file?.mimeType ?? null,
+            size: node.file?.size ?? null,
+          }
+        : null,
+      format: node.format?.trim() || node.file?.mimeType || null,
+      accessUri,
+      variantLiteral: node.variantLiteral?.trim() || null,
+      caption: node.caption?.trim() || null,
+      creator: node.creator?.trim() || null,
+      createDate: node.createDate?.trim() || null,
+      createdAt: node.createdAt ?? null,
+    },
+  };
+}
+
+function isUnsupportedMultimediaError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error ?? "").toLowerCase();
+  return message.includes("multimedia") && (message.includes("cannot query") || message.includes("unknown field") || message.includes("namespace"));
+}
+
+export async function fetchMultimediaByDid(
+  did: string,
+  signal?: AbortSignal,
+): Promise<TreeMultimediaRecord[]> {
+  const all: TreeMultimediaRecord[] = [];
+  let cursor: string | null = null;
+
+  try {
+    for (let page = 0; page < 50; page += 1) {
+      type MultimediaPage = { appGainforestAcMultimedia?: Connection<RawTreeMultimediaNode> };
+      const data: MultimediaPage | null = await indexerQuery<MultimediaPage>(
+        TREE_MULTIMEDIA_BY_DID_QUERY,
+        { did, first: 200, after: cursor },
+        signal,
+      );
+      const conn: Connection<RawTreeMultimediaNode> | undefined = data?.appGainforestAcMultimedia;
+      const nodes = (conn?.edges ?? [])
+        .map((edge) => edge?.node)
+        .filter((node): node is RawTreeMultimediaNode => Boolean(node?.did && node?.uri && node?.rkey));
+      all.push(...(await Promise.all(nodes.map((node) => mapTreeMultimedia(node, signal)))));
+      if (!conn?.pageInfo?.hasNextPage || !conn.pageInfo.endCursor) break;
+      cursor = conn.pageInfo.endCursor;
+    }
+  } catch (error) {
+    if (isUnsupportedMultimediaError(error)) return [];
+    throw error;
+  }
+
+  return all;
+}
+
+// ── 9. Bumicert evidence timeline attachments ─────────────────────────────
 
 export type TimelineAttachmentSubject = { uri: string | null; cid: string | null };
 
