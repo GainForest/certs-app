@@ -91,9 +91,10 @@ Legend: `[ ]` open · `[x]` done · `[~]` partially done
   5 pins + "Load more" under the map). Add a lightweight geo query that
   returns all coordinates for map mode.
 - [ ] **Country facet for projects** — organizations have one, projects don't.
-- [ ] **Donate modal transparency** — show where money goes (recipient
-  wallet/org), fees ("100% to steward" is a selling point if true), and what
-  the donor receives (public receipt, on-chain record).
+- [x] **Donate modal transparency** — the amount step now states that 100%
+  goes directly to the organization's verified wallet (no platform fee,
+  network fee covered) and that the donation becomes a public, auditable
+  receipt.
 - [ ] **Recent-donor social proof on detail pages** — "12 people supported
   this, most recently 2 days ago" near the Donate button.
 - [ ] **Credits vs crowdfunding decision** — if "credits" is meant literally,
