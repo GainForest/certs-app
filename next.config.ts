@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
-  allowedDevOrigins: ["local.gainforest.app", "local-e2e.gainforest.app"],
+  allowedDevOrigins: ["local.gainforest.app", "local2.gainforest.app", "local-e2e.gainforest.app"],
   experimental: {
     dynamicOnHover: true,
     preloadEntriesOnStart: true,
