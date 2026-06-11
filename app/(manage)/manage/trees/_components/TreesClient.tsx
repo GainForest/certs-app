@@ -35,6 +35,7 @@ import type {
 import { TreesManageSkeleton } from "./TreesManageSkeleton";
 import { TreeListPagination } from "./TreeListPagination";
 import { ManageConfirmModal } from "./ManageConfirmModal";
+import GreenGlobeTreePreviewCard from "./GreenGlobeTreePreviewCard";
 import {
   CANOPY_COVER_PERCENT_MAX,
   buildTreeManagerItems,
@@ -159,6 +160,11 @@ function establishmentMeansLabel(value: string | null | undefined): string {
   const trimmed = value?.trim();
   if (!trimmed) return "Not set";
   return PARTNER_ESTABLISHMENT_MEANS_OPTIONS.find((option) => option.value === trimmed)?.label ?? trimmed;
+}
+
+function getUniqueTreeSiteRef(items: TreeManagerItem[]): string | null {
+  const siteRefs = Array.from(new Set(items.map((item) => item.occurrence.siteRef).filter((value): value is string => Boolean(value))));
+  return siteRefs.length === 1 ? siteRefs[0] : null;
 }
 
 function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "good" | "warn" }) {
@@ -564,6 +570,11 @@ export function TreesClient({ did, onUpload }: TreesClientProps) {
   const activeSiteName = selectedTree?.occurrence.siteRef
     ? siteLookup.get(selectedTree.occurrence.siteRef)?.record.name ?? "Connected project place"
     : null;
+  const selectedTreeGroup = datasetFilter ? datasetLookup.get(datasetFilter) ?? null : null;
+  const selectedTreeGroupPreviewTree = datasetFilter && selectedTree?.occurrence.datasetRef === datasetFilter ? selectedTree : null;
+  const selectedTreeGroupPreviewSiteRef = datasetFilter ? getUniqueTreeSiteRef(datasetScopedTrees) : null;
+  const selectedTreeGroupPreviewFocusedSiteRef = selectedTreeGroupPreviewTree?.occurrence.siteRef ?? null;
+  const selectedTreeGroupPreviewTreeCount = selectedTreeGroup ? selectedTreeGroup.recordCount ?? datasetScopedTrees.length : null;
 
   const handleTreeSearchChange = useCallback((value: string) => {
     setQueryValues({ q: toNullableQueryValue(value), "tree-page": null, tree: null });
@@ -977,6 +988,19 @@ export function TreesClient({ did, onUpload }: TreesClientProps) {
           {filteredTrees.length} of {datasetScopedTrees.length} tree{datasetScopedTrees.length === 1 ? "" : "s"}
         </p>
       </div>
+
+      {selectedTreeGroup ? (
+        <GreenGlobeTreePreviewCard
+          did={did}
+          datasetRef={selectedTreeGroup.uri}
+          treeGroupName={selectedTreeGroup.name}
+          treeCount={selectedTreeGroupPreviewTreeCount}
+          treeUri={selectedTreeGroupPreviewTree?.occurrence.atUri ?? null}
+          treeName={selectedTreeGroupPreviewTree?.occurrence.scientificName ?? null}
+          siteRef={selectedTreeGroupPreviewSiteRef}
+          focusedSiteRef={selectedTreeGroupPreviewFocusedSiteRef}
+        />
+      ) : null}
 
       {treeItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 gap-4 rounded-2xl border border-dashed border-border text-center px-6">

@@ -16,6 +16,37 @@ export const INDEXER_URL = "https://dev-api-hi.gainforest.app/graphql";
 /** Green Globe live map (data.gainforest.app). */
 export const GLOBE_URL = "https://data.gainforest.app";
 
+const LOCAL_GREEN_GLOBE_PREVIEW_BASE_URL = "http://localhost:8910";
+
+/** Green Globe embedded preview base URL. Override for hosted Green Globe testing. */
+export const GREEN_GLOBE_PREVIEW_URL =
+  process.env.NEXT_PUBLIC_GREEN_GLOBE_URL?.trim().replace(/\/$/, "") ||
+  (process.env.NEXT_PUBLIC_VERCEL_ENV === "production" ? GLOBE_URL : LOCAL_GREEN_GLOBE_PREVIEW_BASE_URL);
+
+export function greenGlobeTreePreviewHref(
+  did: string,
+  options?: {
+    treeUri?: string | null;
+    datasetRef?: string | null;
+    datasetRefs?: string[] | null;
+    siteRef?: string | null;
+  },
+): string {
+  const query = new URLSearchParams();
+
+  if (options?.treeUri) query.set("tree-uri", options.treeUri);
+  if (options?.siteRef) query.set("project-site-id", options.siteRef);
+
+  const datasetRefs = Array.from(new Set([...(options?.datasetRef ? [options.datasetRef] : []), ...(options?.datasetRefs ?? [])]));
+  for (const datasetRef of datasetRefs) {
+    if (datasetRef.length > 0) query.append("dataset-ref", datasetRef);
+  }
+
+  const queryString = query.toString();
+  const basePath = `${GREEN_GLOBE_PREVIEW_URL}/embed/${encodeURIComponent(did)}`;
+  return queryString ? `${basePath}?${queryString}` : basePath;
+}
+
 /** Hyperscan ATProto explorer (hyperscan.dev). */
 export const HYPERSCAN_URL = "https://www.hyperscan.dev";
 
