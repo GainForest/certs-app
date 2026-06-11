@@ -13,6 +13,7 @@ import {
   HeartIcon,
   LeafIcon,
   MapPinnedIcon,
+  PaperclipIcon,
   SparklesIcon,
   SproutIcon,
   UsersRoundIcon,
@@ -31,6 +32,7 @@ import {
   fetchBumicertsByDid,
   fetchImageOccurrencesByDid,
   fetchLocationsByDid,
+  fetchObservationSummaryByDid,
   fetchOccurrencesByDid,
   fetchRecordByUri,
   fetchRecordDetail,
@@ -38,6 +40,7 @@ import {
   fetchTreeDatasetsByDid,
   type BumicertRecord,
   type DetailBadge,
+  type ObservationSummary,
   type OccurrenceRecord,
   type TimelineAttachmentItem,
 } from "../../../_lib/indexer";
@@ -142,14 +145,18 @@ export default async function BumicertDetailPage({
 
   const isOverviewTab = activeTab === "overview";
   const showsDetailSidebar = activeTab !== "timeline";
-  const [moreBumicerts, observations] = isOverviewTab
+  const [moreBumicerts, observations, observationSummary, linkedTimelineCount] = isOverviewTab
     ? await Promise.all([
         fetchBumicertsByDid(record.did, 6)
           .then((page) => page.records.filter((item) => item.id !== record.id).slice(0, 5))
           .catch(() => []),
         fetchImageOccurrencesByDid(record.did, 24).catch(() => []),
+        fetchObservationSummaryByDid(record.did).catch(() => null),
+        fetchTimelineAttachmentsByDid(record.did)
+          .then((items) => items.filter((item) => item.record.subjects?.[0]?.uri === record.atUri).length)
+          .catch(() => null),
       ])
-    : [[], [] as OccurrenceRecord[]];
+    : [[], [] as OccurrenceRecord[], null, null];
 
   let timelineAttachments: TimelineAttachmentItem[] = [];
   let timelineAttachmentsUnavailable = false;
@@ -229,6 +236,13 @@ export default async function BumicertDetailPage({
                 detail={detail}
                 description={description}
                 observations={observations}
+                evidence={{
+                  boundaries: record.locationUris.length,
+                  observationSummary,
+                  timelineCount: linkedTimelineCount,
+                  detailHref,
+                  ownerHref: `/account/${encodeURIComponent(owner.urlIdentifier)}`,
+                }}
               />
             )}
             {activeTab === "site-boundaries" && <SiteBoundariesPanel record={record} />}
@@ -760,16 +774,26 @@ function Badge({ badge }: { badge: DetailBadge }) {
   );
 }
 
+type EvidenceInfo = {
+  boundaries: number;
+  observationSummary: ObservationSummary | null;
+  timelineCount: number | null;
+  detailHref: string;
+  ownerHref: string;
+};
+
 function OverviewPanel({
   record,
   detail,
   description,
   observations,
+  evidence,
 }: {
   record: BumicertRecord;
   detail: RouteData["detail"];
   description: string | null | undefined;
   observations: OccurrenceRecord[];
+  evidence: EvidenceInfo;
 }) {
   return (
     <article className="py-1">
@@ -820,8 +844,84 @@ function OverviewPanel({
         ),
       )}
 
+      <EvidenceSection evidence={evidence} />
+
       <BumicertObservationsGallery observations={observations} />
     </article>
+  );
+}
+
+/**
+ * The trust meter: how much verifiable material backs this claim. Each chip
+ * links to where the evidence lives, and zero-states stay visible (muted) so
+ * evidence-rich and evidence-light Bumicerts are distinguishable at a glance.
+ */
+function EvidenceSection({ evidence }: { evidence: EvidenceInfo }) {
+  const { boundaries, observationSummary, timelineCount, detailHref, ownerHref } = evidence;
+
+  const chips: Array<{ key: string; href: string; icon: ReactNode; label: string; present: boolean }> = [
+    {
+      key: "boundaries",
+      href: `${detailHref}?tab=site-boundaries`,
+      icon: <MapPinnedIcon className="h-3.5 w-3.5" aria-hidden />,
+      label: boundaries > 0
+        ? `${formatNumber(boundaries)} site ${boundaries === 1 ? "boundary" : "boundaries"} mapped`
+        : "No site boundaries yet",
+      present: boundaries > 0,
+    },
+    ...(observationSummary
+      ? [{
+          key: "sightings",
+          href: ownerHref,
+          icon: <LeafIcon className="h-3.5 w-3.5" aria-hidden />,
+          label: observationSummary.count > 0
+            ? `${formatCompact(observationSummary.count)} nature sighting${observationSummary.count === 1 ? "" : "s"}${
+                observationSummary.latestAt ? ` · latest ${formatRelative(observationSummary.latestAt)}` : ""
+              }`
+            : "No nature sightings yet",
+          present: observationSummary.count > 0,
+        }]
+      : []),
+    ...(timelineCount !== null
+      ? [{
+          key: "timeline",
+          href: `${detailHref}?tab=timeline`,
+          icon: <PaperclipIcon className="h-3.5 w-3.5" aria-hidden />,
+          label: timelineCount > 0
+            ? `${formatNumber(timelineCount)} timeline item${timelineCount === 1 ? "" : "s"}`
+            : "No timeline evidence yet",
+          present: timelineCount > 0,
+        }]
+      : []),
+  ];
+
+  if (chips.length === 0) return null;
+
+  return (
+    <div className="mt-8 border-t border-border-soft pt-6">
+      <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+        Evidence
+      </h2>
+      <div className="flex flex-wrap gap-2">
+        {chips.map((chip) => (
+          <Link
+            key={chip.key}
+            href={chip.href}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+              chip.present
+                ? "border-primary/25 bg-primary/[0.07] text-foreground hover:border-primary/50 hover:text-primary"
+                : "border-border-soft bg-surface text-muted-foreground hover:border-border hover:text-foreground"
+            }`}
+          >
+            <span className={chip.present ? "text-primary" : "text-muted-foreground/70"}>{chip.icon}</span>
+            {chip.label}
+          </Link>
+        ))}
+      </div>
+      <p className="mt-3 text-xs leading-5 text-muted-foreground">
+        Evidence is published by the organization on the open ATProto network and can be inspected by anyone.
+      </p>
+    </div>
   );
 }
 

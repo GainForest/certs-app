@@ -50,17 +50,20 @@ Legend: `[ ]` open · `[x]` done · `[~]` partially done
 
 ## P1 — Trust & evaluation layer
 
-- [ ] **Evidence-completeness badge** on cards + detail header, e.g.
-  "📍 boundaries · 📷 14 photos · 🔊 monitoring · 📄 2 reports". Data already
-  exists (locations, observations, timeline attachments) — surface it as a
-  scannable trust meter. Start: count per-DID observations/timeline items.
-- [ ] **Link observations to bumicerts visibly** — 41.6K sightings are the
-  platform's unique dMRV asset but are an afterthought on project pages.
-  Show "this project's site has N verified sightings, last one X days ago"
-  in the detail header / cards.
-- [ ] **Quantified claims: format + validate** — cards show raw "⭔ 24164249 ha"
-  (unformatted and implausible). Format (`24.2M ha`) and sanity-check at
-  creation time; flag outliers instead of printing them.
+- [~] **Evidence-completeness badge** on cards + detail header — DONE on the
+  detail page: an "Evidence" section with linked chips (site boundaries ·
+  nature sightings + latest date · timeline items), zero-states muted so
+  evidence-rich and evidence-light certs are distinguishable. Cards show a
+  sightings pill (one batched count query per page of DIDs). Remaining:
+  photos/reports breakdown on cards, and an aggregate score.
+- [~] **Link observations to bumicerts visibly** — DONE at org level: detail
+  evidence chip ("N nature sightings · latest X ago") and card pill.
+  Remaining: site-level linkage (sightings within the claim's certified
+  locations, not just the same publisher DID).
+- [x] **Quantified claims: format + validate** — area scope tags are now
+  normalized at the data layer ("⭔ 24164249 ha" → "⭔ 24.2M ha"); areas
+  larger than any country (>1.5B ha) are dropped as bad data. Remaining:
+  validation at creation time.
 - [ ] **Evaluation records (ATProto)** — let third parties publish evaluation
   records against a claim (Hypercerts evaluation model). Add an
   "Evaluations" tab: who reviewed, methodology, verdict.
@@ -69,8 +72,10 @@ Legend: `[ ]` open · `[x]` done · `[~]` partially done
 - [ ] **Donor identity prompts** — top donor is "Anonymous supporter" ($19.2K
   of $26.9K total): social proof is wasted. Prompt to attach name/pseudonym
   at donation time; let anonymous donors pick a display alias.
-- [ ] **Empty-tab annotations** — detail tabs "Site Boundaries" / "Timeline"
-  are usually empty voids; annotate counts ("Timeline · 0") or collapse.
+- [~] **Empty-tab annotations** — the overview Evidence chips now carry the
+  counts and link into the Site Boundaries / Timeline tabs, so visitors see
+  "No timeline evidence yet" before clicking. Remaining: counts in the tab
+  strip itself (lives in AppShell's header bridge).
 
 ## P2 — Marketplace depth
 

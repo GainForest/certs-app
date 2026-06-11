@@ -30,6 +30,7 @@ import { StatsTileGrid } from "../_components/StatsTile";
 import {
   fetchBumicertStats,
   fetchBumicerts,
+  fetchObservationCountsByDid,
   type BumicertRecord,
   type BumicertStats,
   type ExplorerRecord,
@@ -117,6 +118,8 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
   const [totalStats, setTotalStats] = useState<BumicertStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [fundingIndex, setFundingIndex] = useState<FundingSummaryIndex | null>(null);
+  const [sightingCounts, setSightingCounts] = useState<Map<string, number>>(new Map());
+  const sightingDidsRequestedRef = useRef<Set<string>>(new Set());
   const sortMenuRef = useRef<HTMLDivElement | null>(null);
   const filtersMenuRef = useRef<HTMLDivElement | null>(null);
   const requestSeqRef = useRef(0);
@@ -154,6 +157,30 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
       });
     return () => controller.abort();
   }, []);
+
+  // Evidence signal for the cards: nature sightings shared by each publishing
+  // organization, fetched as one batched count query per page of new DIDs.
+  useEffect(() => {
+    const missing = [...new Set(records.map((record) => record.did))]
+      .filter((did) => !sightingDidsRequestedRef.current.has(did));
+    if (missing.length === 0) return;
+    for (const did of missing) sightingDidsRequestedRef.current.add(did);
+    const controller = new AbortController();
+    fetchObservationCountsByDid(missing, controller.signal)
+      .then((counts) => {
+        setSightingCounts((current) => {
+          const next = new Map(current);
+          for (const [did, count] of counts) next.set(did, count);
+          return next;
+        });
+      })
+      .catch((error) => {
+        // Allow a retry on the next records change (covers aborts too).
+        for (const did of missing) sightingDidsRequestedRef.current.delete(did);
+        if ((error as Error).name !== "AbortError") console.warn("[bumicerts] sighting counts failed", error);
+      });
+    return () => controller.abort();
+  }, [records]);
 
   useEffect(() => {
     if (!statsEnabled) return;
@@ -593,9 +620,9 @@ export function BumicertsExploreClient({ records: initialRecords = [] }: { recor
             {view === "map" ? (
               <RecordMap records={visibleRecords} kind="bumicert" onOpen={openMapRecord} />
             ) : view === "list" ? (
-              <BumicertList records={renderedRecords} loading={loading} onOpen={openRecord} fundingIndex={fundingIndex} />
+              <BumicertList records={renderedRecords} loading={loading} onOpen={openRecord} fundingIndex={fundingIndex} sightingCounts={sightingCounts} />
             ) : (
-              <BumicertGrid records={renderedRecords} loading={loading} onOpen={openRecord} fundingIndex={fundingIndex} />
+              <BumicertGrid records={renderedRecords} loading={loading} onOpen={openRecord} fundingIndex={fundingIndex} sightingCounts={sightingCounts} />
             )}
           </div>
 
@@ -706,11 +733,13 @@ const BumicertGrid = memo(function BumicertGrid({
   loading,
   onOpen,
   fundingIndex,
+  sightingCounts,
 }: {
   records: BumicertRecord[];
   loading: boolean;
   onOpen: (record: BumicertRecord) => void;
   fundingIndex: FundingSummaryIndex | null;
+  sightingCounts: Map<string, number>;
 }) {
   if (loading && records.length === 0) {
     return <BumicertGridSkeleton />;
@@ -761,7 +790,12 @@ const BumicertGrid = memo(function BumicertGrid({
             aria-label={`Open project: ${record.title}`}
             className="block h-full w-full text-left"
           >
-            <BumicertCardVisual record={record} priority={index < 8} funding={fundingIndex?.get(record.atUri)} />
+            <BumicertCardVisual
+              record={record}
+              priority={index < 8}
+              funding={fundingIndex?.get(record.atUri)}
+              sightingCount={sightingCounts.get(record.did)}
+            />
           </button>
         </div>
       ))}
@@ -810,37 +844,46 @@ const BumicertList = memo(function BumicertList({
   loading,
   onOpen,
   fundingIndex,
+  sightingCounts,
 }: {
   records: BumicertRecord[];
   loading: boolean;
   onOpen: (record: BumicertRecord) => void;
   fundingIndex: FundingSummaryIndex | null;
+  sightingCounts: Map<string, number>;
 }) {
   if (loading && records.length === 0) {
     return <BumicertGridSkeleton />;
   }
 
   if (records.length === 0) {
-    return <BumicertGrid records={records} loading={loading} onOpen={onOpen} fundingIndex={fundingIndex} />;
+    return <BumicertGrid records={records} loading={loading} onOpen={onOpen} fundingIndex={fundingIndex} sightingCounts={sightingCounts} />;
   }
 
   return (
     <ul role="list" className="mt-4">
       {records.map((record, index) => (
         <li key={record.id} className="relative animate-in after:absolute after:inset-x-4 after:bottom-0 after:h-px after:bg-border last:after:hidden" style={{ animationDelay: `${Math.min(index, 10) * 35}ms` }}>
-          <BumicertListItem record={record} onOpen={onOpen} priority={index < 8} funding={fundingIndex?.get(record.atUri)} />
+          <BumicertListItem
+            record={record}
+            onOpen={onOpen}
+            priority={index < 8}
+            funding={fundingIndex?.get(record.atUri)}
+            sightingCount={sightingCounts.get(record.did)}
+          />
         </li>
       ))}
     </ul>
   );
 });
 
-const BumicertListItem = memo(function BumicertListItem({ record, priority, onOpen, funding }: { record: BumicertRecord; priority: boolean; onOpen: (record: BumicertRecord) => void; funding?: BumicertFundingSummary }) {
+const BumicertListItem = memo(function BumicertListItem({ record, priority, onOpen, funding, sightingCount }: { record: BumicertRecord; priority: boolean; onOpen: (record: BumicertRecord) => void; funding?: BumicertFundingSummary; sightingCount?: number }) {
   const [imgError, setImgError] = useState(false);
   const hasImage = Boolean(record.imageUrl) && !imgError;
   const placeLabel = record.locationCount > 0 ? `${record.locationCount} project place${record.locationCount === 1 ? "" : "s"}` : null;
   const peopleLabel = record.contributorCount > 0 ? formatPeopleNamed(record.contributorCount) : null;
   const fundingLabel = formatFundingLabel(funding);
+  const sightingsLabel = sightingCount && sightingCount > 0 ? `${formatStat(sightingCount)} nature sightings` : null;
 
   return (
     <button
@@ -876,6 +919,7 @@ const BumicertListItem = memo(function BumicertListItem({ record, priority, onOp
             {fundingLabel ? <span className="font-medium text-primary">{fundingLabel}</span> : null}
             {peopleLabel ? <span>{peopleLabel}</span> : null}
             {placeLabel ? <span>{placeLabel}</span> : null}
+            {sightingsLabel ? <span>{sightingsLabel}</span> : null}
           </span>
           <span className="shrink-0 text-xs font-medium text-foreground transition-colors group-hover:text-primary">Show details</span>
         </span>
@@ -884,8 +928,8 @@ const BumicertListItem = memo(function BumicertListItem({ record, priority, onOp
   );
 });
 
-const BumicertCardVisual = memo(function BumicertCardVisual({ record, priority, funding }: { record: BumicertRecord; priority: boolean; funding?: BumicertFundingSummary }) {
-  const { scopeItems, iconItems } = useMemo(() => buildPillRows(record, funding), [record, funding]);
+const BumicertCardVisual = memo(function BumicertCardVisual({ record, priority, funding, sightingCount }: { record: BumicertRecord; priority: boolean; funding?: BumicertFundingSummary; sightingCount?: number }) {
+  const { scopeItems, iconItems } = useMemo(() => buildPillRows(record, funding, sightingCount), [record, funding, sightingCount]);
   const organizationName = record.creatorName ?? "Project steward";
   const [imgError, setImgError] = useState(false);
   const hasImage = Boolean(record.imageUrl) && !imgError;
@@ -958,7 +1002,7 @@ function formatFundingLabel(funding?: BumicertFundingSummary): string | null {
   return funding.raisedUsd >= 1 ? `${formatCompactUsd(Math.round(funding.raisedUsd))} raised` : "Donations";
 }
 
-function buildPillRows(record: BumicertRecord, funding?: BumicertFundingSummary): {
+function buildPillRows(record: BumicertRecord, funding?: BumicertFundingSummary, sightingCount?: number): {
   scopeItems: BumicertCardPill[];
   iconItems: BumicertCardPill[];
 } {
@@ -1009,6 +1053,19 @@ function buildPillRows(record: BumicertRecord, funding?: BumicertFundingSummary)
         </>
       ),
       ariaLabel: formatPeopleNamed(record.contributorCount),
+    });
+  }
+
+  if (sightingCount && sightingCount > 0) {
+    iconItems.push({
+      key: "sightings",
+      content: (
+        <>
+          <LeafIcon className="h-3.5 w-3.5" aria-hidden />
+          <span>{formatStat(sightingCount)}</span>
+        </>
+      ),
+      ariaLabel: `${sightingCount} nature sighting${sightingCount === 1 ? "" : "s"} shared by this organization`,
     });
   }
 
