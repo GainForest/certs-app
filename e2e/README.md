@@ -2,7 +2,7 @@
 
 Authenticated E2E tests run through central sign-in on an HTTPS `*.gainforest.app` host so cookie and redirect behavior matches production.
 
-The setup project first smoke-tests the configured handle/password account, then creates a fresh disposable email account and saves that disposable account's browser state for the real checklist test. Teardown deletes the run-owned disposable account automatically.
+The setup project first smoke-tests the configured handle/password account, then creates a fresh disposable email account and saves that disposable account's browser state for the focused e2e specs. The authenticated specs are chained in Playwright project order so account setup, profile edits, organization conversion, sites, observations, bumicert creation, audio, and settings checks run as separate files while sharing the disposable account. Teardown deletes the run-owned disposable account automatically.
 
 Local default:
 
