@@ -42,7 +42,7 @@ import {
   type TimelineAttachmentItem,
 } from "../../../_lib/indexer";
 import { isPdsBlobUrl } from "../../../_lib/pds";
-import { blockExplorerUrl, INDEXER_URL, localBumicertHref } from "../../../_lib/urls";
+import { blockExplorerUrl, INDEXER_URL, localBumicertHref, SITE_URL } from "../../../_lib/urls";
 import { fetchAuthSession } from "../../../_lib/auth-server";
 import { getAccountRouteData, readAccountRouteParams } from "../../../account/_lib/account-route";
 import { Separator } from "@/components/ui/separator";
@@ -177,8 +177,15 @@ export default async function BumicertDetailPage({
     timelineSources = { audio, occurrences: occurrencePage.records, treeGroups, places };
   }
 
+  const jsonLd = buildBumicertJsonLd(record, owner, fundingConfig, detailHref, description ?? null);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <BumicertHeaderTitleBridge
         summary={{
           title: record.title,
@@ -259,6 +266,40 @@ export default async function BumicertDetailPage({
       </main>
     </>
   );
+}
+
+function buildBumicertJsonLd(
+  record: BumicertRecord,
+  owner: RouteData["owner"],
+  fundingConfig: BumicertFundingConfig,
+  detailHref: string,
+  description: string | null,
+): Record<string, unknown> {
+  const accepting = Boolean(fundingConfig?.receivingWallet?.uri) && (fundingConfig?.status ?? "open") === "open";
+  const url = `${SITE_URL}${detailHref}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Project",
+    name: record.title,
+    url,
+    ...(description ? { description } : {}),
+    ...(record.imageUrl ? { image: record.imageUrl } : {}),
+    ...(record.startDate ? { foundingDate: record.startDate } : {}),
+    parentOrganization: {
+      "@type": "Organization",
+      name: owner.displayName,
+      url: `${SITE_URL}/account/${encodeURIComponent(owner.urlIdentifier)}`,
+    },
+    ...(accepting
+      ? {
+          potentialAction: {
+            "@type": "DonateAction",
+            target: `${url}?tab=donations`,
+            recipient: { "@type": "Organization", name: owner.displayName },
+          },
+        }
+      : {}),
+  };
 }
 
 async function readRouteData(params: BumicertPageParams): Promise<RouteData> {
@@ -527,6 +568,22 @@ function SidebarDonations({
   const hasReceipts = receipts.length > 0;
   const donationStatus = getDonationStatus(fundingConfig, unavailable);
   const isOwner = authSession.isLoggedIn && authSession.did === record.did;
+  const goalUsd = parseGoalUsd(fundingConfig);
+
+  // No funding config, no history, and not the owner: skip the dead commerce
+  // UI ($0 stats + disabled button) — a short note is more honest.
+  if (!isOwner && donationStatus.kind === "not-applicable" && !hasReceipts) {
+    return (
+      <div className="space-y-2">
+        <h3 className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          Donations
+        </h3>
+        <p className="text-sm leading-6 text-muted-foreground">
+          This project is not accepting donations yet. Explore the story, places, and evidence — or follow {owner.displayName} for updates.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -555,9 +612,12 @@ function SidebarDonations({
           <p className="mt-0.5 text-lg font-medium text-foreground">{formatCompact(receipts.length)}</p>
         </div>
       </div>
+      {goalUsd !== null && donationStatus.kind === "open" ? (
+        <FundingProgress raisedUsd={totalUsd} goalUsd={goalUsd} />
+      ) : null}
       {isOwner ? (
         <FundingStatus ownerDid={record.did} bumicertRkey={record.rkey} fundingConfig={fundingConfig} />
-      ) : (
+      ) : donationStatus.kind === "open" ? (
         <DonateButton
           bumicert={{
             organizationDid: record.did,
@@ -567,12 +627,43 @@ function SidebarDonations({
           }}
           fundingConfig={fundingConfig}
           authSession={authSession}
-          disabled={donationStatus.kind !== "open"}
-          label={donationStatus.kind === "open" && hasReceipts ? "Donate again" : "Donate"}
+          disabled={false}
+          label={hasReceipts ? "Donate again" : "Donate"}
         />
-      )}
-      <p className="text-xs leading-5 text-muted-foreground">
-        Completed donations appear publicly so supporters can see the impact.
+      ) : null}
+      {donationStatus.kind === "open" ? (
+        <p className="text-xs leading-5 text-muted-foreground">
+          Completed donations appear publicly so supporters can see the impact.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function parseGoalUsd(fundingConfig: BumicertFundingConfig): number | null {
+  const raw = fundingConfig?.goalInUSD;
+  if (!raw) return null;
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function FundingProgress({ raisedUsd, goalUsd }: { raisedUsd: number; goalUsd: number }) {
+  const ratio = Math.max(0, Math.min(1, raisedUsd / goalUsd));
+  const percent = Math.round(ratio * 100);
+  return (
+    <div className="space-y-1.5">
+      <div
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        aria-label={`Funding progress: ${percent}% of ${formatCompactUsd(goalUsd)} goal`}
+        className="h-2 w-full overflow-hidden rounded-full bg-muted"
+      >
+        <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${Math.max(percent, 2)}%` }} />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        <span className="font-medium text-foreground">{percent}%</span> of {formatCompactUsd(goalUsd)} goal
       </p>
     </div>
   );
@@ -608,10 +699,15 @@ function buildOrganizationLinks(
 ): OrganizationLinkItem[] {
   const links: OrganizationLinkItem[] = [];
   const seen = new Set<string>();
+  const seenPlatforms = new Set<string>();
 
   function add(item: OrganizationLinkItem) {
     if (seen.has(item.href)) return;
+    // One button per platform — orgs sometimes list e.g. two YouTube URLs,
+    // which rendered as confusing duplicate icons in the sidebar.
+    if (item.platform !== "link" && item.platform !== "website" && seenPlatforms.has(item.platform)) return;
     seen.add(item.href);
+    seenPlatforms.add(item.platform);
     links.push(item);
   }
 
@@ -792,6 +888,8 @@ function DonationsPanel({
   const donorCount = donationEntries.length;
   const donationStatus = getDonationStatus(fundingConfig, unavailable);
   const isOwner = authSession.isLoggedIn && authSession.did === record.did;
+  const goalUsd = parseGoalUsd(fundingConfig);
+  const showSupportCard = !unavailable && (isOwner || donationStatus.kind !== "not-applicable");
   const stats: StatsTileItem[] = [
     {
       label: "raised",
@@ -814,7 +912,7 @@ function DonationsPanel({
 
   return (
     <article className="space-y-5 py-1">
-      {!unavailable ? (
+      {showSupportCard ? (
         <div className="overflow-hidden rounded-3xl bg-card/75 p-5 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur sm:p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
@@ -824,6 +922,11 @@ function DonationsPanel({
               <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
                 Your donation supports {owner.displayName} and appears with this project story once completed.
               </p>
+              {goalUsd !== null && donationStatus.kind === "open" ? (
+                <div className="mt-4 max-w-xl">
+                  <FundingProgress raisedUsd={totalUsd} goalUsd={goalUsd} />
+                </div>
+              ) : null}
             </div>
             <div className="w-full sm:w-44 sm:shrink-0">
               {isOwner ? (
@@ -862,8 +965,12 @@ function DonationsPanel({
       ) : receipts.length === 0 ? (
         <EmptyState
           icon={<HeartIcon className="h-8 w-8" />}
-          title="No donations yet"
-          body="Be the first to support this project story."
+          title={donationStatus.kind === "not-applicable" && !isOwner ? "Not accepting donations yet" : "No donations yet"}
+          body={
+            donationStatus.kind === "not-applicable" && !isOwner
+              ? `${owner.displayName} has not enabled donations for this project. Check the story and evidence tabs in the meantime.`
+              : "Be the first to support this project story."
+          }
           variant="leaderboard"
         />
       ) : (

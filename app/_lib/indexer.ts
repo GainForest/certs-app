@@ -976,6 +976,37 @@ function extractWorkScopeTags(workScope?: { __typename?: string; scope?: string 
     .filter(Boolean);
 }
 
+/**
+ * Creation-wizard placeholder copy that leaked into live records. Rendering it
+ * as a real description makes the catalog look auto-generated, so treat these
+ * as "no description". Matched case-insensitively against the trimmed start.
+ */
+const PLACEHOLDER_DESCRIPTION_PATTERNS: RegExp[] = [
+  /^inspire others to support you\./i,
+  /^share your (story|vision), build your community$/i,
+  /^project story$/i,
+  /^why we care$/i,
+];
+
+function sanitizeShortDescription(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  if (PLACEHOLDER_DESCRIPTION_PATTERNS.some((pattern) => pattern.test(trimmed))) return null;
+  return trimmed;
+}
+
+/**
+ * Disposable records created by the browser e2e suites (e.g. "Disposable
+ * E2E Forest Org Edited", "E2E Bumicert 1749…-0-0") should not appear in the
+ * public catalogs. The e2e specs assert against the PDS / manage pages, which
+ * fetch by DID and are unaffected.
+ */
+export function isLikelyTestRecordName(name: string | null | undefined): boolean {
+  if (!name) return false;
+  if (/disposable/i.test(name) && /\be2e\b/i.test(name)) return true;
+  return /^e2e bumicert \d/i.test(name.trim());
+}
+
 function mapActivity(n: RawActivity): BumicertRecord {
   let imageUrl: string | null = null;
   let imageRef: string | null = null;
@@ -992,7 +1023,7 @@ function mapActivity(n: RawActivity): BumicertRecord {
     atUri: n.uri || `at://${n.did}/org.hypercerts.claim.activity/${n.rkey}`,
     cid: n.cid ?? null,
     title: (n.title ?? "Untitled bumicert").trim() || "Untitled bumicert",
-    shortDescription: n.shortDescription?.trim() || null,
+    shortDescription: sanitizeShortDescription(n.shortDescription),
     startDate: n.startDate?.trim() || null,
     endDate: n.endDate?.trim() || null,
     contributorCount: Array.isArray(n.contributors) ? n.contributors.length : 0,
@@ -1017,7 +1048,8 @@ async function mapActivityConnection(
 ): Promise<Page<BumicertRecord>> {
   const nodes = (conn?.edges ?? [])
     .map((e) => e?.node)
-    .filter((n): n is RawActivity => Boolean(n?.did));
+    .filter((n): n is RawActivity => Boolean(n?.did))
+    .filter((n) => !isLikelyTestRecordName(n.title));
   let records = nodes.map(mapActivity);
   records = await resolveImages(
     records,
@@ -2147,7 +2179,8 @@ async function fetchCertOrgPage(
   const nodes = (conn?.edges ?? [])
     .map((e) => e?.node)
     .filter((n): n is RawCertOrg => Boolean(n?.did));
-  const records = await hydrateCertOrgs(nodes, signal, includeBumicertCounts, includeObservationCounts);
+  const records = (await hydrateCertOrgs(nodes, signal, includeBumicertCounts, includeObservationCounts))
+    .filter((record) => !isLikelyTestRecordName(record.name));
   return {
     records,
     cursor: conn?.pageInfo?.endCursor ?? null,
