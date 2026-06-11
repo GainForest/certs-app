@@ -5,11 +5,24 @@ import type { ManageMode } from "./manageDashboardMode";
 export function ManageDashboard({
   account,
   mode,
+  basePath,
+  writeRepoDid,
   children,
 }: {
   account: AccountRouteData;
   mode?: ManageMode | null;
+  basePath?: string;
+  writeRepoDid?: string;
   children?: React.ReactNode;
 }) {
-  return <ManageDashboardClient account={account} mode={mode}>{children}</ManageDashboardClient>;
+  return (
+    <ManageDashboardClient
+      account={account}
+      mode={mode}
+      basePath={basePath}
+      writeRepoDid={writeRepoDid}
+    >
+      {children}
+    </ManageDashboardClient>
+  );
 }

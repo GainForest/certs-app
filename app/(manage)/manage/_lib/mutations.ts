@@ -2,9 +2,9 @@
 
 /**
  * Client-side helper for publish mutations routed through
- * /api/manage/proxy → auth.gainforest.app/api/atproto/mutation.
- *
- * All mutations are executed in the context of the logged-in user's account.
+ * /api/manage/proxy → auth.gainforest.app/api/atproto/mutation for personal
+ * repo writes, or /api/cgs/mutation → auth.gainforest.app/api/cgs/mutation for
+ * group-owned CGS writes.
  */
 
 import type {
@@ -56,11 +56,13 @@ export type AttachExistingOccurrencesResult = {
   >;
 };
 
+type GroupScoped = { repo?: string };
+
 type MutationPayload =
-  | { operation: "createRecord"; collection: string; rkey?: string; record: Record<string, unknown> }
-  | { operation: "putRecord"; collection: string; rkey: string; record: Record<string, unknown>; swapRecord?: string }
-  | { operation: "deleteRecord"; collection: string; rkey: string }
-  | { operation: "uploadBlob"; blobData: string; blobMimeType: string }
+  | ({ operation: "createRecord"; collection: string; rkey?: string; record: Record<string, unknown> } & GroupScoped)
+  | ({ operation: "putRecord"; collection: string; rkey: string; record: Record<string, unknown>; swapRecord?: string } & GroupScoped)
+  | ({ operation: "deleteRecord"; collection: string; rkey: string } & GroupScoped)
+  | ({ operation: "uploadBlob"; blobData: string; blobMimeType: string } & GroupScoped)
   | { operation: "createMultimediaFromFile"; blobData: string; blobMimeType: string; occurrenceRef: string; siteRef?: string; subjectPart: string; caption?: string }
   | { operation: "getDatasetRecord"; rkey: string }
   | { operation: "getCertifiedLocationRecord"; rkey: string }
@@ -126,7 +128,8 @@ async function callProxy<T>(payload: MutationPayload): Promise<T> {
   const timeout = window.setTimeout(() => controller.abort(), MUTATION_TIMEOUT_MS);
 
   try {
-    const res = await fetch("/api/manage/proxy", {
+    const isGroupScoped = "repo" in payload && typeof payload.repo === "string" && payload.repo.length > 0;
+    const res = await fetch(isGroupScoped ? "/api/cgs/mutation" : "/api/manage/proxy", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
@@ -151,15 +154,22 @@ export async function createRecord(
   collection: string,
   record: Record<string, unknown>,
   rkey?: string,
+  options?: { repo?: string },
 ): Promise<CreateResult> {
-  return callProxy({ operation: "createRecord", collection, record, ...(rkey ? { rkey } : {}) });
+  return callProxy({
+    operation: "createRecord",
+    collection,
+    record,
+    ...(rkey ? { rkey } : {}),
+    ...(options?.repo ? { repo: options.repo } : {}),
+  });
 }
 
 export async function putRecord(
   collection: string,
   rkey: string,
   record: Record<string, unknown>,
-  options?: { swapRecord?: string },
+  options?: { swapRecord?: string; repo?: string },
 ): Promise<CreateResult> {
   return callProxy({
     operation: "putRecord",
@@ -167,11 +177,12 @@ export async function putRecord(
     rkey,
     record,
     ...(options?.swapRecord ? { swapRecord: options.swapRecord } : {}),
+    ...(options?.repo ? { repo: options.repo } : {}),
   });
 }
 
-export async function deleteRecord(collection: string, rkey: string): Promise<void> {
-  await callProxy({ operation: "deleteRecord", collection, rkey });
+export async function deleteRecord(collection: string, rkey: string, options?: { repo?: string }): Promise<void> {
+  await callProxy({ operation: "deleteRecord", collection, rkey, ...(options?.repo ? { repo: options.repo } : {}) });
 }
 
 export async function getDatasetRecord(rkey: string): Promise<DatasetRecordResult> {
@@ -258,10 +269,15 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-export async function uploadBlob(file: File): Promise<UploadBlobResult> {
+export async function uploadBlob(file: File, options?: { repo?: string }): Promise<UploadBlobResult> {
   const buf = await file.arrayBuffer();
   const b64 = bytesToBase64(new Uint8Array(buf));
-  return callProxy({ operation: "uploadBlob", blobData: b64, blobMimeType: file.type });
+  return callProxy({
+    operation: "uploadBlob",
+    blobData: b64,
+    blobMimeType: file.type,
+    ...(options?.repo ? { repo: options.repo } : {}),
+  });
 }
 
 export async function createMultimediaFromFile(input: CreateMultimediaFromFileInput): Promise<MultimediaResult> {

@@ -135,10 +135,12 @@ function EditableHero({
   onEditWebsite,
   onEditStartDate,
   onEditVisibility,
+  basePath,
 }: {
   account: AccountRouteData;
   isEditing: boolean;
   editState: HeroEditState;
+  basePath: string;
   onChange: (field: keyof Omit<HeroEditState, "logoFile" | "coverFile">, value: string) => void;
   onEditLogo: () => void;
   onEditCover: () => void;
@@ -320,7 +322,7 @@ function EditableHero({
         {/* Edit button in view mode */}
         {!isEditing && (
           <Link
-            href="/manage?mode=edit"
+            href={`${basePath}?mode=edit`}
             className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/55 backdrop-blur-xl border border-white/20 shadow-lg hover:bg-background/70 transition-colors text-xs font-medium text-foreground/80"
           >
             <PencilIcon className="h-3.5 w-3.5" />
@@ -387,10 +389,14 @@ function EditBar({
 export function ManageDashboardClient({
   account,
   mode,
+  basePath = "/manage",
+  writeRepoDid,
   children,
 }: {
   account: AccountRouteData;
   mode?: ManageMode | null;
+  basePath?: string;
+  writeRepoDid?: string;
   children?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -403,7 +409,7 @@ export function ManageDashboardClient({
   const resolvedMode = hasCompletedSetup
     ? resolveDashboardMode({ currentKind: account.kind, mode: parsedMode })
     : parsedMode;
-  const isAccountManageRoute = pathname === "/manage";
+  const isAccountManageRoute = pathname === basePath;
 
   useEffect(() => {
     if (!isAccountManageRoute || mode !== undefined) return;
@@ -481,7 +487,7 @@ export function ManageDashboardClient({
     setLogoFile(null);
     setCoverFile(null);
     setSaveError(null);
-    router.push("/manage");
+    router.push(basePath);
   };
 
   const openDashboardModal = (id: string, content: React.ReactNode) => {
@@ -550,8 +556,9 @@ export function ManageDashboardClient({
       // Upload blobs if files selected
       let avatarBlob: { ref: unknown; mimeType: string; size: number } | null = null;
       let bannerBlob: { ref: unknown; mimeType: string; size: number } | null = null;
-      if (logoFile) avatarBlob = await uploadBlob(logoFile);
-      if (coverFile) bannerBlob = await uploadBlob(coverFile);
+      const writeOptions = writeRepoDid ? { repo: writeRepoDid } : undefined;
+      if (logoFile) avatarBlob = await uploadBlob(logoFile, writeOptions);
+      if (coverFile) bannerBlob = await uploadBlob(coverFile, writeOptions);
 
       // Build profile records
       const profileRecord: Record<string, unknown> = {
@@ -581,8 +588,8 @@ export function ManageDashboardClient({
       if (bannerBlob) profileRecord.banner = bannerBlob;
 
       await Promise.all([
-        putRecord("app.bsky.actor.profile", "self", profileRecord),
-        putRecord("app.certified.actor.profile", "self", certifiedProfileRecord),
+        putRecord("app.bsky.actor.profile", "self", profileRecord, writeOptions),
+        putRecord("app.certified.actor.profile", "self", certifiedProfileRecord, writeOptions),
       ]);
 
       // Update org record if applicable
@@ -592,14 +599,14 @@ export function ManageDashboardClient({
           createdAt: account.createdAt ?? new Date().toISOString(),
           visibility: editVisibility === "Unlisted" ? "unlisted" : "public",
         };
-        if (editCountry.trim()) orgRecord.location = await createCountryLocationStrongRef(editCountry);
+        if (editCountry.trim()) orgRecord.location = await createCountryLocationStrongRef(editCountry, writeOptions);
         if (editStartDate.trim()) orgRecord.foundedDate = `${editStartDate.trim()}T00:00:00.000Z`;
 
-        await putRecord("app.certified.actor.organization", "self", orgRecord);
+        await putRecord("app.certified.actor.organization", "self", orgRecord, writeOptions);
       }
 
       // Navigate back to view mode and refresh data
-      router.push("/manage");
+      router.push(basePath);
       router.refresh();
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to save. Please try again.");
@@ -641,8 +648,9 @@ export function ManageDashboardClient({
             onEditWebsite={openWebsiteModal}
             onEditStartDate={openStartDateModal}
             onEditVisibility={openVisibilityModal}
+            basePath={basePath}
           />
-          <ManageAccountTabs account={account} />
+          <ManageAccountTabs account={account} basePath={basePath} />
           {/* About section */}
           {account.kind === "organization" && (
             <div className="py-4 space-y-2">
@@ -677,8 +685,9 @@ export function ManageDashboardClient({
           onEditWebsite={openWebsiteModal}
           onEditStartDate={openStartDateModal}
           onEditVisibility={openVisibilityModal}
+          basePath={basePath}
         />
-        <ManageAccountTabs account={account} />
+        <ManageAccountTabs account={account} basePath={basePath} />
         {children ?? (
           <>
             {account.detail?.richBody?.length ? (
