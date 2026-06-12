@@ -70,9 +70,7 @@ function OrgCard({ group }: { group: CgsGroupMembership }) {
           <p className="truncate text-base font-medium text-foreground transition-colors group-hover:text-primary">
             {groupName(group)}
           </p>
-          <p className="truncate text-sm text-muted-foreground">
-            {group.handle ? `@${group.handle}` : "Organization account"}
-          </p>
+          <p className="truncate text-sm text-muted-foreground">Organization account</p>
         </div>
 
         <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">

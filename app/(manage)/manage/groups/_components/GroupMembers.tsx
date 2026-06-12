@@ -30,11 +30,6 @@ function roleBadge(role: string) {
       : "bg-muted text-muted-foreground";
 }
 
-function shortDid(did: string): string {
-  const tail = did.split(":").pop() ?? did;
-  return tail.length > 14 ? `${tail.slice(0, 6)}…${tail.slice(-4)}` : tail;
-}
-
 function formatDate(value?: string | null) {
   if (!value) return null;
   const date = new Date(value);
@@ -75,9 +70,7 @@ function MemberRow({
   const locked = member.role === "owner";
   const editable = canManage && !locked;
   const name = profile?.displayName?.trim();
-  const handle = profile?.handle?.trim();
-  const primary = name || (handle ? `@${handle}` : shortDid(member.did));
-  const secondary = name && handle ? `@${handle}` : shortDid(member.did);
+  const primary = name || "Member";
   const joined = formatDate(member.addedAt);
 
   return (
@@ -86,8 +79,7 @@ function MemberRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">{primary}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {secondary}
-          {joined ? ` · joined ${joined}` : ""}
+          {joined ? `Joined ${joined}` : "Organization member"}
         </p>
       </div>
 
@@ -244,7 +236,7 @@ export function GroupMembers({
       <Input
         value={memberDid}
         onChange={(event) => setMemberDid(event.target.value)}
-        placeholder="Member username or account ID"
+        placeholder="Member username"
         disabled={isPending}
       />
       <select

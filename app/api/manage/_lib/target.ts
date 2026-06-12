@@ -16,7 +16,7 @@ export async function resolveManageApiTarget(request: Request): Promise<ManageTa
 
   const target = await resolveGroupManageTarget(repo);
   if (!target) {
-    return Response.json({ error: "You do not have access to manage this group." }, { status: 403 });
+    return Response.json({ error: "You do not have access to manage this organization." }, { status: 403 });
   }
   return target;
 }

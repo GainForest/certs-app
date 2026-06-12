@@ -44,14 +44,14 @@ function GroupNotMemberMessage({
 }: {
   group: { displayName: string; handle: string | null; identifier: string };
 }) {
-  const name = group.displayName?.trim() || group.handle || group.identifier;
+  const name = group.displayName?.trim() || "this organization";
 
   return (
     <Container className="flex min-h-[50vh] items-center justify-center py-12">
       <section className="max-w-xl rounded-3xl border border-border bg-card p-6 text-center shadow-sm sm:p-8">
         <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">Organization access</p>
         <h1 className="mt-3 font-instrument text-3xl font-light italic tracking-[-0.02em] text-foreground">
-          You’re not a member of {name}
+          {name === "this organization" ? "You’re not a member of this organization" : `You’re not a member of ${name}`}
         </h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           This manage page is only available to members of the organization. Ask an owner or admin to add you, or switch to another organization you belong to.

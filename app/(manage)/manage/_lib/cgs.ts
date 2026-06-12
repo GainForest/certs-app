@@ -119,7 +119,7 @@ export async function callCgs<T>(payload: CgsMutationPayload): Promise<T> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(payload),
   });
-  return parseJsonResponse<T>(res, "Group request failed.");
+  return parseJsonResponse<T>(res, "Organization request failed.");
 }
 
 export async function registerCgsGroup(input: {

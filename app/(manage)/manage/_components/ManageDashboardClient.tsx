@@ -456,7 +456,7 @@ export function ManageDashboardClient({
   mode?: ManageMode | null;
   basePath?: string;
   writeRepoDid?: string;
-  /** When scoped into a CGS group, the current user's role — enables the members list. */
+  /** When scoped into an organization, the current user's role — enables the members list. */
   groupRole?: CgsRole;
   initialGroupMembers?: CgsMember[];
   initialGroupMembersError?: string | null;

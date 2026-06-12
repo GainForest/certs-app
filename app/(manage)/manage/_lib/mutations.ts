@@ -4,7 +4,7 @@
  * Client-side helper for publish mutations routed through
  * /api/manage/proxy → auth.gainforest.app/api/atproto/mutation for personal
  * repo writes, or /api/cgs/mutation → auth.gainforest.app/api/cgs/mutation for
- * group-owned CGS writes.
+ * organization-owned writes.
  */
 
 import type {

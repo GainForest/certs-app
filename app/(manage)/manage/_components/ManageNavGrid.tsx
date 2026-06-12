@@ -69,7 +69,7 @@ const ORG_NAV_CARDS: NavCard[] = [
   {
     id: "organizations",
     label: "Organizations",
-    description: "Open CGS organization accounts and manage members.",
+    description: "Open organization accounts and manage members.",
     href: "/manage/organizations",
     Icon: Building2Icon,
   },
