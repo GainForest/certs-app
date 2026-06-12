@@ -90,7 +90,11 @@ export async function resolveGroupManageTarget(identifier: string): Promise<Mana
   return groupManageTarget({
     did,
     accountKind: account.kind,
-    identifier: membership.handle?.trim() || account.handle || identifier || did,
+    // Keep the dashboard anchored to the route segment that was requested.
+    // ManageDashboardClient uses target.basePath to decide whether it should
+    // render the hero; switching to a canonical handle here can make valid
+    // aliases like /manage/groups/group render only the child overview.
+    identifier: normalizedIdentifier || identifier || membership.handle?.trim() || account.handle || did,
     role: membership.role,
     displayName: account.displayName || membership.displayName || null,
     avatarUrl: account.avatarUrl || membership.avatarUrl || null,
