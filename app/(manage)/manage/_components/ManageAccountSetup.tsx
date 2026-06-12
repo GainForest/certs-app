@@ -88,19 +88,6 @@ function normalizeWebsite(url: string): string | undefined {
   return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
 }
 
-function organizationHandleFromName(name: string): string {
-  const label = name
-    .trim()
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48)
-    .replace(/-+$/g, "");
-  return label || "organization";
-}
-
 // ── GainForest mark ──────────────────────────────────────────────────────────
 
 function GainForestMark({ className, alt = "" }: { className?: string; alt?: string }) {
@@ -556,7 +543,6 @@ function AccountSetupForm({
       const normalizedWebsite = kind === "organization" ? normalizeWebsite(website) : undefined;
       const registeredOrganization = kind === "organization"
         ? await registerCgsGroup({
-            handle: organizationHandleFromName(trimmedName),
             ownerDid,
             displayName: trimmedName,
             description: trimmedBio,
