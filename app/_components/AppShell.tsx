@@ -42,7 +42,6 @@ import {
   groupIdentifierFromManagePath,
   groupManageBasePath,
   manageHref,
-  type ManageTarget,
 } from "@/lib/links";
 import { AuthButton, SignInPrompt } from "./AuthFlow";
 import { HeaderSlotsProvider, useHeaderSlots } from "./HeaderSlots";
@@ -142,20 +141,20 @@ type ShellProfileResponse = {
   profileName: string | null;
 };
 
-type ManageContextResponse = ManageTarget | { error?: string };
+function readContextualManageBasePath(): string {
+  if (typeof window === "undefined") return "/manage";
+  return activeContextToManagePath(window.localStorage.getItem(ACTIVE_MANAGE_CONTEXT_KEY));
+}
 
 function useContextualManageBasePath(): string {
   const pathname = usePathname() ?? "/";
-  const [basePath, setBasePath] = useState("/manage");
+  const groupIdentifier = groupIdentifierFromManagePath(pathname);
+  const [basePath, setBasePath] = useState(readContextualManageBasePath);
 
   useEffect(() => {
-    const groupIdentifier = groupIdentifierFromManagePath(pathname);
-    if (groupIdentifier) {
-      setBasePath(groupManageBasePath(groupIdentifier));
-      return;
-    }
+    if (groupIdentifier) return;
 
-    const refresh = () => setBasePath(activeContextToManagePath(window.localStorage.getItem(ACTIVE_MANAGE_CONTEXT_KEY)));
+    const refresh = () => setBasePath(readContextualManageBasePath());
     refresh();
     const handleStorage = (event: StorageEvent) => {
       if (event.key === ACTIVE_MANAGE_CONTEXT_KEY) refresh();
@@ -166,9 +165,9 @@ function useContextualManageBasePath(): string {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("gainforest-active-account-context", refresh);
     };
-  }, [pathname]);
+  }, [groupIdentifier]);
 
-  return basePath;
+  return groupIdentifier ? groupManageBasePath(groupIdentifier) : basePath;
 }
 
 export function AppShell({
@@ -564,29 +563,16 @@ function ManageSection({
 }) {
   const pathname = usePathname() ?? "/";
   const searchParams = useSearchParams();
-  const [manageTarget, setManageTarget] = useState<ManageTarget | null>(null);
   const groupIdentifier = groupIdentifierFromManagePath(pathname);
-  const basePath = manageTarget?.basePath ?? (groupIdentifier ? groupManageBasePath(groupIdentifier) : "/manage");
-  const resolvedAccountKind = manageTarget?.accountKind ?? manageAccountKind;
-
-  useEffect(() => {
-    let cancelled = false;
-    const params = groupIdentifier ? `?group=${encodeURIComponent(groupIdentifier)}` : "";
-    fetch(`/api/manage/context${params}`, { cache: "no-store" })
-      .then(async (response) => response.ok ? await response.json() as ManageContextResponse : null)
-      .then((payload) => {
-        if (cancelled) return;
-        setManageTarget(payload && "kind" in payload ? payload : null);
-      })
-      .catch(() => { if (!cancelled) setManageTarget(null); });
-    return () => { cancelled = true; };
-  }, [groupIdentifier]);
+  const isGroupManageContext = Boolean(groupIdentifier);
+  const basePath = groupIdentifier ? groupManageBasePath(groupIdentifier) : "/manage";
+  const resolvedAccountKind = isGroupManageContext ? "organization" : manageAccountKind;
 
   const organizationItems: NavLeaf[] = [
     {
       kind: "leaf",
       id: "organization",
-      text: manageTarget?.kind === "group" ? "Group Home" : "My Organization",
+      text: isGroupManageContext ? "Group Home" : "My Organization",
       Icon: Building2Icon,
       href: basePath,
       pathCheck: { equals: basePath },
