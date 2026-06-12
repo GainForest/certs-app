@@ -26,12 +26,12 @@ import {
   type FormEvent,
 } from "react";
 import type { CgsGroupMembership } from "@/app/(manage)/manage/_lib/cgs";
-import { groupIdentifierFromManagePath, groupManageBasePath, manageHref } from "@/lib/links";
+import { groupManageBasePath, manageHref } from "@/lib/links";
 import {
-  findSwitcherGroupByIdentifier,
   switcherGroupIdentifier,
   useAccountList,
   useActiveAccountContext,
+  useManagePathContextSync,
   type AccountCard,
   type ActiveAccountContext,
   type SwitcherGroup,
@@ -578,15 +578,12 @@ function AuthenticatedMenu({
   const containerRef = useRef<HTMLDivElement>(null);
   const { personal: personalCard, groups, status: groupsStatus, reload } = useAccountList(session.did);
   const [activeContext, setActiveContext] = useActiveAccountContext(session.did);
-  const activeContextRef = useRef(activeContext);
   const cleanProfileName = profileName?.trim() || personalCard?.displayName?.trim() || null;
   const profileNameLoading = isProfileNameLoading && profileName === undefined;
   const displayLabel = cleanProfileName ?? (profileNameLoading ? "Account" : "Personal account");
   const secondaryLabel = cleanProfileName ? "Signed in" : profileNameLoading ? "Loading profile" : "Personal account";
 
-  useEffect(() => {
-    activeContextRef.current = activeContext;
-  }, [activeContext]);
+  useManagePathContextSync({ pathname, sessionDid: session.did, groups, activeContext, setActiveContext });
 
   const selectPersonal = () => {
     setActiveContext({ type: "personal", did: session.did });
@@ -602,16 +599,6 @@ function AuthenticatedMenu({
     });
     setOpen(false);
   };
-
-  useEffect(() => {
-    const urlIdentifier = groupIdentifierFromManagePath(pathname);
-    if (!urlIdentifier) return;
-    const match = findSwitcherGroupByIdentifier(groups, urlIdentifier);
-    if (!match) return;
-    const current = activeContextRef.current;
-    if (current.type === "group" && current.did === match.groupDid) return;
-    setActiveContext({ type: "group", did: match.groupDid, identifier: switcherGroupIdentifier(match), role: match.role });
-  }, [pathname, groups, setActiveContext]);
 
   const handleBlur = (event: React.FocusEvent) => {
     if (!containerRef.current?.contains(event.relatedTarget as Node)) {

@@ -153,6 +153,18 @@ export function groupIdentifierFromManagePath(pathname: string): string | null {
   }
 }
 
+export function isManagePath(pathname: string): boolean {
+  return /^\/manage(?:[/?#]|$)/.test(pathname);
+}
+
+export function isManageGroupsPath(pathname: string): boolean {
+  return /^\/manage\/groups(?:[/?#]|$)/.test(pathname);
+}
+
+export function isPersonalManageContextPath(pathname: string): boolean {
+  return isManagePath(pathname) && !isManageGroupsPath(pathname);
+}
+
 export function isGroupManagePath(pathname: string): boolean {
   return groupIdentifierFromManagePath(pathname) !== null;
 }

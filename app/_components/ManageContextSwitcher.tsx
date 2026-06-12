@@ -14,12 +14,12 @@ import {
   UserIcon,
   UsersIcon,
 } from "lucide-react";
-import { groupIdentifierFromManagePath, groupManageBasePath } from "@/lib/links";
+import { groupManageBasePath } from "@/lib/links";
 import {
-  findSwitcherGroupByIdentifier,
   switcherGroupIdentifier,
   useAccountList,
   useActiveAccountContext,
+  useManagePathContextSync,
   type ActiveAccountContext,
   type SwitcherGroup,
 } from "../_lib/account-switcher";
@@ -54,23 +54,8 @@ export function ManageContextSwitcher({
 
   const { personal, groups, status, reload } = useAccountList(sessionDid);
   const [activeContext, setActiveContext] = useActiveAccountContext(sessionDid);
-  const activeContextRef = useRef(activeContext);
 
-  useEffect(() => {
-    activeContextRef.current = activeContext;
-  }, [activeContext]);
-
-  // When you land on an organization's manage URL (via any link), reflect that
-  // org as the active context so the switcher and header menu stay in sync.
-  useEffect(() => {
-    const urlIdentifier = groupIdentifierFromManagePath(pathname);
-    if (!urlIdentifier) return;
-    const match = findSwitcherGroupByIdentifier(groups, urlIdentifier);
-    if (!match) return;
-    const current = activeContextRef.current;
-    if (current.type === "group" && current.did === match.groupDid) return;
-    setActiveContext({ type: "group", did: match.groupDid, identifier: switcherGroupIdentifier(match), role: match.role });
-  }, [pathname, groups, setActiveContext]);
+  useManagePathContextSync({ pathname, sessionDid, groups, activeContext, setActiveContext });
 
   useEffect(() => {
     if (!open) return;

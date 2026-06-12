@@ -10,8 +10,8 @@
 // in the background (stale-while-revalidate). In-flight requests are deduped so
 // the two consumers never double-fetch.
 
-import { useEffect, useSyncExternalStore } from "react";
-import { ACTIVE_MANAGE_CONTEXT_KEY } from "@/lib/links";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { ACTIVE_MANAGE_CONTEXT_KEY, groupIdentifierFromManagePath, isPersonalManageContextPath } from "@/lib/links";
 import type { CgsGroupMembership } from "@/app/(manage)/manage/_lib/cgs";
 
 export type AccountCard = { displayName: string | null; avatarUrl: string | null; handle: string | null };
@@ -269,4 +269,44 @@ export function useActiveAccountContext(
   // rememberActiveContext is a stable module-level reference, so consumers can
   // safely list it in effect dependencies without re-running every render.
   return [active, rememberActiveContext];
+}
+
+export function useManagePathContextSync(options: {
+  pathname: string;
+  sessionDid: string;
+  groups: SwitcherGroup[];
+  activeContext: ActiveAccountContext;
+  setActiveContext: (context: ActiveAccountContext) => void;
+}): void {
+  const { pathname, sessionDid, groups, activeContext, setActiveContext } = options;
+  const activeContextRef = useRef(activeContext);
+
+  useEffect(() => {
+    activeContextRef.current = activeContext;
+  }, [activeContext]);
+
+  useEffect(() => {
+    const urlIdentifier = groupIdentifierFromManagePath(pathname);
+    if (urlIdentifier) {
+      const match = findSwitcherGroupByIdentifier(groups, urlIdentifier);
+      if (!match) return;
+
+      const current = activeContextRef.current;
+      if (current.type === "group" && current.did === match.groupDid) return;
+
+      setActiveContext({
+        type: "group",
+        did: match.groupDid,
+        identifier: switcherGroupIdentifier(match),
+        role: match.role,
+      });
+      return;
+    }
+
+    if (!isPersonalManageContextPath(pathname)) return;
+
+    const current = activeContextRef.current;
+    if (current.type === "personal" && current.did === sessionDid) return;
+    setActiveContext({ type: "personal", did: sessionDid });
+  }, [groups, pathname, sessionDid, setActiveContext]);
 }
