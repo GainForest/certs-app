@@ -8,6 +8,8 @@ import {
   setAnalyticsConsent,
   type AnalyticsConsent,
 } from "@/lib/analytics/consent";
+import { SUPPORTED_LOCALES } from "@/lib/i18n/languages";
+import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { isTreeUploadTrackingPath } from "@/lib/analytics/tree-upload";
 import { useAnalyticsConsent } from "@/lib/analytics/use-analytics-consent";
 import { links } from "@/lib/links";
@@ -27,10 +29,11 @@ type ContentsquareProviderProps = {
 };
 
 function getTrackedPath(pathname: string): string {
-  if (typeof window === "undefined") return pathname;
+  const canonicalPathname = stripLocaleFromPathname(pathname);
+  if (typeof window === "undefined") return canonicalPathname;
 
   const query = getTrackedQuery();
-  return query.length > 0 ? `${pathname}?${query}` : pathname;
+  return query.length > 0 ? `${canonicalPathname}?${query}` : canonicalPathname;
 }
 
 function getTrackedQuery(): string {
@@ -103,7 +106,7 @@ function ContentsquareRouteTracker({
     if (isContentsquareLoaded()) {
       pushContentsquareCommand(["trackPageview", path]);
     } else {
-      pushContentsquareCommand(["setPath", pathname]);
+      pushContentsquareCommand(["setPath", stripLocaleFromPathname(pathname)]);
       const query = getTrackedQuery();
       if (query.length > 0) pushContentsquareCommand(["setQuery", query]);
     }
@@ -199,12 +202,22 @@ export function ContentsquareProvider({ children, enabled }: ContentsquareProvid
                 var searchParams = new URLSearchParams(window.location.search);
                 return searchParams.get("mode") === "upload" ? "mode=upload" : "";
               }
+              function getCanonicalPathname() {
+                var locales = ${JSON.stringify(SUPPORTED_LOCALES)};
+                var parts = window.location.pathname.split("/").filter(Boolean);
+                if (parts.length > 0 && locales.indexOf(parts[0]) !== -1) {
+                  var stripped = window.location.pathname.slice(parts[0].length + 1);
+                  return stripped.charAt(0) === "/" ? stripped : "/" + stripped;
+                }
+                return window.location.pathname;
+              }
               function getTrackedPath() {
                 var query = getTrackedQuery();
-                return window.location.pathname + (query ? "?" + query : "");
+                var pathname = getCanonicalPathname();
+                return pathname + (query ? "?" + query : "");
               }
               if (typeof CS_CONF === "undefined") {
-                window._uxa.push(["setPath", window.location.pathname]);
+                window._uxa.push(["setPath", getCanonicalPathname()]);
                 var query = getTrackedQuery();
                 if (query) window._uxa.push(["setQuery", query]);
                 var tag = document.createElement("script");

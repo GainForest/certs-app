@@ -8,6 +8,7 @@ import { MenuIcon, XIcon } from "lucide-react";
 import { LogoMark } from "./Logo";
 import { StatusPill } from "./StatusPill";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
+import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { ThemeToggle } from "./ThemeToggle";
 import type { StatusSnapshot } from "../_lib/status";
 import { GLOBE_URL } from "../_lib/urls";
@@ -28,7 +29,7 @@ const NAV = [
 // live status pill links out to the instatus page.
 export function TopNav({ status }: { status: StatusSnapshot }) {
   const t = useTranslations("common");
-  const pathname = usePathname() ?? "/";
+  const pathname = stripLocaleFromPathname(usePathname() ?? "/");
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Close the mobile drawer on route change.

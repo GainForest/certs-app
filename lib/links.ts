@@ -1,3 +1,5 @@
+import { stripLocaleFromPathname } from "@/lib/i18n/routing";
+
 const TREE_UPLOAD_FEEDBACK_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLScpHS_-7QTTiHIseqjzvkdbx6jzjenebkaLGXoETNrfit0ZNA/viewform";
 const CONTENTSQUARE_UXA_BASE_URL = "https://t.contentsquare.net/uxa";
@@ -143,8 +145,12 @@ export function manageTreeHref(
   return manageHref(target, "trees", query);
 }
 
+function canonicalAppPathname(pathname: string): string {
+  return stripLocaleFromPathname(pathname);
+}
+
 export function groupIdentifierFromManagePath(pathname: string): string | null {
-  const match = pathname.match(/^\/manage\/groups\/([^/?#]+)(?:[/?#]|$)/);
+  const match = canonicalAppPathname(pathname).match(/^\/manage\/groups\/([^/?#]+)(?:[/?#]|$)/);
   if (!match?.[1]) return null;
   try {
     return decodeURIComponent(match[1]);
@@ -154,11 +160,11 @@ export function groupIdentifierFromManagePath(pathname: string): string | null {
 }
 
 export function isManagePath(pathname: string): boolean {
-  return /^\/manage(?:[/?#]|$)/.test(pathname);
+  return /^\/manage(?:[/?#]|$)/.test(canonicalAppPathname(pathname));
 }
 
 export function isManageGroupsPath(pathname: string): boolean {
-  return /^\/manage\/groups(?:[/?#]|$)/.test(pathname);
+  return /^\/manage\/groups(?:[/?#]|$)/.test(canonicalAppPathname(pathname));
 }
 
 export function isPersonalManageContextPath(pathname: string): boolean {

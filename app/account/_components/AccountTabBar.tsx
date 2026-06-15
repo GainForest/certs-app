@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { BadgeIcon, HeartIcon, HomeIcon, LeafIcon, SettingsIcon } from "lucide-react";
+import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { cn } from "@/lib/utils";
 import type { AccountKind } from "../_lib/account-route";
 import {
@@ -124,7 +125,7 @@ export function AccountTabBar({
   includeSettings = false,
   manageBasePath,
 }: OrgTabBarProps) {
-  const pathname = usePathname() ?? "/";
+  const pathname = stripLocaleFromPathname(usePathname() ?? "/");
   const searchParams = useSearchParams();
   const tabs = buildTabs(did, accountKind, scope, includeSettings, manageBasePath);
   const paths = buildTabPaths(did, scope, manageBasePath);

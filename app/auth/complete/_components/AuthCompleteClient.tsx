@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ChevronRight, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { groupIdentifierFromManagePath } from "@/lib/links";
 import { cn } from "@/lib/utils";
 import { monogram } from "@/app/_lib/did-profile";
 import type { CgsGroupMembership } from "@/app/(manage)/manage/_lib/cgs";
@@ -82,8 +83,7 @@ function bestGroupName(group: GroupOption): string {
 function redirectGroupIdentifier(redirectTo: string): string | null {
   try {
     const url = new URL(redirectTo, window.location.origin);
-    const match = url.pathname.match(/^\/manage\/groups\/([^/]+)\/?$/);
-    return match?.[1] ? decodeURIComponent(match[1]).trim() : null;
+    return groupIdentifierFromManagePath(url.pathname)?.trim() || null;
   } catch {
     return null;
   }

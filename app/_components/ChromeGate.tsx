@@ -1,12 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { AuthSession } from "../_lib/auth";
+import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { AppShell } from "./AppShell";
 import { Footer } from "./Footer";
 
 export function ChromeGate({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname() ?? "/";
+  const pathname = stripLocaleFromPathname(usePathname() ?? "/");
 
   if (pathname.startsWith("/auth")) {
     return <>{children}</>;
