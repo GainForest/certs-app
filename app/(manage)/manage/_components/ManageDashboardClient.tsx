@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import type { AccountRouteData } from "@/app/account/_lib/account-route";
 import { ManageAccountSetup } from "./ManageAccountSetup";
 import {
@@ -464,6 +465,7 @@ export function ManageDashboardClient({
 }) {
   const router = useRouter();
   const pathname = usePathname() ?? "/manage";
+  const canonicalPathname = stripLocaleFromPathname(pathname);
   const searchParams = useSearchParams();
   const modal = useModal();
   const rawMode = mode === undefined ? searchParams.get("mode") ?? undefined : mode ?? undefined;
@@ -472,7 +474,7 @@ export function ManageDashboardClient({
   const resolvedMode = hasCompletedSetup
     ? resolveDashboardMode({ currentKind: account.kind, mode: parsedMode })
     : parsedMode ?? "onboard-user";
-  const isAccountManageRoute = pathname === basePath || decodePath(pathname) === decodePath(basePath);
+  const isAccountManageRoute = canonicalPathname === basePath || decodePath(canonicalPathname) === decodePath(basePath);
 
   useEffect(() => {
     if (!isAccountManageRoute || mode !== undefined) return;
