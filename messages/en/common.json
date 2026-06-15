@@ -10,7 +10,12 @@
   },
   "navigation": {
     "navigation": "Navigation",
-    "openNavigation": "Open navigation"
+    "openNavigation": "Open navigation",
+    "homeAria": "GainForest home",
+    "sectionsAria": "Site sections",
+    "closeMenu": "Close menu",
+    "openMenu": "Open menu",
+    "greenGlobeExternal": "Green Globe"
   },
   "theme": {
     "toggle": "Toggle theme",
@@ -169,5 +174,82 @@
     "description": "Save your project sites, tree information, and Bumicerts in one place.",
     "failed": "We couldn’t finish signing you in. Please try again.",
     "getStarted": "Get started"
+  },
+  "status": {
+    "pillTitle": "System status",
+    "page": {
+      "degraded": "Health unavailable",
+      "UP": "Everything is working",
+      "HASISSUES": "Some services are slow",
+      "UNDERMAINTENANCE": "Planned work happening",
+      "DOWN": "A service is not working"
+    },
+    "component": {
+      "OPERATIONAL": "Operational",
+      "UNDERMAINTENANCE": "Under maintenance",
+      "DEGRADEDPERFORMANCE": "Degraded",
+      "PARTIALOUTAGE": "Partial outage",
+      "MAJOROUTAGE": "Major outage",
+      "UNKNOWN": "Unknown"
+    },
+    "services": {
+      "search": {
+        "name": "Search index",
+        "detail": "Discovery and indexing"
+      },
+      "storage": {
+        "name": "Personal data server",
+        "detail": "Record and media storage"
+      },
+      "labels": {
+        "name": "Labeling service",
+        "detail": "Trust and moderation labels"
+      },
+      "website": {
+        "name": "Web app",
+        "detail": "Bumicerts interface"
+      },
+      "api": {
+        "name": "API",
+        "detail": "Application backend"
+      },
+      "defaultName": "Service"
+    },
+    "summary": {
+      "working": "{operational}/{total} services working",
+      "healthy": "{percent}% healthy",
+      "updated": "updated {time}"
+    },
+    "hero": {
+      "imageAlt": "Forest canopy at sunrise",
+      "eyebrow": "Live status",
+      "title": "GainForest",
+      "accent": "system health",
+      "lede": "Current availability for Bumicerts, data services, and supporting infrastructure."
+    },
+    "unavailable": {
+      "title": "Status is temporarily unavailable",
+      "bodyBeforeLink": "We could not load the live board. You can still check the public status page at",
+      "link": "GainForest Status"
+    },
+    "incidents": {
+      "title": "Recent incidents",
+      "last": "{count, plural, one {Latest incident} other {Latest # incidents}}",
+      "window": "Last 90 days",
+      "empty": "No recent incidents reported.",
+      "viewFull": "View full status page",
+      "happeningNow": "Happening now",
+      "fixed": "Fixed",
+      "downFor": "down for {duration}"
+    },
+    "serviceCard": {
+      "health90Day": "90-day health"
+    },
+    "loadingAria": "System status loading",
+    "time": {
+      "justNow": "just now",
+      "minutesAgo": "{count, plural, one {# minute ago} other {# minutes ago}}",
+      "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}"
+    }
   }
 }

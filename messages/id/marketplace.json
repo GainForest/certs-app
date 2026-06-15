@@ -661,6 +661,9 @@
       "projectPlace": "Tempat proyek",
       "showDetails": "Tampilkan detail",
       "loading": "Memuat proyek"
+    },
+    "actions": {
+      "clearAll": "Hapus semua"
     }
   },
   "browseGrid": {

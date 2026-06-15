@@ -10,7 +10,12 @@
   },
   "navigation": {
     "navigation": "Navigasi",
-    "openNavigation": "Buka navigasi"
+    "openNavigation": "Buka navigasi",
+    "homeAria": "Beranda GainForest",
+    "sectionsAria": "Bagian situs",
+    "closeMenu": "Tutup menu",
+    "openMenu": "Buka menu",
+    "greenGlobeExternal": "Green Globe"
   },
   "theme": {
     "toggle": "Ganti tema",
@@ -169,5 +174,82 @@
     "description": "Simpan situs proyek, informasi pohon, dan Bumicerts Anda di satu tempat.",
     "failed": "Kami tidak dapat menyelesaikan proses masuk Anda. Coba lagi.",
     "getStarted": "Mulai"
+  },
+  "status": {
+    "pillTitle": "Status sistem",
+    "page": {
+      "degraded": "Kesehatan tidak tersedia",
+      "UP": "Semuanya berfungsi",
+      "HASISSUES": "Beberapa layanan lambat",
+      "UNDERMAINTENANCE": "Pemeliharaan terjadwal berlangsung",
+      "DOWN": "Sebuah layanan tidak berfungsi"
+    },
+    "component": {
+      "OPERATIONAL": "Operasional",
+      "UNDERMAINTENANCE": "Dalam pemeliharaan",
+      "DEGRADEDPERFORMANCE": "Menurun",
+      "PARTIALOUTAGE": "Gangguan sebagian",
+      "MAJOROUTAGE": "Gangguan besar",
+      "UNKNOWN": "Tidak diketahui"
+    },
+    "services": {
+      "search": {
+        "name": "Indeks pencarian",
+        "detail": "Penemuan dan pengindeksan"
+      },
+      "storage": {
+        "name": "Server data pribadi",
+        "detail": "Penyimpanan catatan dan media"
+      },
+      "labels": {
+        "name": "Layanan label",
+        "detail": "Label kepercayaan dan moderasi"
+      },
+      "website": {
+        "name": "Aplikasi web",
+        "detail": "Antarmuka Bumicerts"
+      },
+      "api": {
+        "name": "API aplikasi",
+        "detail": "Backend aplikasi"
+      },
+      "defaultName": "Layanan"
+    },
+    "summary": {
+      "working": "{operational}/{total} layanan berfungsi",
+      "healthy": "{percent}% sehat",
+      "updated": "diperbarui {time}"
+    },
+    "hero": {
+      "imageAlt": "Kanopi hutan saat matahari terbit",
+      "eyebrow": "Status langsung",
+      "title": "GainForest",
+      "accent": "kesehatan sistem",
+      "lede": "Ketersediaan terkini untuk Bumicerts, layanan data, dan infrastruktur pendukung."
+    },
+    "unavailable": {
+      "title": "Status sementara tidak tersedia",
+      "bodyBeforeLink": "Kami tidak dapat memuat papan langsung. Anda tetap dapat memeriksa halaman status publik di",
+      "link": "Status GainForest"
+    },
+    "incidents": {
+      "title": "Insiden terbaru",
+      "last": "{count, plural, one {Insiden terbaru} other {# insiden terbaru}}",
+      "window": "90 hari terakhir",
+      "empty": "Tidak ada insiden terbaru yang dilaporkan.",
+      "viewFull": "Lihat halaman status lengkap",
+      "happeningNow": "Sedang berlangsung",
+      "fixed": "Selesai",
+      "downFor": "tidak aktif selama {duration}"
+    },
+    "serviceCard": {
+      "health90Day": "Kesehatan 90 hari"
+    },
+    "loadingAria": "Status sistem dimuat",
+    "time": {
+      "justNow": "baru saja",
+      "minutesAgo": "{count, plural, one {# menit lalu} other {# menit lalu}}",
+      "hoursAgo": "{count, plural, one {# jam lalu} other {# jam lalu}}"
+    }
   }
 }

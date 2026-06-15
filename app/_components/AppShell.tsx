@@ -169,7 +169,10 @@ function useCanonicalPathname(): string {
 function useContextualManageBasePath(): string {
   const pathname = useCanonicalPathname();
   const groupIdentifier = groupIdentifierFromManagePath(pathname);
-  const [basePath, setBasePath] = useState(readContextualManageBasePath);
+  // Keep the server render and the first client render identical. Reading
+  // localStorage in the state initializer makes links hydrate as /manage on the
+  // server but /manage/groups/... on the client when a group context is saved.
+  const [basePath, setBasePath] = useState("/manage");
 
   useEffect(() => {
     if (groupIdentifier) return;

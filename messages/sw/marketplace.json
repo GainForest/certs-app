@@ -661,6 +661,9 @@
       "projectPlace": "Eneo la mradi",
       "showDetails": "Onyesha maelezo",
       "loading": "Inapakia miradi"
+    },
+    "actions": {
+      "clearAll": "Futa yote"
     }
   },
   "browseGrid": {

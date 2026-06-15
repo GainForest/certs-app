@@ -661,6 +661,9 @@
       "projectPlace": "Local do projeto",
       "showDetails": "Mostrar detalhes",
       "loading": "Carregando projetos"
+    },
+    "actions": {
+      "clearAll": "Limpar tudo"
     }
   },
   "browseGrid": {

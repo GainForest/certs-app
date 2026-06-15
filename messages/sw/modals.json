@@ -420,5 +420,11 @@
   "imageEditor": {
     "loading": "Inapakia...",
     "done": "Tayari"
+  },
+  "countrySelector": {
+    "title": "Chagua nchi",
+    "description": "Chagua nchi inayohusiana na rekodi hii.",
+    "searchPlaceholder": "Tafuta nchi",
+    "done": "Imekamilika"
   }
 }

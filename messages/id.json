@@ -120,6 +120,41 @@
         "apply": "Daftar di Ma Earth",
         "learn": "Pelajari putaran ini"
       }
+    },
+    "brand": {
+      "alt": "Ikon aplikasi GainForest"
+    },
+    "stats": {
+      "bumicertsShared": "Bumicert dibagikan",
+      "organizationProfiles": "profil organisasi",
+      "natureSightingsShared": "temuan alam dibagikan",
+      "raisedForProjects": "terkumpul untuk proyek"
+    },
+    "openNetwork": {
+      "titlePrefix": "Dibangun di atas",
+      "titleEmphasis": "jaringan terbuka",
+      "description": "Bumicerts adalah catatan dampak portabel yang dapat berpindah antar aplikasi, komunitas, dan alat pendanaan — bukan basis data tertutup.",
+      "protocol": {
+        "name": "Protokol AT",
+        "description": "data sosial portabel"
+      },
+      "youBadge": "Anda",
+      "apps": {
+        "maEarth": {
+          "blurb": "Komunitas dapat memakai bukti Bumicert saat mendaftar ke putaran pendanaan yang didukung komunitas."
+        },
+        "gainforest": {
+          "blurb": "GainForest membantu penjaga alam menerbitkan kerja terverifikasi, lokasi, pohon, observasi, dan cerita proyek."
+        },
+        "hypercerts": {
+          "blurb": "Klaim dampak terbuka dapat terhubung dengan alat Hypercerts dan ekosistem pendanaan barang publik."
+        }
+      },
+      "points": {
+        "portable": "Portabel antar aplikasi",
+        "owned": "Dimiliki komunitas",
+        "shared": "Bukti dampak bersama"
+      }
     }
   }
 }

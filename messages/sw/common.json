@@ -10,7 +10,12 @@
   },
   "navigation": {
     "navigation": "Urambazaji",
-    "openNavigation": "Fungua urambazaji"
+    "openNavigation": "Fungua urambazaji",
+    "homeAria": "Nyumbani kwa GainForest",
+    "sectionsAria": "Sehemu za tovuti",
+    "closeMenu": "Funga menyu",
+    "openMenu": "Fungua menyu",
+    "greenGlobeExternal": "Green Globe"
   },
   "theme": {
     "toggle": "Badilisha mandhari",
@@ -169,5 +174,82 @@
     "description": "Hifadhi maeneo ya miradi, taarifa za miti na Bumicerts zako mahali pamoja.",
     "failed": "Hatukuweza kukamilisha kuingia kwako. Jaribu tena.",
     "getStarted": "Anza"
+  },
+  "status": {
+    "pillTitle": "Hali ya mfumo",
+    "page": {
+      "degraded": "Afya haipatikani",
+      "UP": "Kila kitu kinafanya kazi",
+      "HASISSUES": "Baadhi ya huduma ni polepole",
+      "UNDERMAINTENANCE": "Matengenezo yaliyopangwa yanaendelea",
+      "DOWN": "Huduma haifanyi kazi"
+    },
+    "component": {
+      "OPERATIONAL": "Inafanya kazi",
+      "UNDERMAINTENANCE": "Iko kwenye matengenezo",
+      "DEGRADEDPERFORMANCE": "Utendaji umeshuka",
+      "PARTIALOUTAGE": "Hitilafu ya sehemu",
+      "MAJOROUTAGE": "Hitilafu kubwa",
+      "UNKNOWN": "Haijulikani"
+    },
+    "services": {
+      "search": {
+        "name": "Faharasa ya utafutaji",
+        "detail": "Ugunduzi na uorodheshaji"
+      },
+      "storage": {
+        "name": "Seva ya data binafsi",
+        "detail": "Hifadhi ya rekodi na media"
+      },
+      "labels": {
+        "name": "Huduma ya lebo",
+        "detail": "Lebo za uaminifu na usimamizi"
+      },
+      "website": {
+        "name": "Programu ya wavuti",
+        "detail": "Kiolesura cha Bumicerts"
+      },
+      "api": {
+        "name": "API ya programu",
+        "detail": "Sehemu ya nyuma ya programu"
+      },
+      "defaultName": "Huduma"
+    },
+    "summary": {
+      "working": "Huduma {operational}/{total} zinafanya kazi",
+      "healthy": "{percent}% yenye afya",
+      "updated": "imesasishwa {time}"
+    },
+    "hero": {
+      "imageAlt": "Kilele cha msitu wakati wa macheo",
+      "eyebrow": "Hali ya moja kwa moja",
+      "title": "GainForest",
+      "accent": "afya ya mfumo",
+      "lede": "Upatikanaji wa sasa wa Bumicerts, huduma za data na miundombinu inayounga mkono."
+    },
+    "unavailable": {
+      "title": "Hali haipatikani kwa muda",
+      "bodyBeforeLink": "Hatukuweza kupakia ubao wa moja kwa moja. Bado unaweza kuangalia ukurasa wa hali wa umma kwenye",
+      "link": "Hali ya GainForest"
+    },
+    "incidents": {
+      "title": "Matukio ya hivi karibuni",
+      "last": "{count, plural, one {Tukio la hivi karibuni} other {Matukio # ya hivi karibuni}}",
+      "window": "Siku 90 zilizopita",
+      "empty": "Hakuna matukio ya hivi karibuni yaliyoripotiwa.",
+      "viewFull": "Tazama ukurasa kamili wa hali",
+      "happeningNow": "Inaendelea sasa",
+      "fixed": "Imerekebishwa",
+      "downFor": "haipatikani kwa {duration}"
+    },
+    "serviceCard": {
+      "health90Day": "Afya ya siku 90"
+    },
+    "loadingAria": "Hali ya mfumo inapakia",
+    "time": {
+      "justNow": "sasa hivi",
+      "minutesAgo": "dakika {count, plural, one {#} other {#}} zilizopita",
+      "hoursAgo": "saa {count, plural, one {#} other {#}} zilizopita"
+    }
   }
 }

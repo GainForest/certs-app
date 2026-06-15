@@ -120,6 +120,41 @@
         "apply": "Inscrever-se na Ma Earth",
         "learn": "Saiba mais sobre a rodada"
       }
+    },
+    "brand": {
+      "alt": "Ícone do app GainForest"
+    },
+    "stats": {
+      "bumicertsShared": "Bumicerts compartilhados",
+      "organizationProfiles": "perfis de organizações",
+      "natureSightingsShared": "observações da natureza compartilhadas",
+      "raisedForProjects": "arrecadados para projetos"
+    },
+    "openNetwork": {
+      "titlePrefix": "Construído sobre uma",
+      "titleEmphasis": "rede aberta",
+      "description": "Bumicerts são registros de impacto portáteis que podem circular entre apps, comunidades e ferramentas de financiamento — não um banco de dados fechado.",
+      "protocol": {
+        "name": "Protocolo AT",
+        "description": "dados sociais portáteis"
+      },
+      "youBadge": "Você",
+      "apps": {
+        "maEarth": {
+          "blurb": "Comunidades podem usar evidências dos Bumicerts ao se candidatar a rodadas de financiamento apoiadas pela comunidade."
+        },
+        "gainforest": {
+          "blurb": "A GainForest ajuda guardiões da natureza a publicar trabalho verificado, locais, árvores, observações e histórias de projetos."
+        },
+        "hypercerts": {
+          "blurb": "Declarações abertas de impacto podem se conectar a ferramentas Hypercerts e ecossistemas de financiamento de bens públicos."
+        }
+      },
+      "points": {
+        "portable": "Portátil entre apps",
+        "owned": "Pertence às comunidades",
+        "shared": "Prova compartilhada de impacto"
+      }
     }
   }
 }

@@ -420,5 +420,11 @@
   "imageEditor": {
     "loading": "Memuat...",
     "done": "Selesai"
+  },
+  "countrySelector": {
+    "title": "Pilih negara",
+    "description": "Pilih negara yang terhubung dengan catatan ini.",
+    "searchPlaceholder": "Cari negara",
+    "done": "Selesai"
   }
 }

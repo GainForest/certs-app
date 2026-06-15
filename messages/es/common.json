@@ -10,7 +10,12 @@
   },
   "navigation": {
     "navigation": "Navegación",
-    "openNavigation": "Abrir navegación"
+    "openNavigation": "Abrir navegación",
+    "homeAria": "Inicio de GainForest",
+    "sectionsAria": "Secciones del sitio",
+    "closeMenu": "Cerrar menú",
+    "openMenu": "Abrir menú",
+    "greenGlobeExternal": "Green Globe"
   },
   "theme": {
     "toggle": "Cambiar tema",
@@ -169,5 +174,82 @@
     "description": "Guarda tus sitios de proyecto, información de árboles y Bumicerts en un solo lugar.",
     "failed": "No pudimos completar tu inicio de sesión. Inténtalo de nuevo.",
     "getStarted": "Empezar"
+  },
+  "status": {
+    "pillTitle": "Estado del sistema",
+    "page": {
+      "degraded": "Estado no disponible",
+      "UP": "Todo funciona",
+      "HASISSUES": "Algunos servicios están lentos",
+      "UNDERMAINTENANCE": "Mantenimiento programado en curso",
+      "DOWN": "Un servicio no funciona"
+    },
+    "component": {
+      "OPERATIONAL": "Operativo",
+      "UNDERMAINTENANCE": "En mantenimiento",
+      "DEGRADEDPERFORMANCE": "Degradado",
+      "PARTIALOUTAGE": "Interrupción parcial",
+      "MAJOROUTAGE": "Interrupción mayor",
+      "UNKNOWN": "Desconocido"
+    },
+    "services": {
+      "search": {
+        "name": "Índice de búsqueda",
+        "detail": "Descubrimiento e indexación"
+      },
+      "storage": {
+        "name": "Servidor de datos personales",
+        "detail": "Almacenamiento de registros y medios"
+      },
+      "labels": {
+        "name": "Servicio de etiquetas",
+        "detail": "Etiquetas de confianza y moderación"
+      },
+      "website": {
+        "name": "App web",
+        "detail": "Interfaz de Bumicerts"
+      },
+      "api": {
+        "name": "API de la aplicación",
+        "detail": "Backend de la aplicación"
+      },
+      "defaultName": "Servicio"
+    },
+    "summary": {
+      "working": "{operational}/{total} servicios funcionando",
+      "healthy": "{percent}% saludable",
+      "updated": "actualizado {time}"
+    },
+    "hero": {
+      "imageAlt": "Dosel del bosque al amanecer",
+      "eyebrow": "Estado en vivo",
+      "title": "GainForest",
+      "accent": "salud del sistema",
+      "lede": "Disponibilidad actual de Bumicerts, servicios de datos e infraestructura de apoyo."
+    },
+    "unavailable": {
+      "title": "El estado no está disponible temporalmente",
+      "bodyBeforeLink": "No pudimos cargar el panel en vivo. También puedes consultar la página pública de estado en",
+      "link": "Estado de GainForest"
+    },
+    "incidents": {
+      "title": "Incidentes recientes",
+      "last": "{count, plural, one {Último incidente} other {Últimos # incidentes}}",
+      "window": "Últimos 90 días",
+      "empty": "No se reportaron incidentes recientes.",
+      "viewFull": "Ver página completa de estado",
+      "happeningNow": "En curso",
+      "fixed": "Resuelto",
+      "downFor": "inactivo durante {duration}"
+    },
+    "serviceCard": {
+      "health90Day": "Salud de 90 días"
+    },
+    "loadingAria": "Cargando estado del sistema",
+    "time": {
+      "justNow": "ahora mismo",
+      "minutesAgo": "hace {count, plural, one {# minuto} other {# minutos}}",
+      "hoursAgo": "hace {count, plural, one {# hora} other {# horas}}"
+    }
   }
 }

@@ -120,6 +120,41 @@
         "apply": "Apply on Ma Earth",
         "learn": "Learn about the round"
       }
+    },
+    "brand": {
+      "alt": "GainForest app icon"
+    },
+    "stats": {
+      "bumicertsShared": "Bumicerts shared",
+      "organizationProfiles": "organization profiles",
+      "natureSightingsShared": "nature sightings shared",
+      "raisedForProjects": "raised for projects"
+    },
+    "openNetwork": {
+      "titlePrefix": "Built on an",
+      "titleEmphasis": "open network",
+      "description": "Bumicerts are portable impact records that can travel across apps, communities, and funding tools — not a closed database.",
+      "protocol": {
+        "name": "AT Protocol",
+        "description": "portable social data"
+      },
+      "youBadge": "You",
+      "apps": {
+        "maEarth": {
+          "blurb": "Communities can use Bumicert evidence when applying for community-backed funding rounds."
+        },
+        "gainforest": {
+          "blurb": "GainForest helps nature stewards publish verified work, sites, trees, observations, and project stories."
+        },
+        "hypercerts": {
+          "blurb": "Open impact claims can connect with broader Hypercerts tooling and public-good funding ecosystems."
+        }
+      },
+      "points": {
+        "portable": "Portable across apps",
+        "owned": "Owned by communities",
+        "shared": "Shared proof of impact"
+      }
     }
   }
 }

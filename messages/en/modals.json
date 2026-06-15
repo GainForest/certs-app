@@ -420,5 +420,11 @@
   "imageEditor": {
     "loading": "Loading...",
     "done": "Done"
+  },
+  "countrySelector": {
+    "title": "Select country",
+    "description": "Choose the country connected to this record.",
+    "searchPlaceholder": "Search countries",
+    "done": "Done"
   }
 }

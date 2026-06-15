@@ -120,6 +120,41 @@
         "apply": "Omba kwenye Ma Earth",
         "learn": "Jifunze kuhusu awamu hii"
       }
+    },
+    "brand": {
+      "alt": "Aikoni ya programu ya GainForest"
+    },
+    "stats": {
+      "bumicertsShared": "Bumicerts zilizoshirikiwa",
+      "organizationProfiles": "wasifu wa mashirika",
+      "natureSightingsShared": "matukio ya asili yaliyoshirikiwa",
+      "raisedForProjects": "zimekusanywa kwa miradi"
+    },
+    "openNetwork": {
+      "titlePrefix": "Imejengwa juu ya",
+      "titleEmphasis": "mtandao wazi",
+      "description": "Bumicerts ni rekodi za athari zinazobebeka kati ya programu, jamii na zana za ufadhili — si hifadhidata iliyofungwa.",
+      "protocol": {
+        "name": "Itifaki ya AT",
+        "description": "data ya kijamii inayobebeka"
+      },
+      "youBadge": "Wewe",
+      "apps": {
+        "maEarth": {
+          "blurb": "Jamii zinaweza kutumia ushahidi wa Bumicert wanapoomba awamu za ufadhili zinazoungwa mkono na jamii."
+        },
+        "gainforest": {
+          "blurb": "GainForest huwasaidia walezi wa mazingira kuchapisha kazi iliyothibitishwa, maeneo, miti, uchunguzi na hadithi za miradi."
+        },
+        "hypercerts": {
+          "blurb": "Madai wazi ya athari yanaweza kuunganishwa na zana za Hypercerts na mifumo ya ufadhili wa manufaa ya umma."
+        }
+      },
+      "points": {
+        "portable": "Inabebeka kati ya programu",
+        "owned": "Inamilikiwa na jamii",
+        "shared": "Ushahidi wa athari ulioshirikiwa"
+      }
     }
   }
 }
