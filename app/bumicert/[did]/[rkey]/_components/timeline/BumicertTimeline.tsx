@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useId, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRightIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  DatabaseIcon,
   ExternalLinkIcon,
   FileTextIcon,
   GlobeIcon,
@@ -43,6 +44,9 @@ import type {
 } from "@/app/_lib/indexer";
 
 const ATTACHMENT_COLLECTION = "org.hypercerts.context.attachment";
+const CONTENT_TYPE_TREE_DATASET = "tree-dataset";
+const CONTENT_TYPE_BIODIVERSITY = "biodiversity";
+const CONTENT_TYPE_BIODIVERSITY_DATASET = "biodiversity-dataset";
 const PAGE_SIZE = 8;
 
 type TimelineSourceData = {
@@ -80,7 +84,7 @@ type TileKind = "site" | "tree" | "nature" | "audio" | "image" | "video" | "pdf"
 type TimelineTile = { id: string; kind: TileKind; title: string; caption: string; preview: PreviewPayload | null };
 type TimelineReference = {
   id: string;
-  kind: "audio" | "occurrence" | "tree" | "location" | "unknown";
+  kind: "audio" | "occurrence" | "tree" | "biodiversityDataset" | "location" | "unknown";
   title: string;
   description?: string;
   recordedAt?: string | null;
@@ -108,14 +112,14 @@ const FILTERS: Array<{ id: Exclude<EvidenceKind, "site" | "other">; label: strin
   { id: "all", label: "All" },
   { id: "tree", label: "Trees" },
   { id: "audio", label: "Sounds" },
-  { id: "nature", label: "Nature" },
+  { id: "nature", label: "Biodiversity" },
   { id: "file", label: "Files" },
 ];
 
 const EVIDENCE_TABS: Array<{ id: EvidenceTab; label: string; icon: LucideIcon; description: string }> = [
   { id: "audio", label: "Field sounds", icon: MicIcon, description: "Add recordings already saved by this organization." },
   { id: "trees", label: "Tree groups", icon: TreesIcon, description: "Add tree information grouped by project place." },
-  { id: "nature", label: "Nature sightings", icon: LeafIcon, description: "Add plant, animal, or field observations." },
+  { id: "nature", label: "Biodiversity", icon: LeafIcon, description: "Filter observations and add displayed data or grouped datasets." },
   { id: "files", label: "Files and links", icon: FileTextIcon, description: "Add reports, photos, videos, or web pages." },
 ];
 
@@ -182,6 +186,8 @@ function parseAttachmentContent(content: unknown): ParsedAttachmentContent[] {
 function getLinkedTreeGroupUris(entries: TimelineAttachmentItem[]): Set<string> {
   const linked = new Set<string>();
   for (const entry of entries) {
+    const normalized = entry.record.contentType?.trim().toLowerCase();
+    if (normalized && normalized !== CONTENT_TYPE_TREE_DATASET) continue;
     for (const item of parseAttachmentContent(entry.record.content)) {
       if (item.kind === "uri" && parseAtUri(item.uri)?.collection === "app.gainforest.dwc.dataset") {
         linked.add(item.uri);
@@ -191,11 +197,24 @@ function getLinkedTreeGroupUris(entries: TimelineAttachmentItem[]): Set<string> 
   return linked;
 }
 
+function getLinkedBiodiversityUris(entries: TimelineAttachmentItem[]): Set<string> {
+  const linked = new Set<string>();
+  for (const entry of entries) {
+    if (evidenceKind(entry.record.contentType, entry.record.content) !== "nature") continue;
+    for (const item of parseAttachmentContent(entry.record.content)) {
+      if (item.kind !== "uri") continue;
+      const collection = parseAtUri(item.uri)?.collection;
+      if (collection === "app.gainforest.dwc.occurrence" || collection === "app.gainforest.dwc.dataset") linked.add(item.uri);
+    }
+  }
+  return linked;
+}
+
 function evidenceKind(contentType: string | null | undefined, content: unknown): EvidenceKind {
   const normalized = contentType?.trim().toLowerCase();
   if (normalized === "audio") return "audio";
-  if (normalized === "tree-dataset" || normalized === "occurrence") return "tree";
-  if (normalized === "biodiversity") return "nature";
+  if (normalized === CONTENT_TYPE_TREE_DATASET || normalized === "occurrence") return "tree";
+  if (normalized === CONTENT_TYPE_BIODIVERSITY || normalized === CONTENT_TYPE_BIODIVERSITY_DATASET) return "nature";
   if (["document", "report", "evidence", "testimonial", "methodology", "photo", "video", "certificate"].includes(normalized ?? "")) return "file";
 
   const parsed = parseAttachmentContent(content);
@@ -269,6 +288,7 @@ function previewFromHref(href: string, mimeType: string | null, fileName?: strin
 function previewForReference(uri: string, reference: TimelineReference | undefined): PreviewPayload | null {
   if (reference?.kind === "location" && reference.actionHref) return { kind: "site", href: reference.actionHref, title: reference.title, body: reference.description };
   if (reference?.kind === "tree") return { kind: "text", href: "", title: reference.title, body: reference.description ?? "Linked tree information" };
+  if (reference?.kind === "biodiversityDataset") return { kind: "text", href: "", title: reference.title, body: reference.description ?? "Linked biodiversity dataset" };
   if (reference?.kind === "audio" && reference.actionHref) return { kind: "audio", href: reference.actionHref, title: reference.title, body: reference.description };
   if (reference?.actionHref) return { kind: "link", href: reference.actionHref, title: reference.title, body: reference.description };
   if (reference) return { kind: "text", href: "", title: reference.title, body: reference.description ?? "Linked item" };
@@ -306,8 +326,8 @@ function buildTiles(entryId: string, content: unknown, references: TimelineRefer
     const reference = refs.get(item.uri);
     const preview = previewForReference(item.uri, reference);
     const parsed = parseAtUri(item.uri);
-    const kind: TileKind = reference?.kind === "tree" ? "tree" : reference?.kind === "occurrence" ? "nature" : reference?.kind === "audio" ? "audio" : reference?.kind === "location" ? "site" : "item";
-    const title = reference?.title ?? (parsed?.collection === "app.gainforest.dwc.dataset" ? "Tree group" : "Linked item");
+    const kind: TileKind = reference?.kind === "tree" ? "tree" : reference?.kind === "occurrence" || reference?.kind === "biodiversityDataset" ? "nature" : reference?.kind === "audio" ? "audio" : reference?.kind === "location" ? "site" : "item";
+    const title = reference?.title ?? (parsed?.collection === "app.gainforest.dwc.dataset" ? "Grouped dataset" : "Linked item");
     tiles.push({ id, kind, title, caption: reference?.description ?? title, preview });
   });
   return tiles;
@@ -329,7 +349,7 @@ function noteFromDescription(description: unknown): string | null {
 function kindLabel(kind: EvidenceKind): string {
   if (kind === "tree") return "Tree group";
   if (kind === "audio") return "Field sound";
-  if (kind === "nature") return "Nature sightings";
+  if (kind === "nature") return "Biodiversity";
   if (kind === "site") return "Project place";
   if (kind === "file") return "File";
   return "Evidence";
@@ -339,13 +359,13 @@ function titleForEntry(item: TimelineAttachmentItem, kind: EvidenceKind, referen
   const explicit = cleanText(item.record.title);
   const treeRef = references.find((ref) => ref.kind === "tree");
   if (kind === "tree" && treeRef) return treeRef.title;
-  if (kind === "nature") return explicit ?? "Nature sightings";
+  if (kind === "nature") return explicit ?? "Biodiversity observations";
   return explicit ?? kindLabel(kind);
 }
 
 function recordedDateForEntry(kind: EvidenceKind, references: TimelineReference[]): string {
-  const treeRange = references.find((ref) => ref.kind === "tree" && ref.dateRange)?.dateRange;
-  if (treeRange) return treeRange;
+  const referenceRange = references.find((ref) => ref.dateRange)?.dateRange;
+  if (referenceRange) return referenceRange;
   const dates = references.map((ref) => ref.recordedAt).filter((value): value is string => Boolean(value));
   const range = formatDateRangeFromValues(dates);
   if (range) return range;
@@ -361,8 +381,15 @@ function metricBadges(kind: EvidenceKind, references: TimelineReference[], tileC
   }
   if (kind === "nature") {
     const observations = references.filter((ref) => ref.kind === "occurrence");
+    const datasets = references.filter((ref) => ref.kind === "biodiversityDataset");
+    const datasetObservationCount = datasets.reduce((sum, ref) => sum + (ref.metrics?.itemCount ?? 0), 0);
+    const observationCount = observations.length + datasetObservationCount;
     const species = new Set(observations.map((ref) => ref.title.trim().toLowerCase()).filter(Boolean));
-    return [`${formatNumber(observations.length)} sightings`, species.size > 0 ? `${formatNumber(species.size)} species` : null].filter((value): value is string => Boolean(value));
+    const datasetSpeciesCount = datasets.reduce((sum, ref) => sum + (ref.metrics?.speciesCount ?? 0), 0);
+    return [
+      observationCount > 0 ? `${formatNumber(observationCount)} observations` : datasets.length > 0 ? `${formatNumber(datasets.length)} datasets` : null,
+      species.size + datasetSpeciesCount > 0 ? `${formatNumber(species.size + datasetSpeciesCount)} species` : null,
+    ].filter((value): value is string => Boolean(value));
   }
   if (kind === "audio") return [`${formatNumber(Math.max(tileCount, references.filter((ref) => ref.kind === "audio").length))} recordings`];
   if (kind === "file") return [`${formatNumber(tileCount)} items`];
@@ -416,8 +443,100 @@ function getPlaceForTreeGroup(treeGroupUri: string, occurrences: OccurrenceRecor
   return place ? { uri: place.metadata.uri, cid: place.metadata.cid } : null;
 }
 
-function isNatureSighting(item: OccurrenceRecord): boolean {
-  return !item.datasetRef;
+type BiodiversityDatasetGroup = {
+  uri: string;
+  name: string;
+  description: string | null;
+  recordCount: number;
+  records: OccurrenceRecord[];
+  speciesCount: number;
+  dateRange: string | null;
+  recordedByValues: string[];
+  searchText: string;
+};
+
+function occurrenceTitle(item: OccurrenceRecord): string {
+  return item.scientificName ?? item.vernacularName ?? item.remarks ?? "Unknown observation";
+}
+
+function uniqueRecordedByValues(items: OccurrenceRecord[]): string[] {
+  const values = new Map<string, string>();
+  for (const item of items) {
+    const recordedBy = item.recordedBy?.trim();
+    if (!recordedBy) continue;
+    const key = recordedBy.toLowerCase();
+    if (!values.has(key)) values.set(key, recordedBy);
+  }
+  return Array.from(values.values()).sort((left, right) => left.localeCompare(right));
+}
+
+function recordedBySummary(values: string[]): string | null {
+  if (values.length === 0) return null;
+  if (values.length === 1) return values[0] ?? null;
+  return `${values[0]} + ${values.length - 1} more`;
+}
+
+function matchesRecordedBy(item: OccurrenceRecord, recordedBy: string): boolean {
+  if (!recordedBy) return true;
+  return item.recordedBy?.trim().toLowerCase() === recordedBy.toLowerCase();
+}
+
+function occurrenceSearchText(item: OccurrenceRecord, datasetName?: string | null): string {
+  return [
+    occurrenceTitle(item),
+    item.kingdom,
+    item.family,
+    item.genus,
+    item.locality,
+    item.country,
+    item.recordedBy,
+    item.eventDate,
+    datasetName ?? item.datasetName,
+  ].filter((value): value is string => typeof value === "string" && value.length > 0).join(" ").toLowerCase();
+}
+
+function buildBiodiversityDatasetGroups(datasets: UploadTreeDatasetRecord[], occurrences: OccurrenceRecord[]): BiodiversityDatasetGroup[] {
+  const datasetLookup = new Map(datasets.map((dataset) => [dataset.uri, dataset]));
+  const recordsByDataset = new Map<string, OccurrenceRecord[]>();
+
+  for (const occurrence of occurrences) {
+    if (!occurrence.datasetRef) continue;
+    const existing = recordsByDataset.get(occurrence.datasetRef) ?? [];
+    existing.push(occurrence);
+    recordsByDataset.set(occurrence.datasetRef, existing);
+  }
+
+  const datasetUris = new Set<string>([...datasets.map((dataset) => dataset.uri), ...recordsByDataset.keys()]);
+
+  return Array.from(datasetUris).map((uri) => {
+    const records = recordsByDataset.get(uri) ?? [];
+    const dataset = datasetLookup.get(uri);
+    const species = new Set(records.map((item) => occurrenceTitle(item).trim().toLowerCase()).filter(Boolean));
+    const recordedByValues = uniqueRecordedByValues(records);
+    const name = dataset?.name ?? records.find((item) => item.datasetName)?.datasetName ?? "Grouped biodiversity dataset";
+    const description = dataset?.description ?? null;
+    const dateRange = formatDateRangeFromValues(records.map((item) => item.eventDate ?? item.createdAt));
+    const searchText = [
+      name,
+      description,
+      dateRange,
+      dataset?.createdAt,
+      recordedByValues.join(" "),
+      ...records.map((item) => occurrenceSearchText(item, name)),
+    ].filter((value): value is string => typeof value === "string" && value.length > 0).join(" ").toLowerCase();
+
+    return {
+      uri,
+      name,
+      description,
+      recordCount: Math.max(records.length, dataset?.recordCount ?? 0),
+      records,
+      speciesCount: species.size,
+      dateRange,
+      recordedByValues,
+      searchText,
+    };
+  }).sort((left, right) => right.recordCount - left.recordCount || left.name.localeCompare(right.name));
 }
 
 function buildOptimisticAttachment(args: {
@@ -461,28 +580,25 @@ export function BumicertTimeline({
   const [currentPage, setCurrentPage] = useState(1);
   const [status, setStatus] = useState<string | null>(null);
   const linkedWindow = useMemo(() => formatLinkedWindow(entries), [entries]);
-  const allReferences = useMemo(() => {
-    const built = buildTimelineReferences({
-      entries,
+  const providedReferencesById = useMemo(() => new Map(references.map((ref) => [ref.id, ref])), [references]);
+  const entryModels = useMemo(() => entries.map((item, index) => {
+    const entryId = getEntryId(item, index);
+    const builtReferences = buildTimelineReferences({
+      entries: [item],
       audio: sources.audio,
       occurrences: sources.occurrences,
       treeGroups: sources.treeGroups,
       places: sources.places,
     });
-    const byId = new Map<string, TimelineReference>();
-    for (const ref of [...built, ...references]) byId.set(ref.id, ref);
-    return Array.from(byId.values());
-  }, [entries, references, sources.audio, sources.occurrences, sources.treeGroups, sources.places]);
-  const refsById = useMemo(() => new Map(allReferences.map((ref) => [ref.id, ref])), [allReferences]);
-  const entryModels = useMemo(() => entries.map((item, index) => {
-    const entryId = getEntryId(item, index);
+    const refsById = new Map(providedReferencesById);
+    for (const ref of builtReferences) refsById.set(ref.id, ref);
     const entryRefs = parseAttachmentContent(item.record.content)
       .filter((content): content is { kind: "uri"; uri: string } => content.kind === "uri" && content.uri.startsWith("at://"))
       .map((content) => refsById.get(content.uri))
       .filter((ref): ref is TimelineReference => Boolean(ref));
     const kind = evidenceKind(item.record.contentType, item.record.content);
     return { item, index, entryId, refs: entryRefs, kind, tiles: buildTiles(entryId, item.record.content, entryRefs) };
-  }), [entries, refsById]);
+  }), [entries, providedReferencesById, sources.audio, sources.occurrences, sources.places, sources.treeGroups]);
   const counts = useMemo(() => new Map(FILTERS.map((filter) => [filter.id, entryModels.filter((entry) => matchesFilter(entry.kind, filter.id)).length])), [entryModels]);
   const filteredEntries = entryModels.filter((entry) => matchesFilter(entry.kind, activeFilter));
   const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
@@ -685,6 +801,7 @@ function TimelineEntryCard({
   const previewTiles = tiles.filter((tile) => tile.preview && !(kind === "nature" && tile.preview.kind === "text"));
   const selectedTile = activeTileId ? previewTiles.find((tile) => tile.id === activeTileId) : undefined;
   const activePreview = selectedTile?.preview ?? previewTiles[0]?.preview ?? null;
+  const biodiversityRefs = refs.filter((ref) => ref.kind === "occurrence" || ref.kind === "biodiversityDataset");
 
   async function handleDelete() {
     if (!rkey) return;
@@ -734,12 +851,12 @@ function TimelineEntryCard({
       {expanded ? (
         <div id={panelId} className="space-y-3 border-t border-border/50 p-4 pt-3">
           {note ? <div className="rounded-xl bg-muted/20 px-3 py-2 text-sm leading-6 text-foreground/80">{note}</div> : null}
-          {kind === "nature" && refs.filter((ref) => ref.kind === "occurrence").length > 0 ? (
+          {kind === "nature" && biodiversityRefs.length > 0 ? (
             <div className="rounded-xl bg-muted/20 p-3">
-              <p className="text-xs text-muted-foreground">Selected sightings</p>
+              <p className="text-xs text-muted-foreground">Displayed biodiversity data</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {refs.filter((ref) => ref.kind === "occurrence").slice(0, 8).map((ref) => <span key={ref.id} className="rounded-full bg-background px-2.5 py-1 text-xs text-foreground shadow-xs">{ref.title}</span>)}
-                {refs.filter((ref) => ref.kind === "occurrence").length > 8 ? <span className="rounded-full bg-background px-2.5 py-1 text-xs text-muted-foreground shadow-xs">+{refs.filter((ref) => ref.kind === "occurrence").length - 8} more</span> : null}
+                {biodiversityRefs.slice(0, 8).map((ref) => <span key={ref.id} className="rounded-full bg-background px-2.5 py-1 text-xs text-foreground shadow-xs">{ref.title}</span>)}
+                {biodiversityRefs.length > 8 ? <span className="rounded-full bg-background px-2.5 py-1 text-xs text-muted-foreground shadow-xs">+{biodiversityRefs.length - 8} more</span> : null}
               </div>
             </div>
           ) : null}
@@ -860,6 +977,7 @@ function EvidenceAdder({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const linkedTreeGroups = useMemo(() => getLinkedTreeGroupUris(entries), [entries]);
+  const linkedBiodiversityUris = useMemo(() => getLinkedBiodiversityUris(entries), [entries]);
 
   async function submitDrafts(drafts: AttachmentDraft | AttachmentDraft[], onSuccess?: () => void) {
     const items = (Array.isArray(drafts) ? drafts : [drafts]).filter((draft) => draft.contents.length > 0);
@@ -943,7 +1061,7 @@ function EvidenceAdder({
       <div className="mt-4 flex flex-col gap-2">
         {activeTab === "audio" ? <AudioPicker data={sources.audio} isSubmitting={isSubmitting} submitDrafts={submitDrafts} /> : null}
         {activeTab === "trees" ? <TreeGroupPicker data={sources.treeGroups} occurrences={sources.occurrences} places={sources.places} linkedTreeGroups={linkedTreeGroups} isSubmitting={isSubmitting} submitDrafts={submitDrafts} /> : null}
-        {activeTab === "nature" ? <NaturePicker data={sources.occurrences.filter(isNatureSighting)} isSubmitting={isSubmitting} submitDrafts={submitDrafts} /> : null}
+        {activeTab === "nature" ? <BiodiversityPicker occurrences={sources.occurrences} datasets={sources.treeGroups} linkedUris={linkedBiodiversityUris} isSubmitting={isSubmitting} submitDrafts={submitDrafts} /> : null}
         {activeTab === "files" ? <FilePicker isSubmitting={isSubmitting} submitDrafts={submitDrafts} /> : null}
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </div>
@@ -1025,7 +1143,7 @@ function TreeGroupPicker({ data, occurrences, places, linkedTreeGroups, isSubmit
   if (rows.length === 0) return <PickerEmpty label="tree groups" href="/manage/trees" />;
   const drafts = Array.from(selected).map((uri) => {
     const place = getPlaceForTreeGroup(uri, occurrences, places);
-    return { title: "Tree group", contentType: "tree-dataset", contents: [uri], note, contextualSubjects: place ? [place] : [] } satisfies AttachmentDraft;
+    return { title: "Tree group", contentType: CONTENT_TYPE_TREE_DATASET, contents: [uri], note, contextualSubjects: place ? [place] : [] } satisfies AttachmentDraft;
   });
   return (
     <>
@@ -1050,29 +1168,213 @@ function TreeGroupPicker({ data, occurrences, places, linkedTreeGroups, isSubmit
   );
 }
 
-function NaturePicker({ data, isSubmitting, submitDrafts }: { data: OccurrenceRecord[]; isSubmitting: boolean; submitDrafts: (draft: AttachmentDraft, onSuccess?: () => void) => void }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+function BiodiversityPicker({
+  occurrences,
+  datasets,
+  linkedUris,
+  isSubmitting,
+  submitDrafts,
+}: {
+  occurrences: OccurrenceRecord[];
+  datasets: UploadTreeDatasetRecord[];
+  linkedUris: Set<string>;
+  isSubmitting: boolean;
+  submitDrafts: (drafts: AttachmentDraft[], onSuccess?: () => void) => void;
+}) {
+  const [selectedOccurrences, setSelectedOccurrences] = useState<Set<string>>(new Set());
+  const [selectedDatasets, setSelectedDatasets] = useState<Set<string>>(new Set());
+  const [recordedByFilter, setRecordedByFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [note, setNote] = useState("");
-  const rows = data.filter((item) => item.atUri);
-  function toggle(uri: string) {
-    setSelected((current) => {
+  const rows = useMemo(() => occurrences.filter((item) => item.atUri), [occurrences]);
+  const datasetGroups = useMemo(() => buildBiodiversityDatasetGroups(datasets, rows), [datasets, rows]);
+  const datasetByUri = useMemo(() => new Map(datasetGroups.map((group) => [group.uri, group])), [datasetGroups]);
+  const datasetNameByUri = useMemo(() => new Map(datasetGroups.map((group) => [group.uri, group.name])), [datasetGroups]);
+  const recordedByOptions = useMemo(() => uniqueRecordedByValues(rows), [rows]);
+  const normalizedRecordedBy = recordedByFilter.trim().toLowerCase();
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const displayedRows = useMemo(() => rows.filter((item) => {
+    if (!matchesRecordedBy(item, normalizedRecordedBy)) return false;
+    if (!normalizedSearch) return true;
+    return occurrenceSearchText(item, item.datasetRef ? datasetNameByUri.get(item.datasetRef) : null).includes(normalizedSearch);
+  }), [datasetNameByUri, normalizedRecordedBy, normalizedSearch, rows]);
+  const displayedDatasets = useMemo(() => datasetGroups.map((group) => {
+    const groupDetailsSearchText = [group.name, group.description, group.dateRange, group.recordedByValues.join(" ")]
+      .filter((value): value is string => typeof value === "string" && value.length > 0)
+      .join(" ")
+      .toLowerCase();
+    const groupDetailsMatch = !normalizedSearch || groupDetailsSearchText.includes(normalizedSearch);
+    const matchingRecords = group.records.filter((item) => {
+      if (!matchesRecordedBy(item, normalizedRecordedBy)) return false;
+      if (!normalizedSearch || groupDetailsMatch) return true;
+      return occurrenceSearchText(item, group.name).includes(normalizedSearch);
+    });
+    return { ...group, groupDetailsMatch, matchingRecords };
+  }).filter((group) => {
+    if (group.matchingRecords.length > 0) return true;
+    return !normalizedRecordedBy && group.groupDetailsMatch;
+  }), [datasetGroups, normalizedRecordedBy, normalizedSearch]);
+  const linkedDatasetUris = useMemo(() => new Set(Array.from(linkedUris).filter((uri) => datasetByUri.has(uri))), [datasetByUri, linkedUris]);
+  const selectedOrLinkedDatasetUris = useMemo(() => new Set([...linkedDatasetUris, ...selectedDatasets]), [linkedDatasetUris, selectedDatasets]);
+  const isCoveredBySelectedOrLinkedDataset = useCallback((item: OccurrenceRecord) => Boolean(item.datasetRef && selectedOrLinkedDatasetUris.has(item.datasetRef)), [selectedOrLinkedDatasetUris]);
+  const displayedRowUris = displayedRows
+    .filter((item) => !isCoveredBySelectedOrLinkedDataset(item))
+    .map((item) => item.atUri)
+    .filter((uri): uri is string => Boolean(uri) && !linkedUris.has(uri));
+  const allDisplayedSelected = displayedRowUris.length > 0 && displayedRowUris.every((uri) => selectedOccurrences.has(uri));
+  const selectableSelectedOccurrenceCount = Array.from(selectedOccurrences).filter((uri) => {
+    const item = rows.find((row) => row.atUri === uri);
+    return item && !linkedUris.has(uri) && !isCoveredBySelectedOrLinkedDataset(item);
+  }).length;
+  const selectedCount = selectableSelectedOccurrenceCount + selectedDatasets.size;
+  const allRecordersValue = "__all_recorders__";
+  const searchInputId = useId();
+  const recorderLabelId = useId();
+
+  function toggleOccurrence(uri: string) {
+    if (linkedUris.has(uri)) return;
+    const item = rows.find((row) => row.atUri === uri);
+    if (item && isCoveredBySelectedOrLinkedDataset(item)) return;
+    setSelectedOccurrences((current) => {
       const next = new Set(current);
       if (next.has(uri)) next.delete(uri); else next.add(uri);
       return next;
     });
   }
-  if (rows.length === 0) return <PickerEmpty label="nature sightings" />;
+
+  function toggleDataset(uri: string) {
+    if (linkedUris.has(uri)) return;
+    const willSelect = !selectedDatasets.has(uri);
+    setSelectedDatasets((current) => {
+      const next = new Set(current);
+      if (next.has(uri)) next.delete(uri); else next.add(uri);
+      return next;
+    });
+    if (willSelect) {
+      const memberUris = new Set((datasetByUri.get(uri)?.records ?? []).map((item) => item.atUri).filter(Boolean));
+      setSelectedOccurrences((current) => {
+        const next = new Set(current);
+        for (const memberUri of memberUris) next.delete(memberUri);
+        return next;
+      });
+    }
+  }
+
+  function toggleDisplayedRows() {
+    setSelectedOccurrences((current) => {
+      const next = new Set(current);
+      if (allDisplayedSelected) {
+        for (const uri of displayedRowUris) next.delete(uri);
+      } else {
+        for (const uri of displayedRowUris) next.add(uri);
+      }
+      return next;
+    });
+  }
+
+  function submitSelection() {
+    const datasetUris = Array.from(selectedDatasets).filter((uri) => !linkedUris.has(uri));
+    const blockedDatasetUris = new Set([...linkedDatasetUris, ...datasetUris]);
+    const occurrenceUris = Array.from(selectedOccurrences).filter((uri) => {
+      if (linkedUris.has(uri)) return false;
+      const item = rows.find((row) => row.atUri === uri);
+      return item ? !item.datasetRef || !blockedDatasetUris.has(item.datasetRef) : true;
+    });
+    const datasetDrafts = datasetUris.flatMap((uri) => {
+      const group = datasetByUri.get(uri);
+      return [{ title: group?.name ?? "Biodiversity dataset", contentType: CONTENT_TYPE_BIODIVERSITY_DATASET, contents: [uri], note } satisfies AttachmentDraft];
+    });
+    const drafts = [
+      ...datasetDrafts,
+      ...(occurrenceUris.length > 0 ? [{ title: "Biodiversity observations", contentType: CONTENT_TYPE_BIODIVERSITY, contents: occurrenceUris, note } satisfies AttachmentDraft] : []),
+    ];
+    submitDrafts(drafts, () => {
+      setSelectedOccurrences(new Set());
+      setSelectedDatasets(new Set());
+      setNote("");
+    });
+  }
+
+  if (rows.length === 0 && datasetGroups.length === 0) return <PickerEmpty label="biodiversity data" href="/manage/trees" />;
+
   return (
     <>
-      <div className="grid max-h-[420px] gap-2 overflow-auto pr-1">
-        {rows.map((item) => {
-          const title = item.scientificName ?? item.vernacularName ?? item.remarks ?? "Unknown sighting";
-          const secondary = [item.kingdom, formatDate(item.eventDate ?? item.createdAt), item.locality].filter(Boolean).join(" · ");
-          return <CheckRow key={item.atUri} selected={selected.has(item.atUri)} onToggle={() => toggle(item.atUri)} icon={LeafIcon} primary={title} secondary={secondary} disabled={isSubmitting} />;
-        })}
+      <div className="grid gap-3">
+        <div className="grid gap-2 rounded-xl border border-border/60 bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)]">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={searchInputId} className="text-sm font-medium">Search</label>
+            <Input id={searchInputId} value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} disabled={isSubmitting} placeholder="Search biodiversity" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span id={recorderLabelId} className="text-sm font-medium">Recorder</span>
+            <Select value={recordedByFilter || allRecordersValue} onValueChange={(value) => setRecordedByFilter(value === allRecordersValue ? "" : value)} disabled={isSubmitting || recordedByOptions.length === 0}>
+              <SelectTrigger aria-labelledby={recorderLabelId}><SelectValue placeholder="All recorders" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={allRecordersValue}>All recorders</SelectItem>
+                {recordedByOptions.map((recordedBy) => <SelectItem key={recordedBy} value={recordedBy}>{recordedBy}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <section className="rounded-xl border border-border/60 bg-background p-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Displayed biodiversity data</p>
+              <p className="text-xs text-muted-foreground">{displayedRows.length} of {rows.length} observations shown. Choose individual records from this filtered view.</p>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={toggleDisplayedRows} disabled={isSubmitting || displayedRowUris.length === 0}>
+              {allDisplayedSelected ? "Clear displayed" : "Select displayed"}
+            </Button>
+          </div>
+          {displayedRows.length === 0 ? (
+            <p className="mt-3 rounded-lg border border-dashed border-border/70 px-3 py-4 text-center text-sm text-muted-foreground">No biodiversity data matches these filters.</p>
+          ) : (
+            <div className="mt-3 grid max-h-[360px] gap-2 overflow-auto pr-1">
+              {displayedRows.map((item) => {
+                const title = occurrenceTitle(item);
+                const datasetName = item.datasetRef ? datasetNameByUri.get(item.datasetRef) ?? item.datasetName : item.datasetName;
+                const secondary = [
+                  item.kingdom,
+                  formatDate(item.eventDate ?? item.createdAt),
+                  item.locality,
+                  item.recordedBy ? `Recorded by ${item.recordedBy}` : null,
+                  datasetName,
+                ].filter(Boolean).join(" · ");
+                const alreadyLinked = linkedUris.has(item.atUri);
+                const coveredByDataset = isCoveredBySelectedOrLinkedDataset(item);
+                return <CheckRow key={item.atUri} selected={!alreadyLinked && !coveredByDataset && selectedOccurrences.has(item.atUri)} onToggle={() => toggleOccurrence(item.atUri)} icon={LeafIcon} primary={title} secondary={secondary} status={alreadyLinked ? "Already linked" : coveredByDataset ? "Covered by dataset" : undefined} disabled={isSubmitting || alreadyLinked || coveredByDataset} />;
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-border/60 bg-background p-3">
+          <p className="text-sm font-medium text-foreground">Grouped datasets</p>
+          <p className="mt-1 text-xs text-muted-foreground">Datasets are filtered by the same recorded-by and search choices.</p>
+          {displayedDatasets.length === 0 ? (
+            <p className="mt-3 rounded-lg border border-dashed border-border/70 px-3 py-4 text-center text-sm text-muted-foreground">No grouped datasets match these filters.</p>
+          ) : (
+            <div className="mt-3 grid gap-2">
+              {displayedDatasets.map((group) => {
+                const alreadyLinked = linkedUris.has(group.uri);
+                const recorder = recordedBySummary(group.recordedByValues);
+                const secondary = [
+                  `${formatNumber(group.matchingRecords.length)} shown`,
+                  `${formatNumber(group.recordCount)} total`,
+                  group.speciesCount > 0 ? `${formatNumber(group.speciesCount)} species` : null,
+                  group.dateRange,
+                  recorder ? `Recorded by ${recorder}` : null,
+                ].filter(Boolean).join(" · ");
+                return <CheckRow key={group.uri} selected={!alreadyLinked && selectedDatasets.has(group.uri)} onToggle={() => toggleDataset(group.uri)} icon={DatabaseIcon} primary={group.name} secondary={secondary} status={alreadyLinked ? "Already linked" : "Grouped dataset"} disabled={isSubmitting || alreadyLinked} />;
+              })}
+            </div>
+          )}
+        </section>
       </div>
+      <ManageLink href="/manage/trees" label="Manage biodiversity data" />
       <OptionalNote value={note} onChange={setNote} disabled={isSubmitting} />
-      <SubmitButton count={selected.size} isSubmitting={isSubmitting} onClick={() => submitDrafts({ title: "Nature sightings", contentType: "biodiversity", contents: Array.from(selected), note }, () => { setSelected(new Set()); setNote(""); })} />
+      <SubmitButton count={selectedCount} isSubmitting={isSubmitting} onClick={submitSelection} />
     </>
   );
 }
@@ -1179,6 +1481,24 @@ function ManageLink({ href, label }: { href: string; label: string }) {
   return <Link href={href} className="inline-flex w-fit items-center gap-2 rounded-full border border-border/60 px-3 py-1.5 text-xs font-medium text-foreground/70 transition-colors hover:border-primary/40 hover:text-primary">{label}<ExternalLinkIcon className="h-3 w-3" /></Link>;
 }
 
+function getDatasetEvidencePurposes(entries: TimelineAttachmentItem[]): Map<string, "tree" | "biodiversity"> {
+  const purposes = new Map<string, "tree" | "biodiversity">();
+  for (const entry of entries) {
+    const normalized = entry.record.contentType?.trim().toLowerCase();
+    const purpose = normalized === CONTENT_TYPE_TREE_DATASET
+      ? "tree"
+      : normalized === CONTENT_TYPE_BIODIVERSITY || normalized === CONTENT_TYPE_BIODIVERSITY_DATASET
+        ? "biodiversity"
+        : null;
+    if (!purpose) continue;
+    for (const item of parseAttachmentContent(entry.record.content)) {
+      if (item.kind !== "uri" || parseAtUri(item.uri)?.collection !== "app.gainforest.dwc.dataset") continue;
+      if (purpose === "tree" || !purposes.has(item.uri)) purposes.set(item.uri, purpose);
+    }
+  }
+  return purposes;
+}
+
 export function buildTimelineReferences(args: {
   entries: TimelineAttachmentItem[];
   audio: ManagedAudio[];
@@ -1193,6 +1513,7 @@ export function buildTimelineReferences(args: {
     return [item.uri, item] as const;
   }));
   const placeByUri = new Map(args.places.map((item) => [item.metadata.uri, item]));
+  const datasetPurposes = getDatasetEvidencePurposes(args.entries);
   const uris = new Set<string>();
   for (const entry of args.entries) {
     for (const item of parseAttachmentContent(entry.record.content)) {
@@ -1208,13 +1529,32 @@ export function buildTimelineReferences(args: {
     if (parsed?.collection === "app.gainforest.dwc.dataset") {
       const item = treeByUri.get(uri);
       const stats = getTreeGroupStats(uri, args.occurrences);
-      const title = item?.name ?? "Linked tree group";
+      const purpose = datasetPurposes.get(uri) ?? "tree";
+      const title = item?.name ?? (purpose === "biodiversity" ? "Linked biodiversity dataset" : "Linked tree group");
       const count = stats.itemCount || item?.recordCount || 0;
+      if (purpose === "biodiversity") {
+        const records = args.occurrences.filter((occurrence) => occurrence.datasetRef === uri);
+        const recorders = recordedBySummary(uniqueRecordedByValues(records));
+        return {
+          id: uri,
+          kind: "biodiversityDataset",
+          title,
+          description: [
+            `${formatNumber(count)} observations`,
+            stats.speciesCount > 0 ? `${formatNumber(stats.speciesCount)} species` : null,
+            recorders ? `Recorded by ${recorders}` : null,
+          ].filter(Boolean).join(" · "),
+          recordedAt: item?.createdAt ?? null,
+          dateRange: stats.dateRange,
+          treeGroupUri: uri,
+          metrics: { itemCount: count, speciesCount: stats.speciesCount },
+        } satisfies TimelineReference;
+      }
       return { id: uri, kind: "tree", title, description: [`${formatNumber(count)} trees`, stats.speciesCount > 0 ? `${formatNumber(stats.speciesCount)} species` : null].filter(Boolean).join(" · "), recordedAt: item?.createdAt ?? null, dateRange: stats.dateRange, treeGroupUri: uri, metrics: { itemCount: count, treeCount: count, speciesCount: stats.speciesCount }, mapHref: greenGlobeTreePreview(parsed.did, uri), actionHref: greenGlobeTreePreview(parsed.did, uri) } satisfies TimelineReference;
     }
     if (parsed?.collection === "app.gainforest.dwc.occurrence") {
       const item = occurrenceByUri.get(uri);
-      return { id: uri, kind: "occurrence", title: item?.scientificName ?? item?.vernacularName ?? "Linked sighting", description: [item?.individualCount ? `${formatNumber(item.individualCount)} individuals` : null, formatDate(item?.eventDate ?? item?.createdAt)].filter(Boolean).join(" · "), recordedAt: item?.eventDate ?? item?.createdAt ?? null, treeGroupUri: item?.datasetRef ?? null } satisfies TimelineReference;
+      return { id: uri, kind: "occurrence", title: item ? occurrenceTitle(item) : "Linked observation", description: [item?.individualCount ? `${formatNumber(item.individualCount)} individuals` : null, formatDate(item?.eventDate ?? item?.createdAt), item?.recordedBy ? `Recorded by ${item.recordedBy}` : null].filter(Boolean).join(" · "), recordedAt: item?.eventDate ?? item?.createdAt ?? null, treeGroupUri: item?.datasetRef ?? null } satisfies TimelineReference;
     }
     if (parsed?.collection === "app.certified.location") {
       const item = placeByUri.get(uri);

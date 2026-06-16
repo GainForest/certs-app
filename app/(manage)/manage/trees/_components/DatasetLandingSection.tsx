@@ -6,6 +6,7 @@ import {
   MapPinIcon,
   Trash2Icon,
   TreesIcon,
+  UserRoundIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,8 @@ export type DatasetLandingCard = {
   uploadDateLabel: string;
   uploadTimestamp: number;
   locationLabel: string;
+  recordedByValues: string[];
+  recordedByLabel: string | null;
   statusLabel: string;
   statusTone: StatusTone;
   searchText: string;
@@ -85,6 +88,25 @@ function getTreeGroupLocationLabel(trees: TreeManagerItem[]): string {
   return `${uniqueLocations[0]} + ${uniqueLocations.length - 1} more`;
 }
 
+function getTreeGroupRecordedByValues(trees: TreeManagerItem[]): string[] {
+  const values = new Map<string, string>();
+
+  for (const tree of trees) {
+    const recordedBy = tree.occurrence.recordedBy?.trim();
+    if (!recordedBy) continue;
+    const key = recordedBy.toLowerCase();
+    if (!values.has(key)) values.set(key, recordedBy);
+  }
+
+  return Array.from(values.values()).sort((left, right) => left.localeCompare(right));
+}
+
+function formatRecordedByLabel(values: string[]): string | null {
+  if (values.length === 0) return null;
+  if (values.length === 1) return values[0] ?? null;
+  return `${values[0]} + ${values.length - 1} more`;
+}
+
 function getTreeGroupStatus(trees: TreeManagerItem[]): { label: string; tone: StatusTone } {
   if (trees.length === 0) return { label: "No trees yet", tone: "neutral" };
 
@@ -115,12 +137,15 @@ function createTreeGroupLandingCard(options: {
   const { label: statusLabel, tone: statusTone } = getTreeGroupStatus(trees);
   const name = isUngrouped ? "Ungrouped trees" : treeGroup?.name ?? "Unnamed tree group";
   const locationLabel = getTreeGroupLocationLabel(trees);
+  const recordedByValues = getTreeGroupRecordedByValues(trees);
+  const recordedByLabel = formatRecordedByLabel(recordedByValues);
   const uploadDateLabel = formatUploadDate(createdAt);
   const searchText = [
     name,
     treeGroup?.description,
     `${treeCount}`,
     locationLabel,
+    recordedByValues.join(" "),
     statusLabel,
     uploadDateLabel,
   ]
@@ -135,6 +160,8 @@ function createTreeGroupLandingCard(options: {
     uploadDateLabel,
     uploadTimestamp: getUploadTimestamp(createdAt),
     locationLabel,
+    recordedByValues,
+    recordedByLabel,
     statusLabel,
     statusTone,
     searchText,
@@ -255,6 +282,12 @@ export function DatasetLandingSection({
               <MapPinIcon className="size-4 shrink-0" />
               <span className="truncate">{card.locationLabel}</span>
             </div>
+            {card.recordedByLabel ? (
+              <div className="flex items-center gap-2">
+                <UserRoundIcon className="size-4 shrink-0" />
+                <span className="truncate">Recorder: {card.recordedByLabel}</span>
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pt-4 text-sm font-medium text-foreground">
