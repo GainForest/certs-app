@@ -37,7 +37,8 @@ import {
 } from "react";
 import { format } from "date-fns";
 import { localBumicertHref, hyperscanRecordHref } from "@/app/_lib/urls";
-import { createRecord, putRecord, uploadBlob } from "@/app/(manage)/manage/_lib/mutations";
+import { canCreateRecord, canUpdateRecord } from "@/app/(manage)/manage/_lib/cgs-permissions";
+import { createRecord, getRecord, putRecord, uploadBlob } from "@/app/(manage)/manage/_lib/mutations";
 import { useModal } from "@/components/ui/modal/context";
 import {
   SiteEditorModal,
@@ -51,6 +52,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarRange } from "@/components/ui/calendar-range";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { manageApiHref, manageHref, type ManageTarget } from "@/lib/links";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
@@ -199,12 +201,12 @@ function projectRecordWithBumicert(project: LinkedProjectPrefill, bumicert: { ur
   };
 }
 
-async function appendBumicertToProject(project: LinkedProjectPrefill, bumicert: { uri: string; cid: string }) {
+async function appendBumicertToProject(project: LinkedProjectPrefill, bumicert: { uri: string; cid: string }, target: ManageTarget) {
   await putRecord(
     PROJECT_COLLECTION,
     project.rkey,
     projectRecordWithBumicert(project, bumicert),
-    project.cid ? { swapRecord: project.cid } : undefined,
+    { ...(project.cid ? { swapRecord: project.cid } : {}), ...(target.kind === "group" ? { repo: target.did } : {}) },
   );
 }
 
@@ -752,6 +754,7 @@ function StoryStep({
 
 function PeopleStep({
   did,
+  target,
   values,
   setValues,
   sites,
@@ -761,10 +764,12 @@ function PeopleStep({
   contributorProfiles,
   setContributorProfile,
   onSiteCreated,
+  createPermissionReason = null,
   issues,
   onFieldChange,
 }: {
   did: string;
+  target: ManageTarget;
   values: FormValues;
   setValues: React.Dispatch<React.SetStateAction<FormValues>>;
   sites: ManagedLocation[];
@@ -774,6 +779,7 @@ function PeopleStep({
   contributorProfiles: Record<string, ActorResult>;
   setContributorProfile: (identity: string, actor: ActorResult | null) => void;
   onSiteCreated: (site: ManagedLocation) => void;
+  createPermissionReason?: string | null;
   issues: Partial<Record<FormField, FormIssue>>;
   onFieldChange: (field: FormField) => void;
 }) {
@@ -835,7 +841,10 @@ function PeopleStep({
             type="button"
             variant="outline"
             size="sm"
+            disabled={Boolean(createPermissionReason)}
+            title={createPermissionReason ?? undefined}
             onClick={() => {
+              if (createPermissionReason) return;
               pushModal(
                 {
                   id: SiteEditorModalId,
@@ -843,6 +852,7 @@ function PeopleStep({
                   content: (
                     <SiteEditorModal
                       did={did}
+                      target={target}
                       initialData={null}
                       onSaved={(savedRef) => {
                         const optimisticSite: ManagedLocation = {
@@ -897,7 +907,7 @@ function PeopleStep({
         ) : sites.length === 0 ? (
           <p className="rounded-2xl bg-muted/50 px-4 py-3.5 text-[13px] leading-6 text-muted-foreground">
             You don’t have any sites yet. You can publish without one, add one here, or add project places under{" "}
-            <Link href="/manage/sites" className="text-primary underline-offset-2 hover:underline">Manage → Sites</Link> and come back.
+            <Link href={manageHref(target, "sites")} className="text-primary underline-offset-2 hover:underline">Manage → Sites</Link> and come back.
           </p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
@@ -1109,7 +1119,7 @@ function DraftsSubheader({
 
 /* ── Published ──────────────────────────────────────────────────────────── */
 
-function PublishedView({ result, ownerIdentifier, onReset }: { result: PublishResult; ownerIdentifier: string; onReset: () => void }) {
+function PublishedView({ result, target, ownerIdentifier, onReset }: { result: PublishResult; target: ManageTarget; ownerIdentifier: string; onReset: () => void }) {
   const detailHref = localBumicertHref(ownerIdentifier, result.rkey);
   const hyperscanHref = hyperscanRecordHref(result.uri);
   return (
@@ -1130,7 +1140,7 @@ function PublishedView({ result, ownerIdentifier, onReset }: { result: PublishRe
           <Link href={detailHref}>Open Bumicert <ArrowRightIcon className="size-4" /></Link>
         </Button>
         <Button asChild variant="secondary">
-          <Link href="/manage/bumicerts">Back to Bumicerts</Link>
+          <Link href={manageHref(target, "bumicerts")}>Back to Bumicerts</Link>
         </Button>
         {hyperscanHref ? (
           <Button asChild variant="ghost">
@@ -1148,11 +1158,13 @@ function PublishedView({ result, ownerIdentifier, onReset }: { result: PublishRe
 
 export function NewBumicertClient({
   did,
+  target,
   ownerIdentifier,
   profile,
   linkedProject = null,
 }: {
   did: string;
+  target: ManageTarget;
   ownerIdentifier: string;
   profile: ProfilePreview;
   linkedProject?: LinkedProjectPrefill | null;
@@ -1174,6 +1186,9 @@ export function NewBumicertClient({
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState<PublishResult | null>(null);
   const [mobileSheet, setMobileSheet] = useState<"preview" | null>(null);
+  const publishPermission = canCreateRecord(target);
+  const linkedProjectUpdatePermission = canUpdateRecord(target);
+  const canLinkToProject = Boolean(linkedProject?.canLink && linkedProjectUpdatePermission.allowed);
   const autosaveTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -1193,7 +1208,7 @@ export function NewBumicertClient({
     const controller = new AbortController();
     setSitesStatus("loading");
     setSitesError(null);
-    fetch("/api/manage/sites", { signal: controller.signal })
+    fetch(manageApiHref("/api/manage/sites", target), { signal: controller.signal })
       .then(async (res) => {
         const json = await res.json();
         if (!res.ok) throw new Error(json?.error ?? "Failed to load sites");
@@ -1206,7 +1221,7 @@ export function NewBumicertClient({
         setSitesError(error instanceof Error ? error.message : "Failed to load sites");
       });
     return () => controller.abort();
-  }, []);
+  }, [target]);
 
   useEffect(() => {
     if (sitesStatus === "idle") refreshSites();
@@ -1338,15 +1353,26 @@ export function NewBumicertClient({
 
   const buildWorkScopeRecord = async () => {
     const createdAt = new Date().toISOString();
+    const writeOptions = target.kind === "group" ? { repo: target.did } : undefined;
     const refs = await Promise.all(scopeKeys(values).map(async (scope) => {
-      const result = await putRecord(WORK_SCOPE_TAG_COLLECTION, scope.key, {
+      const record = {
         $type: WORK_SCOPE_TAG_COLLECTION,
         key: scope.key,
         name: scope.label,
         category: "topic",
         createdAt,
-      });
-      return { uri: result.uri, cid: result.cid };
+      };
+      const existing = await getRecord(WORK_SCOPE_TAG_COLLECTION, scope.key, writeOptions).catch(() => null);
+      if (existing) return { uri: existing.uri, cid: existing.cid };
+
+      try {
+        const result = await createRecord(WORK_SCOPE_TAG_COLLECTION, record, scope.key, writeOptions);
+        return { uri: result.uri, cid: result.cid };
+      } catch (error) {
+        const racedExisting = await getRecord(WORK_SCOPE_TAG_COLLECTION, scope.key, writeOptions).catch(() => null);
+        if (racedExisting) return { uri: racedExisting.uri, cid: racedExisting.cid };
+        throw error;
+      }
     }));
     return {
       $type: "org.hypercerts.workscope.cel",
@@ -1365,12 +1391,16 @@ export function NewBumicertClient({
       setPublishError(validation);
       return;
     }
+    if (!publishPermission.allowed) {
+      setPublishError(publishPermission.reason ?? "You cannot publish for this organization.");
+      return;
+    }
     setIsPublishing(true);
     setPublishError(null);
     try {
       let image: Record<string, unknown> | undefined;
       if (coverFile) {
-        const blob = await uploadBlob(coverFile);
+        const blob = await uploadBlob(coverFile, target.kind === "group" ? { repo: target.did } : undefined);
         image = { $type: "org.hypercerts.defs#smallImage", image: blob.ref };
       } else if (prefilledCoverUrl) {
         image = { $type: "org.hypercerts.defs#uri", uri: prefilledCoverUrl };
@@ -1394,8 +1424,8 @@ export function NewBumicertClient({
         ...(image ? { image } : {}),
         createdAt: new Date().toISOString(),
       };
-      const result = await createRecord(COLLECTION, record);
-      if (linkedProject?.canLink) await appendBumicertToProject(linkedProject, result);
+      const result = await createRecord(COLLECTION, record, undefined, target.kind === "group" ? { repo: target.did } : undefined);
+      if (linkedProject?.canLink && linkedProjectUpdatePermission.allowed) await appendBumicertToProject(linkedProject, result, target);
       setPublishResult({ uri: result.uri, cid: result.cid, rkey: extractRkey(result.uri) });
       if (activeDraftId) handleDeleteDraft(activeDraftId);
     } catch (error) {
@@ -1440,7 +1470,7 @@ export function NewBumicertClient({
 
       <div className="mx-auto w-full max-w-5xl px-4 py-7 sm:px-6 sm:py-9">
         {publishResult ? (
-          <PublishedView result={publishResult} ownerIdentifier={ownerIdentifier} onReset={resetForm} />
+          <PublishedView result={publishResult} target={target} ownerIdentifier={ownerIdentifier} onReset={resetForm} />
         ) : (
           <>
             <form onSubmit={handlePublish} className="mt-2 grid gap-x-14 gap-y-12 xl:grid-cols-[minmax(0,1fr)_18rem]">
@@ -1467,6 +1497,7 @@ export function NewBumicertClient({
                   <SectionHeader eyebrow="People & places" title={STEPS[2].title} subtitle={STEPS[2].subtitle} />
                   <PeopleStep
                     did={did}
+                    target={target}
                     values={values}
                     setValues={setValues}
                     sites={sites}
@@ -1476,6 +1507,7 @@ export function NewBumicertClient({
                     contributorProfiles={contributorProfiles}
                     setContributorProfile={setContributorProfile}
                     onSiteCreated={handleSiteCreated}
+                    createPermissionReason={publishPermission.reason}
                     issues={fieldIssues}
                     onFieldChange={markFieldChanged}
                   />
@@ -1488,9 +1520,9 @@ export function NewBumicertClient({
 
                 <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
                   <span className="hidden text-xs text-muted-foreground sm:block">{activeDraftId ? "Saved" : "Not saved yet"}</span>
-                  <Button type="submit" size="lg" disabled={isPublishing}>
+                  <Button type="submit" size="lg" disabled={isPublishing || !publishPermission.allowed} title={publishPermission.reason ?? undefined}>
                     {isPublishing ? <Loader2Icon className="size-4 animate-spin" /> : <LeafIcon className="size-4" />}
-                    {isPublishing ? "Publishing…" : linkedProject?.canLink ? "Publish to the project" : "Publish"}
+                    {isPublishing ? "Publishing…" : canLinkToProject ? "Publish to the project" : "Publish"}
                   </Button>
                 </div>
               </div>

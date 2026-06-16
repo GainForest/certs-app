@@ -12,6 +12,9 @@ import { AudioSectionTabs } from "./AudioSectionTabs";
 import { CreatePanel, DetailPanel, ListPanel } from "./AudioPanels";
 import { FlowChart } from "./FlowChart";
 import { MODES, SECTIONS, TELEGRAM_BOT_URL, type AudioWorkspaceData, type Section } from "./types";
+import { manageApiHref, type ManageTarget } from "@/lib/links";
+import { canCreateRecord, canUpdateRecord } from "../../_lib/cgs-permissions";
+import { configureAudioMutationRepo } from "./audio-mutations";
 
 type Mode = (typeof MODES)[number];
 
@@ -20,9 +23,10 @@ const SEARCH_QUERY_STATE_OPTIONS = { ...QUERY_STATE_OPTIONS, throttleMs: 200 } a
 
 interface AudioClientProps {
   did: string;
+  target: ManageTarget;
 }
 
-export function AudioClient({ did }: AudioClientProps) {
+export function AudioClient({ did, target }: AudioClientProps) {
   const t = useTranslations("upload.audio");
   const [section, setSection] = useQueryState(
     "section",
@@ -44,12 +48,14 @@ export function AudioClient({ did }: AudioClientProps) {
   const [workspace, setWorkspace] = useState<AudioWorkspaceData>({ events: [], deployments: [], recordings: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const createPermission = canCreateRecord(target);
+  const updatePermission = canUpdateRecord(target);
 
   const loadAudio = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/manage/audio", { cache: "no-store" });
+      const response = await fetch(manageApiHref("/api/manage/audio", target), { cache: "no-store" });
       const data = (await response.json()) as AudioWorkspaceData | { error?: string };
       if (!response.ok || "error" in data) {
         const message = "error" in data ? data.error : null;
@@ -62,7 +68,12 @@ export function AudioClient({ did }: AudioClientProps) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [target]);
+
+  useEffect(() => {
+    configureAudioMutationRepo(target.kind === "group" ? target.did : null);
+    return () => configureAudioMutationRepo(null);
+  }, [target]);
 
   useEffect(() => {
     void loadAudio();
@@ -79,6 +90,10 @@ export function AudioClient({ did }: AudioClientProps) {
   };
 
   const openNew = (target: Section) => {
+    if (!createPermission.allowed) {
+      setError(createPermission.reason ?? "You cannot create audio records for this organization.");
+      return;
+    }
     void setSection(target);
     void setMode("new");
     void setSelectedUri("");
@@ -170,6 +185,7 @@ export function AudioClient({ did }: AudioClientProps) {
           section={section}
           events={events}
           deployments={deployments}
+          createDisabledReason={createPermission.reason}
           onCreated={invalidateAudio}
           onOpenDetail={openDetail}
         />
@@ -182,6 +198,7 @@ export function AudioClient({ did }: AudioClientProps) {
           events={events}
           deployments={deployments}
           recordings={recordings}
+          updateDisabledReason={updatePermission.reason}
           onUpdated={invalidateAudio}
           onOpenDetail={openDetail}
         />
@@ -193,6 +210,7 @@ export function AudioClient({ did }: AudioClientProps) {
           events={events}
           deployments={deployments}
           recordings={recordings}
+          createDisabledReason={createPermission.reason}
           onNew={() => openNew(section)}
           onOpenDetail={openDetail}
         />

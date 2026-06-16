@@ -1,0 +1,255 @@
+{
+  "seo": {
+    "title": "Bumicerts — Financie impacto regenerativo",
+    "description": "Bumicerts conecta financiadores a guardiões da natureza que realizam trabalho regenerativo em campo. Financie impacto ambiental verificado diretamente."
+  },
+  "language": {
+    "label": "Idioma",
+    "changeAria": "Alterar idioma",
+    "currentLanguage": "Idioma atual"
+  },
+  "navigation": {
+    "navigation": "Navegação",
+    "openNavigation": "Abrir navegação",
+    "homeAria": "Início da GainForest",
+    "sectionsAria": "Seções do site",
+    "closeMenu": "Fechar menu",
+    "openMenu": "Abrir menu",
+    "greenGlobeExternal": "Green Globe"
+  },
+  "theme": {
+    "toggle": "Alternar tema",
+    "switchLight": "Mudar para modo claro",
+    "switchDark": "Mudar para modo escuro"
+  },
+  "cart": {
+    "aria": "Carrinho",
+    "ariaWithCount": "Carrinho ({count, plural, one {# item} other {# itens}})"
+  },
+  "auth": {
+    "getStarted": "Começar",
+    "unknown": "Desconhecido",
+    "completeOnboarding": "Concluir integração",
+    "organizationAccount": "Conta de organização",
+    "userAccount": "Conta de usuário",
+    "myAccount": "Minha conta",
+    "signOut": "Sair",
+    "settings": "Configurações"
+  },
+  "errorPage": {
+    "title": "Algo deu errado.",
+    "description": "Desculpe, ocorreu um erro ao processar sua solicitação.",
+    "tryAgain": "Tentar novamente",
+    "home": "Início"
+  },
+  "notFound": {
+    "description": "Esta página não existe. Talvez tenha sido movida, ou talvez nunca tenha existido.",
+    "backHome": "Voltar ao início"
+  },
+  "sidebar": {
+    "sections": {
+      "explore": "EXPLORAR",
+      "manage": "GERENCIAR"
+    },
+    "items": {
+      "bumicerts": "Bumicerts",
+      "organizations": "Organizações",
+      "leaderboard": "Classificação",
+      "organization": "Organização",
+      "sites": "Locais",
+      "audio": "Áudio",
+      "trees": "Árvores",
+      "profile": "Perfil",
+      "settings": "Configurações",
+      "projects": "Projetos",
+      "observations": "Observações",
+      "donations": "Doações",
+      "organizationHome": "Início da organização",
+      "myOrganization": "Minha organização",
+      "myOrganizations": "Minhas organizações",
+      "mySites": "Meus locais",
+      "myAudio": "Meu áudio",
+      "myProjects": "Meus projetos",
+      "myTrees": "Minhas árvores",
+      "myProfile": "Meu perfil"
+    },
+    "prompts": {
+      "signInDescription": "Entre para gerenciar sua conta e conteúdo.",
+      "signIn": "Entrar",
+      "onboardingDescription": "Conclua a integração para gerenciar sua conta.",
+      "onboard": "Integrar",
+      "accountLoadError": "Não foi possível carregar sua conta agora.",
+      "checkingAccount": "Verificando sua conta..."
+    },
+    "creationCard": {
+      "createBumicert": "Criar um Bumicert",
+      "createProject": "Criar um projeto"
+    },
+    "tabs": {
+      "explore": "Explorar",
+      "manage": "Gerenciar"
+    }
+  },
+  "bumicertCard": {
+    "missingImage": "Imagem do Bumicert indisponível",
+    "additionalObjectives": "{count, plural, one {# objetivo adicional} other {# objetivos adicionais}}"
+  },
+  "pagination": {
+    "loadMore": "Carregar mais",
+    "loading": "Carregando",
+    "end": "Você chegou ao fim."
+  },
+  "footer": {
+    "brandAlt": "GainForest",
+    "tagline": "Conectando comunidades a financiadores.",
+    "builtWith": "Infraestrutura aberta. Criado com a GainForest.",
+    "dataCollectionsAria": "Coleções de dados",
+    "footerLinksAria": "Links do rodapé",
+    "copyright": "Código aberto, impulsionado pela comunidade.",
+    "nonprofit": "Associação suíça sem fins lucrativos registrada",
+    "swissRegistration": "Registro suíço",
+    "bottomTagline": "Criado para impacto coletivo",
+    "links": {
+      "gainforest": "GainForest",
+      "documentation": "Documentação",
+      "twitter": "X (Twitter)",
+      "github": "GitHub",
+      "bumicerts": "Bumicerts",
+      "organizations": "Organizações",
+      "observations": "Observações",
+      "leaderboard": "Classificação",
+      "greenGlobe": "Green Globe",
+      "status": "Status"
+    }
+  },
+  "browseGrid": {
+    "title": "Formas de explorar",
+    "description": "Quatro caminhos para o trabalho da GainForest, pensados para financiadores, guardiões e equipes de campo.",
+    "loadingAria": "Carregando links de exploração",
+    "cards": {
+      "bumicerts": {
+        "label": "Projetos verificados",
+        "title": "Bumicerts",
+        "blurb": "Explore histórias de projetos com fotos, locais, pessoas e contexto.",
+        "statLabel": "histórias"
+      },
+      "organizations": {
+        "label": "Guardiões da natureza",
+        "title": "Organizações",
+        "blurb": "Encontre comunidades e organizações que cuidam de ecossistemas no mundo todo.",
+        "statLabel": "perfis"
+      },
+      "observations": {
+        "label": "Biodiversidade",
+        "title": "Observações",
+        "blurb": "Explore avistamentos de espécies, locais e fotos ou sons da GainForest.",
+        "statLabel": "avistamentos"
+      },
+      "leaderboard": {
+        "label": "Campeões de impacto",
+        "title": "Classificação",
+        "blurb": "Veja doadores que ajudam comunidades por meio dos Bumicerts.",
+        "statLabel": "arrecadado"
+      }
+    }
+  },
+  "onboardingPrompt": {
+    "title": "Configure seu perfil",
+    "description": "Boas-vindas ao GainForest. Crie seu perfil pessoal para começar a gerenciar seus projetos, registros e organizações.",
+    "continue": "Continuar"
+  },
+  "fileInput": {
+    "pasteFromClipboard": "Colar da área de transferência",
+    "uploadFromDevice": "Enviar do dispositivo",
+    "remove": "Remover",
+    "dropToReplaceImage": "Solte para substituir a imagem",
+    "dropToReplaceFile": "Solte para substituir o arquivo",
+    "noImageInClipboard": "Nenhuma imagem encontrada na área de transferência",
+    "clipboardReadFailed": "Não foi possível ler a área de transferência",
+    "fileTooLarge": "O arquivo excede {maxSizeInMB} MB.",
+    "unsupportedFileType": "Tipo de arquivo não compatível.",
+    "placeholder": "Envie ou arraste e solte seu arquivo"
+  },
+  "signInPrompt": {
+    "description": "Salve seus locais de projeto, informações de árvores e Bumicerts em um só lugar.",
+    "failed": "Não conseguimos concluir seu login. Tente novamente.",
+    "getStarted": "Começar"
+  },
+  "status": {
+    "pillTitle": "Estado do sistema",
+    "page": {
+      "degraded": "Saúde indisponível",
+      "UP": "Tudo está funcionando",
+      "HASISSUES": "Alguns serviços estão lentos",
+      "UNDERMAINTENANCE": "Manutenção programada em andamento",
+      "DOWN": "Um serviço não está funcionando"
+    },
+    "component": {
+      "OPERATIONAL": "Operacional",
+      "UNDERMAINTENANCE": "Em manutenção",
+      "DEGRADEDPERFORMANCE": "Degradado",
+      "PARTIALOUTAGE": "Interrupção parcial",
+      "MAJOROUTAGE": "Interrupção grave",
+      "UNKNOWN": "Desconhecido"
+    },
+    "services": {
+      "search": {
+        "name": "Índice de busca",
+        "detail": "Descoberta e indexação"
+      },
+      "storage": {
+        "name": "Servidor de dados pessoais",
+        "detail": "Armazenamento de registros e mídia"
+      },
+      "labels": {
+        "name": "Serviço de rótulos",
+        "detail": "Rótulos de confiança e moderação"
+      },
+      "website": {
+        "name": "App web",
+        "detail": "Interface do Bumicerts"
+      },
+      "api": {
+        "name": "API da aplicação",
+        "detail": "Backend da aplicação"
+      },
+      "defaultName": "Serviço"
+    },
+    "summary": {
+      "working": "{operational}/{total} serviços funcionando",
+      "healthy": "{percent}% saudável",
+      "updated": "atualizado {time}"
+    },
+    "hero": {
+      "imageAlt": "Copa da floresta ao nascer do sol",
+      "eyebrow": "Status ao vivo",
+      "title": "GainForest",
+      "accent": "saúde do sistema",
+      "lede": "Disponibilidade atual de Bumicerts, serviços de dados e infraestrutura de apoio."
+    },
+    "unavailable": {
+      "title": "Status temporariamente indisponível",
+      "bodyBeforeLink": "Não foi possível carregar o painel ao vivo. Você ainda pode consultar a página pública de status em",
+      "link": "Status da GainForest"
+    },
+    "incidents": {
+      "title": "Incidentes recentes",
+      "last": "{count, plural, one {Último incidente} other {Últimos # incidentes}}",
+      "window": "Últimos 90 dias",
+      "empty": "Nenhum incidente recente relatado.",
+      "viewFull": "Ver página completa de status",
+      "happeningNow": "Acontecendo agora",
+      "fixed": "Resolvido",
+      "downFor": "indisponível por {duration}"
+    },
+    "serviceCard": {
+      "health90Day": "Saúde em 90 dias"
+    },
+    "loadingAria": "Carregando estado do sistema",
+    "time": {
+      "justNow": "agora mesmo",
+      "minutesAgo": "há {count, plural, one {# minuto} other {# minutos}}",
+      "hoursAgo": "há {count, plural, one {# hora} other {# horas}}"
+    }
+  }
+}

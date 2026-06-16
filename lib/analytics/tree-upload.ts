@@ -1,3 +1,4 @@
+import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { TREE_UPLOAD_STEP_NAMES, type TreeUploadStepName } from "./events";
 
 const KILOBYTE = 1024;
@@ -22,7 +23,8 @@ export function getTreeUploadStepName(stepIndex: number): TreeUploadStepName {
 }
 
 export function isTreeUploadTrackingPath(pathname: string): boolean {
-  return pathname === "/manage/trees" || pathname.startsWith("/manage/trees/");
+  const canonicalPathname = stripLocaleFromPathname(pathname);
+  return canonicalPathname === "/manage/trees" || canonicalPathname.startsWith("/manage/trees/");
 }
 
 export function isTreeUploadTrackingSurface(pathname: string, search: string): boolean {

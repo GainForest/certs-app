@@ -1,0 +1,255 @@
+{
+  "seo": {
+    "title": "Bumicerts — Fadhili athari ya urejeshaji",
+    "description": "Bumicerts huwaunganisha wafadhili na walinzi wa mazingira wanaofanya kazi ya urejeshaji ardhini. Fadhili athari ya mazingira iliyothibitishwa moja kwa moja."
+  },
+  "language": {
+    "label": "Lugha",
+    "changeAria": "Badilisha lugha",
+    "currentLanguage": "Lugha ya sasa"
+  },
+  "navigation": {
+    "navigation": "Urambazaji",
+    "openNavigation": "Fungua urambazaji",
+    "homeAria": "Nyumbani kwa GainForest",
+    "sectionsAria": "Sehemu za tovuti",
+    "closeMenu": "Funga menyu",
+    "openMenu": "Fungua menyu",
+    "greenGlobeExternal": "Green Globe"
+  },
+  "theme": {
+    "toggle": "Badilisha mandhari",
+    "switchLight": "Badilisha kwenda hali angavu",
+    "switchDark": "Badilisha kwenda hali nyeusi"
+  },
+  "cart": {
+    "aria": "Kikapu",
+    "ariaWithCount": "Kikapu ({count, plural, one {# bidhaa} other {# bidhaa}})"
+  },
+  "auth": {
+    "getStarted": "Anza",
+    "unknown": "Haijulikani",
+    "completeOnboarding": "Kamilisha utangulizi",
+    "organizationAccount": "Akaunti ya shirika",
+    "userAccount": "Akaunti ya mtumiaji",
+    "myAccount": "Akaunti yangu",
+    "signOut": "Ondoka",
+    "settings": "Mipangilio"
+  },
+  "errorPage": {
+    "title": "Hitilafu imetokea.",
+    "description": "Samahani, hitilafu ilitokea wakati wa kushughulikia ombi lako.",
+    "tryAgain": "Jaribu tena",
+    "home": "Nyumbani"
+  },
+  "notFound": {
+    "description": "Ukurasa huu haupo. Labda ulihamishwa, au labda haukuwahi kuwepo.",
+    "backHome": "Rudi nyumbani"
+  },
+  "sidebar": {
+    "sections": {
+      "explore": "GUNDUA",
+      "manage": "SIMAMIA"
+    },
+    "items": {
+      "bumicerts": "Bumicerts",
+      "organizations": "Mashirika",
+      "leaderboard": "Ubao wa wanaoongoza",
+      "organization": "Shirika",
+      "sites": "Maeneo",
+      "audio": "Sauti",
+      "trees": "Miti",
+      "profile": "Wasifu",
+      "settings": "Mipangilio",
+      "projects": "Miradi",
+      "observations": "Uchunguzi",
+      "donations": "Michango",
+      "organizationHome": "Nyumbani kwa shirika",
+      "myOrganization": "Shirika langu",
+      "myOrganizations": "Mashirika yangu",
+      "mySites": "Maeneo yangu",
+      "myAudio": "Sauti zangu",
+      "myProjects": "Miradi yangu",
+      "myTrees": "Miti yangu",
+      "myProfile": "Wasifu wangu"
+    },
+    "prompts": {
+      "signInDescription": "Ingia ili kusimamia akaunti na maudhui yako.",
+      "signIn": "Ingia",
+      "onboardingDescription": "Kamilisha utangulizi ili kusimamia akaunti yako.",
+      "onboard": "Anza utangulizi",
+      "accountLoadError": "Hatukuweza kupakia akaunti yako kwa sasa.",
+      "checkingAccount": "Tunakagua akaunti yako..."
+    },
+    "creationCard": {
+      "createBumicert": "Unda Bumicert",
+      "createProject": "Unda mradi"
+    },
+    "tabs": {
+      "explore": "Gundua",
+      "manage": "Simamia"
+    }
+  },
+  "bumicertCard": {
+    "missingImage": "Picha ya Bumicert haipatikani",
+    "additionalObjectives": "{count, plural, one {lengo # la ziada} other {malengo # ya ziada}}"
+  },
+  "pagination": {
+    "loadMore": "Pakia zaidi",
+    "loading": "Inapakia",
+    "end": "Umefika mwisho."
+  },
+  "footer": {
+    "brandAlt": "GainForest",
+    "tagline": "Kuunganisha jamii na wafadhili.",
+    "builtWith": "Miundombinu wazi. Imejengwa na GainForest.",
+    "dataCollectionsAria": "Mikusanyiko ya data",
+    "footerLinksAria": "Viungo vya kijachini",
+    "copyright": "Chanzo huria, kinachoendeshwa na jamii.",
+    "nonprofit": "Chama cha Uswisi kisicho cha faida kilichosajiliwa",
+    "swissRegistration": "Usajili wa Uswisi",
+    "bottomTagline": "Imejengwa kwa athari ya pamoja",
+    "links": {
+      "gainforest": "GainForest",
+      "documentation": "Nyaraka",
+      "twitter": "X (Twitter)",
+      "github": "GitHub",
+      "bumicerts": "Bumicerts",
+      "organizations": "Mashirika",
+      "observations": "Uchunguzi",
+      "leaderboard": "Ubao wa wanaoongoza",
+      "greenGlobe": "Green Globe",
+      "status": "Hali"
+    }
+  },
+  "browseGrid": {
+    "title": "Njia za kuchunguza",
+    "description": "Njia nne za kuingia kwenye kazi ya GainForest, kwa wafadhili, watunzaji na timu za nyanjani.",
+    "loadingAria": "Inapakia viungo vya kuchunguza",
+    "cards": {
+      "bumicerts": {
+        "label": "Miradi iliyothibitishwa",
+        "title": "Bumicerts",
+        "blurb": "Vinjari hadithi za miradi zenye picha, maeneo, watu na muktadha.",
+        "statLabel": "hadithi"
+      },
+      "organizations": {
+        "label": "Watunzaji wa asili",
+        "title": "Mashirika",
+        "blurb": "Pata jamii na mashirika yanayotunza mifumo ikolojia duniani kote.",
+        "statLabel": "wasifu"
+      },
+      "observations": {
+        "label": "Bioanuwai",
+        "title": "Uchunguzi",
+        "blurb": "Chunguza uonaji wa spishi, maeneo, na picha au sauti kutoka GainForest.",
+        "statLabel": "uonekano"
+      },
+      "leaderboard": {
+        "label": "Mabingwa wa athari",
+        "title": "Ubao wa wanaoongoza",
+        "blurb": "Waone wafadhili wanaosaidia jamii kupitia Bumicerts.",
+        "statLabel": "imekusanywa"
+      }
+    }
+  },
+  "onboardingPrompt": {
+    "title": "Sanidi wasifu wako",
+    "description": "Karibu GainForest. Unda wasifu wako binafsi ili kuanza kusimamia miradi, rekodi na mashirika yako.",
+    "continue": "Endelea"
+  },
+  "fileInput": {
+    "pasteFromClipboard": "Bandika kutoka ubao nakili",
+    "uploadFromDevice": "Pakia kutoka kifaa",
+    "remove": "Ondoa",
+    "dropToReplaceImage": "Achia hapa kubadilisha picha",
+    "dropToReplaceFile": "Achia hapa kubadilisha faili",
+    "noImageInClipboard": "Hakuna picha iliyopatikana kwenye ubao nakili",
+    "clipboardReadFailed": "Imeshindikana kusoma ubao nakili",
+    "fileTooLarge": "Faili linazidi {maxSizeInMB} MB.",
+    "unsupportedFileType": "Aina ya faili haitumiki.",
+    "placeholder": "Pakia au buruta na udondoshe faili lako"
+  },
+  "signInPrompt": {
+    "description": "Hifadhi maeneo ya miradi, taarifa za miti na Bumicerts zako mahali pamoja.",
+    "failed": "Hatukuweza kukamilisha kuingia kwako. Jaribu tena.",
+    "getStarted": "Anza"
+  },
+  "status": {
+    "pillTitle": "Hali ya mfumo",
+    "page": {
+      "degraded": "Afya haipatikani",
+      "UP": "Kila kitu kinafanya kazi",
+      "HASISSUES": "Baadhi ya huduma ni polepole",
+      "UNDERMAINTENANCE": "Matengenezo yaliyopangwa yanaendelea",
+      "DOWN": "Huduma haifanyi kazi"
+    },
+    "component": {
+      "OPERATIONAL": "Inafanya kazi",
+      "UNDERMAINTENANCE": "Iko kwenye matengenezo",
+      "DEGRADEDPERFORMANCE": "Utendaji umeshuka",
+      "PARTIALOUTAGE": "Hitilafu ya sehemu",
+      "MAJOROUTAGE": "Hitilafu kubwa",
+      "UNKNOWN": "Haijulikani"
+    },
+    "services": {
+      "search": {
+        "name": "Faharasa ya utafutaji",
+        "detail": "Ugunduzi na uorodheshaji"
+      },
+      "storage": {
+        "name": "Seva ya data binafsi",
+        "detail": "Hifadhi ya rekodi na media"
+      },
+      "labels": {
+        "name": "Huduma ya lebo",
+        "detail": "Lebo za uaminifu na usimamizi"
+      },
+      "website": {
+        "name": "Programu ya wavuti",
+        "detail": "Kiolesura cha Bumicerts"
+      },
+      "api": {
+        "name": "API ya programu",
+        "detail": "Sehemu ya nyuma ya programu"
+      },
+      "defaultName": "Huduma"
+    },
+    "summary": {
+      "working": "Huduma {operational}/{total} zinafanya kazi",
+      "healthy": "{percent}% yenye afya",
+      "updated": "imesasishwa {time}"
+    },
+    "hero": {
+      "imageAlt": "Kilele cha msitu wakati wa macheo",
+      "eyebrow": "Hali ya moja kwa moja",
+      "title": "GainForest",
+      "accent": "afya ya mfumo",
+      "lede": "Upatikanaji wa sasa wa Bumicerts, huduma za data na miundombinu inayounga mkono."
+    },
+    "unavailable": {
+      "title": "Hali haipatikani kwa muda",
+      "bodyBeforeLink": "Hatukuweza kupakia ubao wa moja kwa moja. Bado unaweza kuangalia ukurasa wa hali wa umma kwenye",
+      "link": "Hali ya GainForest"
+    },
+    "incidents": {
+      "title": "Matukio ya hivi karibuni",
+      "last": "{count, plural, one {Tukio la hivi karibuni} other {Matukio # ya hivi karibuni}}",
+      "window": "Siku 90 zilizopita",
+      "empty": "Hakuna matukio ya hivi karibuni yaliyoripotiwa.",
+      "viewFull": "Tazama ukurasa kamili wa hali",
+      "happeningNow": "Inaendelea sasa",
+      "fixed": "Imerekebishwa",
+      "downFor": "haipatikani kwa {duration}"
+    },
+    "serviceCard": {
+      "health90Day": "Afya ya siku 90"
+    },
+    "loadingAria": "Hali ya mfumo inapakia",
+    "time": {
+      "justNow": "sasa hivi",
+      "minutesAgo": "dakika {count, plural, one {#} other {#}} zilizopita",
+      "hoursAgo": "saa {count, plural, one {#} other {#}} zilizopita"
+    }
+  }
+}

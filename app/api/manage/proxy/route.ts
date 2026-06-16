@@ -3,6 +3,7 @@ import { isIP } from "node:net";
 import { headers } from "next/headers";
 import { fetchAuthSession } from "@/app/_lib/auth-server";
 import { getAuthBaseUrl } from "@/app/_lib/auth";
+import { resolveGroupManageTarget } from "@/app/_lib/manage-server";
 import { TREE_FUTURE_DATE_ERROR, isTreeDateInFuture } from "@/app/_lib/tree-date-validation";
 import { resolvePdsHost } from "@/app/_lib/pds";
 import { transformPhotoUrl } from "@/app/(manage)/manage/_lib/upload/url-transforms";
@@ -72,11 +73,14 @@ type AppendExistingDatasetRowResult =
   | { index: number; state: "partial"; occurrenceUri: string; photoCount: number; error: string }
   | { index: number; state: "error"; error: string };
 
-type MutationBody =
+type GroupScoped = { repo?: string };
+
+type MutationBody = GroupScoped & (
   | { operation: "createRecord"; collection: string; rkey?: string; record: Record<string, unknown> }
   | { operation: "putRecord"; collection: string; rkey: string; record: Record<string, unknown>; swapRecord?: string }
   | { operation: "deleteRecord"; collection: string; rkey: string }
   | { operation: "uploadBlob"; blobData: string; blobMimeType: string }
+  | { operation: "getRecord"; collection: string; rkey: string }
   | { operation: "createMultimediaFromFile"; blobData: string; blobMimeType: string; occurrenceRef: string; siteRef?: string; subjectPart: string; caption?: string }
   | { operation: "getDatasetRecord"; rkey: string }
   | { operation: "getCertifiedLocationRecord"; rkey: string }
@@ -102,12 +106,14 @@ type MutationBody =
       siteRef?: string;
       subjectPart: string;
       caption?: string;
-    };
+    }
+);
 
 type ForwardableMutationBody = Exclude<
   MutationBody,
   | { operation: "createMultimediaFromUrl" }
   | { operation: "createMultimediaFromFile" }
+  | { operation: "getRecord" }
   | { operation: "getDatasetRecord" }
   | { operation: "getCertifiedLocationRecord" }
   | { operation: "incrementDatasetRecordCount" }
@@ -468,6 +474,7 @@ function isAppendExistingDatasetRowInput(value: unknown): value is AppendExistin
 
 function isMutationBody(value: unknown): value is MutationBody {
   if (!isRecord(value)) return false;
+  if ("repo" in value && typeof value.repo !== "undefined" && typeof value.repo !== "string") return false;
   const body = value as Partial<MutationBody>;
   if (body.operation === "uploadBlob") return typeof body.blobData === "string" && typeof body.blobMimeType === "string";
   if (body.operation === "createMultimediaFromFile") {
@@ -492,6 +499,7 @@ function isMutationBody(value: unknown): value is MutationBody {
     );
   }
   if (body.operation === "deleteRecord") return typeof body.collection === "string" && typeof body.rkey === "string";
+  if (body.operation === "getRecord") return typeof body.collection === "string" && body.collection.length > 0 && typeof body.rkey === "string" && body.rkey.length > 0;
   if (body.operation === "getDatasetRecord") return typeof body.rkey === "string" && body.rkey.length > 0;
   if (body.operation === "getCertifiedLocationRecord") return typeof body.rkey === "string" && body.rkey.length > 0;
   if (body.operation === "incrementDatasetRecordCount") {
@@ -665,7 +673,8 @@ async function forwardMutationResponse(body: ForwardableMutationBody, did: strin
   const futureDateError = getMutationFutureDateError(body);
   if (futureDateError) return Response.json({ error: futureDateError }, { status: 400 });
 
-  const authUrl = `${getAuthBaseUrl()}/api/atproto/mutation`;
+  const isGroupScoped = typeof body.repo === "string" && body.repo.trim().length > 0;
+  const authUrl = `${getAuthBaseUrl()}${isGroupScoped ? "/api/cgs/mutation" : "/api/atproto/mutation"}`;
   let upstream: Response;
   try {
     upstream = await fetch(authUrl, {
@@ -677,7 +686,9 @@ async function forwardMutationResponse(body: ForwardableMutationBody, did: strin
       body: JSON.stringify(body),
     });
   } catch (err) {
-    const fallback = await runConfiguredPdsMutation(body, did).catch((error) => Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 502 }));
+    const fallback = isGroupScoped
+      ? null
+      : await runConfiguredPdsMutation(body, did).catch((error) => Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 502 }));
     if (fallback) return fallback;
     const message = err instanceof Error ? err.message : "Saving is unavailable right now.";
     return Response.json({ error: message }, { status: 502 });
@@ -686,10 +697,17 @@ async function forwardMutationResponse(body: ForwardableMutationBody, did: strin
   const result = await upstream.json().catch(() => null);
   if (result) return Response.json(result, { status: upstream.status });
 
-  const fallback = await runConfiguredPdsMutation(body, did).catch((error) => Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 502 }));
+  const fallback = isGroupScoped
+    ? null
+    : await runConfiguredPdsMutation(body, did).catch((error) => Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 502 }));
   if (fallback) return fallback;
 
   return Response.json({ error: "Saving is unavailable right now. Please try again later." }, { status: upstream.ok ? 502 : upstream.status });
+}
+
+function scopedRepo(repo: string | null | undefined): GroupScoped {
+  const trimmed = repo?.trim();
+  return trimmed ? { repo: trimmed } : {};
 }
 
 async function executeForwardableMutation<T>(body: ForwardableMutationBody, did: string, cookie: string | null, fallbackMessage = "Could not save your changes."): Promise<T> {
@@ -856,6 +874,7 @@ async function createMeasurement(body: Extract<MutationBody, { operation: "creat
     operation: "createRecord",
     collection: MEASUREMENT_COLLECTION,
     record,
+    ...scopedRepo(body.repo),
   }, did, cookie, "Measurement could not be saved.").catch(() => {
     throw new Error("Measurement could not be saved.");
   });
@@ -871,6 +890,7 @@ async function createOccurrenceRecord(options: {
     dynamicProperties: string;
     establishmentMeans?: string;
   };
+  repo?: string;
 }): Promise<CreatedRecord> {
   assertTreeEventDateIsNotFuture(options.occurrenceInput.eventDate);
   const record = buildOccurrenceRecord(options.occurrenceInput);
@@ -878,6 +898,7 @@ async function createOccurrenceRecord(options: {
     operation: "createRecord",
     collection: OCCURRENCE_COLLECTION,
     record,
+    ...scopedRepo(options.repo),
   }, options.did, options.cookie, "Tree information could not be saved.").catch(() => {
     throw new Error("Tree information could not be saved.");
   });
@@ -890,11 +911,13 @@ async function createMeasurementRecord(options: {
   cookie: string | null;
   occurrenceUri: string;
   floraMeasurement: FloraMeasurementFields;
+  repo?: string;
 }): Promise<CreatedRecord> {
   return createMeasurement({
     operation: "createMeasurement",
     occurrenceRef: options.occurrenceUri,
     flora: options.floraMeasurement,
+    ...scopedRepo(options.repo),
   }, options.did, options.cookie);
 }
 
@@ -966,6 +989,7 @@ async function updateDatasetRecordCount(options: {
   cookie: string | null;
   datasetRkey: string;
   incrementBy: number;
+  repo?: string;
 }): Promise<DatasetRecordResult> {
   let lastError: unknown;
 
@@ -995,6 +1019,7 @@ async function updateDatasetRecordCount(options: {
         rkey: options.datasetRkey,
         record: nextRecord,
         swapRecord: current.cid,
+        ...scopedRepo(options.repo),
       }, options.did, options.cookie, "Tree group count could not be updated.");
 
       return { ...result, rkey: options.datasetRkey, record: nextRecord };
@@ -1023,6 +1048,7 @@ async function incrementDatasetRecordCount(
     cookie,
     datasetRkey: body.rkey,
     incrementBy: body.increment,
+    repo: body.repo,
   });
 }
 
@@ -1031,11 +1057,13 @@ async function deleteStoredRecord(options: {
   cookie: string | null;
   collection: string;
   rkey: string;
+  repo?: string;
 }): Promise<void> {
   await executeForwardableMutation({
     operation: "deleteRecord",
     collection: options.collection,
     rkey: options.rkey,
+    ...scopedRepo(options.repo),
   }, options.did, options.cookie, "Cleanup could not finish automatically.").catch(() => {
     throw new Error("Cleanup could not finish automatically.");
   });
@@ -1045,6 +1073,7 @@ async function detachOccurrenceFromDatasetByRkey(options: {
   did: string;
   cookie: string | null;
   rkey: string;
+  repo?: string;
 }): Promise<CreatedRecord> {
   const current = await fetchRepoRecord({
     did: options.did,
@@ -1066,6 +1095,7 @@ async function detachOccurrenceFromDatasetByRkey(options: {
       rkey: options.rkey,
       record: nextRecord,
       swapRecord: current.cid,
+      ...scopedRepo(options.repo),
     }, options.did, options.cookie, "The tree was saved, but it could not be moved out of the tree group automatically.");
 
     return { ...result, rkey: options.rkey, record: nextRecord };
@@ -1153,6 +1183,7 @@ async function attachExistingOccurrencesToDataset(
         rkey,
         record: nextRecord,
         swapRecord: current.cid,
+        ...scopedRepo(body.repo),
       }, did, cookie, "Tree could not be added to the tree group.");
 
       attachedCount += 1;
@@ -1175,6 +1206,7 @@ async function attachExistingOccurrencesToDataset(
         cookie,
         datasetRkey: body.datasetRkey,
         incrementBy: attachedCount,
+        repo: body.repo,
       });
     } catch (error) {
       datasetCountUpdated = false;
@@ -1264,6 +1296,7 @@ async function updateOccurrenceByRkey(
       rkey: body.rkey,
       record: nextRecord,
       swapRecord: current.cid,
+      ...scopedRepo(body.repo),
     }, did, cookie, "Tree could not be saved.");
 
     return { ...result, rkey: body.rkey, record: nextRecord };
@@ -1327,6 +1360,7 @@ async function updateMeasurementByRkey(
       rkey: body.rkey,
       record: nextRecord,
       swapRecord: current.cid,
+      ...scopedRepo(body.repo),
     }, did, cookie, "Measurement could not be saved.");
 
     return { ...result, rkey: body.rkey, record: nextRecord };
@@ -1364,6 +1398,7 @@ async function updateMultimediaByRkey(
       rkey: body.rkey,
       record: nextRecord,
       swapRecord: current.cid,
+      ...scopedRepo(body.repo),
     }, did, cookie, "Photo could not be saved.");
 
     return { ...result, rkey: body.rkey, record: nextRecord };
@@ -1492,6 +1527,7 @@ async function deleteTreeGroupCascadeByRkey(
         cookie,
         collection: OCCURRENCE_COLLECTION,
         rkey: tree.rkey,
+        repo: body.repo,
       });
       deletedTreeRkeys.push(tree.rkey);
       deletedTreeUris.push(tree.uri);
@@ -1503,7 +1539,7 @@ async function deleteTreeGroupCascadeByRkey(
 
     for (const rkey of measurementRkeys) {
       try {
-        await deleteStoredRecord({ did, cookie, collection: MEASUREMENT_COLLECTION, rkey });
+        await deleteStoredRecord({ did, cookie, collection: MEASUREMENT_COLLECTION, rkey, repo: body.repo });
         deletedMeasurementRkeys.push(rkey);
       } catch {
         cleanupErrorCount += 1;
@@ -1513,7 +1549,7 @@ async function deleteTreeGroupCascadeByRkey(
 
     for (const rkey of multimediaRkeys) {
       try {
-        await deleteStoredRecord({ did, cookie, collection: MULTIMEDIA_COLLECTION, rkey });
+        await deleteStoredRecord({ did, cookie, collection: MULTIMEDIA_COLLECTION, rkey, repo: body.repo });
         deletedMultimediaRkeys.push(rkey);
       } catch {
         cleanupErrorCount += 1;
@@ -1532,6 +1568,7 @@ async function deleteTreeGroupCascadeByRkey(
         cookie,
         collection: DATASET_COLLECTION,
         rkey: body.datasetRkey,
+        repo: body.repo,
       });
       treeGroupDeleted = true;
     } catch {
@@ -1593,6 +1630,7 @@ async function deleteOccurrenceCascadeByRkey(
     cookie,
     collection: OCCURRENCE_COLLECTION,
     rkey: body.rkey,
+    repo: body.repo,
   }).catch(() => {
     throw new Error("Tree could not be deleted.");
   });
@@ -1603,7 +1641,7 @@ async function deleteOccurrenceCascadeByRkey(
 
   for (const rkey of measurementRkeys) {
     try {
-      await deleteStoredRecord({ did, cookie, collection: MEASUREMENT_COLLECTION, rkey });
+      await deleteStoredRecord({ did, cookie, collection: MEASUREMENT_COLLECTION, rkey, repo: body.repo });
       deletedMeasurementRkeys.push(rkey);
     } catch {
       linkedCleanupFailed = true;
@@ -1612,7 +1650,7 @@ async function deleteOccurrenceCascadeByRkey(
 
   for (const rkey of multimediaRkeys) {
     try {
-      await deleteStoredRecord({ did, cookie, collection: MULTIMEDIA_COLLECTION, rkey });
+      await deleteStoredRecord({ did, cookie, collection: MULTIMEDIA_COLLECTION, rkey, repo: body.repo });
       deletedMultimediaRkeys.push(rkey);
     } catch {
       linkedCleanupFailed = true;
@@ -1628,6 +1666,7 @@ async function deleteOccurrenceCascadeByRkey(
         cookie,
         datasetRkey,
         incrementBy: -1,
+        repo: body.repo,
       });
     } catch (error) {
       treeGroupCountUpdated = false;
@@ -1650,6 +1689,7 @@ async function rollbackCreatedRecords(options: {
   cookie: string | null;
   measurementRkey: string | null;
   occurrenceRkey: string;
+  repo?: string;
 }): Promise<{ ok: boolean; error: string | null; occurrenceStillExists: boolean }> {
   if (options.measurementRkey) {
     try {
@@ -1658,6 +1698,7 @@ async function rollbackCreatedRecords(options: {
         cookie: options.cookie,
         collection: MEASUREMENT_COLLECTION,
         rkey: options.measurementRkey,
+        repo: options.repo,
       });
     } catch {
       return {
@@ -1674,6 +1715,7 @@ async function rollbackCreatedRecords(options: {
       cookie: options.cookie,
       collection: OCCURRENCE_COLLECTION,
       rkey: options.occurrenceRkey,
+      repo: options.repo,
     });
     return { ok: true, error: null, occurrenceStillExists: false };
   } catch {
@@ -1725,6 +1767,7 @@ async function detachTrackedOccurrences(options: {
   cookie: string | null;
   occurrences: PersistedOccurrence[];
   results: AppendExistingDatasetRowResult[];
+  repo?: string;
 }): Promise<void> {
   for (const occurrence of options.occurrences) {
     try {
@@ -1732,6 +1775,7 @@ async function detachTrackedOccurrences(options: {
         did: options.did,
         cookie: options.cookie,
         rkey: occurrence.occurrenceRkey,
+        repo: options.repo,
       });
       upsertPersistedPartialResult({
         results: options.results,
@@ -1809,6 +1853,7 @@ async function appendExistingDataset(
         did,
         cookie,
         occurrenceInput,
+        repo: body.repo,
       });
 
       if (row.floraMeasurement) {
@@ -1817,6 +1862,7 @@ async function appendExistingDataset(
           cookie,
           occurrenceUri: occurrence.uri,
           floraMeasurement: row.floraMeasurement,
+          repo: body.repo,
         });
         measurementRkey = measurement.rkey;
       }
@@ -1826,6 +1872,7 @@ async function appendExistingDataset(
         cookie,
         datasetRkey: body.datasetRkey,
         incrementBy: 1,
+        repo: body.repo,
       });
 
       persistedOccurrences.push({
@@ -1855,6 +1902,7 @@ async function appendExistingDataset(
         cookie,
         measurementRkey,
         occurrenceRkey: occurrence.rkey,
+        repo: body.repo,
       });
 
       if (rollback.ok) {
@@ -1864,6 +1912,7 @@ async function appendExistingDataset(
             cookie,
             occurrences: persistedOccurrences,
             results,
+            repo: body.repo,
           });
           results.push(makeRowError(rowIndex, TREE_GROUP_UNAVAILABLE_MESSAGE));
           pushRemainingRowsUnavailableErrors({
@@ -1891,10 +1940,11 @@ async function appendExistingDataset(
             cookie,
             occurrences: persistedOccurrences,
             results,
+            repo: body.repo,
           });
 
           try {
-            await detachOccurrenceFromDatasetByRkey({ did, cookie, rkey: occurrence.rkey });
+            await detachOccurrenceFromDatasetByRkey({ did, cookie, rkey: occurrence.rkey, repo: body.repo });
             results.push({
               index: rowIndex,
               state: "partial",
@@ -1934,6 +1984,7 @@ async function appendExistingDataset(
             cookie,
             datasetRkey: body.datasetRkey,
             incrementBy: 1,
+            repo: body.repo,
           });
           results.push({
             index: rowIndex,
@@ -1953,6 +2004,7 @@ async function appendExistingDataset(
               cookie,
               occurrences: persistedOccurrences,
               results,
+              repo: body.repo,
             });
             upsertPersistedPartialResult({
               results,
@@ -2102,6 +2154,7 @@ async function createMultimediaFromPhotoBytes(
     siteRef?: string;
     subjectPart: string;
     caption?: string;
+    repo?: string;
   },
   did: string,
   cookie: string | null,
@@ -2110,6 +2163,7 @@ async function createMultimediaFromPhotoBytes(
     operation: "uploadBlob",
     blobData: Buffer.from(input.bytes).toString("base64"),
     blobMimeType: input.mimeType,
+    ...scopedRepo(input.repo),
   }, did, cookie, "Photo could not be saved.");
   const file = getUploadedBlob(uploadResult, input.mimeType, input.bytes.byteLength);
   const record = omitUndefined({
@@ -2126,6 +2180,7 @@ async function createMultimediaFromPhotoBytes(
     operation: "createRecord",
     collection: MULTIMEDIA_COLLECTION,
     record,
+    ...scopedRepo(input.repo),
   }, did, cookie, "Photo could not be saved.");
 
   return { ...result, rkey: rkeyFromUri(result.uri), record };
@@ -2144,6 +2199,7 @@ async function createMultimediaFromFile(
     siteRef: body.siteRef,
     subjectPart: body.subjectPart,
     caption: body.caption,
+    repo: body.repo,
   }, did, cookie);
 }
 
@@ -2160,7 +2216,20 @@ async function createMultimediaFromUrl(
     siteRef: body.siteRef,
     subjectPart: body.subjectPart,
     caption: body.caption,
+    repo: body.repo,
   }, did, cookie);
+}
+
+async function resolveMutationTarget(body: MutationBody, sessionDid: string): Promise<{ did: string; repo: string | null } | Response> {
+  const repo = body.repo?.trim() || null;
+  if (!repo || repo === sessionDid) return { did: sessionDid, repo: null };
+
+  const target = await resolveGroupManageTarget(repo);
+  if (!target) {
+    return Response.json({ error: "You do not have access to manage this organization." }, { status: 403 });
+  }
+
+  return { did: target.did, repo: target.did };
 }
 
 /**
@@ -2180,24 +2249,44 @@ export async function POST(request: Request) {
   const headerList = await headers();
   const cookie = headerList.get("cookie");
 
-  let body: unknown;
+  let rawBody: unknown;
   try {
-    body = await request.json();
+    rawBody = await request.json();
   } catch {
     return Response.json({ error: "Invalid request" }, { status: 400 });
   }
-  if (!isMutationBody(body)) {
+  if (!isMutationBody(rawBody)) {
     return Response.json({ error: "Invalid request" }, { status: 400 });
   }
+
+  const mutationTarget = await resolveMutationTarget(rawBody, session.did);
+  if (mutationTarget instanceof Response) return mutationTarget;
+  const targetDid = mutationTarget.did;
+  const body: MutationBody = mutationTarget.repo ? { ...rawBody, repo: mutationTarget.repo } : rawBody;
 
   const futureDateError = getMutationFutureDateError(body);
   if (futureDateError) {
     return Response.json({ error: futureDateError }, { status: 400 });
   }
 
+  if (body.operation === "getRecord") {
+    try {
+      const result = await fetchRepoRecord({
+        did: targetDid,
+        collection: body.collection,
+        rkey: body.rkey,
+        missingMessage: "Record not found.",
+      });
+      return Response.json(result);
+    } catch (error) {
+      const status = error instanceof TreeGroupUnavailableError ? 404 : 502;
+      return Response.json({ error: error instanceof Error ? error.message : "Record could not be loaded." }, { status });
+    }
+  }
+
   if (body.operation === "getDatasetRecord") {
     try {
-      const result = await getDatasetRecordFromPds(session.did, body.rkey);
+      const result = await getDatasetRecordFromPds(targetDid, body.rkey);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Could not check the selected tree group." }, { status: 502 });
@@ -2206,7 +2295,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "getCertifiedLocationRecord") {
     try {
-      const result = await getCertifiedLocationRecordFromPds(session.did, body.rkey);
+      const result = await getCertifiedLocationRecordFromPds(targetDid, body.rkey);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Could not check the selected site." }, { status: 502 });
@@ -2215,7 +2304,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "incrementDatasetRecordCount") {
     try {
-      const result = await incrementDatasetRecordCount(body, session.did, cookie);
+      const result = await incrementDatasetRecordCount(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Tree group count could not be updated." }, { status: 502 });
@@ -2224,7 +2313,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "createMeasurement") {
     try {
-      const result = await createMeasurement(body, session.did, cookie);
+      const result = await createMeasurement(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Measurement could not be saved." }, { status: 502 });
@@ -2233,7 +2322,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "updateMeasurement") {
     try {
-      const result = await updateMeasurementByRkey(body, session.did, cookie);
+      const result = await updateMeasurementByRkey(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Measurement could not be saved." }, { status: 502 });
@@ -2242,7 +2331,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "updateOccurrence") {
     try {
-      const result = await updateOccurrenceByRkey(body, session.did, cookie);
+      const result = await updateOccurrenceByRkey(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Tree could not be saved." }, { status: 502 });
@@ -2251,7 +2340,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "updateMultimedia") {
     try {
-      const result = await updateMultimediaByRkey(body, session.did, cookie);
+      const result = await updateMultimediaByRkey(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Photo could not be saved." }, { status: 502 });
@@ -2260,7 +2349,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "deleteOccurrenceCascade") {
     try {
-      const result = await deleteOccurrenceCascadeByRkey(body, session.did, cookie);
+      const result = await deleteOccurrenceCascadeByRkey(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Tree could not be deleted." }, { status: 502 });
@@ -2269,7 +2358,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "deleteTreeGroupCascade") {
     try {
-      const result = await deleteTreeGroupCascadeByRkey(body, session.did, cookie);
+      const result = await deleteTreeGroupCascadeByRkey(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Tree group could not be deleted." }, { status: 502 });
@@ -2279,9 +2368,10 @@ export async function POST(request: Request) {
   if (body.operation === "detachOccurrenceFromDataset") {
     try {
       const result = await detachOccurrenceFromDatasetByRkey({
-        did: session.did,
+        did: targetDid,
         cookie,
         rkey: body.rkey,
+        repo: body.repo,
       });
       return Response.json(result);
     } catch (error) {
@@ -2291,7 +2381,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "attachExistingOccurrences") {
     try {
-      const result = await attachExistingOccurrencesToDataset(body, session.did, cookie);
+      const result = await attachExistingOccurrencesToDataset(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Trees could not be added to the selected tree group." }, { status: 502 });
@@ -2300,7 +2390,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "appendExistingDataset") {
     try {
-      const result = await appendExistingDataset(body, session.did, cookie);
+      const result = await appendExistingDataset(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Trees could not be saved to the selected tree group." }, { status: 502 });
@@ -2309,7 +2399,7 @@ export async function POST(request: Request) {
 
   if (body.operation === "createMultimediaFromFile") {
     try {
-      const result = await createMultimediaFromFile(body, session.did, cookie);
+      const result = await createMultimediaFromFile(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Photo could not be saved." }, { status: 502 });
@@ -2318,12 +2408,12 @@ export async function POST(request: Request) {
 
   if (body.operation === "createMultimediaFromUrl") {
     try {
-      const result = await createMultimediaFromUrl(body, session.did, cookie);
+      const result = await createMultimediaFromUrl(body, targetDid, cookie);
       return Response.json(result);
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : "Photo could not be saved." }, { status: 502 });
     }
   }
 
-  return forwardMutationResponse(body, session.did, cookie);
+  return forwardMutationResponse(body, targetDid, cookie);
 }

@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useModal } from "@/components/ui/modal/context";
 import { TREE_UPLOAD_EVENTS, type TreeUploadEventPayload } from "@/lib/analytics/events";
 import { trackTreeUploadEvent } from "@/lib/analytics/hotjar";
-import { links } from "@/lib/links";
+import { links, type ManageTarget } from "@/lib/links";
 import {
   appendExistingDataset,
   createMeasurement,
@@ -100,12 +100,14 @@ type PhotoUploadQueueEntry = {
 type UploadStepProps = {
   uploadId: string;
   did: string;
+  target: ManageTarget;
   validRows: ValidatedRow[];
   previewSkippedRows: TreeUploadRowAttentionSummary[];
   koboMediaZipFile: File | null;
   establishmentMeans: string | null;
   datasetSelection: UploadDatasetSelection;
   siteSelection: UploadSiteSelection | null;
+  mutationDisabledReason?: string | null;
   backLabel: string;
   onBack: () => void;
   onUploadMore: () => void;
@@ -201,18 +203,21 @@ function fileFromSerializablePhoto(photoFile: { name: string; type: string; arra
 export default function UploadStep({
   uploadId,
   did,
+  target,
   validRows,
   previewSkippedRows,
   koboMediaZipFile,
   establishmentMeans,
   datasetSelection,
   siteSelection,
+  mutationDisabledReason = null,
   backLabel,
   onBack,
   onUploadMore,
   onDone,
 }: UploadStepProps) {
   const { pushModal, show } = useModal();
+  const writeOptions = useMemo(() => target.kind === "group" ? { repo: target.did } : undefined, [target.did, target.kind]);
   const [uploadStarted, setUploadStarted] = useState(false);
   const [uploadDone, setUploadDone] = useState(false);
   const [uploadStartedAtMs, setUploadStartedAtMs] = useState<number | null>(null);
@@ -268,6 +273,13 @@ export default function UploadStep({
     if (uploadRef.current) return;
     uploadRef.current = true;
     const uploadStartMs = Date.now();
+    if (mutationDisabledReason) {
+      setClockMs(uploadStartMs);
+      setUploadStarted(true);
+      setUploadFatalError(mutationDisabledReason);
+      setUploadDone(true);
+      return;
+    }
     const previewSkippedCount = previewSkippedRows.length;
     const sourceTotalRows = validRows.length + previewSkippedCount;
     setClockMs(uploadStartMs);
@@ -413,7 +425,7 @@ export default function UploadStep({
           ...(datasetSelection.description.trim() ? { description: datasetSelection.description.trim() } : {}),
           ...(establishmentMeans ? { establishmentMeans } : {}),
           createdAt: new Date().toISOString(),
-        });
+        }, undefined, writeOptions);
         datasetUri = dsResult.uri;
         datasetRkey = dsResult.uri.split("/").pop();
         setUploadedDatasetUri(dsResult.uri);
@@ -468,7 +480,7 @@ export default function UploadStep({
           }
 
           try {
-            await detachOccurrenceFromDataset(rkey);
+            await detachOccurrenceFromDataset(rkey, writeOptions);
             if (status.state === "success") demotedSuccesses += 1;
             statuses[index] = { state: "partial", occurrenceUri: status.occurrenceUri, photoCount: status.photoCount, error: nextBaseError };
           } catch {
@@ -514,7 +526,7 @@ export default function UploadStep({
             datasetRkey: datasetSelection.dataset.rkey,
             rows: chunkRows,
             establishmentMeans,
-          });
+          }, writeOptions);
           const handledIndexes = new Set<number>();
           setUploadedDatasetUri(response.datasetBecameUnavailable ? null : response.datasetUri);
 
@@ -655,7 +667,7 @@ export default function UploadStep({
           dynamicProperties: buildTreeDynamicProperties(datasetUri),
         };
         const occRecord = occurrenceInputToRecord(occurrence);
-        const occResult = await createRecord("app.gainforest.dwc.occurrence", occRecord as Record<string, unknown>);
+        const occResult = await createRecord("app.gainforest.dwc.occurrence", occRecord as Record<string, unknown>, undefined, writeOptions);
         const occurrenceRkey = occResult.uri.split("/").pop();
 
         if (row.floraMeasurement) {
@@ -668,11 +680,11 @@ export default function UploadStep({
                 basalDiameter: row.floraMeasurement.diameter,
                 canopyCoverPercent: row.floraMeasurement.canopyCoverPercent,
               },
-            });
+            }, writeOptions);
           } catch (measurementError) {
             if (occurrenceRkey) {
               try {
-                await deleteRecord("app.gainforest.dwc.occurrence", occurrenceRkey);
+                await deleteRecord("app.gainforest.dwc.occurrence", occurrenceRkey, writeOptions);
               } catch {
                 partials += 1;
                 setRowStatuses((prev) => {
@@ -713,14 +725,14 @@ export default function UploadStep({
     const persistedOccurrences = successes + partials;
     if (datasetSelection.mode === "new" && datasetRkey && persistedOccurrences === 0) {
       try {
-        await deleteRecord("app.gainforest.dwc.dataset", datasetRkey);
+        await deleteRecord("app.gainforest.dwc.dataset", datasetRkey, writeOptions);
         setUploadedDatasetUri(null);
       } catch {
         setDatasetUpdateWarning("The empty tree group could not be removed automatically.");
       }
     } else if (datasetSelection.mode === "new" && datasetRkey && persistedOccurrences > 0) {
       try {
-        await incrementDatasetRecordCount(datasetRkey, persistedOccurrences);
+        await incrementDatasetRecordCount(datasetRkey, persistedOccurrences, writeOptions);
       } catch {
         setDatasetUpdateWarning("Tree group created, but its tree count could not be updated.");
       }
@@ -740,7 +752,7 @@ export default function UploadStep({
     });
     setClockMs(completedAtMs);
     setUploadDone(true);
-  }, [datasetSelection, establishmentMeans, koboMediaZipFile, photoFetchQueue.length, previewSkippedRows.length, siteSelection, uploadId, validRows]);
+  }, [datasetSelection, establishmentMeans, koboMediaZipFile, mutationDisabledReason, photoFetchQueue.length, previewSkippedRows.length, siteSelection, uploadId, validRows, writeOptions]);
 
   const runPhotoFetch = useCallback(async () => {
     if (photoFetchRef.current) return;
@@ -811,7 +823,7 @@ export default function UploadStep({
               occurrenceRef: occurrenceUri,
               siteRef: siteSelection?.uri,
               subjectPart: photo.subjectPart,
-            })
+            }, writeOptions)
           : await (async () => {
               const archivePromise = getKoboMediaArchive();
               if (!archivePromise) {
@@ -831,7 +843,7 @@ export default function UploadStep({
                 subjectPart: photo.subjectPart,
                 caption: `Imported from photo folder: ${photo.fileName}`,
                 format: photoFile.type,
-              });
+              }, writeOptions);
             })();
 
         successes += 1;
@@ -892,7 +904,7 @@ export default function UploadStep({
     });
     setClockMs(completedAtMs);
     setPhotoFetchDone(true);
-  }, [datasetSelection.mode, koboMediaZipFile, photoFetchQueue, rowStatuses, siteSelection?.uri, uploadId, validRows.length]);
+  }, [datasetSelection.mode, koboMediaZipFile, photoFetchQueue, rowStatuses, siteSelection?.uri, uploadId, validRows.length, writeOptions]);
 
   const { current, total: uploadTotal, successes, partials, failures, currentRow } = progress;
   const completedRows = successes + partials + failures;
@@ -938,7 +950,7 @@ export default function UploadStep({
   });
 
   const sourceTotalCount = uploadTotal + previewSkippedRows.length;
-  const treeManagerHref = links.manage.treesFiltered({ dataset: uploadedDatasetUri });
+  const treeManagerHref = links.manage.target.trees(target, { dataset: uploadedDatasetUri });
   const treeManagerLabel = uploadedDatasetUri ? "View tree group" : "View trees";
   const uploadDurationSeconds = uploadStartedAtMs
     ? Math.max(0, Math.round((clockMs - uploadStartedAtMs) / 1_000))
@@ -1021,6 +1033,7 @@ export default function UploadStep({
             {datasetSelection.mode === "existing" ? `Adding to ${selectedDatasetName}.` : `Creating group "${selectedDatasetName}".`}
           </p>
         )}
+        {mutationDisabledReason && !uploadDone ? <p className="mt-2 text-sm text-muted-foreground">{mutationDisabledReason}</p> : null}
       </div>
 
       {isUploadInProgress && (

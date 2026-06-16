@@ -11,8 +11,10 @@ import {
   ListIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { manageApiHref, manageHref, type ManageTarget } from "@/lib/links";
 import { useModal } from "@/components/ui/modal/context";
 import Container from "@/components/ui/container";
+import { canCreateRecord, canDeleteRecord, canUpdateRecord } from "../../_lib/cgs-permissions";
 import { deleteRecord, putRecord } from "../../_lib/mutations";
 import type { ManagedLocation } from "@/app/_lib/indexer";
 import { SitesSkeleton } from "./SitesSkeleton";
@@ -76,7 +78,7 @@ function ViewToggle({ view, setView }: { view: ViewMode; setView: (view: ViewMod
   );
 }
 
-export function SitesClient({ did }: { did: string }) {
+export function SitesClient({ did, target }: { did: string; target: ManageTarget }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const modal = useModal();
@@ -92,12 +94,15 @@ export function SitesClient({ did }: { did: string }) {
   const [previewingRkey, setPreviewingRkey] = useState<string | null>(searchParams.get("rkey"));
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("cards");
+  const createPermission = canCreateRecord(target);
+  const updatePermission = canUpdateRecord(target);
+  const deletePermission = canDeleteRecord(target);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   const loadDefaultSite = useCallback(async () => {
     setDefaultError(null);
     try {
-      const res = await fetch("/api/manage/sites/default");
+      const res = await fetch(manageApiHref("/api/manage/sites/default", target));
       const data = (await res.json()) as { siteUri: string | null } | { error: string };
       if (!res.ok || "error" in data) {
         setDefaultError(("error" in data ? data.error : null) ?? "Could not load the default site.");
@@ -107,14 +112,14 @@ export function SitesClient({ did }: { did: string }) {
     } catch {
       setDefaultError("Could not load the default site.");
     }
-  }, []);
+  }, [target]);
 
   const loadSites = useCallback(async () => {
     setIsLoading(true);
     setFetchError(null);
     setCardErrors({});
     try {
-      const res = await fetch("/api/manage/sites");
+      const res = await fetch(manageApiHref("/api/manage/sites", target));
       const data = (await res.json()) as ManagedLocation[] | { error: string };
       if (!res.ok || "error" in data) {
         setFetchError(("error" in data ? data.error : null) ?? "Failed to load sites.");
@@ -127,7 +132,7 @@ export function SitesClient({ did }: { did: string }) {
     } finally {
       setIsLoading(false);
     }
-  }, [loadDefaultSite]);
+  }, [loadDefaultSite, target]);
 
   useEffect(() => { void loadSites(); }, [loadSites]);
 
@@ -180,6 +185,10 @@ export function SitesClient({ did }: { did: string }) {
   const canShowPreview = currentSiteIndex >= 0 && Boolean(iframeUrl);
 
   const handleOpenAdd = () => {
+    if (!createPermission.allowed) {
+      setFetchError(createPermission.reason ?? "You cannot add sites for this organization.");
+      return;
+    }
     modal.pushModal(
       {
         id: SiteEditorModalId,
@@ -187,6 +196,7 @@ export function SitesClient({ did }: { did: string }) {
         content: (
           <SiteEditorModal
             did={did}
+            target={target}
             initialData={null}
             onSaved={() => void loadSites()}
           />
@@ -198,6 +208,10 @@ export function SitesClient({ did }: { did: string }) {
   };
 
   const handleOpenEdit = (site: ManagedLocation) => {
+    if (!updatePermission.allowed) {
+      if (site.metadata.rkey) setCardError(site.metadata.rkey, updatePermission.reason ?? "You cannot edit this site.");
+      return;
+    }
     const rkey = site.metadata.rkey;
     modal.pushModal(
       {
@@ -206,8 +220,10 @@ export function SitesClient({ did }: { did: string }) {
         content: (
           <SiteEditorModal
             did={did}
+            target={target}
             initialData={{
               rkey,
+              cid: site.metadata.cid,
               name: site.record.name ?? "",
               hasShapeLocation: isShapeLocation(site),
               recordValue: site.rawRecord ?? null,
@@ -234,6 +250,10 @@ export function SitesClient({ did }: { did: string }) {
     const rkey = site.metadata.rkey;
     const siteUri = site.metadata.uri;
     if (!rkey || !siteUri) return;
+    if (!updatePermission.allowed) {
+      setCardError(rkey, updatePermission.reason ?? "You cannot change the default site.");
+      return;
+    }
     setSettingDefaultRkey(rkey);
     setCardError(rkey, null);
     const previousDefault = defaultSiteUri;
@@ -243,7 +263,7 @@ export function SitesClient({ did }: { did: string }) {
         $type: DEFAULT_SITE_COLLECTION,
         site: siteUri,
         createdAt: new Date().toISOString(),
-      });
+      }, target.kind === "group" ? { repo: target.did } : undefined);
       void loadDefaultSite();
     } catch (err) {
       setDefaultSiteUri(previousDefault);
@@ -260,16 +280,20 @@ export function SitesClient({ did }: { did: string }) {
       setCardError(rkey, "Choose another default site before deleting this one.");
       return;
     }
+    if (!deletePermission.allowed) {
+      setCardError(rkey, deletePermission.reason ?? "You cannot delete this site.");
+      return;
+    }
 
     setDeletingRkey(rkey);
     setCardError(rkey, null);
     try {
-      await deleteRecord("app.certified.location", rkey);
+      await deleteRecord("app.certified.location", rkey, target.kind === "group" ? { repo: target.did } : undefined);
       setSites((prev) => prev.filter((item) => item.metadata.rkey !== rkey));
       if (previewingRkey === rkey) {
         setPreviewingRkey(null);
         setIframeUrl(null);
-        router.push("/manage/sites", { scroll: false });
+        router.push(manageHref(target, "sites"), { scroll: false });
       }
     } catch (err) {
       setCardError(rkey, err instanceof Error ? err.message : "Failed to delete site.");
@@ -293,7 +317,7 @@ export function SitesClient({ did }: { did: string }) {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {sites.length > 0 ? <ViewToggle view={view} setView={setView} /> : null}
-          <Button size="sm" className="rounded-full" onClick={handleOpenAdd}>
+          <Button size="sm" className="rounded-full" onClick={handleOpenAdd} disabled={!createPermission.allowed} title={createPermission.reason ?? undefined}>
             <CirclePlusIcon />
             Add site
           </Button>
@@ -366,7 +390,7 @@ export function SitesClient({ did }: { did: string }) {
           <p className="max-w-sm text-sm text-muted-foreground">
             Add your first field location to get started.
           </p>
-          <Button variant="outline" size="sm" onClick={handleOpenAdd}>
+          <Button variant="outline" size="sm" onClick={handleOpenAdd} disabled={!createPermission.allowed} title={createPermission.reason ?? undefined}>
             <CirclePlusIcon />
             Add a site
           </Button>
@@ -390,6 +414,8 @@ export function SitesClient({ did }: { did: string }) {
                   isDeleting={deletingRkey === rkey}
                   error={cardErrors[rkey] ?? null}
                   variant={view === "list" ? "list" : "card"}
+                  updateDisabledReason={updatePermission.reason}
+                  deleteDisabledReason={deletePermission.reason}
                 />
               );
               return view === "list" ? (

@@ -2,6 +2,7 @@
 
 import { CheckIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import FileDropStep from "./FileDropStep";
 import ColumnMappingStep from "./ColumnMappingStep";
 import PreviewStep from "./PreviewStep";
@@ -15,6 +16,8 @@ import type { KoboMediaZipIndex } from "../../_lib/upload/kobo-media-zip";
 import { NO_UPLOAD_DATASET_SELECTION, type UploadDatasetSelection } from "../../_lib/upload/upload-dataset-selection";
 import type { UploadSiteSelection } from "../../_lib/upload/site-selection";
 import { clearPendingUpload, readPendingUpload } from "./upload-session";
+import type { ManageTarget } from "@/lib/links";
+import { canCreateRecord, canUpdateRecord } from "../../_lib/cgs-permissions";
 
 type WizardState = {
   currentStep: 1 | 2 | 3 | 4;
@@ -125,7 +128,8 @@ function StepIndicator({ currentStep }: { currentStep: 1 | 2 | 3 | 4 }) {
   );
 }
 
-export function TreeUploadWizard({ did, onDone }: { did: string; onDone: () => void }) {
+export function TreeUploadWizard({ did, target, onDone }: { did: string; target: ManageTarget; onDone: () => void }) {
+  const t = useTranslations("upload.trees.wizard");
   const [initial] = useState(() => initWizard(did));
   const [state, setState] = useState<WizardState>(initial.state);
   const [uploadId, setUploadId] = useState(initial.uploadId);
@@ -133,6 +137,8 @@ export function TreeUploadWizard({ did, onDone }: { did: string; onDone: () => v
   const lastViewedStepRef = useRef<string | null>(null);
   const restoredPendingUploadRef = useRef(initial.restoredPendingUpload);
   const analyticsConsent = useAnalyticsConsent();
+  const createPermission = canCreateRecord(target);
+  const updatePermission = canUpdateRecord(target);
 
   useEffect(() => {
     if (analyticsConsent !== "granted") return;
@@ -224,9 +230,9 @@ export function TreeUploadWizard({ did, onDone }: { did: string; onDone: () => v
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="font-instrument text-2xl font-medium italic tracking-[-0.03em] text-foreground sm:text-3xl">Upload Trees</h1>
+        <h1 className="font-instrument text-2xl font-medium italic tracking-[-0.03em] text-foreground sm:text-3xl">{t("title")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload a spreadsheet export of tree information to GainForest.
+          {t("description")}
         </p>
       </div>
       <StepIndicator currentStep={currentStep} />
@@ -235,9 +241,12 @@ export function TreeUploadWizard({ did, onDone }: { did: string; onDone: () => v
         <FileDropStep
           uploadId={uploadId}
           did={did}
+          target={target}
           initialEstablishmentMeans={establishmentMeans}
           initialDatasetSelection={datasetSelection}
           initialSiteSelection={siteSelection}
+          createDisabledReason={createPermission.reason}
+          updateDisabledReason={updatePermission.reason}
           onFileAndMappings={handleFileAndMappings}
         />
       )}
@@ -270,12 +279,14 @@ export function TreeUploadWizard({ did, onDone }: { did: string; onDone: () => v
         <UploadStep
           uploadId={uploadId}
           did={did}
+          target={target}
           validRows={validRows}
           previewSkippedRows={previewSkippedRows}
           koboMediaZipFile={koboMediaZipFile}
           establishmentMeans={establishmentMeans}
           datasetSelection={datasetSelection}
           siteSelection={siteSelection}
+          mutationDisabledReason={datasetSelection.mode === "existing" ? updatePermission.reason : createPermission.reason}
           backLabel={parsedData !== null ? "Back to preview" : "Start over"}
           onBack={handleBackToStep3}
           onUploadMore={handleUploadMore}
