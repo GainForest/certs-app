@@ -13,6 +13,7 @@ import { resolveBlobUrl, resolvePdsHost } from "@/app/_lib/pds";
 import { RecordExplorer } from "@/app/_components/RecordExplorer";
 import { getAccountRouteData } from "@/app/account/_lib/account-route";
 import { formatCgsErrorMessage } from "@/app/_lib/cgs-errors";
+import { fetchAuthSession } from "@/app/_lib/auth-server";
 import { fetchCgsMembersForRequest } from "@/app/_lib/cgs-server";
 import { AccountSettingsSections } from "@/app/account/_components/AccountSettingsSections";
 import Container from "@/components/ui/container";
@@ -65,7 +66,10 @@ export async function ManageHomeSection({ target, wrapDashboard = true }: { targ
   const groupRole: CgsRole | undefined = target.kind === "group"
     ? target.role === "owner" ? "owner" : target.role === "admin" ? "admin" : "member"
     : undefined;
-  const initialMembers = target.kind === "group" ? await loadInitialGroupMembers(target.did) : null;
+  const [initialMembers, session] = await Promise.all([
+    target.kind === "group" ? loadInitialGroupMembers(target.did) : Promise.resolve(null),
+    target.kind === "group" ? fetchAuthSession() : Promise.resolve(null),
+  ]);
 
   return (
     <ManageDashboard
@@ -73,6 +77,7 @@ export async function ManageHomeSection({ target, wrapDashboard = true }: { targ
       basePath={target.basePath}
       writeRepoDid={target.kind === "group" ? target.did : undefined}
       groupRole={groupRole}
+      currentUserDid={session?.isLoggedIn ? session.did : null}
       initialGroupMembers={initialMembers?.members}
       initialGroupMembersError={initialMembers?.error ?? null}
     >
@@ -136,7 +141,7 @@ export async function SettingsSection({ target }: { target: ManageTarget }) {
   const t = await getTranslations("upload.settings");
   if (target.kind === "group") {
     const role: CgsRole = target.role === "owner" ? "owner" : target.role === "admin" ? "admin" : "member";
-    const initialMembers = await loadInitialGroupMembers(target.did);
+    const [initialMembers, session] = await Promise.all([loadInitialGroupMembers(target.did), fetchAuthSession()]);
     return (
       <Container className="pt-4 pb-8">
         <div className="mb-6">
@@ -146,6 +151,7 @@ export async function SettingsSection({ target }: { target: ManageTarget }) {
         <GroupMembers
           groupDid={target.did}
           currentRole={role}
+          currentUserDid={session.isLoggedIn ? session.did : null}
           variant="section"
           initialMembers={initialMembers.members}
           initialError={initialMembers.error}

@@ -9,6 +9,7 @@ export function ManageDashboard({
   basePath,
   writeRepoDid,
   groupRole,
+  currentUserDid,
   initialGroupMembers,
   initialGroupMembersError,
   children,
@@ -18,6 +19,7 @@ export function ManageDashboard({
   basePath?: string;
   writeRepoDid?: string;
   groupRole?: CgsRole;
+  currentUserDid?: string | null;
   initialGroupMembers?: CgsMember[];
   initialGroupMembersError?: string | null;
   children?: React.ReactNode;
@@ -29,6 +31,7 @@ export function ManageDashboard({
       basePath={basePath}
       writeRepoDid={writeRepoDid}
       groupRole={groupRole}
+      currentUserDid={currentUserDid}
       initialGroupMembers={initialGroupMembers}
       initialGroupMembersError={initialGroupMembersError}
     >

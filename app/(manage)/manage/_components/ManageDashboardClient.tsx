@@ -470,6 +470,7 @@ export function ManageDashboardClient({
   basePath = "/manage",
   writeRepoDid,
   groupRole,
+  currentUserDid,
   initialGroupMembers,
   initialGroupMembersError,
   children,
@@ -480,6 +481,7 @@ export function ManageDashboardClient({
   writeRepoDid?: string;
   /** When scoped into an organization, the current user's role — enables the members list. */
   groupRole?: CgsRole;
+  currentUserDid?: string | null;
   initialGroupMembers?: CgsMember[];
   initialGroupMembersError?: string | null;
   children?: React.ReactNode;
@@ -846,6 +848,7 @@ export function ManageDashboardClient({
               <GroupMembers
                 groupDid={writeRepoDid}
                 currentRole={groupRole}
+                currentUserDid={currentUserDid}
                 variant="section"
                 initialMembers={initialGroupMembers}
                 initialError={initialGroupMembersError}

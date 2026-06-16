@@ -51,7 +51,7 @@ function friendlyOperationDeniedMessage(role: string, operation: string): string
         ? "Admins can add regular members, but only owners can add another admin."
         : "Only owners and admins can add members to this organization.";
     case "member.remove":
-      return "Only owners and admins can remove members. Organization owners cannot be removed.";
+      return "Members can leave themselves. Removing anyone else requires an owner or admin, and organization owners cannot be removed.";
     case "putAnyRecord":
       return "You can only edit records you created. Ask an admin or owner to change another member’s record.";
     case "deleteAnyRecord":
@@ -110,7 +110,7 @@ function friendlyKnownCgsMessage(message: string, fallback: string): string | nu
   }
 
   if (normalized.includes("invalid did") || normalized.includes("invalid member")) {
-    return "Enter a valid member email or username.";
+    return "Enter a valid member username.";
   }
 
   if (normalized.includes("failed to fetch") || normalized.includes("networkerror") || normalized === "load failed") {

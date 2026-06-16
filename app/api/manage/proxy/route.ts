@@ -80,6 +80,7 @@ type MutationBody = GroupScoped & (
   | { operation: "putRecord"; collection: string; rkey: string; record: Record<string, unknown>; swapRecord?: string }
   | { operation: "deleteRecord"; collection: string; rkey: string }
   | { operation: "uploadBlob"; blobData: string; blobMimeType: string }
+  | { operation: "getRecord"; collection: string; rkey: string }
   | { operation: "createMultimediaFromFile"; blobData: string; blobMimeType: string; occurrenceRef: string; siteRef?: string; subjectPart: string; caption?: string }
   | { operation: "getDatasetRecord"; rkey: string }
   | { operation: "getCertifiedLocationRecord"; rkey: string }
@@ -112,6 +113,7 @@ type ForwardableMutationBody = Exclude<
   MutationBody,
   | { operation: "createMultimediaFromUrl" }
   | { operation: "createMultimediaFromFile" }
+  | { operation: "getRecord" }
   | { operation: "getDatasetRecord" }
   | { operation: "getCertifiedLocationRecord" }
   | { operation: "incrementDatasetRecordCount" }
@@ -497,6 +499,7 @@ function isMutationBody(value: unknown): value is MutationBody {
     );
   }
   if (body.operation === "deleteRecord") return typeof body.collection === "string" && typeof body.rkey === "string";
+  if (body.operation === "getRecord") return typeof body.collection === "string" && body.collection.length > 0 && typeof body.rkey === "string" && body.rkey.length > 0;
   if (body.operation === "getDatasetRecord") return typeof body.rkey === "string" && body.rkey.length > 0;
   if (body.operation === "getCertifiedLocationRecord") return typeof body.rkey === "string" && body.rkey.length > 0;
   if (body.operation === "incrementDatasetRecordCount") {
@@ -2264,6 +2267,21 @@ export async function POST(request: Request) {
   const futureDateError = getMutationFutureDateError(body);
   if (futureDateError) {
     return Response.json({ error: futureDateError }, { status: 400 });
+  }
+
+  if (body.operation === "getRecord") {
+    try {
+      const result = await fetchRepoRecord({
+        did: targetDid,
+        collection: body.collection,
+        rkey: body.rkey,
+        missingMessage: "Record not found.",
+      });
+      return Response.json(result);
+    } catch (error) {
+      const status = error instanceof TreeGroupUnavailableError ? 404 : 502;
+      return Response.json({ error: error instanceof Error ? error.message : "Record could not be loaded." }, { status });
+    }
   }
 
   if (body.operation === "getDatasetRecord") {

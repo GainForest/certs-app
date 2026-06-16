@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import { Loader2Icon, LockIcon, RefreshCwIcon, Trash2Icon, UserPlusIcon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -131,12 +131,14 @@ function MemberRow({
 export function GroupMembers({
   groupDid,
   currentRole,
+  currentUserDid = null,
   variant = "panel",
   initialMembers,
   initialError = null,
 }: {
   groupDid: string;
   currentRole: CgsRole;
+  currentUserDid?: string | null;
   variant?: Variant;
   initialMembers?: CgsMember[];
   initialError?: string | null;
@@ -151,10 +153,16 @@ export function GroupMembers({
   const [role, setRole] = useState<RoleInput>("member");
   const [error, setError] = useState<string | null>(initialError);
   const [loaded, setLoaded] = useState(hasInitialMembers || Boolean(initialError));
-  const [isPending, startTransition] = useTransition();
+  const [pendingCount, setPendingCount] = useState(0);
+  const isPending = pendingCount > 0;
+
+  const runPending = useCallback((task: () => Promise<void>) => {
+    setPendingCount((count) => count + 1);
+    void task().finally(() => setPendingCount((count) => Math.max(0, count - 1)));
+  }, []);
 
   const refresh = useCallback(() => {
-    startTransition(async () => {
+    runPending(async () => {
       setError(null);
       try {
         const result = await listCgsMembers(groupDid);
@@ -165,7 +173,7 @@ export function GroupMembers({
         setLoaded(true);
       }
     });
-  }, [groupDid]);
+  }, [groupDid, runPending]);
 
   useEffect(() => {
     setMembers(initialMembers ?? []);
@@ -195,7 +203,7 @@ export function GroupMembers({
     const identifier = memberIdentifier.trim();
     if (!identifier) return;
     const nextRole = canSetRoles ? role : "member";
-    startTransition(async () => {
+    runPending(async () => {
       setError(null);
       try {
         const identity = await resolveCgsMemberIdentity(identifier);
@@ -211,7 +219,7 @@ export function GroupMembers({
 
   const updateRole = (did: string, nextRole: RoleInput) => {
     if (!canSetRoles) return;
-    startTransition(async () => {
+    runPending(async () => {
       setError(null);
       try {
         await setCgsMemberRole(groupDid, did, nextRole);
@@ -223,8 +231,9 @@ export function GroupMembers({
   };
 
   const remove = (did: string) => {
-    if (!canAddRemove) return;
-    startTransition(async () => {
+    const isSelf = Boolean(currentUserDid && currentUserDid === did);
+    if (!canAddRemove && !isSelf) return;
+    runPending(async () => {
       setError(null);
       try {
         await removeCgsMember(groupDid, did);
@@ -248,10 +257,10 @@ export function GroupMembers({
         <Input
           value={memberIdentifier}
           onChange={(event) => setMemberIdentifier(event.target.value)}
-          placeholder="name@example.com or username"
-          autoComplete="email"
+          placeholder="GainForest username"
+          autoComplete="username"
           disabled={isPending}
-          aria-label="Member email or username"
+          aria-label="Member username"
         />
         {canSetRoles ? (
           <select
@@ -271,7 +280,7 @@ export function GroupMembers({
       </form>
       <p className="text-xs text-muted-foreground">
         {canSetRoles
-          ? "Use an email when available. If lookup is not connected for that account yet, use their GainForest username."
+          ? "Email invitations are not connected yet. Add people by their GainForest username for now."
           : "Admins can add regular members. Ask an owner to change roles or add another admin."}
       </p>
     </div>
@@ -303,7 +312,7 @@ export function GroupMembers({
             key={member.did}
             member={member}
             profile={profiles[member.did]}
-            canRemove={canAddRemove}
+            canRemove={canAddRemove || Boolean(currentUserDid && member.did === currentUserDid)}
             canSetRoles={canSetRoles}
             isPending={isPending}
             onRoleChange={updateRole}

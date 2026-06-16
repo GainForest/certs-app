@@ -38,7 +38,7 @@ import {
 import { format } from "date-fns";
 import { localBumicertHref, hyperscanRecordHref } from "@/app/_lib/urls";
 import { canCreateRecord, canUpdateRecord } from "@/app/(manage)/manage/_lib/cgs-permissions";
-import { createRecord, putRecord, uploadBlob } from "@/app/(manage)/manage/_lib/mutations";
+import { createRecord, getRecord, putRecord, uploadBlob } from "@/app/(manage)/manage/_lib/mutations";
 import { useModal } from "@/components/ui/modal/context";
 import {
   SiteEditorModal,
@@ -1353,15 +1353,26 @@ export function NewBumicertClient({
 
   const buildWorkScopeRecord = async () => {
     const createdAt = new Date().toISOString();
+    const writeOptions = target.kind === "group" ? { repo: target.did } : undefined;
     const refs = await Promise.all(scopeKeys(values).map(async (scope) => {
-      const result = await putRecord(WORK_SCOPE_TAG_COLLECTION, scope.key, {
+      const record = {
         $type: WORK_SCOPE_TAG_COLLECTION,
         key: scope.key,
         name: scope.label,
         category: "topic",
         createdAt,
-      }, target.kind === "group" ? { repo: target.did } : undefined);
-      return { uri: result.uri, cid: result.cid };
+      };
+      const existing = await getRecord(WORK_SCOPE_TAG_COLLECTION, scope.key, writeOptions).catch(() => null);
+      if (existing) return { uri: existing.uri, cid: existing.cid };
+
+      try {
+        const result = await createRecord(WORK_SCOPE_TAG_COLLECTION, record, scope.key, writeOptions);
+        return { uri: result.uri, cid: result.cid };
+      } catch (error) {
+        const racedExisting = await getRecord(WORK_SCOPE_TAG_COLLECTION, scope.key, writeOptions).catch(() => null);
+        if (racedExisting) return { uri: racedExisting.uri, cid: racedExisting.cid };
+        throw error;
+      }
     }));
     return {
       $type: "org.hypercerts.workscope.cel",

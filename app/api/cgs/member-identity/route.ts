@@ -45,12 +45,12 @@ async function resolveMemberDid(identifier: string): Promise<string | null> {
 export async function GET(request: Request) {
   const identifier = normalizeIdentifier(new URL(request.url).searchParams.get("identifier") ?? "");
   if (!identifier) {
-    return Response.json({ error: "Enter a member email or username." }, { status: 400 });
+    return Response.json({ error: "Enter a member username." }, { status: 400 });
   }
 
   if (isLikelyEmail(identifier)) {
     return Response.json(
-      { error: "Email invitations are not connected yet. Use this person’s GainForest username for now." },
+      { error: "Email invitations are not connected yet. Ask for this person’s GainForest username for now." },
       { status: 422 },
     );
   }
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
   const did = await resolveMemberDid(identifier);
 
   if (!did?.startsWith("did:")) {
-    return Response.json({ error: "We could not find that member. Check the email or username and try again." }, { status: 404 });
+    return Response.json({ error: "We could not find that member. Check the username and try again." }, { status: 404 });
   }
 
   const card = await getCertifiedProfileCard(did).catch(() => ({

@@ -79,6 +79,7 @@ type MutationPayload = GroupScoped & (
   | { operation: "putRecord"; collection: string; rkey: string; record: Record<string, unknown>; swapRecord?: string }
   | { operation: "deleteRecord"; collection: string; rkey: string }
   | { operation: "uploadBlob"; blobData: string; blobMimeType: string }
+  | { operation: "getRecord"; collection: string; rkey: string }
   | { operation: "createMultimediaFromFile"; blobData: string; blobMimeType: string; occurrenceRef: string; siteRef?: string; subjectPart: string; caption?: string }
   | { operation: "getDatasetRecord"; rkey: string }
   | { operation: "getCertifiedLocationRecord"; rkey: string }
@@ -111,6 +112,7 @@ type CreateResult = { uri: string; cid: string };
 type RecordMutationResult = { uri: string; cid: string; rkey: string; record?: Record<string, unknown> };
 type UploadBlobResult = { ref: unknown; mimeType: string; size: number; blob?: unknown };
 type MultimediaResult = { uri: string; cid: string; rkey: string; record?: Record<string, unknown> };
+type RecordReadResult = { uri: string; cid: string; rkey: string; record: Record<string, unknown> };
 type DatasetRecordResult = { uri: string; cid: string; rkey: string; record: Record<string, unknown> };
 type CertifiedLocationRecordResult = { uri: string; cid: string; rkey: string; record: Record<string, unknown> };
 type CascadeDeleteResult = {
@@ -207,6 +209,10 @@ export async function putRecord(
 
 export async function deleteRecord(collection: string, rkey: string, options?: { repo?: string }): Promise<void> {
   await callProxy({ operation: "deleteRecord", collection, rkey, ...(options?.repo ? { repo: options.repo } : {}) });
+}
+
+export async function getRecord(collection: string, rkey: string, options?: { repo?: string }): Promise<RecordReadResult> {
+  return callProxy({ operation: "getRecord", collection, rkey, ...(options?.repo ? { repo: options.repo } : {}) });
 }
 
 export async function getDatasetRecord(rkey: string, options?: { repo?: string }): Promise<DatasetRecordResult> {
