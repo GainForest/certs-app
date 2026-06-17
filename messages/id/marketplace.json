@@ -843,13 +843,30 @@
         "place": "Tempat",
         "country": "Negara",
         "habitat": "Habitat",
-        "notes": "Catatan"
+        "notes": "Catatan",
+        "kind": "Tumbuhan atau hewan",
+        "mapLocation": "Lokasi peta"
       },
       "validation": {
         "name": "Masukkan nama tumbuhan atau hewan.",
         "date": "Masukkan kapan terlihat.",
-        "location": "Masukkan lokasi peta yang valid."
-      }
+        "location": "Masukkan lokasi peta yang valid.",
+        "kind": "Pilih apakah ini tumbuhan atau hewan."
+      },
+      "kindOptions": {
+        "plant": "Tumbuhan",
+        "animal": "Hewan"
+      },
+      "chooseOne": "Pilih satu",
+      "chooseMapLocation": "Pilih lokasi di peta.",
+      "chooseOnMap": "Pilih di peta",
+      "chooseMapLocationTitle": "Pilih lokasi peta",
+      "closeMapLocationChooser": "Tutup pemilih lokasi peta",
+      "movePin": "Klik peta untuk memindahkan pin pengamatan.",
+      "noMapLocation": "Belum ada lokasi peta yang dipilih.",
+      "useLocation": "Gunakan lokasi",
+      "natureSoundRecording": "Rekaman suara alam",
+      "unidentifiedSighting": "Pengamatan tidak teridentifikasi"
     },
     "media": {
       "image": "Foto",
@@ -879,6 +896,45 @@
       "country": "Negara",
       "type": "Jenis"
     },
-    "audioHero": "Putar suara untuk {title}"
+    "audioHero": "Putar suara untuk {title}",
+    "detailLabels": {
+      "nameDetails": "Detail nama",
+      "nameRank": "Peringkat nama",
+      "natureGroup": "Kelompok alam",
+      "sightingDetails": "Detail pengamatan",
+      "sightingType": "Jenis pengamatan",
+      "lifeStage": "Tahap hidup",
+      "sex": "Jenis kelamin",
+      "reproductiveCondition": "Kondisi reproduksi",
+      "behavior": "Perilaku",
+      "placeName": "Nama tempat",
+      "cityOrTown": "Kota atau desa",
+      "area": "Wilayah",
+      "stateProvince": "Negara bagian / provinsi",
+      "elevation": "Ketinggian",
+      "sharedDetails": "Detail berbagi",
+      "observedBy": "Diamati oleh",
+      "namedBy": "Diidentifikasi oleh",
+      "dateNamed": "Tanggal identifikasi",
+      "shared": "Dibagikan",
+      "sourceDetails": "Detail sumber",
+      "sourceName": "Nama sumber",
+      "organizationCode": "Kode organisasi",
+      "sourceGroup": "Kelompok sumber",
+      "surveyMethod": "Metode survei",
+      "license": "Lisensi",
+      "rightsHolder": "Pemegang hak",
+      "sightingId": "ID pengamatan"
+    }
+  },
+  "manageProjects": {
+    "hero": {
+      "title": "Proyek Saya",
+      "description": "Buat dan kelola proyek yang dapat berisi beberapa Bumicert, bersama foto, video, dan media lain yang menunjukkan pekerjaannya."
+    },
+    "metadata": {
+      "title": "Kelola Proyek — GainForest",
+      "description": "Buat dan kelola koleksi proyek untuk Bumicert Anda."
+    }
   }
 }

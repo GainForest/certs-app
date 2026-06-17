@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { AnimatePresence, motion } from "framer-motion";
 import { parseAsString, parseAsStringEnum, useQueryStates } from "nuqs";
 import {
@@ -249,14 +250,16 @@ export function ManageProjectsClient({ target, bumicerts }: { target: ManageTarg
 }
 
 function ProjectHero() {
+  const t = useTranslations("marketplace.manageProjects.hero");
+
   return (
     <section className="-mx-4 px-4 py-1 sm:-mx-6 sm:px-6">
       <div className="max-w-2xl">
         <h1 className="font-instrument text-2xl font-medium italic tracking-[-0.03em] text-foreground sm:text-3xl">
-          My Projects
+          {t("title")}
         </h1>
         <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-          Create and manage projects that can contain multiple Bumicerts, along with the photos, videos, and other media that show the work.
+          {t("description")}
         </p>
       </div>
     </section>

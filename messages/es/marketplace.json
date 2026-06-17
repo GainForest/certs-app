@@ -843,13 +843,30 @@
         "place": "Lugar",
         "country": "País",
         "habitat": "Hábitat",
-        "notes": "Notas"
+        "notes": "Notas",
+        "kind": "Planta o animal",
+        "mapLocation": "Ubicación en el mapa"
       },
       "validation": {
         "name": "Ingresa el nombre de una planta o un animal.",
         "date": "Ingresa cuándo se observó.",
-        "location": "Ingresa una ubicación válida en el mapa."
-      }
+        "location": "Ingresa una ubicación válida en el mapa.",
+        "kind": "Elige si es una planta o un animal."
+      },
+      "kindOptions": {
+        "plant": "Planta",
+        "animal": "Fauna"
+      },
+      "chooseOne": "Elige una opción",
+      "chooseMapLocation": "Elige una ubicación en el mapa.",
+      "chooseOnMap": "Elegir en el mapa",
+      "chooseMapLocationTitle": "Elegir ubicación en el mapa",
+      "closeMapLocationChooser": "Cerrar selector de ubicación en el mapa",
+      "movePin": "Haz clic en el mapa para mover el pin del avistamiento.",
+      "noMapLocation": "Aún no se eligió una ubicación en el mapa.",
+      "useLocation": "Usar ubicación",
+      "natureSoundRecording": "Grabación de sonido de la naturaleza",
+      "unidentifiedSighting": "Avistamiento sin identificar"
     },
     "media": {
       "image": "Foto",
@@ -879,6 +896,45 @@
       "country": "País",
       "type": "Tipo"
     },
-    "audioHero": "Reproducir sonido de {title}"
+    "audioHero": "Reproducir sonido de {title}",
+    "detailLabels": {
+      "nameDetails": "Detalles del nombre",
+      "nameRank": "Rango del nombre",
+      "natureGroup": "Grupo natural",
+      "sightingDetails": "Detalles del avistamiento",
+      "sightingType": "Tipo de avistamiento",
+      "lifeStage": "Etapa de vida",
+      "sex": "Sexo",
+      "reproductiveCondition": "Condición reproductiva",
+      "behavior": "Comportamiento",
+      "placeName": "Nombre del lugar",
+      "cityOrTown": "Ciudad o pueblo",
+      "area": "Área",
+      "stateProvince": "Estado / provincia",
+      "elevation": "Elevación",
+      "sharedDetails": "Detalles compartidos",
+      "observedBy": "Observado por",
+      "namedBy": "Identificado por",
+      "dateNamed": "Fecha de identificación",
+      "shared": "Compartido",
+      "sourceDetails": "Detalles de la fuente",
+      "sourceName": "Nombre de la fuente",
+      "organizationCode": "Código de organización",
+      "sourceGroup": "Grupo de origen",
+      "surveyMethod": "Método de muestreo",
+      "license": "Licencia",
+      "rightsHolder": "Titular de derechos",
+      "sightingId": "ID del avistamiento"
+    }
+  },
+  "manageProjects": {
+    "hero": {
+      "title": "Mis proyectos",
+      "description": "Crea y gestiona proyectos que pueden contener varios Bumicerts, junto con las fotos, videos y otros medios que muestran el trabajo."
+    },
+    "metadata": {
+      "title": "Gestionar proyectos — GainForest",
+      "description": "Crea y gestiona colecciones de proyectos para tus Bumicerts."
+    }
   }
 }

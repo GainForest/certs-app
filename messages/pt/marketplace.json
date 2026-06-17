@@ -843,13 +843,30 @@
         "place": "Local",
         "country": "País",
         "habitat": "Hábitat",
-        "notes": "Notas"
+        "notes": "Notas",
+        "kind": "Planta ou animal",
+        "mapLocation": "Localização no mapa"
       },
       "validation": {
         "name": "Insira o nome de uma planta ou animal.",
         "date": "Insira quando foi visto.",
-        "location": "Insira uma localização válida no mapa."
-      }
+        "location": "Insira uma localização válida no mapa.",
+        "kind": "Escolha se isto é uma planta ou um animal."
+      },
+      "kindOptions": {
+        "plant": "Planta",
+        "animal": "Fauna"
+      },
+      "chooseOne": "Escolha uma opção",
+      "chooseMapLocation": "Escolha uma localização no mapa.",
+      "chooseOnMap": "Escolher no mapa",
+      "chooseMapLocationTitle": "Escolher localização no mapa",
+      "closeMapLocationChooser": "Fechar seletor de localização no mapa",
+      "movePin": "Clique no mapa para mover o marcador da observação.",
+      "noMapLocation": "Nenhuma localização no mapa escolhida ainda.",
+      "useLocation": "Usar localização",
+      "natureSoundRecording": "Gravação de som da natureza",
+      "unidentifiedSighting": "Observação não identificada"
     },
     "media": {
       "image": "Foto",
@@ -879,6 +896,45 @@
       "country": "País",
       "type": "Tipo"
     },
-    "audioHero": "Reproduzir som de {title}"
+    "audioHero": "Reproduzir som de {title}",
+    "detailLabels": {
+      "nameDetails": "Detalhes do nome",
+      "nameRank": "Classificação do nome",
+      "natureGroup": "Grupo natural",
+      "sightingDetails": "Detalhes da observação",
+      "sightingType": "Tipo de observação",
+      "lifeStage": "Estágio de vida",
+      "sex": "Sexo",
+      "reproductiveCondition": "Condição reprodutiva",
+      "behavior": "Comportamento",
+      "placeName": "Nome do local",
+      "cityOrTown": "Cidade ou vila",
+      "area": "Área",
+      "stateProvince": "Estado / província",
+      "elevation": "Elevação",
+      "sharedDetails": "Detalhes compartilhados",
+      "observedBy": "Observado por",
+      "namedBy": "Identificado por",
+      "dateNamed": "Data de identificação",
+      "shared": "Compartilhado",
+      "sourceDetails": "Detalhes da fonte",
+      "sourceName": "Nome da fonte",
+      "organizationCode": "Código da organização",
+      "sourceGroup": "Grupo da fonte",
+      "surveyMethod": "Método de amostragem",
+      "license": "Licença",
+      "rightsHolder": "Titular dos direitos",
+      "sightingId": "ID da observação"
+    }
+  },
+  "manageProjects": {
+    "hero": {
+      "title": "Meus projetos",
+      "description": "Crie e gerencie projetos que podem conter vários Bumicerts, junto com fotos, vídeos e outras mídias que mostram o trabalho."
+    },
+    "metadata": {
+      "title": "Gerenciar projetos — GainForest",
+      "description": "Crie e gerencie coleções de projetos para seus Bumicerts."
+    }
   }
 }

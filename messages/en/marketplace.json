@@ -843,13 +843,30 @@
         "place": "Place",
         "country": "Country",
         "habitat": "Habitat",
-        "notes": "Notes"
+        "notes": "Notes",
+        "kind": "Plant or animal",
+        "mapLocation": "Map location"
       },
       "validation": {
         "name": "Enter a plant or animal name.",
         "date": "Enter when it was seen.",
-        "location": "Enter a valid map location."
-      }
+        "location": "Enter a valid map location.",
+        "kind": "Choose whether this is a plant or animal."
+      },
+      "kindOptions": {
+        "plant": "Plant",
+        "animal": "Animal"
+      },
+      "chooseOne": "Choose one",
+      "chooseMapLocation": "Choose a map location.",
+      "chooseOnMap": "Choose on map",
+      "chooseMapLocationTitle": "Choose map location",
+      "closeMapLocationChooser": "Close map location chooser",
+      "movePin": "Click the map to move the sighting pin.",
+      "noMapLocation": "No map location chosen yet.",
+      "useLocation": "Use location",
+      "natureSoundRecording": "Nature sound recording",
+      "unidentifiedSighting": "Unidentified sighting"
     },
     "media": {
       "image": "Photo",
@@ -879,6 +896,45 @@
       "country": "Country",
       "type": "Type"
     },
-    "audioHero": "Play sound for {title}"
+    "audioHero": "Play sound for {title}",
+    "detailLabels": {
+      "nameDetails": "Name details",
+      "nameRank": "Name rank",
+      "natureGroup": "Nature group",
+      "sightingDetails": "Sighting details",
+      "sightingType": "Sighting type",
+      "lifeStage": "Life stage",
+      "sex": "Sex",
+      "reproductiveCondition": "Reproductive condition",
+      "behavior": "Behavior",
+      "placeName": "Place name",
+      "cityOrTown": "City or town",
+      "area": "Area",
+      "stateProvince": "State / province",
+      "elevation": "Elevation",
+      "sharedDetails": "Shared details",
+      "observedBy": "Observed by",
+      "namedBy": "Named by",
+      "dateNamed": "Date named",
+      "shared": "Shared",
+      "sourceDetails": "Source details",
+      "sourceName": "Source name",
+      "organizationCode": "Organization code",
+      "sourceGroup": "Source group",
+      "surveyMethod": "Survey method",
+      "license": "License",
+      "rightsHolder": "Rights holder",
+      "sightingId": "Sighting ID"
+    }
+  },
+  "manageProjects": {
+    "hero": {
+      "title": "My Projects",
+      "description": "Create and manage projects that can contain multiple Bumicerts, along with the photos, videos, and other media that show the work."
+    },
+    "metadata": {
+      "title": "Manage Projects — GainForest",
+      "description": "Create and manage project collections for your Bumicerts."
+    }
   }
 }

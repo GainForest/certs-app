@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { Map as LeafletMap, Marker, TileLayer } from "leaflet";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowUpRightIcon, CalendarRangeIcon, CheckIcon, HeartIcon, ImageOffIcon, Layers3Icon, Loader2Icon, MapPinIcon, PencilIcon, Share2Icon, Trash2Icon, UsersIcon, XIcon } from "lucide-react";
 import {
   fetchRecordByUri,
@@ -31,6 +32,8 @@ import {
   accountHref,
   localBumicertHref,
 } from "../_lib/urls";
+
+type RecordDrawerT = ReturnType<typeof useTranslations<"marketplace.recordDrawer">>;
 
 // Right-side detail sheet for any explorer record. Slides in over a dimmed
 // scrim; Escape or a scrim click closes it. A full-bleed hero image fades into
@@ -63,6 +66,7 @@ export function RecordDrawer({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingOccurrence, setDeletingOccurrence] = useState(false);
   const [projectBumicerts, setProjectBumicerts] = useState<BumicertRecord[] | null>(null);
+  const t = useTranslations("marketplace.recordDrawer");
   // Whether this Bumicert is currently accepting donations — drives the Donate
   // button. `null` while we don't yet know (loading / non-bumicert).
   const [donatable, setDonatable] = useState<boolean | null>(null);
@@ -196,7 +200,7 @@ export function RecordDrawer({
 
   const title =
     record.kind === "occurrence"
-      ? occurrenceDisplayName(record)
+      ? occurrenceDisplayName(record, t)
       : record.kind === "bumicert" || record.kind === "project"
         ? record.title
         : record.name;
@@ -220,24 +224,24 @@ export function RecordDrawer({
     record.kind === "bumicert"
       ? []
       : detail
-        ? detail.sections
-        : [{ title: null, fields: buildFields(record) }];
+        ? localizeDetailSections(detail.sections, t)
+        : [{ title: null, fields: buildFields(record, t) }];
   const mediaBadges: DetailBadge[] =
     record.kind === "occurrence"
-      ? record.media.map((m) => ({ label: mediaLabel(m), tone: "info" }))
+      ? record.media.map((m) => ({ label: mediaLabel(m, t), tone: "info" }))
       : [];
   const badges = record.kind === "bumicert" ? [] : [...(detail?.badges ?? []), ...mediaBadges];
   const detailHref = record.kind === "bumicert" ? localBumicertHref(preferredOwnerIdentifier, record.rkey) : null;
   const ownerHref = accountHref(preferredOwnerIdentifier);
   const canManageOccurrence = isEditableObservationRecord(record) && authSession?.isLoggedIn === true && authSession.did === record.did;
-  const occurrenceValidationError = record.kind === "occurrence" ? validateObservationDraft(occurrenceDraft) : null;
+  const occurrenceValidationError = record.kind === "occurrence" ? validateObservationDraft(occurrenceDraft, t) : null;
   const occurrenceHasChanges = record.kind === "occurrence" && !observationDraftsEqual(occurrenceDraft, observationDraftFromRecord(record));
 
   async function handleSaveOccurrence(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     if (activeRecord.kind !== "occurrence" || !canManageOccurrence || savingOccurrence) return;
 
-    const validationError = validateObservationDraft(occurrenceDraft);
+    const validationError = validateObservationDraft(occurrenceDraft, t);
     if (validationError) {
       setOccurrenceFeedback(validationError);
       return;
@@ -254,9 +258,9 @@ export function RecordDrawer({
       onRecordUpdated?.(nextRecord);
       setDetail(null);
       setIsEditingOccurrence(false);
-      setOccurrenceFeedback("Sighting saved.");
+      setOccurrenceFeedback(t("observation.saved"));
     } catch {
-      setOccurrenceFeedback("This sighting could not be saved. Please try again.");
+      setOccurrenceFeedback(t("observation.saveError"));
     } finally {
       setSavingOccurrence(false);
     }
@@ -272,7 +276,7 @@ export function RecordDrawer({
       onRecordDeleted?.(activeRecord);
       onClose();
     } catch {
-      setOccurrenceFeedback("This sighting could not be deleted. Please try again.");
+      setOccurrenceFeedback(t("observation.deleteError"));
       setDeletingOccurrence(false);
     }
   }
@@ -350,8 +354,8 @@ export function RecordDrawer({
               ))}
             </div>
           )}
-          {record.kind === "occurrence" && occurrenceSecondaryName(record) && (
-            <p className="mt-1.5 text-[14px] italic text-foreground/65">{occurrenceSecondaryName(record)}</p>
+          {record.kind === "occurrence" && occurrenceSecondaryName(record, t) && (
+            <p className="mt-1.5 text-[14px] italic text-foreground/65">{occurrenceSecondaryName(record, t)}</p>
           )}
           {shortLead && (
             <p className="mt-2.5 text-[14.5px] leading-[1.55] text-foreground/72">
@@ -369,7 +373,7 @@ export function RecordDrawer({
                   className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md"
                 >
                   <HeartIcon className="h-4 w-4" />
-                  Donate
+                  {t("actions.donate")}
                 </Link>
               )}
               <Link
@@ -377,7 +381,7 @@ export function RecordDrawer({
                 className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border-soft bg-background px-4 text-[14px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
               >
                 <ArrowUpRightIcon className="h-4 w-4" />
-                View
+                {t("actions.view")}
               </Link>
               <ShareIconButton path={detailHref} />
             </div>
@@ -396,7 +400,7 @@ export function RecordDrawer({
               href={ownerHref}
               className="mt-3 flex h-9 items-center justify-center gap-1.5 rounded-full border border-border-soft bg-background text-[13px] font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
             >
-              View profile
+              {t("actions.viewProfile")}
               <ArrowUpRightIcon className="h-3.5 w-3.5" />
             </Link>
             {detail?.socials && detail.socials.length > 0 && (
@@ -572,10 +576,7 @@ const OPTIONAL_OBSERVATION_FIELDS: Array<keyof ObservationDraft> = [
 const INPUT_CLASS = "mt-1.5 h-10 w-full rounded-xl border border-border-soft bg-background px-3 text-[14px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary/50 focus:ring-2 focus:ring-primary/10";
 const TEXTAREA_CLASS = "mt-1.5 min-h-20 w-full rounded-xl border border-border-soft bg-background px-3 py-2 text-[14px] leading-5 text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary/50 focus:ring-2 focus:ring-primary/10";
 const LABEL_CLASS = "text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/45";
-const OBSERVATION_KIND_OPTIONS = [
-  { value: "Plantae", label: "Plant" },
-  { value: "Animalia", label: "Animal" },
-] as const;
+const OBSERVATION_KIND_OPTIONS = ["Plantae", "Animalia"] as const;
 
 function ObservationOwnerControls({
   draft,
@@ -612,13 +613,19 @@ function ObservationOwnerControls({
   onSave: (event: FormEvent<HTMLFormElement>) => void;
   onStopDelete: () => void;
 }) {
+  const t = useTranslations("marketplace.recordDrawer");
+  const kindOptions = OBSERVATION_KIND_OPTIONS.map((value) => ({
+    value,
+    label: value === "Plantae" ? t("observation.kindOptions.plant") : t("observation.kindOptions.animal"),
+  }));
+
   return (
     <div className="mt-4 rounded-2xl border border-border-soft bg-surface/60 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[13px] font-medium text-foreground">Your sighting</p>
+          <p className="text-[13px] font-medium text-foreground">{t("observation.ownerTitle")}</p>
           <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
-            You can change the saved details or remove this sighting.
+            {t("observation.ownerDescription")}
           </p>
         </div>
         {!isEditing ? (
@@ -628,7 +635,7 @@ function ObservationOwnerControls({
             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border-soft bg-background px-3 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
           >
             <PencilIcon className="h-3.5 w-3.5" />
-            Edit
+            {t("actions.edit")}
           </button>
         ) : null}
       </div>
@@ -636,27 +643,27 @@ function ObservationOwnerControls({
       {isEditing ? (
         <form onSubmit={onSave} className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <TextField label="Scientific name" value={draft.scientificName} onChange={(value) => onChange("scientificName", value)} required />
-            <TextField label="Common name" value={draft.vernacularName} onChange={(value) => onChange("vernacularName", value)} />
+            <TextField label={t("observation.fields.scientificName")} value={draft.scientificName} onChange={(value) => onChange("scientificName", value)} required />
+            <TextField label={t("observation.fields.vernacularName")} value={draft.vernacularName} onChange={(value) => onChange("vernacularName", value)} />
             <SelectField
-              label="Plant or animal"
+              label={t("observation.fields.kind")}
               value={draft.kingdom}
               onChange={(value) => onChange("kingdom", value)}
               required
-              options={OBSERVATION_KIND_OPTIONS}
+              options={kindOptions}
             />
-            <TextField label="Date seen" value={draft.eventDate} onChange={(value) => onChange("eventDate", value)} placeholder="YYYY-MM-DD" required />
-            <TextField label="Shared by" value={draft.recordedBy} onChange={(value) => onChange("recordedBy", value)} />
+            <TextField label={t("observation.fields.eventDate")} value={draft.eventDate} onChange={(value) => onChange("eventDate", value)} placeholder="YYYY-MM-DD" required />
+            <TextField label={t("observation.fields.recordedBy")} value={draft.recordedBy} onChange={(value) => onChange("recordedBy", value)} />
             <LocationField
               latitude={draft.decimalLatitude}
               longitude={draft.decimalLongitude}
               onOpenMap={onOpenLocationPicker}
             />
-            <TextField label="Place" value={draft.locality} onChange={(value) => onChange("locality", value)} />
-            <TextField label="Country" value={draft.country} onChange={(value) => onChange("country", value)} />
+            <TextField label={t("observation.fields.place")} value={draft.locality} onChange={(value) => onChange("locality", value)} />
+            <TextField label={t("observation.fields.country")} value={draft.country} onChange={(value) => onChange("country", value)} />
           </div>
-          <TextAreaField label="Habitat" value={draft.habitat} onChange={(value) => onChange("habitat", value)} />
-          <TextAreaField label="Notes" value={draft.occurrenceRemarks} onChange={(value) => onChange("occurrenceRemarks", value)} />
+          <TextAreaField label={t("observation.fields.habitat")} value={draft.habitat} onChange={(value) => onChange("habitat", value)} />
+          <TextAreaField label={t("observation.fields.notes")} value={draft.occurrenceRemarks} onChange={(value) => onChange("occurrenceRemarks", value)} />
           {(feedback || validationError) && (
             <p className={`text-[13px] ${validationError ? "text-destructive" : "text-muted-foreground"}`}>
               {validationError ?? feedback}
@@ -669,7 +676,7 @@ function ObservationOwnerControls({
               disabled={isSaving}
               className="inline-flex h-10 items-center rounded-full border border-border-soft bg-background px-4 text-[13px] font-medium text-foreground/80 transition-colors hover:border-foreground/30 disabled:opacity-60"
             >
-              Cancel
+              {t("actions.cancel")}
             </button>
             <button
               type="submit"
@@ -677,7 +684,7 @@ function ObservationOwnerControls({
               className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
             >
               {isSaving ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <CheckIcon className="h-3.5 w-3.5" />}
-              Save changes
+              {t("actions.saveChanges")}
             </button>
           </div>
         </form>
@@ -688,9 +695,9 @@ function ObservationOwnerControls({
       <div className="mt-4 border-t border-border-soft pt-4">
         {deleteConfirmOpen ? (
           <div className="rounded-xl bg-destructive/10 p-3">
-            <p className="text-[13px] font-medium text-foreground">Delete this sighting?</p>
+            <p className="text-[13px] font-medium text-foreground">{t("observation.deleteTitle")}</p>
             <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
-              This removes the sighting and linked photos, field sounds, and saved details. This cannot be undone.
+              {t("observation.deleteDescription")}
             </p>
             <div className="mt-3 flex flex-wrap justify-end gap-2">
               <button
@@ -699,7 +706,7 @@ function ObservationOwnerControls({
                 disabled={isDeleting}
                 className="inline-flex h-9 items-center rounded-full border border-border-soft bg-background px-3 text-[13px] font-medium text-foreground/80 transition-colors hover:border-foreground/30 disabled:opacity-60"
               >
-                Keep sighting
+                {t("observation.keep")}
               </button>
               <button
                 type="button"
@@ -708,7 +715,7 @@ function ObservationOwnerControls({
                 className="inline-flex h-9 items-center gap-2 rounded-full bg-destructive px-3 text-[13px] font-medium text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:opacity-60"
               >
                 {isDeleting ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <Trash2Icon className="h-3.5 w-3.5" />}
-                Delete sighting
+                {t("observation.delete")}
               </button>
             </div>
           </div>
@@ -719,7 +726,7 @@ function ObservationOwnerControls({
             className="inline-flex h-9 items-center gap-1.5 rounded-full border border-destructive/25 bg-background px-3 text-[13px] font-medium text-destructive transition-colors hover:bg-destructive/10"
           >
             <Trash2Icon className="h-3.5 w-3.5" />
-            Delete sighting
+            {t("observation.delete")}
           </button>
         )}
       </div>
@@ -770,6 +777,8 @@ function SelectField({
   options: ReadonlyArray<{ value: string; label: string }>;
   required?: boolean;
 }) {
+  const t = useTranslations("marketplace.recordDrawer.observation");
+
   return (
     <label className="block">
       <span className={LABEL_CLASS}>{label}</span>
@@ -779,7 +788,7 @@ function SelectField({
         required={required}
         className={INPUT_CLASS}
       >
-        <option value="">Choose one</option>
+        <option value="">{t("chooseOne")}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
         ))}
@@ -789,15 +798,16 @@ function SelectField({
 }
 
 function LocationField({ latitude, longitude, onOpenMap }: { latitude: string; longitude: string; onOpenMap: () => void }) {
+  const t = useTranslations("marketplace.recordDrawer.observation");
   const lat = coordinateFromDraft(latitude);
   const lon = coordinateFromDraft(longitude);
   const locationText = lat != null && lon != null
     ? `${formatCoordinateInput(lat)}, ${formatCoordinateInput(lon)}`
-    : "Choose a map location.";
+    : t("chooseMapLocation");
 
   return (
     <div className="sm:col-span-2">
-      <span className={LABEL_CLASS}>Map location</span>
+      <span className={LABEL_CLASS}>{t("fields.mapLocation")}</span>
       <div className="mt-1.5 flex flex-col gap-2 rounded-xl border border-border-soft bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-[13px] text-foreground/75">{locationText}</span>
         <button
@@ -806,7 +816,7 @@ function LocationField({ latitude, longitude, onOpenMap }: { latitude: string; l
           className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-border-soft bg-surface px-3 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
         >
           <MapPinIcon className="h-3.5 w-3.5" />
-          Choose on map
+          {t("chooseOnMap")}
         </button>
       </div>
     </div>
@@ -833,6 +843,7 @@ function ObservationLocationPickerModal({
   onClose: () => void;
   onSelect: (lat: number, lon: number) => void;
 }) {
+  const t = useTranslations("marketplace.recordDrawer");
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
@@ -914,18 +925,18 @@ function ObservationLocationPickerModal({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[110] grid place-items-center px-4 py-6" role="dialog" aria-modal="true" aria-label="Choose map location">
+    <div className="fixed inset-0 z-[110] grid place-items-center px-4 py-6" role="dialog" aria-modal="true" aria-label={t("observation.chooseMapLocationTitle")}>
       <button
         type="button"
-        aria-label="Close map location chooser"
+        aria-label={t("observation.closeMapLocationChooser")}
         className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]"
         onClick={onClose}
       />
       <div className="relative z-[1] flex w-full max-w-[440px] flex-col overflow-hidden rounded-3xl border border-border-soft bg-background shadow-2xl">
         <div className="flex items-start justify-between gap-3 px-5 py-4">
           <div>
-            <h3 className="text-[16px] font-medium text-foreground">Choose map location</h3>
-            <p className="mt-1 text-[13px] leading-5 text-muted-foreground">Click the map to move the sighting pin.</p>
+            <h3 className="text-[16px] font-medium text-foreground">{t("observation.chooseMapLocationTitle")}</h3>
+            <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{t("observation.movePin")}</p>
           </div>
           <button
             type="button"
@@ -938,7 +949,7 @@ function ObservationLocationPickerModal({
         <div ref={elRef} className="h-80 w-full border-y border-border-soft bg-surface-sunken" />
         <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[13px] text-muted-foreground">
-            {selected ? `${formatCoordinateInput(selected.lat)}, ${formatCoordinateInput(selected.lon)}` : "No map location chosen yet."}
+            {selected ? `${formatCoordinateInput(selected.lat)}, ${formatCoordinateInput(selected.lon)}` : t("observation.noMapLocation")}
           </p>
           <div className="flex justify-end gap-2">
             <button
@@ -946,7 +957,7 @@ function ObservationLocationPickerModal({
               onClick={onClose}
               className="inline-flex h-10 items-center rounded-full border border-border-soft bg-background px-4 text-[13px] font-medium text-foreground/80 transition-colors hover:border-foreground/30"
             >
-              Cancel
+              {t("actions.cancel")}
             </button>
             <button
               type="button"
@@ -955,7 +966,7 @@ function ObservationLocationPickerModal({
               className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
             >
               <CheckIcon className="h-3.5 w-3.5" />
-              Use location
+              {t("observation.useLocation")}
             </button>
           </div>
         </div>
@@ -975,10 +986,10 @@ function observationKindFromKingdom(value: string | null | undefined): string {
   return "";
 }
 
-function observationKindLabel(value: string | null | undefined): string | null {
+function observationKindLabel(value: string | null | undefined, t: RecordDrawerT): string | null {
   const kind = observationKindFromKingdom(value);
-  if (kind === "Plantae") return "Plant";
-  if (kind === "Animalia") return "Animal";
+  if (kind === "Plantae") return t("observation.kindOptions.plant");
+  if (kind === "Animalia") return t("observation.kindOptions.animal");
   return null;
 }
 
@@ -1015,15 +1026,15 @@ function observationDraftsEqual(a: ObservationDraft, b: ObservationDraft): boole
   return (Object.keys(a) as Array<keyof ObservationDraft>).every((field) => normalizeDraftValue(a[field]) === normalizeDraftValue(b[field]));
 }
 
-function validateObservationDraft(draft: ObservationDraft): string | null {
-  if (!normalizeDraftValue(draft.scientificName)) return "Enter a scientific name.";
-  if (!observationKindFromKingdom(draft.kingdom)) return "Choose whether this is a plant or animal.";
-  if (!normalizeDraftValue(draft.eventDate)) return "Enter when it was seen.";
+function validateObservationDraft(draft: ObservationDraft, t: RecordDrawerT): string | null {
+  if (!normalizeDraftValue(draft.scientificName)) return t("observation.validation.name");
+  if (!observationKindFromKingdom(draft.kingdom)) return t("observation.validation.kind");
+  if (!normalizeDraftValue(draft.eventDate)) return t("observation.validation.date");
 
   const lat = Number(normalizeDraftValue(draft.decimalLatitude));
   const lon = Number(normalizeDraftValue(draft.decimalLongitude));
   if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lon) || lon < -180 || lon > 180) {
-    return "Enter a valid map location.";
+    return t("observation.validation.location");
   }
 
   return null;
@@ -1092,6 +1103,7 @@ function applyObservationDraft(
 
 function AudioHero({ src, title }: { src: string | null; title: string }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const t = useTranslations("marketplace.recordDrawer");
 
   useEffect(() => {
     audioRef.current?.pause();
@@ -1118,7 +1130,7 @@ function AudioHero({ src, title }: { src: string | null; title: string }) {
             controls
             preload="metadata"
             src={src}
-            aria-label={`Play sound for ${title}`}
+            aria-label={t("audioHero", { title })}
             onPlay={handlePlay}
             className="relative z-[2] h-10 w-full accent-primary"
           />
@@ -1129,11 +1141,13 @@ function AudioHero({ src, title }: { src: string | null; title: string }) {
 }
 
 function CloseButton({ onClose, floating = false }: { onClose: () => void; floating?: boolean }) {
+  const t = useTranslations("marketplace.recordDrawer");
+
   return (
     <button
       type="button"
       onClick={onClose}
-      aria-label="Close"
+      aria-label={t("actions.close")}
       className={
         floating
           ? "inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-foreground/70 shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-foreground"
@@ -1147,6 +1161,7 @@ function CloseButton({ onClose, floating = false }: { onClose: () => void; float
 
 function ShareIconButton({ path }: { path: string }) {
   const [copied, setCopied] = useState(false);
+  const t = useTranslations("marketplace.recordDrawer");
 
   function handleShare() {
     const url = typeof window === "undefined" ? path : new URL(path, window.location.origin).toString();
@@ -1160,8 +1175,8 @@ function ShareIconButton({ path }: { path: string }) {
     <button
       type="button"
       onClick={handleShare}
-      aria-label="Copy link"
-      title={copied ? "Copied!" : "Copy link"}
+      aria-label={t("actions.copyLink")}
+      title={copied ? t("actions.copied") : t("actions.copyLink")}
       className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-soft bg-background text-foreground/60 transition-colors hover:border-primary/40 hover:text-primary"
     >
       {copied ? (
@@ -1182,6 +1197,7 @@ function ProjectBumicertList({
   totalCount: number;
   requestedCount: number;
 }) {
+  const t = useTranslations("marketplace.recordDrawer.projectBumicerts");
   const loading = records === null && requestedCount > 0;
   const shownCount = records?.length ?? 0;
 
@@ -1190,7 +1206,7 @@ function ProjectBumicertList({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Layers3Icon className="h-4 w-4 text-primary" aria-hidden />
-          <h3 className="text-[13px] font-medium text-foreground">Bumicerts in this project</h3>
+          <h3 className="text-[13px] font-medium text-foreground">{t("title")}</h3>
         </div>
         <span className="rounded-full bg-background px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground">
           {formatCompact(totalCount)}
@@ -1198,7 +1214,7 @@ function ProjectBumicertList({
       </div>
 
       {loading ? (
-        <div className="mt-3 space-y-2" aria-label="Loading linked Bumicerts">
+        <div className="mt-3 space-y-2" aria-label={t("loading")}>
           {Array.from({ length: Math.min(Math.max(totalCount, 1), 3) }).map((_, index) => (
             <div key={index} className="flex gap-3 rounded-2xl bg-background/70 p-2">
               <div className="h-14 w-16 shrink-0 animate-pulse rounded-xl bg-muted" />
@@ -1243,20 +1259,20 @@ function ProjectBumicertList({
                   </span>
                 ) : null}
                 <span className="mt-1.5 inline-flex text-[11.5px] font-medium text-primary">
-                  View Bumicert
+                  {t("view")}
                 </span>
               </span>
             </Link>
           ))}
           {requestedCount > shownCount ? (
             <p className="px-1 pt-1 text-[12px] text-muted-foreground">
-              Showing {shownCount} of {requestedCount} linked Bumicerts.
+              {t("showing", { shown: shownCount, total: requestedCount })}
             </p>
           ) : null}
         </div>
       ) : (
         <p className="mt-3 text-[13px] leading-5 text-muted-foreground">
-          This project does not have linked Bumicerts yet.
+          {t("empty")}
         </p>
       )}
     </section>
@@ -1264,6 +1280,7 @@ function ProjectBumicertList({
 }
 
 function BumicertStatStrip({ record }: { record: Extract<ExplorerRecord, { kind: "bumicert" }> }) {
+  const t = useTranslations("marketplace.recordDrawer.bumicertStats");
   const period = useMemo(() => {
     if (!record.startDate && !record.endDate) return null;
     const start = record.startDate ? formatDate(record.startDate) : "—";
@@ -1276,19 +1293,19 @@ function BumicertStatStrip({ record }: { record: Extract<ExplorerRecord, { kind:
       <RecordDrawerStatsTile
         icon={<UsersIcon />}
         value={formatCompact(record.contributorCount)}
-        label="People named"
+        label={t("peopleNamed")}
       />
       <RecordDrawerStatsTile
         icon={<MapPinIcon />}
         value={formatCompact(record.locationCount)}
-        label="Locations"
+        label={t("locations")}
       />
       {period && (
         <RecordDrawerStatsTile
           className="col-span-2"
           icon={<CalendarRangeIcon />}
           value={period}
-          label="Work period"
+          label={t("workPeriod")}
           valueClassName="text-[15px] font-medium"
         />
       )}
@@ -1313,31 +1330,31 @@ function Badge({ badge }: { badge: DetailBadge }) {
   );
 }
 
-function mediaLabel(kind: string): string {
+function mediaLabel(kind: string, t: RecordDrawerT): string {
   switch (kind) {
     case "image":
-      return "Photo";
+      return t("media.image");
     case "audio":
-      return "Field sound";
+      return t("media.audio");
     case "video":
-      return "Video";
+      return t("media.video");
     case "spectrogram":
-      return "Sound view";
+      return t("media.spectrogram");
     default:
       return kind;
   }
 }
 
-function occurrenceDisplayName(record: Extract<ExplorerRecord, { kind: "occurrence" }>): string {
-  if (record.media.includes("audio") && record.vernacularName === "Nature sound recording" && record.scientificName) {
-    return record.scientificName;
+function occurrenceDisplayName(record: Extract<ExplorerRecord, { kind: "occurrence" }>, t: RecordDrawerT): string {
+  if (record.media.includes("audio") && record.vernacularName === "Nature sound recording") {
+    return record.scientificName || t("observation.natureSoundRecording");
   }
-  return record.vernacularName || record.scientificName || (record.media.includes("audio") ? "Nature sound recording" : "Unidentified sighting");
+  return record.vernacularName || record.scientificName || (record.media.includes("audio") ? t("observation.natureSoundRecording") : t("observation.unidentifiedSighting"));
 }
 
-function occurrenceSecondaryName(record: Extract<ExplorerRecord, { kind: "occurrence" }>): string | null {
+function occurrenceSecondaryName(record: Extract<ExplorerRecord, { kind: "occurrence" }>, t: RecordDrawerT): string | null {
   if (!record.vernacularName || !record.scientificName) return null;
-  if (record.media.includes("audio") && record.vernacularName === "Nature sound recording") return record.vernacularName;
+  if (record.media.includes("audio") && record.vernacularName === "Nature sound recording") return t("observation.natureSoundRecording");
   return record.vernacularName.toLowerCase() === record.scientificName.toLowerCase()
     ? null
     : record.scientificName;
@@ -1349,14 +1366,15 @@ function formatScopeTag(tag: string): string {
 }
 
 function KindBadge({ record, floating = false }: { record: ExplorerRecord; floating?: boolean }) {
+  const t = useTranslations("marketplace.recordDrawer");
   const map = {
-    occurrence: { label: "Nature sighting", cls: "text-primary-dark bg-primary/10" },
-    bumicert: { label: "Bumicert", cls: "text-brand-dark bg-brand/12" },
-    project: { label: "Project", cls: "text-primary-dark bg-primary/10" },
-    site: { label: "Project site", cls: "text-foreground/70 bg-foreground/[0.06]" },
+    occurrence: { label: t("kind.occurrence"), cls: "text-primary-dark bg-primary/10" },
+    bumicert: { label: t("kind.bumicert"), cls: "text-brand-dark bg-brand/12" },
+    project: { label: t("kind.project"), cls: "text-primary-dark bg-primary/10" },
+    site: { label: t("kind.site"), cls: "text-foreground/70 bg-foreground/[0.06]" },
   } as const;
   const m = map[record.kind];
-  const label = record.kind === "site" ? "Organization" : m.label;
+  const label = record.kind === "site" ? t("kind.organization") : m.label;
   const cls = floating
     ? "bg-background/80 text-foreground shadow-sm backdrop-blur-md"
     : m.cls;
@@ -1369,41 +1387,91 @@ function KindBadge({ record, floating = false }: { record: ExplorerRecord; float
 
 type Field = { label: string; value: string; wide?: boolean };
 
-function buildFields(r: ExplorerRecord): Field[] {
+function localizeDetailSections(sections: DetailSection[], t: RecordDrawerT): DetailSection[] {
+  return sections.map((section) => ({
+    ...section,
+    title: section.title ? localizeDetailLabel(section.title, t) : section.title,
+    fields: section.fields.map((field) => ({ ...field, label: localizeDetailLabel(field.label, t) })),
+  }));
+}
+
+function localizeDetailLabel(label: string, t: RecordDrawerT): string {
+  switch (label) {
+    case "Name details": return t("detailLabels.nameDetails");
+    case "Scientific name": return t("observation.fields.scientificName");
+    case "Common name": return t("observation.fields.vernacularName");
+    case "Name rank": return t("detailLabels.nameRank");
+    case "Nature group": return t("detailLabels.natureGroup");
+    case "Sighting details": return t("detailLabels.sightingDetails");
+    case "Sighting type": return t("detailLabels.sightingType");
+    case "Count": return t("fields.count");
+    case "Life stage": return t("detailLabels.lifeStage");
+    case "Sex": return t("detailLabels.sex");
+    case "Reproductive condition": return t("detailLabels.reproductiveCondition");
+    case "Behavior": return t("detailLabels.behavior");
+    case "Place": return t("observation.fields.place");
+    case "Place name": return t("detailLabels.placeName");
+    case "City or town": return t("detailLabels.cityOrTown");
+    case "Area": return t("detailLabels.area");
+    case "State / province": return t("detailLabels.stateProvince");
+    case "Country": return t("fields.country");
+    case "Map location": return t("fields.mapLocation");
+    case "Elevation": return t("detailLabels.elevation");
+    case "Habitat": return t("observation.fields.habitat");
+    case "Shared details": return t("detailLabels.sharedDetails");
+    case "Shared by": return t("fields.sharedBy");
+    case "Observed by": return t("detailLabels.observedBy");
+    case "Observed": return t("fields.observed");
+    case "Named by": return t("detailLabels.namedBy");
+    case "Date named": return t("detailLabels.dateNamed");
+    case "Shared": return t("detailLabels.shared");
+    case "Source details": return t("detailLabels.sourceDetails");
+    case "Source name": return t("detailLabels.sourceName");
+    case "Organization code": return t("detailLabels.organizationCode");
+    case "Source group": return t("detailLabels.sourceGroup");
+    case "Survey method": return t("detailLabels.surveyMethod");
+    case "License": return t("detailLabels.license");
+    case "Rights holder": return t("detailLabels.rightsHolder");
+    case "Sighting ID": return t("detailLabels.sightingId");
+    default: return label;
+  }
+}
+
+function buildFields(r: ExplorerRecord, t: RecordDrawerT): Field[] {
   const fields: Field[] = [];
   if (r.kind === "occurrence") {
-    if (r.family) fields.push({ label: "Family", value: r.family });
-    if (r.genus) fields.push({ label: "Genus", value: r.genus });
-    const observationKind = observationKindLabel(r.kingdom);
-    if (observationKind) fields.push({ label: "Plant or animal", value: observationKind });
-    if (r.basisOfRecord) fields.push({ label: "What was seen", value: r.basisOfRecord });
+    if (r.family) fields.push({ label: t("fields.family"), value: r.family });
+    if (r.genus) fields.push({ label: t("fields.genus"), value: r.genus });
+    const observationKind = observationKindLabel(r.kingdom, t);
+    if (observationKind) fields.push({ label: t("observation.fields.kind"), value: observationKind });
+    if (r.basisOfRecord) fields.push({ label: t("fields.basisOfRecord"), value: r.basisOfRecord });
     if (r.individualCount != null)
-      fields.push({ label: "Count", value: formatNumber(r.individualCount) });
-    if (r.recordedBy) fields.push({ label: "Shared by", value: r.recordedBy });
+      fields.push({ label: t("fields.count"), value: formatNumber(r.individualCount) });
+    if (r.recordedBy) fields.push({ label: t("fields.sharedBy"), value: r.recordedBy });
     const place = [r.locality, r.country].filter(Boolean).join(", ");
     if (place)
       fields.push({
-        label: "Location",
+        label: t("fields.location"),
         value: `${countryFlag(r.countryCode)} ${place}`.trim(),
         wide: true,
       });
     if (r.lat != null && r.lon != null)
-      fields.push({ label: "Map location", value: `${r.lat.toFixed(4)}, ${r.lon.toFixed(4)}`, wide: true });
-    if (r.eventDate) fields.push({ label: "Observed", value: formatDate(r.eventDate) });
+      fields.push({ label: t("fields.mapLocation"), value: `${r.lat.toFixed(4)}, ${r.lon.toFixed(4)}`, wide: true });
+    if (r.eventDate) fields.push({ label: t("fields.observed"), value: formatDate(r.eventDate) });
     if (r.media.length)
-      fields.push({ label: "Photos or field sounds", value: r.media.map(mediaLabel).join(", "), wide: true });
-    if (r.remarks) fields.push({ label: "Remarks", value: r.remarks, wide: true });
+      fields.push({ label: t("fields.media"), value: r.media.map((kind) => mediaLabel(kind, t)).join(", "), wide: true });
+    if (r.remarks) fields.push({ label: t("fields.remarks"), value: r.remarks, wide: true });
   } else if (r.kind === "bumicert") {
-    fields.push({ label: "People named", value: formatNumber(r.contributorCount) });
-    fields.push({ label: "Project places", value: formatNumber(r.locationCount) });
-    if (r.startDate) fields.push({ label: "Start", value: formatDate(r.startDate) });
-    if (r.endDate) fields.push({ label: "End", value: formatDate(r.endDate) });
+    fields.push({ label: t("fields.peopleNamed"), value: formatNumber(r.contributorCount) });
+    fields.push({ label: t("fields.projectPlaces"), value: formatNumber(r.locationCount) });
+    if (r.startDate) fields.push({ label: t("fields.start"), value: formatDate(r.startDate) });
+    if (r.endDate) fields.push({ label: t("fields.end"), value: formatDate(r.endDate) });
   } else if (r.kind === "project") {
-    fields.push({ label: "Bumicerts", value: formatNumber(r.bumicertCount) });
-    if (r.locationUri) fields.push({ label: "Project place", value: "Added" });
+    fields.push({ label: t("fields.bumicerts"), value: formatNumber(r.bumicertCount) });
+    if (r.locationUri) fields.push({ label: t("fields.projectPlace"), value: t("fields.added") });
   } else {
-    if (r.country) fields.push({ label: "Country", value: formatCountry(r.country) });
-    if (r.orgType) fields.push({ label: "Type", value: r.orgType });
+    if (r.country) fields.push({ label: t("fields.country"), value: formatCountry(r.country) });
+    if (r.orgType) fields.push({ label: t("fields.type"), value: r.orgType });
   }
   return fields;
 }

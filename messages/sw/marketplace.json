@@ -843,13 +843,30 @@
         "place": "Mahali",
         "country": "Nchi",
         "habitat": "Makazi",
-        "notes": "Madokezo"
+        "notes": "Madokezo",
+        "kind": "Mmea au mnyama",
+        "mapLocation": "Eneo kwenye ramani"
       },
       "validation": {
         "name": "Weka jina la mmea au mnyama.",
         "date": "Weka wakati ulipoonekana.",
-        "location": "Weka eneo halali la ramani."
-      }
+        "location": "Weka eneo halali la ramani.",
+        "kind": "Chagua kama hii ni mmea au mnyama."
+      },
+      "kindOptions": {
+        "plant": "Mmea",
+        "animal": "Mnyama"
+      },
+      "chooseOne": "Chagua moja",
+      "chooseMapLocation": "Chagua eneo kwenye ramani.",
+      "chooseOnMap": "Chagua kwenye ramani",
+      "chooseMapLocationTitle": "Chagua eneo kwenye ramani",
+      "closeMapLocationChooser": "Funga kichagua eneo la ramani",
+      "movePin": "Bofya ramani kusogeza alama ya muono.",
+      "noMapLocation": "Hakuna eneo la ramani lililochaguliwa bado.",
+      "useLocation": "Tumia eneo",
+      "natureSoundRecording": "Rekodi ya sauti ya asili",
+      "unidentifiedSighting": "Muono usiotambuliwa"
     },
     "media": {
       "image": "Picha",
@@ -879,6 +896,45 @@
       "country": "Nchi",
       "type": "Aina"
     },
-    "audioHero": "Cheza sauti ya {title}"
+    "audioHero": "Cheza sauti ya {title}",
+    "detailLabels": {
+      "nameDetails": "Maelezo ya jina",
+      "nameRank": "Daraja la jina",
+      "natureGroup": "Kundi la asili",
+      "sightingDetails": "Maelezo ya muono",
+      "sightingType": "Aina ya muono",
+      "lifeStage": "Hatua ya maisha",
+      "sex": "Jinsia",
+      "reproductiveCondition": "Hali ya uzazi",
+      "behavior": "Tabia",
+      "placeName": "Jina la mahali",
+      "cityOrTown": "Mji au kijiji",
+      "area": "Eneo",
+      "stateProvince": "Jimbo / mkoa",
+      "elevation": "Mwinuko",
+      "sharedDetails": "Maelezo yaliyoshirikiwa",
+      "observedBy": "Imeonwa na",
+      "namedBy": "Imetambuliwa na",
+      "dateNamed": "Tarehe ya utambuzi",
+      "shared": "Imeshirikiwa",
+      "sourceDetails": "Maelezo ya chanzo",
+      "sourceName": "Jina la chanzo",
+      "organizationCode": "Msimbo wa shirika",
+      "sourceGroup": "Kundi la chanzo",
+      "surveyMethod": "Mbinu ya uchunguzi",
+      "license": "Leseni",
+      "rightsHolder": "Mmiliki wa haki",
+      "sightingId": "ID ya muono"
+    }
+  },
+  "manageProjects": {
+    "hero": {
+      "title": "Miradi Yangu",
+      "description": "Unda na usimamie miradi inayoweza kuwa na Bumicert kadhaa, pamoja na picha, video na midia nyingine zinazoonyesha kazi hiyo."
+    },
+    "metadata": {
+      "title": "Simamia Miradi — GainForest",
+      "description": "Unda na usimamie mikusanyiko ya miradi kwa Bumicert zako."
+    }
   }
 }
