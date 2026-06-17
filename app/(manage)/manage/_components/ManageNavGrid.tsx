@@ -31,7 +31,7 @@ type AccountKind = "organization" | "user";
 
 interface NavCard {
   id: string;
-  label: "Sites" | "Audio" | "Trees" | "Bumicerts" | "Organizations";
+  label: "Sites" | "Audio" | "Trees" | "Certs" | "Organizations";
   description: string;
   href: string;
   Icon: LucideIcon | ComponentType<{ className?: string }>;
@@ -61,7 +61,7 @@ const ORG_NAV_CARDS: NavCard[] = [
   },
   {
     id: "bumicerts",
-    label: "Bumicerts",
+    label: "Certs",
     description: "Create and publish verified impact certificates.",
     href: "/manage/bumicerts",
     Icon: BumicertIcon,

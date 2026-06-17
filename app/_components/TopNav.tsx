@@ -140,7 +140,7 @@ export function TopNav({ status }: { status: StatusSnapshot }) {
                 {t("navigation.greenGlobeExternal")}
               </Link>
               <Link href="/bumicerts" className="hover:text-primary">
-                Bumicerts
+                Certs
               </Link>
             </div>
           </nav>

@@ -80,7 +80,7 @@ const NAV_ITEMS: NavSection[] = [
       {
         kind: "leaf",
         id: "bumicerts",
-        text: "Bumicerts",
+        text: "Certs",
         Icon: BumicertIcon,
         href: "/bumicerts",
         pathCheck: { startsWith: "/bumicerts" },

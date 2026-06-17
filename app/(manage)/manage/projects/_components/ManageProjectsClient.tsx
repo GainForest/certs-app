@@ -700,7 +700,7 @@ function ProjectSuccessPanel({
             className="mt-4 max-w-xs text-sm leading-6 text-muted-foreground"
           >
             {showAddBumicert
-              ? "Add a Bumicert next to apply for donations and attach field data."
+              ? "Add a Cert next to apply for donations and attach field data."
               : "Your project changes have been saved."}
           </motion.p>
 
@@ -744,7 +744,7 @@ function ProjectSuccessPanel({
                 <div className="relative z-10 w-full">
                   <div className="min-w-0">
                     <h4 className="font-instrument text-2xl font-medium italic leading-tight tracking-[-0.03em] text-foreground sm:text-3xl">
-                      Add the first Bumicert
+                      Add the first Cert
                     </h4>
                     <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground sm:mx-0">
                       Turn {projectTitle || "this project"} into a fundable story with proof of work, field data, photos, dates, and places.
@@ -895,8 +895,8 @@ function BumicertPicker({
     <section className="space-y-2.5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <label className="block text-sm font-medium text-foreground">
-          Bumicerts in this project
-          <span className="ml-2 font-normal text-muted-foreground">pick from your published Bumicerts</span>
+          Certs in this project
+          <span className="ml-2 font-normal text-muted-foreground">pick from your published Certs</span>
         </label>
         <span className="text-xs text-muted-foreground">{selectedUris.length} selected</span>
       </div>
@@ -904,8 +904,8 @@ function BumicertPicker({
       {bumicerts.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center">
           <LeafIcon className="mx-auto mb-3 size-8 text-primary/70" />
-          <p className="font-instrument text-xl italic text-foreground">No Bumicerts yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">Create a Bumicert first, then add it to a project.</p>
+          <p className="font-instrument text-xl italic text-foreground">No Certs yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">Create a Cert first, then add it to a project.</p>
         </div>
       ) : (
         <div className="relative overflow-hidden rounded-2xl bg-muted p-2">

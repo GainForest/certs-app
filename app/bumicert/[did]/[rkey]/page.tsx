@@ -104,9 +104,9 @@ type BumicertDetailTab = (typeof BUMICERT_DETAIL_TABS)[number];
 
 export async function generateMetadata({ params }: { params: BumicertPageParams }): Promise<Metadata> {
   const { record, owner, urlIdentifier } = await readRouteData(params);
-  const description = record.shortDescription ?? `Bumicert published by ${owner.displayName}.`;
+  const description = record.shortDescription ?? `Cert published by ${owner.displayName}.`;
   return {
-    title: `${record.title} — Bumicert`,
+    title: `${record.title} — Cert`,
     description,
     alternates: { canonical: localBumicertHref(urlIdentifier, record.rkey) },
     openGraph: {
@@ -146,7 +146,7 @@ export default async function BumicertDetailPage({
     try {
       donationReceipts = (await fetchReceipts()).filter((receipt) => receipt.bumicertUri === record.atUri);
     } catch (error) {
-      console.warn("Unable to load Bumicert donations", record.atUri, error);
+      console.warn("Unable to load Cert donations", record.atUri, error);
       donationsUnavailable = true;
     }
   }
@@ -562,7 +562,7 @@ function AboutOrganizationSection({
         <p className="line-clamp-5 text-sm leading-6 text-foreground/70">{owner.description}</p>
       ) : (
         <p className="text-sm leading-6 text-muted-foreground">
-          {owner.displayName} is the organization behind this Bumicert.
+          {owner.displayName} is the organization behind this Cert.
         </p>
       )}
       {owner.country ? (
@@ -854,7 +854,7 @@ function OverviewPanel({
         <p className="mt-6 whitespace-pre-line text-lg leading-8 text-foreground/76 md:text-xl md:leading-9">{description}</p>
       ) : (
         <p className="text-[15px] leading-8 text-muted-foreground">
-          No long-form description has been published for this Bumicert yet.
+          No long-form description has been published for this Cert yet.
         </p>
       )}
 
@@ -999,7 +999,7 @@ function ReviewsPanel({ record, reviews }: { record: BumicertRecord; reviews: Bu
   return (
     <article className="py-1">
       <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-        Independent evaluations and public comments attached to this Bumicert on the open ATProto
+        Independent evaluations and public comments attached to this Cert on the open ATProto
         network. Anyone — auditors, community members, or AI agents — can publish a review; nothing
         here is written or curated by {record.creatorName ?? "the project"} itself.
       </p>
@@ -1179,7 +1179,7 @@ function SiteBoundariesPanel({ record }: { record: BumicertRecord }) {
         <EmptyState
           icon={<MapPinnedIcon className="h-8 w-8" />}
           title="No site boundaries linked"
-          body="This Bumicert does not currently include mapped site boundaries."
+          body="This Cert does not currently include mapped site boundaries."
         />
       )}
     </article>
@@ -1236,7 +1236,7 @@ function DonationsPanel({
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <h2 className="font-instrument text-3xl font-light italic leading-tight tracking-[-0.025em] text-foreground sm:text-4xl">
-                Support this Bumicert
+                Support this Cert
               </h2>
               <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
                 Your donation supports {owner.displayName} and appears with this project story once completed.
@@ -1278,7 +1278,7 @@ function DonationsPanel({
         <EmptyState
           icon={<HeartIcon className="h-8 w-8" />}
           title="Donation information is unavailable"
-          body="We could not load donations for this Bumicert. Try again later on this page."
+          body="We could not load donations for this Cert. Try again later on this page."
           variant="leaderboard"
         />
       ) : receipts.length === 0 ? (
@@ -1306,7 +1306,7 @@ function DonationsPanel({
             <EmptyState
               icon={<HeartIcon className="h-8 w-8" />}
               title="No donation totals yet"
-              body="Completed donations for this Bumicert will appear here."
+              body="Completed donations for this Cert will appear here."
               variant="leaderboard"
             />
           )}
@@ -1327,14 +1327,14 @@ function TimelinePanel({
 }) {
   const events = [
     {
-      title: "Bumicert published",
+      title: "Cert published",
       body: record.shortDescription ?? "This project story was published.",
       meta: formatDateTime(record.createdAt),
     },
     record.locationUris.length > 0
       ? {
           title: "Site boundaries added",
-          body: `${formatNumber(record.locationUris.length)} ${record.locationUris.length === 1 ? "site boundary" : "site boundaries"} linked to this Bumicert.`,
+          body: `${formatNumber(record.locationUris.length)} ${record.locationUris.length === 1 ? "site boundary" : "site boundaries"} linked to this Cert.`,
           meta: "Site Boundaries",
         }
       : null,
@@ -1392,7 +1392,7 @@ function MoreBumicertsSection({
       <Separator className="my-2" />
       <div className="mb-4 flex items-center justify-between gap-3 pt-4">
         <div className="min-w-0">
-          <h2 className="text-sm font-medium text-foreground">More Bumicerts from this Organization</h2>
+          <h2 className="text-sm font-medium text-foreground">More Certs from this Organization</h2>
           <p className="mt-1 truncate text-xs text-muted-foreground">{owner.displayName}</p>
         </div>
         <Link

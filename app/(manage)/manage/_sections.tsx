@@ -117,7 +117,7 @@ export async function BumicertsSection({ target }: { target: ManageTarget }) {
     const page = await fetchBumicertsByDid(target.did, 24);
     return <ManageBumicertsClient target={target} did={target.did} ownerIdentifier={account.urlIdentifier} bumicerts={page.records} />;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load recent Bumicerts.";
+    const message = error instanceof Error ? error.message : "Failed to load recent Certs.";
     return <ManageBumicertsClient target={target} did={target.did} ownerIdentifier={account.urlIdentifier} bumicerts={[]} error={message} />;
   }
 }

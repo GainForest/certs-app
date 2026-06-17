@@ -16,7 +16,7 @@ export default function AccountNotFound() {
       primaryHref="/organizations"
       primaryLabel="Browse organizations"
       secondaryHref="/bumicerts"
-      secondaryLabel="Explore Bumicerts"
+      secondaryLabel="Explore Certs"
     />
   );
 }

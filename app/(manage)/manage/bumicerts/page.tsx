@@ -3,8 +3,8 @@ import { resolvePersonalManageTarget } from "@/app/_lib/manage-server";
 import { BumicertsSection } from "../_sections";
 
 export const metadata: Metadata = {
-  title: "Manage Bumicerts — GainForest",
-  description: "Review your recent Bumicerts and drafts.",
+  title: "Manage Certs — GainForest",
+  description: "Review your recent Certs and drafts.",
   robots: { index: false, follow: false },
 };
 

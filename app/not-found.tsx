@@ -14,7 +14,7 @@ export default function NotFound() {
       title="We couldn’t find that page."
       message="The link may be old, or the page may have moved."
       primaryHref="/bumicerts"
-      primaryLabel="Explore Bumicerts"
+      primaryLabel="Explore Certs"
       secondaryHref="/"
       secondaryLabel="Return home"
     />
