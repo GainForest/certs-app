@@ -1,6 +1,7 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 import { screenshotStep } from "./artifacts";
 import { getPdsRecord, parseAtUri, trackCreatedPdsRecord, waitForProjectByTitle, type PdsRepoRecord } from "./pds";
+import { groupManageBasePath, readCgsOrgMetadata } from "./cgs-org";
 
 export const E2E_PROJECT_SHORT_DESCRIPTION =
   "E2E project summary for restoration work, field evidence, and public impact review.";
@@ -64,12 +65,18 @@ async function ensureProfilePromptIsCleared(page: Page): Promise<void> {
   }
 }
 
+function manageBasePath(): string {
+  const org = readCgsOrgMetadata();
+  return org ? groupManageBasePath(org) : "/manage";
+}
+
 export async function createProject(page: Page, testInfo: TestInfo): Promise<CreatedProject> {
   const title = `E2E Project ${Date.now()}-${testInfo.workerIndex}-${testInfo.retry}`;
+  const basePath = manageBasePath();
 
-  await page.goto("/manage/projects?mode=new", { waitUntil: "domcontentloaded" });
+  await page.goto(`${basePath}/projects?mode=new`, { waitUntil: "domcontentloaded" });
   await ensureProfilePromptIsCleared(page);
-  await page.goto("/manage/projects?mode=new", { waitUntil: "domcontentloaded" });
+  await page.goto(`${basePath}/projects?mode=new`, { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: /create new project/i })).toBeVisible({ timeout: 60_000 });
   await screenshotStep(page, testInfo, "project-create-empty");
 

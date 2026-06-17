@@ -96,8 +96,14 @@ export default defineConfig({
       use: { ...desktopChrome },
     },
     {
-      name: "sites",
+      name: "organization-onboarding",
       dependencies: ["profile-edit"],
+      testMatch: /organization-onboarding\.spec\.ts/,
+      use: { ...desktopChrome },
+    },
+    {
+      name: "sites",
+      dependencies: ["organization-onboarding"],
       testMatch: /sites\.spec\.ts/,
       use: { ...desktopChrome },
     },
@@ -126,8 +132,14 @@ export default defineConfig({
       use: { ...desktopChrome },
     },
     {
-      name: "settings",
+      name: "member-permissions",
       dependencies: ["audio-recordings"],
+      testMatch: /member-permissions\.spec\.ts/,
+      use: { ...desktopChrome },
+    },
+    {
+      name: "settings",
+      dependencies: ["member-permissions"],
       testMatch: /settings\.spec\.ts/,
       use: { ...desktopChrome },
     },

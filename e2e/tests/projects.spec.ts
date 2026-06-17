@@ -6,6 +6,7 @@ import {
   projectItemUris,
 } from "../support/project-flow";
 import { getPdsRecord } from "../support/pds";
+import { groupManageBasePath, readCgsOrgMetadata } from "../support/cgs-org";
 
 const authStatePath = "e2e/.auth/user.json";
 
@@ -31,10 +32,12 @@ test("creates a project and attaches the first Cert from the success CTA", async
   const project = await createProject(page, testInfo);
 
   const addFirstCert = page.getByRole("link", { name: /add the first cert/i });
-  await expect(addFirstCert).toHaveAttribute("href", /\/manage\/certs\/new\?forProject=/);
+  const org = readCgsOrgMetadata();
+  const basePath = org ? groupManageBasePath(org) : "/manage";
+  await expect(addFirstCert).toHaveAttribute("href", new RegExp(`${basePath.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}/certs/new\\?forProject=`));
   await Promise.all([
     page.waitForURL((url) =>
-      url.pathname.endsWith("/manage/certs/new") && url.searchParams.get("forProject") === project.identity,
+      url.pathname.endsWith(`${basePath}/certs/new`) && url.searchParams.get("forProject") === project.identity,
     ),
     addFirstCert.click(),
   ]);

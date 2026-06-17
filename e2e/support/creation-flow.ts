@@ -1,6 +1,7 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 import { screenshotStep } from "./artifacts";
 import { getPdsRecord, parseAtUri, trackCreatedPdsRecord, waitForClaimActivityByTitle, type PdsRepoRecord } from "./pds";
+import { groupManageBasePath, readCgsOrgMetadata } from "./cgs-org";
 
 export const E2E_CERT_SCOPE = "Reforestation";
 export const E2E_CERT_SHORT_DESCRIPTION =
@@ -23,10 +24,16 @@ export type FillCertFormOptions = {
 
 const publishButtonName = /^publish(?: cert| to the project)?$/i;
 
+function manageBasePath(): string {
+  const org = readCgsOrgMetadata();
+  return org ? groupManageBasePath(org) : "/manage";
+}
+
 function newCertUrl(options: FillCertFormOptions): string {
+  const basePath = manageBasePath();
   return options.forProject
-    ? `/manage/certs/new?forProject=${encodeURIComponent(options.forProject)}`
-    : "/manage/certs/new";
+    ? `${basePath}/certs/new?forProject=${encodeURIComponent(options.forProject)}`
+    : `${basePath}/certs/new`;
 }
 
 export async function expectCertPublishValidationEdgeCases(page: Page, testInfo: TestInfo): Promise<void> {
