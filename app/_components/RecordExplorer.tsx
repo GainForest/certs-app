@@ -86,7 +86,7 @@ const KIND_META: Record<RecordKind, KindMeta> = {
     title: "Discover",
     accent: "Regenerative Impact",
     lede: "Browse projects from communities and organizations restoring ecosystems, strengthening livelihoods, and building a more resilient future.",
-    search: "Filter Bumicerts by title or description",
+    search: "Filter Certs by title or description",
     heroLight: "/images/explore/explore-hero-light@2x.webp",
     heroDark: "/images/explore/explore-hero-dark@2x.webp",
   },
@@ -94,7 +94,7 @@ const KIND_META: Record<RecordKind, KindMeta> = {
     eyebrow: "Projects",
     title: "Browse",
     accent: "project collections",
-    lede: "Explore project collections and the Bumicerts they group together.",
+    lede: "Explore project collections and the Certs they group together.",
     search: "Filter projects by title or description",
     heroLight: "/images/explore/explore-hero-light@2x.webp",
     heroDark: "/images/explore/explore-hero-dark@2x.webp",
@@ -196,6 +196,7 @@ export function RecordExplorer({
   ownerDid?: string;
 }) {
   const meta = KIND_META[kind];
+  const showStatsOverview = !showHero || Boolean(ownerDid);
   const [query, setQuery] = useQueryState(
     "q",
     parseAsString.withDefault("").withOptions(SEARCH_QUERY_STATE_OPTIONS),
@@ -235,7 +236,7 @@ export function RecordExplorer({
   const [sortOpen, setSortOpen] = useState(false);
   const [walking, setWalking] = useState(false);
   const [occurrenceStats, setOccurrenceStats] = useState<OccurrenceStats | null>(null);
-  const [occurrenceStatsLoading, setOccurrenceStatsLoading] = useState(kind === "occurrence" && !ownerDid);
+  const [occurrenceStatsLoading, setOccurrenceStatsLoading] = useState(showStatsOverview && kind === "occurrence" && !ownerDid);
   // Gate the first load until the URL has been read, so a shared link's filter
   // params (media/source) are applied before the initial fetch.
   const [hydrated, setHydrated] = useState(false);
@@ -254,7 +255,7 @@ export function RecordExplorer({
   const hasLoadedRecords = records.length > 0;
 
   useEffect(() => {
-    if (kind !== "occurrence" || ownerDid || !hasLoadedRecords || occurrenceStatsStartedRef.current) return;
+    if (!showStatsOverview || kind !== "occurrence" || ownerDid || !hasLoadedRecords || occurrenceStatsStartedRef.current) return;
     occurrenceStatsStartedRef.current = true;
     const ctrl = new AbortController();
     const timer = window.setTimeout(() => {
@@ -272,7 +273,7 @@ export function RecordExplorer({
       window.clearTimeout(timer);
       ctrl.abort();
     };
-  }, [hasLoadedRecords, kind, ownerDid]);
+  }, [hasLoadedRecords, kind, ownerDid, showStatsOverview]);
   // Latest values for the load closure without re-creating it each render.
   const stateRef = useRef({ records, cursor, hasMore, phase });
   stateRef.current = { records, cursor, hasMore, phase };
@@ -466,14 +467,12 @@ export function RecordExplorer({
   useEffect(() => {
     setCardLimit(INITIAL_CARD_LIMIT);
   }, [deferredQuery, kind, occCategory, occMedia, siteSource, sort, view]);
-  // Observations use fast total counters from the index, matching the dedicated
-  // Bumicerts and organizations pages. Other embedded explorer uses still fall
-  // back to loaded-record summaries.
+  // Embedded account/manage explorers keep compact loaded-record summaries.
   const stats = useMemo(
-    () => (kind === "occurrence" && !ownerDid && occurrenceStats ? computeOccurrenceTotalStats(occurrenceStats, records) : computeStats(records, kind)),
-    [kind, occurrenceStats, ownerDid, records],
+    () => showStatsOverview ? (kind === "occurrence" && !ownerDid && occurrenceStats ? computeOccurrenceTotalStats(occurrenceStats, records) : computeStats(records, kind)) : [],
+    [kind, occurrenceStats, ownerDid, records, showStatsOverview],
   );
-  const showStats = kind === "occurrence" ? ownerDid ? records.length > 0 : Boolean(occurrenceStats) || (!occurrenceStatsLoading && records.length > 0) : records.length > 0;
+  const showStats = showStatsOverview && (kind === "occurrence" ? ownerDid ? records.length > 0 : Boolean(occurrenceStats) || (!occurrenceStatsLoading && records.length > 0) : records.length > 0);
   const gridCls = kind === "occurrence" ? GALLERY_GRID_CLS : GRID_CLS;
 
   return (
@@ -488,11 +487,12 @@ export function RecordExplorer({
           accent={meta.accent}
           lede={meta.lede}
           imageAlt={`${meta.eyebrow} nature landscape`}
+          compact
         />
       )}
 
       <div className="relative z-10 mx-auto max-w-6xl px-6">
-        {/* Stats overview — observations use total counters, while older embedded views keep loaded summaries. */}
+        {/* Stats overview — only embedded account/manage views show summaries here. */}
         {showStats && (
           <div className={`relative z-20 ${showHero ? "-mt-10" : "mt-6"}`}>
             <StatBand stats={stats.slice(0, 4)} />
@@ -1334,7 +1334,7 @@ function cardView(record: ExplorerRecord): CardView {
       pills: (
         <>
           <Pill accent>
-            {formatCompact(record.bumicertCount)} Bumicert{record.bumicertCount === 1 ? "" : "s"}
+            {formatCompact(record.bumicertCount)} Cert{record.bumicertCount === 1 ? "" : "s"}
           </Pill>
           {record.locationUri ? <Pill>Project place</Pill> : null}
         </>
@@ -1372,7 +1372,7 @@ function cardView(record: ExplorerRecord): CardView {
     badge: (
       <span className="inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-0.5 text-[9.5px] font-medium uppercase tracking-[0.1em] text-brand-dark backdrop-blur-md">
         <span aria-hidden className="pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-brand text-brand" />
-        Bumicert
+        Cert
       </span>
     ),
     placeholder: (
@@ -1581,12 +1581,12 @@ function computeStats(records: ExplorerRecord[], kind: RecordKind): Stat[] {
     const sites = b.reduce((s, r) => s + r.locationCount, 0);
     const withCover = b.filter((r) => r.imageUrl).length;
     return [
-      { label: "Loaded Bumicerts", value: n(b.length), icon: <LayoutGridIcon />, accent: true },
-      { label: "Bumicerts from last 30 days", value: n(last30), icon: <LeafIcon /> },
-      { label: "People named in loaded Bumicerts", value: n(contributors), icon: <LeafIcon />, accent: true },
-      { label: "Project places in loaded Bumicerts", value: n(sites), icon: <MapIcon /> },
-      { label: "Loaded Bumicerts with pictures", value: n(withCover), icon: <ImageIcon /> },
-      { label: "Bumicerts from this week", value: n(last7), icon: <AudioLinesIcon /> },
+      { label: "Loaded Certs", value: n(b.length), icon: <LayoutGridIcon />, accent: true },
+      { label: "Certs from last 30 days", value: n(last30), icon: <LeafIcon /> },
+      { label: "People named in loaded Certs", value: n(contributors), icon: <LeafIcon />, accent: true },
+      { label: "Project places in loaded Certs", value: n(sites), icon: <MapIcon /> },
+      { label: "Loaded Certs with pictures", value: n(withCover), icon: <ImageIcon /> },
+      { label: "Certs from this week", value: n(last7), icon: <AudioLinesIcon /> },
     ];
   }
 
@@ -1598,7 +1598,7 @@ function computeStats(records: ExplorerRecord[], kind: RecordKind): Stat[] {
     return [
       { label: "Loaded projects", value: n(p.length), icon: <LayoutGridIcon />, accent: true },
       { label: "Projects from last 30 days", value: n(last30), icon: <LeafIcon /> },
-      { label: "Bumicerts in loaded projects", value: n(bumicerts), icon: <LeafIcon />, accent: true },
+      { label: "Certs in loaded projects", value: n(bumicerts), icon: <LeafIcon />, accent: true },
       { label: "Loaded projects with places", value: n(withPlace), icon: <MapIcon /> },
       { label: "Loaded projects with pictures", value: n(withImg), icon: <ImageIcon /> },
       { label: "Projects from this week", value: n(last7), icon: <AudioLinesIcon /> },
