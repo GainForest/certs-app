@@ -19,6 +19,7 @@
   "authLoadOrganizationsFailed": "Tidak dapat memuat organisasi Anda.",
   "authNoOrganizations": "Belum ada organisasi.",
   "authViewOrganizations": "Lihat semua organisasi",
+  "authCreateNewOrganization": "Buat organisasi baru",
   "accountProfileMissing": "Kami tidak dapat menemukan profil itu.",
   "bumicertRaised": "Terkumpul",
   "bumicertDonationPublic": "Donasi yang selesai tampil publik agar pendukung dapat melihat dampaknya.",

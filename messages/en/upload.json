@@ -629,7 +629,7 @@
     "actions": {
       "save": "Save",
       "cancel": "Cancel",
-      "createOrganization": "Create an Organization"
+      "createOrganization": "Create new Organization"
     },
     "about": {
       "title": "About",

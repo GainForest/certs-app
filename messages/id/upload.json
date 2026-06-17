@@ -629,7 +629,7 @@
     "actions": {
       "save": "Simpan",
       "cancel": "Batal",
-      "createOrganization": "Buat organisasi"
+      "createOrganization": "Buat organisasi baru"
     },
     "about": {
       "title": "Tentang",

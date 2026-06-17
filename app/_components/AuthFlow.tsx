@@ -582,6 +582,7 @@ function AuthenticatedMenu({
   const containerRef = useRef<HTMLDivElement>(null);
   const { personal: personalCard, groups, status: groupsStatus, reload } = useAccountList(session.did);
   const [activeContext, setActiveContext] = useActiveAccountContext(session.did);
+  const t = useTranslations("legacy");
   const cleanProfileName = profileName?.trim() || personalCard?.displayName?.trim() || null;
   const profileNameLoading = isProfileNameLoading && profileName === undefined;
   const personalDisplayLabel = cleanProfileName ?? (profileNameLoading ? "Account" : "Personal account");
@@ -744,14 +745,16 @@ function AuthenticatedMenu({
                 View all organizations
               </Link>
 
-              <Link
-                href="/manage?mode=onboard-org"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted/60"
-              >
-                <PlusIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                Create an organization
-              </Link>
+              {groupsStatus === "ready" && groups.length === 0 ? (
+                <Link
+                  href="/manage?mode=onboard-org"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted/60"
+                >
+                  <PlusIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  {t("authCreateNewOrganization")}
+                </Link>
+              ) : null}
 
               <Link
                 href={settingsGroupIdentifier ? manageHref({ basePath: groupManageBasePath(settingsGroupIdentifier) }, "settings") : manageHref({ basePath: "/manage" }, "settings")}

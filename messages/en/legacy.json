@@ -19,6 +19,7 @@
   "authLoadOrganizationsFailed": "Couldn’t load your organizations.",
   "authNoOrganizations": "No organizations yet.",
   "authViewOrganizations": "View all organizations",
+  "authCreateNewOrganization": "Create new Organization",
   "accountProfileMissing": "We couldn’t find that profile.",
   "bumicertRaised": "Raised",
   "bumicertDonationPublic": "Completed donations appear publicly so supporters can see the impact.",

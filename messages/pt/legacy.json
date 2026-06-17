@@ -19,6 +19,7 @@
   "authLoadOrganizationsFailed": "Não conseguimos carregar suas organizações.",
   "authNoOrganizations": "Ainda não há organizações.",
   "authViewOrganizations": "Ver todas as organizações",
+  "authCreateNewOrganization": "Criar nova organização",
   "accountProfileMissing": "Não conseguimos encontrar esse perfil.",
   "bumicertRaised": "Arrecadado",
   "bumicertDonationPublic": "Doações concluídas aparecem publicamente para que apoiadores vejam o impacto.",
