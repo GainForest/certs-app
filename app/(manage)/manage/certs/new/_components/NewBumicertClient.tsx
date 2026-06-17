@@ -645,9 +645,9 @@ function BasicsStep({
 
   return (
     <div className="space-y-8">
-      <Field label="Title" hint="what people will recognise" htmlFor="bumicert-title" error={issues.title?.message}>
+      <Field label="Title" hint="what people will recognise" htmlFor="cert-title" error={issues.title?.message}>
         <input
-          id="bumicert-title"
+          id="cert-title"
           value={values.title}
           maxLength={TITLE_MAX}
           onChange={(e) => {

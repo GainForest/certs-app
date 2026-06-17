@@ -82,8 +82,8 @@ const NAV_ITEMS: NavSection[] = [
         id: "bumicerts",
         text: "Certs",
         Icon: BumicertIcon,
-        href: "/bumicerts",
-        pathCheck: { startsWith: "/bumicerts" },
+        href: "/certs",
+        pathCheck: { startsWith: "/certs" },
       },
       {
         kind: "leaf",
@@ -464,7 +464,7 @@ const SIDEBAR_TABS: {
   href: string;
   Icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  { id: "explore", label: "Explore", href: "/bumicerts", Icon: CompassIcon },
+  { id: "explore", label: "Explore", href: "/certs", Icon: CompassIcon },
   { id: "manage", label: "Manage", href: "/manage", Icon: LayoutDashboardIcon },
 ];
 
@@ -883,7 +883,7 @@ function ProgressiveBlur({
 }
 
 function getRouteHeaderActions(pathname: string, authSession: AuthSession) {
-  if (pathname === "/bumicerts") {
+  if (pathname === "/certs") {
     return <CreateBumicertHeaderButton isUnauthenticated={!authSession.isLoggedIn} />;
   }
 
@@ -1026,7 +1026,7 @@ const BUMICERT_DETAIL_TABS = [
 type BumicertDetailTab = (typeof BUMICERT_DETAIL_TABS)[number]["id"];
 
 function isBumicertDetailPath(pathname: string): boolean {
-  return /^\/bumicert\/[^/]+\/[^/]+\/?$/.test(pathname);
+  return /^\/cert\/[^/]+\/[^/]+\/?$/.test(pathname);
 }
 
 function parseBumicertTab(value: string | null): BumicertDetailTab {

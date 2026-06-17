@@ -10,7 +10,7 @@
  *   Sites         → /manage/sites
  *   Audio         → /manage/audio
  *   Trees         → /manage/trees
- *   Bumicerts     → /manage/bumicerts
+ *   Certs         → /manage/certs
  *   Organizations → /manage/organizations
  */
 
@@ -63,7 +63,7 @@ const ORG_NAV_CARDS: NavCard[] = [
     id: "bumicerts",
     label: "Certs",
     description: "Create and publish verified impact certificates.",
-    href: "/manage/bumicerts",
+    href: "/manage/certs",
     Icon: BumicertIcon,
   },
   {

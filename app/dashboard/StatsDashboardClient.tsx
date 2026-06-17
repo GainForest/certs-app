@@ -57,10 +57,10 @@ export function StatsDashboardClient() {
     const data = stats.bumicerts.data;
     if (!data) return [];
     return [
-      tile(explore("stats.published"), data.totalBumicerts, locale, <LayoutGridIcon />, true, "/bumicerts"),
-      tile(explore("stats.withLocations"), data.certifiedPlaces, locale, <MapIcon />, false, "/bumicerts"),
-      tile(explore("stats.contributors"), data.contributors, locale, <UsersIcon />, true, "/bumicerts"),
-      tile(explore("stats.withCover"), data.projectPhotos, locale, <ImageIcon />, false, "/bumicerts"),
+      tile(explore("stats.published"), data.totalBumicerts, locale, <LayoutGridIcon />, true, "/certs"),
+      tile(explore("stats.withLocations"), data.certifiedPlaces, locale, <MapIcon />, false, "/certs"),
+      tile(explore("stats.contributors"), data.contributors, locale, <UsersIcon />, true, "/certs"),
+      tile(explore("stats.withCover"), data.projectPhotos, locale, <ImageIcon />, false, "/certs"),
     ];
   }, [explore, locale, stats.bumicerts.data]);
 

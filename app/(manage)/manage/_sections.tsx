@@ -25,8 +25,8 @@ import { ManageProjectsClient } from "./projects/_components/ManageProjectsClien
 import { SitesClient } from "./sites/_components/SitesClient";
 import { TreesPageClient } from "./trees/_components/TreesPageClient";
 import { AudioClient } from "./audio/_components/AudioClient";
-import { ManageBumicertsClient } from "./bumicerts/_components/ManageBumicertsClient";
-import { NewBumicertClient, type LinkedProjectPrefill } from "./bumicerts/new/_components/NewBumicertClient";
+import { ManageBumicertsClient } from "./certs/_components/ManageBumicertsClient";
+import { NewBumicertClient, type LinkedProjectPrefill } from "./certs/new/_components/NewBumicertClient";
 import type { ManageTarget } from "@/lib/links";
 
 export async function ManageHomeSection({ target, wrapDashboard = true }: { target: ManageTarget; wrapDashboard?: boolean }) {

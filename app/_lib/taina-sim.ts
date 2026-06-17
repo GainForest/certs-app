@@ -4,12 +4,12 @@
 //
 // Ported from gainforest-app's `app/_lib/taina-sim.ts`. There the floating
 // widget welcomes visitors on the landing page; here we point the same sim
-// at the Bumicert creation flow, where she acts as a writing companion —
-// nudging the owner toward a clearer, more verifiable Bumicert. The persona
+// at the Cert creation flow, where she acts as a writing companion —
+// nudging the owner toward a clearer, more verifiable Cert. The persona
 // fetch (her constitution + speaking style, pulled live from her owner's
 // PDS) is unchanged; only the "Your Job Right Now" framing in
 // `buildSystemPrompt` moved from "welcome the landing visitor" to "help the
-// author write this Bumicert".
+// author write this Cert".
 //
 // Taina is GainForest's community-facing AI assistant, born during the
 // XPRIZE Rainforest in Greater Manaus, where the Indigenous communities
