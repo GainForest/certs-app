@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   AlertTriangleIcon,
   CalendarIcon,
@@ -48,6 +49,7 @@ import AddToTreeGroupModal from "./AddToTreeGroupModal";
 import {
   buildDatasetLandingCards,
   DatasetLandingSection,
+  getSafeRecordedByDisplayName,
   UNGROUPED_DATASET_FILTER,
 } from "./DatasetLandingSection";
 import {
@@ -487,6 +489,7 @@ function mergeTreeDetail(existing: OccurrenceRecord, detail: Partial<OccurrenceR
 }
 
 export function TreesClient({ did, target, onUpload }: TreesClientProps) {
+  const treeFilterT = useTranslations("common.manageTrees.filters");
   const {
     searchQuery,
     selectedTreeRkey,
@@ -1450,29 +1453,29 @@ export function TreesClient({ did, target, onUpload }: TreesClientProps) {
                   if (showTreeGroupLanding) setTreeGroupSearchQuery(event.target.value);
                   else handleTreeSearchChange(event.target.value);
                 }}
-                placeholder={showTreeGroupLanding ? "Search tree groups" : "Search by species, place, or person…"}
+                placeholder={showTreeGroupLanding ? treeFilterT("searchTreeGroups") : treeFilterT("searchTrees")}
                 className="pl-9"
               />
             </div>
             {showTreeGroupLanding && treeGroupRecorderOptions.length > 0 ? (
               <div className="flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-sm shadow-xs transition-colors focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 sm:w-80">
                 <UserRoundIcon className="size-4 shrink-0 text-muted-foreground" />
-                <span className="shrink-0 text-muted-foreground">Recorder</span>
+                <span className="shrink-0 text-muted-foreground">{treeFilterT("recorder")}</span>
                 <Select
                   value={treeGroupRecordedByFilter || ALL_RECORDERS_FILTER_VALUE}
                   onValueChange={(value) => setTreeGroupRecordedByFilter(value === ALL_RECORDERS_FILTER_VALUE ? "" : value)}
                 >
                   <SelectTrigger
-                    aria-label="Filter tree groups by recorder"
+                    aria-label={treeFilterT("filterByRecorder")}
                     className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-left shadow-none ring-offset-0 focus:ring-0 [&>svg]:ml-2 [&>svg]:size-4"
                   >
-                    <SelectValue placeholder="All" />
+                    <SelectValue placeholder={treeFilterT("allRecorders")} />
                   </SelectTrigger>
                   <SelectContent align="start" className="min-w-80 max-w-[calc(100vw-2rem)]">
-                    <SelectItem value={ALL_RECORDERS_FILTER_VALUE}>All</SelectItem>
-                    {treeGroupRecorderOptions.map((recordedBy) => (
+                    <SelectItem value={ALL_RECORDERS_FILTER_VALUE}>{treeFilterT("allRecorders")}</SelectItem>
+                    {treeGroupRecorderOptions.map((recordedBy, index) => (
                       <SelectItem key={recordedBy} value={recordedBy}>
-                        <span className="block max-w-[30rem] whitespace-normal leading-5">{recordedBy}</span>
+                        <span className="block max-w-[30rem] whitespace-normal leading-5">{getSafeRecordedByDisplayName(recordedBy) ?? treeFilterT("recorderOptionFallback", { number: index + 1 })}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1482,8 +1485,8 @@ export function TreesClient({ did, target, onUpload }: TreesClientProps) {
           </div>
           <p className="text-sm text-muted-foreground">
             {showTreeGroupLanding
-              ? `${filteredTreeGroupCards.length} of ${treeGroupCards.length} tree group${treeGroupCards.length === 1 ? "" : "s"}`
-              : `${filteredTrees.length} of ${datasetScopedTrees.length} tree${datasetScopedTrees.length === 1 ? "" : "s"}`}
+              ? treeFilterT("treeGroupCount", { shown: filteredTreeGroupCards.length, total: treeGroupCards.length })
+              : treeFilterT("treeCount", { shown: filteredTrees.length, total: datasetScopedTrees.length })}
           </p>
         </div>
       ) : null}
@@ -1535,9 +1538,9 @@ export function TreesClient({ did, target, onUpload }: TreesClientProps) {
 
           {filteredTreeGroupCards.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-56 gap-3 rounded-2xl border border-dashed border-border text-center px-6">
-              <p className="text-2xl text-muted-foreground font-garamond">No tree groups match your filters</p>
-              <p className="text-sm text-muted-foreground">Try a different name, place, status, or recorder.</p>
-              <Button variant="outline" onClick={() => { setTreeGroupSearchQuery(""); setTreeGroupRecordedByFilter(""); }}>Clear filters</Button>
+              <p className="text-2xl text-muted-foreground font-garamond">{treeFilterT("noTreeGroupsTitle")}</p>
+              <p className="text-sm text-muted-foreground">{treeFilterT("noTreeGroupsDescription")}</p>
+              <Button variant="outline" onClick={() => { setTreeGroupSearchQuery(""); setTreeGroupRecordedByFilter(""); }}>{treeFilterT("clearFilters")}</Button>
             </div>
           ) : (
             <DatasetLandingSection datasetCards={filteredTreeGroupCards} onOpen={handleDatasetChange} onDelete={openDeleteTreeGroupConfirm} deleteDisabledReason={deletePermission.reason} />

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import {
   CalendarIcon,
   ChevronRightIcon,
@@ -30,7 +31,6 @@ export type DatasetLandingCard = {
   uploadTimestamp: number;
   locationLabel: string;
   recordedByValues: string[];
-  recordedByLabel: string | null;
   statusLabel: string;
   statusTone: StatusTone;
   searchText: string;
@@ -101,10 +101,21 @@ function getTreeGroupRecordedByValues(trees: TreeManagerItem[]): string[] {
   return Array.from(values.values()).sort((left, right) => left.localeCompare(right));
 }
 
-function formatRecordedByLabel(values: string[]): string | null {
+export function getSafeRecordedByDisplayName(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (/^(did:|at:\/\/|https?:\/\/|www\.)/i.test(trimmed)) return null;
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) return null;
+  if (!trimmed.includes(" ") && /^[a-z0-9._-]+\.[a-z]{2,}$/i.test(trimmed)) return null;
+  return trimmed;
+}
+
+function formatRecordedByLabel(values: string[], options: { fallback: string; multiple: (count: number) => string; firstAndMore: (name: string, count: number) => string }): string | null {
   if (values.length === 0) return null;
-  if (values.length === 1) return values[0] ?? null;
-  return `${values[0]} + ${values.length - 1} more`;
+  const displayValues = values.map(getSafeRecordedByDisplayName).filter((value): value is string => Boolean(value));
+  if (displayValues.length === 0) return values.length === 1 ? options.fallback : options.multiple(values.length);
+  if (values.length === 1) return displayValues[0] ?? options.fallback;
+  return options.firstAndMore(displayValues[0] ?? options.fallback, values.length - 1);
 }
 
 function getTreeGroupStatus(trees: TreeManagerItem[]): { label: string; tone: StatusTone } {
@@ -138,7 +149,6 @@ function createTreeGroupLandingCard(options: {
   const name = isUngrouped ? "Ungrouped trees" : treeGroup?.name ?? "Unnamed tree group";
   const locationLabel = getTreeGroupLocationLabel(trees);
   const recordedByValues = getTreeGroupRecordedByValues(trees);
-  const recordedByLabel = formatRecordedByLabel(recordedByValues);
   const uploadDateLabel = formatUploadDate(createdAt);
   const searchText = [
     name,
@@ -161,7 +171,6 @@ function createTreeGroupLandingCard(options: {
     uploadTimestamp: getUploadTimestamp(createdAt),
     locationLabel,
     recordedByValues,
-    recordedByLabel,
     statusLabel,
     statusTone,
     searchText,
@@ -245,9 +254,18 @@ export function DatasetLandingSection({
   onDelete?: (treeGroupId: string) => void;
   deleteDisabledReason?: string | null;
 }) {
+  const t = useTranslations("common.manageTrees.datasetLanding");
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {datasetCards.map((card) => (
+      {datasetCards.map((card) => {
+        const recordedByLabel = formatRecordedByLabel(card.recordedByValues, {
+          fallback: t("recorderFallback"),
+          multiple: (count) => t("multipleRecorders", { count }),
+          firstAndMore: (name, count) => t("firstRecorderAndMore", { name, count }),
+        });
+
+        return (
         <article
           key={card.id}
           className={cn(
@@ -258,7 +276,7 @@ export function DatasetLandingSection({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-1">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                {card.isUngrouped ? "Needs a tree group" : "Tree group"}
+                {card.isUngrouped ? t("needsTreeGroup") : t("treeGroup")}
               </p>
               <h2 className="truncate text-2xl leading-none text-foreground font-garamond">
                 {card.name}
@@ -270,9 +288,7 @@ export function DatasetLandingSection({
           <div className="mt-5 space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <TreesIcon className="size-4 shrink-0" />
-              <span>
-                {card.treeCount} tree{card.treeCount === 1 ? "" : "s"}
-              </span>
+              <span>{t("treeCount", { count: card.treeCount })}</span>
             </div>
             <div className="flex items-center gap-2">
               <CalendarIcon className="size-4 shrink-0" />
@@ -282,10 +298,10 @@ export function DatasetLandingSection({
               <MapPinIcon className="size-4 shrink-0" />
               <span className="truncate">{card.locationLabel}</span>
             </div>
-            {card.recordedByLabel ? (
+            {recordedByLabel ? (
               <div className="flex items-center gap-2">
                 <UserRoundIcon className="size-4 shrink-0" />
-                <span className="truncate">Recorder: {card.recordedByLabel}</span>
+                <span className="truncate">{t("recordedBy", { name: recordedByLabel })}</span>
               </div>
             ) : null}
           </div>
@@ -293,7 +309,7 @@ export function DatasetLandingSection({
           <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pt-4 text-sm font-medium text-foreground">
             <Button type="button" variant="ghost" size="sm" className="-ml-2" onClick={() => onOpen(card.id)}>
               <DatabaseIcon className="size-4 text-muted-foreground" />
-              Open tree group
+              {t("openTreeGroup")}
               <ChevronRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
             </Button>
             {card.canDelete && onDelete ? (
@@ -305,15 +321,16 @@ export function DatasetLandingSection({
                 onClick={() => onDelete(card.id)}
                 disabled={Boolean(deleteDisabledReason)}
                 title={deleteDisabledReason ?? undefined}
-                aria-label={`Delete tree group ${card.name}`}
+                aria-label={t("deleteTreeGroupNamed", { name: card.name })}
               >
                 <Trash2Icon />
-                Delete tree group
+                {t("deleteTreeGroup")}
               </Button>
             ) : null}
           </div>
         </article>
-      ))}
+        );
+      })}
     </div>
   );
 }

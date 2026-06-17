@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useId, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import {
   ArrowRightIcon,
@@ -56,12 +57,20 @@ type TimelineSourceData = {
   places: ManagedLocation[];
 };
 
+type TimelineMutationPermission = {
+  allowed: boolean;
+  reason: string | null;
+};
+
 type BumicertTimelineProps = {
   organizationDid: string;
   activityUri: string;
   activityCid: string;
   bumicertTitle: string;
-  isOwner: boolean;
+  canManageEvidence: boolean;
+  createPermission: TimelineMutationPermission;
+  deletePermission: TimelineMutationPermission;
+  mutationRepo?: string;
   initialEntries: TimelineAttachmentItem[];
   sources: TimelineSourceData;
   references?: TimelineReference[];
@@ -108,19 +117,19 @@ type AttachmentDraft = {
 };
 type KnownFileContentType = "document" | "report" | "evidence" | "testimonial" | "methodology" | "photo" | "video" | "audio" | "other";
 
-const FILTERS: Array<{ id: Exclude<EvidenceKind, "site" | "other">; label: string }> = [
-  { id: "all", label: "All" },
-  { id: "tree", label: "Trees" },
-  { id: "audio", label: "Sounds" },
-  { id: "nature", label: "Biodiversity" },
-  { id: "file", label: "Files" },
+const FILTERS: Array<{ id: Exclude<EvidenceKind, "site" | "other"> }> = [
+  { id: "all" },
+  { id: "tree" },
+  { id: "audio" },
+  { id: "nature" },
+  { id: "file" },
 ];
 
-const EVIDENCE_TABS: Array<{ id: EvidenceTab; label: string; icon: LucideIcon; description: string }> = [
-  { id: "audio", label: "Field sounds", icon: MicIcon, description: "Add recordings already saved by this organization." },
-  { id: "trees", label: "Tree groups", icon: TreesIcon, description: "Add tree information grouped by project place." },
-  { id: "nature", label: "Biodiversity", icon: LeafIcon, description: "Filter observations and add displayed data or grouped datasets." },
-  { id: "files", label: "Files and links", icon: FileTextIcon, description: "Add reports, photos, videos, or web pages." },
+const EVIDENCE_TABS: Array<{ id: EvidenceTab; icon: LucideIcon }> = [
+  { id: "audio", icon: MicIcon },
+  { id: "trees", icon: TreesIcon },
+  { id: "nature", icon: LeafIcon },
+  { id: "files", icon: FileTextIcon },
 ];
 
 const FILE_CONTENT_TYPES: Array<{ value: KnownFileContentType; label: string }> = [
@@ -288,7 +297,7 @@ function previewFromHref(href: string, mimeType: string | null, fileName?: strin
 function previewForReference(uri: string, reference: TimelineReference | undefined): PreviewPayload | null {
   if (reference?.kind === "location" && reference.actionHref) return { kind: "site", href: reference.actionHref, title: reference.title, body: reference.description };
   if (reference?.kind === "tree") return { kind: "text", href: "", title: reference.title, body: reference.description ?? "Linked tree information" };
-  if (reference?.kind === "biodiversityDataset") return { kind: "text", href: "", title: reference.title, body: reference.description ?? "Linked biodiversity dataset" };
+  if (reference?.kind === "biodiversityDataset") return { kind: "text", href: "", title: reference.title, body: reference.description ?? "Linked biodiversity data group" };
   if (reference?.kind === "audio" && reference.actionHref) return { kind: "audio", href: reference.actionHref, title: reference.title, body: reference.description };
   if (reference?.actionHref) return { kind: "link", href: reference.actionHref, title: reference.title, body: reference.description };
   if (reference) return { kind: "text", href: "", title: reference.title, body: reference.description ?? "Linked item" };
@@ -327,7 +336,7 @@ function buildTiles(entryId: string, content: unknown, references: TimelineRefer
     const preview = previewForReference(item.uri, reference);
     const parsed = parseAtUri(item.uri);
     const kind: TileKind = reference?.kind === "tree" ? "tree" : reference?.kind === "occurrence" || reference?.kind === "biodiversityDataset" ? "nature" : reference?.kind === "audio" ? "audio" : reference?.kind === "location" ? "site" : "item";
-    const title = reference?.title ?? (parsed?.collection === "app.gainforest.dwc.dataset" ? "Grouped dataset" : "Linked item");
+    const title = reference?.title ?? (parsed?.collection === "app.gainforest.dwc.dataset" ? "Grouped data" : "Linked item");
     tiles.push({ id, kind, title, caption: reference?.description ?? title, preview });
   });
   return tiles;
@@ -387,7 +396,7 @@ function metricBadges(kind: EvidenceKind, references: TimelineReference[], tileC
     const species = new Set(observations.map((ref) => ref.title.trim().toLowerCase()).filter(Boolean));
     const datasetSpeciesCount = datasets.reduce((sum, ref) => sum + (ref.metrics?.speciesCount ?? 0), 0);
     return [
-      observationCount > 0 ? `${formatNumber(observationCount)} observations` : datasets.length > 0 ? `${formatNumber(datasets.length)} datasets` : null,
+      observationCount > 0 ? `${formatNumber(observationCount)} observations` : datasets.length > 0 ? `${formatNumber(datasets.length)} data groups` : null,
       species.size + datasetSpeciesCount > 0 ? `${formatNumber(species.size + datasetSpeciesCount)} species` : null,
     ].filter((value): value is string => Boolean(value));
   }
@@ -459,6 +468,23 @@ function occurrenceTitle(item: OccurrenceRecord): string {
   return item.scientificName ?? item.vernacularName ?? item.remarks ?? "Unknown observation";
 }
 
+function getSafeRecorderDisplayName(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (/^(did:|at:\/\/|https?:\/\/|www\.)/i.test(trimmed)) return null;
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) return null;
+  if (!trimmed.includes(" ") && /^[a-z0-9._-]+\.[a-z]{2,}$/i.test(trimmed)) return null;
+  return trimmed;
+}
+
+function formatRecorderSummary(values: string[], options: { fallback: string; multiple: (count: number) => string; firstAndMore: (name: string, count: number) => string }): string | null {
+  if (values.length === 0) return null;
+  const displayValues = values.map(getSafeRecorderDisplayName).filter((value): value is string => Boolean(value));
+  if (displayValues.length === 0) return values.length === 1 ? options.fallback : options.multiple(values.length);
+  if (values.length === 1) return displayValues[0] ?? options.fallback;
+  return options.firstAndMore(displayValues[0] ?? options.fallback, values.length - 1);
+}
+
 function uniqueRecordedByValues(items: OccurrenceRecord[]): string[] {
   const values = new Map<string, string>();
   for (const item of items) {
@@ -468,12 +494,6 @@ function uniqueRecordedByValues(items: OccurrenceRecord[]): string[] {
     if (!values.has(key)) values.set(key, recordedBy);
   }
   return Array.from(values.values()).sort((left, right) => left.localeCompare(right));
-}
-
-function recordedBySummary(values: string[]): string | null {
-  if (values.length === 0) return null;
-  if (values.length === 1) return values[0] ?? null;
-  return `${values[0]} + ${values.length - 1} more`;
 }
 
 function matchesRecordedBy(item: OccurrenceRecord, recordedBy: string): boolean {
@@ -513,7 +533,7 @@ function buildBiodiversityDatasetGroups(datasets: UploadTreeDatasetRecord[], occ
     const dataset = datasetLookup.get(uri);
     const species = new Set(records.map((item) => occurrenceTitle(item).trim().toLowerCase()).filter(Boolean));
     const recordedByValues = uniqueRecordedByValues(records);
-    const name = dataset?.name ?? records.find((item) => item.datasetName)?.datasetName ?? "Grouped biodiversity dataset";
+    const name = dataset?.name ?? records.find((item) => item.datasetName)?.datasetName ?? "Grouped biodiversity data";
     const description = dataset?.description ?? null;
     const dateRange = formatDateRangeFromValues(records.map((item) => item.eventDate ?? item.createdAt));
     const searchText = [
@@ -569,12 +589,23 @@ export function BumicertTimeline({
   activityUri,
   activityCid,
   bumicertTitle,
-  isOwner,
+  canManageEvidence,
+  createPermission,
+  deletePermission,
+  mutationRepo,
   initialEntries,
   sources,
   references = [],
   attachmentsUnavailable,
 }: BumicertTimelineProps) {
+  const timelineT = useTranslations("bumicert.detail.timeline");
+  const filterLabels: Record<Exclude<EvidenceKind, "site" | "other">, string> = {
+    all: timelineT("filters.all"),
+    tree: timelineT("filters.tree"),
+    audio: timelineT("filters.audio"),
+    nature: timelineT("filters.biodiversity"),
+    file: timelineT("filters.file"),
+  };
   const [entries, setEntries] = useState(() => initialEntries.filter((entry) => isAttachmentForActivity(entry, activityUri)));
   const [activeFilter, setActiveFilter] = useState<EvidenceKind>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -608,7 +639,7 @@ export function BumicertTimeline({
 
   function handleCreated(created: TimelineAttachmentItem) {
     setEntries((current) => [created, ...current.filter((entry) => entry.metadata.rkey !== created.metadata.rkey)]);
-    setStatus("Linked to the public timeline. It may take a moment to appear for everyone.");
+    setStatus(timelineT("linkSuccess"));
   }
 
   function handleDeleted(rkey: string) {
@@ -624,18 +655,18 @@ export function BumicertTimeline({
       className="py-1"
     >
       <div className="flex flex-col gap-6">
-        {isOwner ? (
+        {canManageEvidence ? (
           <section className="rounded-3xl border border-primary/25 bg-primary/5 p-4 shadow-sm ring-1 ring-primary/10" aria-labelledby="link-evidence-heading">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Owner tools</p>
-                <h2 id="link-evidence-heading" className="mt-1 text-2xl tracking-tight text-foreground">Link evidence</h2>
-                <p className="mt-1 max-w-3xl text-sm text-muted-foreground">Attach saved items or files to {bumicertTitle}. Linked items appear in the public timeline below.</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">{timelineT("timelineTools")}</p>
+                <h2 id="link-evidence-heading" className="mt-1 text-2xl tracking-tight text-foreground">{timelineT("linkEvidenceTitle")}</h2>
+                <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{timelineT("linkEvidenceDescription", { title: bumicertTitle })}</p>
               </div>
-              <span className="inline-flex w-fit rounded-full border border-primary/25 bg-background/80 px-3 py-1 text-xs font-medium text-primary">Not public here yet</span>
+              <span className="inline-flex w-fit rounded-full border border-primary/25 bg-background/80 px-3 py-1 text-xs font-medium text-primary">{timelineT("notTimelineYet")}</span>
             </div>
             {attachmentsUnavailable ? (
-              <p className="mt-3 rounded-2xl border border-warn/20 bg-warn/10 px-3 py-2 text-sm text-warn">Existing timeline links could not be checked. Refresh before adding tree groups.</p>
+              <p className="mt-3 rounded-2xl border border-warn/20 bg-warn/10 px-3 py-2 text-sm text-warn">{timelineT("linksUnavailable")}</p>
             ) : null}
             <div className="mt-4 rounded-2xl border border-border/60 bg-background/85 p-4 shadow-xs">
               <EvidenceAdder
@@ -644,6 +675,8 @@ export function BumicertTimeline({
                 activityCid={activityCid}
                 sources={sources}
                 entries={entries}
+                createPermission={createPermission}
+                mutationRepo={mutationRepo}
                 onCreated={handleCreated}
               />
             </div>
@@ -655,14 +688,14 @@ export function BumicertTimeline({
           <div className="rounded-2xl border border-border/50 bg-background p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <h2 id="timeline-heading" className="text-2xl tracking-tight text-foreground">Linked evidence timeline</h2>
+                <h2 id="timeline-heading" className="text-2xl tracking-tight text-foreground">{timelineT("linkedTitle")}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {entries.length === 1 ? "1 item linked to this Cert" : `${formatNumber(entries.length)} items linked to this Cert`}
-                  {linkedWindow ? ` · linked ${linkedWindow}` : ""}
+                  {timelineT("linkedItemCount", { count: entries.length })}
+                  {linkedWindow ? ` · ${timelineT("linked", { window: linkedWindow })}` : ""}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">Review files, field notes, tree information, sounds, and map layers already added to this public timeline.</p>
+                <p className="mt-1 text-xs text-muted-foreground">{timelineT("linkedDescription")}</p>
               </div>
-              {linkedWindow ? <p className="text-xs text-muted-foreground">Linked window: {linkedWindow}</p> : null}
+              {linkedWindow ? <p className="text-xs text-muted-foreground">{timelineT("linkedWindow", { window: linkedWindow })}</p> : null}
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
@@ -680,7 +713,7 @@ export function BumicertTimeline({
                       isActive ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                     )}
                   >
-                    {filter.label}{filter.id !== "all" && count > 0 ? ` ${count}` : ""}
+                    {filterLabels[filter.id]}{filter.id !== "all" && count > 0 ? ` ${count}` : ""}
                   </button>
                 );
               })}
@@ -692,7 +725,7 @@ export function BumicertTimeline({
           {entries.length === 0 ? (
             <TimelineEmpty />
           ) : filteredEntries.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border/70 py-10 text-center text-sm text-muted-foreground">No evidence matches this filter.</div>
+            <div className="rounded-2xl border border-dashed border-border/70 py-10 text-center text-sm text-muted-foreground">{timelineT("emptyFiltered")}</div>
           ) : (
             <>
               <div className="flex flex-col gap-3">
@@ -700,17 +733,20 @@ export function BumicertTimeline({
                   <TimelineEntryCard
                     key={entry.entryId}
                     {...entry}
-                    isOwner={isOwner}
+                    canManageEvidence={canManageEvidence}
+                    canDeleteEvidence={deletePermission.allowed}
+                    deleteDisabledReason={deletePermission.reason}
+                    mutationRepo={mutationRepo}
                     onDeleted={handleDeleted}
                   />
                 ))}
               </div>
               {totalPages > 1 ? (
                 <div className="flex items-center justify-between pt-2">
-                  <p className="text-sm text-muted-foreground">Page {safePage} of {totalPages}</p>
+                  <p className="text-sm text-muted-foreground">{timelineT("pageOf", { current: safePage, total: totalPages })}</p>
                   <div className="flex items-center gap-1">
-                    <Button type="button" variant="outline" size="icon-sm" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={safePage <= 1} aria-label="Previous page"><ChevronLeftIcon /></Button>
-                    <Button type="button" variant="outline" size="icon-sm" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={safePage >= totalPages} aria-label="Next page"><ChevronRightIcon /></Button>
+                    <Button type="button" variant="outline" size="icon-sm" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={safePage <= 1} aria-label={timelineT("previousPage")}><ChevronLeftIcon /></Button>
+                    <Button type="button" variant="outline" size="icon-sm" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={safePage >= totalPages} aria-label={timelineT("nextPage")}><ChevronRightIcon /></Button>
                   </div>
                 </div>
               ) : null}
@@ -773,7 +809,10 @@ function TimelineEntryCard({
   refs,
   kind,
   tiles,
-  isOwner,
+  canManageEvidence,
+  canDeleteEvidence,
+  deleteDisabledReason,
+  mutationRepo,
   onDeleted,
 }: {
   item: TimelineAttachmentItem;
@@ -782,9 +821,13 @@ function TimelineEntryCard({
   refs: TimelineReference[];
   kind: EvidenceKind;
   tiles: TimelineTile[];
-  isOwner: boolean;
+  canManageEvidence: boolean;
+  canDeleteEvidence: boolean;
+  deleteDisabledReason: string | null;
+  mutationRepo?: string;
   onDeleted: (rkey: string) => void;
 }) {
+  const entryT = useTranslations("bumicert.detail.timelineEntry");
   const [expanded, setExpanded] = useState(index === 0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -794,7 +837,7 @@ function TimelineEntryCard({
   const rkey = item.metadata.rkey;
   const title = titleForEntry(item, kind, refs);
   const badges = metricBadges(kind, refs, tiles.length);
-  const linkedDate = formatDate(item.record.createdAt ?? item.metadata.createdAt) || "Not specified";
+  const linkedDate = formatDate(item.record.createdAt ?? item.metadata.createdAt) || entryT("notSpecified");
   const recordedDate = recordedDateForEntry(kind, refs);
   const note = noteFromDescription(item.record.description);
   const mapHref = refs.find((ref) => ref.mapHref)?.mapHref ?? null;
@@ -805,14 +848,18 @@ function TimelineEntryCard({
 
   async function handleDelete() {
     if (!rkey) return;
+    if (!canDeleteEvidence) {
+      setDeleteError(deleteDisabledReason ?? entryT("deleteUnavailable"));
+      return;
+    }
     setDeleteError(null);
     setIsDeleting(true);
     try {
-      await deleteRecord(ATTACHMENT_COLLECTION, rkey);
+      await deleteRecord(ATTACHMENT_COLLECTION, rkey, mutationRepo ? { repo: mutationRepo } : undefined);
       onDeleted(rkey);
       setShowDeleteConfirm(false);
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : "Unable to remove this item.");
+      setDeleteError(error instanceof Error ? error.message : entryT("deleteError"));
     } finally {
       setIsDeleting(false);
     }
@@ -834,15 +881,15 @@ function TimelineEntryCard({
           <h3 className="mt-1 text-base text-foreground">{title}</h3>
           <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
             <span>{recordedDate}</span>
-            <span>linked {linkedDate}</span>
+            <span>{entryT("linked", { date: linkedDate })}</span>
           </div>
         </button>
         <div className="flex items-center gap-1">
           {mapHref ? <Link href={mapHref} target="_blank" rel="noreferrer" className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Open map"><ExternalLinkIcon className="h-4 w-4" /></Link> : null}
-          {isOwner && rkey ? (
-            <button type="button" onClick={() => { setShowDeleteConfirm(true); setDeleteError(null); }} className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Remove evidence"><Trash2Icon className="h-4 w-4" /></button>
+          {canManageEvidence && rkey ? (
+            <button type="button" onClick={() => { setShowDeleteConfirm(true); setDeleteError(null); }} disabled={!canDeleteEvidence} title={!canDeleteEvidence ? deleteDisabledReason ?? entryT("deleteUnavailable") : undefined} className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50" aria-label={canDeleteEvidence ? entryT("removeEvidence") : deleteDisabledReason ?? entryT("deleteUnavailable")}><Trash2Icon className="h-4 w-4" /></button>
           ) : null}
-          <button type="button" aria-expanded={expanded} aria-controls={panelId} onClick={() => setExpanded((value) => !value)} className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={expanded ? "Collapse evidence" : "Expand evidence"}>
+          <button type="button" aria-expanded={expanded} aria-controls={panelId} onClick={() => setExpanded((value) => !value)} className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={expanded ? entryT("collapseEvidence") : entryT("expandEvidence")}>
             <ChevronDownIcon className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")} />
           </button>
         </div>
@@ -853,10 +900,10 @@ function TimelineEntryCard({
           {note ? <div className="rounded-xl bg-muted/20 px-3 py-2 text-sm leading-6 text-foreground/80">{note}</div> : null}
           {kind === "nature" && biodiversityRefs.length > 0 ? (
             <div className="rounded-xl bg-muted/20 p-3">
-              <p className="text-xs text-muted-foreground">Displayed biodiversity data</p>
+              <p className="text-xs text-muted-foreground">{entryT("displayedBiodiversityData")}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {biodiversityRefs.slice(0, 8).map((ref) => <span key={ref.id} className="rounded-full bg-background px-2.5 py-1 text-xs text-foreground shadow-xs">{ref.title}</span>)}
-                {biodiversityRefs.length > 8 ? <span className="rounded-full bg-background px-2.5 py-1 text-xs text-muted-foreground shadow-xs">+{biodiversityRefs.length - 8} more</span> : null}
+                {biodiversityRefs.length > 8 ? <span className="rounded-full bg-background px-2.5 py-1 text-xs text-muted-foreground shadow-xs">{entryT("more", { count: biodiversityRefs.length - 8 })}</span> : null}
               </div>
             </div>
           ) : null}
@@ -869,12 +916,12 @@ function TimelineEntryCard({
 
       {showDeleteConfirm ? (
         <div className="border-t border-border/50 bg-destructive/5 p-4">
-          <p className="text-sm font-medium text-foreground">Remove evidence?</p>
-          <p className="mt-1 text-sm text-muted-foreground">Remove “{title}”? This cannot be undone.</p>
+          <p className="text-sm font-medium text-foreground">{entryT("deleteConfirm.title")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{entryT("deleteConfirm.body", { title })}</p>
           {deleteError ? <p className="mt-2 text-sm text-destructive">{deleteError}</p> : null}
           <div className="mt-3 flex gap-2">
-            <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={isDeleting}>{isDeleting ? <Loader2Icon className="animate-spin" /> : null} Remove</Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting}>Cancel</Button>
+            <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={isDeleting || !canDeleteEvidence}>{isDeleting ? <Loader2Icon className="animate-spin" /> : null} {isDeleting ? entryT("deleteConfirm.removing") : entryT("deleteConfirm.remove")}</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting}>{entryT("deleteConfirm.cancel")}</Button>
           </div>
         </div>
       ) : null}
@@ -964,6 +1011,8 @@ function EvidenceAdder({
   activityCid,
   sources,
   entries,
+  createPermission,
+  mutationRepo,
   onCreated,
 }: {
   organizationDid: string;
@@ -971,19 +1020,38 @@ function EvidenceAdder({
   activityCid: string;
   sources: TimelineSourceData;
   entries: TimelineAttachmentItem[];
+  createPermission: TimelineMutationPermission;
+  mutationRepo?: string;
   onCreated: (entry: TimelineAttachmentItem) => void;
 }) {
+  const evidenceT = useTranslations("bumicert.detail.evidenceAdder");
   const [activeTab, setActiveTab] = useState<EvidenceTab | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const linkedTreeGroups = useMemo(() => getLinkedTreeGroupUris(entries), [entries]);
   const linkedBiodiversityUris = useMemo(() => getLinkedBiodiversityUris(entries), [entries]);
+  const tabLabels: Record<EvidenceTab, string> = {
+    audio: evidenceT("tabs.audio"),
+    trees: evidenceT("tabs.trees"),
+    nature: evidenceT("tabs.biodiversity"),
+    files: evidenceT("tabs.files"),
+  };
+  const tabDescriptions: Record<EvidenceTab, string> = {
+    audio: evidenceT("tabDescriptions.audio"),
+    trees: evidenceT("tabDescriptions.trees"),
+    nature: evidenceT("tabDescriptions.biodiversity"),
+    files: evidenceT("tabDescriptions.files"),
+  };
 
   async function submitDrafts(drafts: AttachmentDraft | AttachmentDraft[], onSuccess?: () => void) {
     const items = (Array.isArray(drafts) ? drafts : [drafts]).filter((draft) => draft.contents.length > 0);
     if (items.length === 0) return;
+    if (!createPermission.allowed) {
+      setError(createPermission.reason ?? evidenceT("permissions.createDenied"));
+      return;
+    }
     if (!activityCid) {
-      setError("This Cert is still loading its timeline details. Refresh and try again.");
+      setError(evidenceT("incompleteBumicertReference"));
       return;
     }
     setError(null);
@@ -998,7 +1066,7 @@ function EvidenceAdder({
             recordContents.push({ $type: "org.hypercerts.defs#uri", uri: content });
             resolvedContents.push({ $type: "org.hypercerts.defs#uri", uri: content });
           } else {
-            const uploaded = await uploadBlob(content);
+            const uploaded = await uploadBlob(content, mutationRepo ? { repo: mutationRepo } : undefined);
             recordContents.push({ $type: "org.hypercerts.defs#smallBlob", blob: { $type: "blob", ...uploaded, mimeType: content.type || uploaded.mimeType } });
             resolvedContents.push({ $type: "org.hypercerts.defs#smallBlob", blob: { $type: "blob", uri: URL.createObjectURL(content), cid: content.name, mimeType: content.type || uploaded.mimeType, size: content.size } });
           }
@@ -1013,7 +1081,7 @@ function EvidenceAdder({
           ...(draft.note?.trim() ? { description: { $type: "org.hypercerts.defs#descriptionString", value: draft.note.trim(), facets: [] } } : {}),
           createdAt: new Date().toISOString(),
         };
-        const result = await createRecord(ATTACHMENT_COLLECTION, record);
+        const result = await createRecord(ATTACHMENT_COLLECTION, record, undefined, mutationRepo ? { repo: mutationRepo } : undefined);
         const rkey = result.uri.split("/").pop() ?? makeLocalRkey();
         const optimistic = buildOptimisticAttachment({ organizationDid, created: { uri: result.uri, cid: result.cid, rkey }, title: draft.title, contentType: draft.contentType, note: draft.note, contents: resolvedContents, subjects });
         created.push(optimistic);
@@ -1021,7 +1089,7 @@ function EvidenceAdder({
       }
       onSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to link this evidence. Please try again.");
+      setError(err instanceof Error ? err.message : evidenceT("linkError"));
       if (created.length > 0) onSuccess?.();
     } finally {
       setIsSubmitting(false);
@@ -1031,15 +1099,16 @@ function EvidenceAdder({
   if (activeTab === null) {
     return (
       <div className="flex flex-col">
-        <span className="text-2xl font-medium text-foreground">Choose evidence type</span>
-        <span className="text-sm text-muted-foreground">Select a source to link existing evidence to this timeline.</span>
+        <span className="text-2xl font-medium text-foreground">{evidenceT("chooseEvidenceType")}</span>
+        <span className="text-sm text-muted-foreground">{evidenceT("selectSourceToLink")}</span>
+        {!createPermission.allowed ? <p className="mt-3 rounded-xl border border-warn/20 bg-warn/10 px-3 py-2 text-sm text-warn">{createPermission.reason ?? evidenceT("permissions.createDenied")}</p> : null}
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {EVIDENCE_TABS.map(({ id, icon: Icon, label, description }) => (
-            <button key={id} type="button" onClick={() => setActiveTab(id)} className="flex min-h-32 flex-col items-start justify-between rounded-2xl border border-border/60 bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5">
+          {EVIDENCE_TABS.map(({ id, icon: Icon }) => (
+            <button key={id} type="button" onClick={() => setActiveTab(id)} disabled={!createPermission.allowed} title={!createPermission.allowed ? createPermission.reason ?? evidenceT("permissions.createDenied") : undefined} className="flex min-h-32 flex-col items-start justify-between rounded-2xl border border-border/60 bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60">
               <Icon className="h-5 w-5 text-primary/70" />
               <span>
-                <span className="block text-base font-medium text-foreground">{label}</span>
-                <span className="mt-1 block text-xs leading-5 text-muted-foreground">{description}</span>
+                <span className="block text-base font-medium text-foreground">{tabLabels[id]}</span>
+                <span className="mt-1 block text-xs leading-5 text-muted-foreground">{tabDescriptions[id]}</span>
               </span>
             </button>
           ))}
@@ -1054,8 +1123,8 @@ function EvidenceAdder({
       <div className="flex items-center gap-3">
         <Button type="button" variant="secondary" size="icon-sm" disabled={isSubmitting} onClick={() => setActiveTab(null)}><ChevronLeftIcon /></Button>
         <div className="flex flex-col">
-          <span className="text-2xl font-medium text-foreground">Link {activeConfig.label}</span>
-          <span className="text-sm text-muted-foreground">Select items to link to this timeline.</span>
+          <span className="text-2xl font-medium text-foreground">{evidenceT("linkType", { type: tabLabels[activeConfig.id] })}</span>
+          <span className="text-sm text-muted-foreground">{evidenceT("selectRecordsToLink")}</span>
         </div>
       </div>
       <div className="mt-4 flex flex-col gap-2">
@@ -1084,19 +1153,21 @@ function CheckRow({ selected, onToggle, icon: Icon, primary, secondary, status, 
 }
 
 function OptionalNote({ value, onChange, disabled }: { value: string; onChange: (value: string) => void; disabled?: boolean }) {
+  const evidenceT = useTranslations("bumicert.detail.evidenceAdder");
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium">Optional note</label>
-      <Textarea value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} placeholder="Add context about this evidence…" rows={3} />
+      <label className="text-sm font-medium">{evidenceT("optionalNote")}</label>
+      <Textarea value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} placeholder={evidenceT("optionalNotePlaceholder")} rows={3} />
     </div>
   );
 }
 
 function SubmitButton({ count, isSubmitting, onClick }: { count: number; isSubmitting: boolean; onClick: () => void }) {
+  const evidenceT = useTranslations("bumicert.detail.evidenceAdder");
   return (
     <Button type="button" onClick={onClick} disabled={isSubmitting || count === 0} className="w-full">
       {isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
-      {isSubmitting ? "Linking…" : count === 0 ? "Select evidence to link" : count === 1 ? "Link 1 item" : `Link ${count} items`}
+      {isSubmitting ? evidenceT("linking") : count === 0 ? evidenceT("selectToLink") : evidenceT("linkItems", { count })}
       {!isSubmitting ? <ArrowRightIcon /> : null}
     </Button>
   );
@@ -1181,6 +1252,7 @@ function BiodiversityPicker({
   isSubmitting: boolean;
   submitDrafts: (drafts: AttachmentDraft[], onSuccess?: () => void) => void;
 }) {
+  const biodiversityT = useTranslations("bumicert.detail.evidenceAdder.biodiversity");
   const [selectedOccurrences, setSelectedOccurrences] = useState<Set<string>>(new Set());
   const [selectedDatasets, setSelectedDatasets] = useState<Set<string>>(new Set());
   const [recordedByFilter, setRecordedByFilter] = useState("");
@@ -1282,11 +1354,11 @@ function BiodiversityPicker({
     });
     const datasetDrafts = datasetUris.flatMap((uri) => {
       const group = datasetByUri.get(uri);
-      return [{ title: group?.name ?? "Biodiversity dataset", contentType: CONTENT_TYPE_BIODIVERSITY_DATASET, contents: [uri], note } satisfies AttachmentDraft];
+      return [{ title: group?.name ?? biodiversityT("attachmentGroupTitle"), contentType: CONTENT_TYPE_BIODIVERSITY_DATASET, contents: [uri], note } satisfies AttachmentDraft];
     });
     const drafts = [
       ...datasetDrafts,
-      ...(occurrenceUris.length > 0 ? [{ title: "Biodiversity observations", contentType: CONTENT_TYPE_BIODIVERSITY, contents: occurrenceUris, note } satisfies AttachmentDraft] : []),
+      ...(occurrenceUris.length > 0 ? [{ title: biodiversityT("attachmentObservationsTitle"), contentType: CONTENT_TYPE_BIODIVERSITY, contents: occurrenceUris, note } satisfies AttachmentDraft] : []),
     ];
     submitDrafts(drafts, () => {
       setSelectedOccurrences(new Set());
@@ -1295,23 +1367,23 @@ function BiodiversityPicker({
     });
   }
 
-  if (rows.length === 0 && datasetGroups.length === 0) return <PickerEmpty label="biodiversity data" href="/manage/trees" />;
+  if (rows.length === 0 && datasetGroups.length === 0) return <PickerEmpty label={biodiversityT("emptyLabel")} href="/manage/trees" />;
 
   return (
     <>
       <div className="grid gap-3">
         <div className="grid gap-2 rounded-xl border border-border/60 bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)]">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={searchInputId} className="text-sm font-medium">Search</label>
-            <Input id={searchInputId} value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} disabled={isSubmitting} placeholder="Search biodiversity" />
+            <label htmlFor={searchInputId} className="text-sm font-medium">{biodiversityT("searchLabel")}</label>
+            <Input id={searchInputId} value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} disabled={isSubmitting} placeholder={biodiversityT("searchPlaceholder")} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <span id={recorderLabelId} className="text-sm font-medium">Recorder</span>
+            <span id={recorderLabelId} className="text-sm font-medium">{biodiversityT("recorderLabel")}</span>
             <Select value={recordedByFilter || allRecordersValue} onValueChange={(value) => setRecordedByFilter(value === allRecordersValue ? "" : value)} disabled={isSubmitting || recordedByOptions.length === 0}>
-              <SelectTrigger aria-labelledby={recorderLabelId}><SelectValue placeholder="All recorders" /></SelectTrigger>
+              <SelectTrigger aria-labelledby={recorderLabelId}><SelectValue placeholder={biodiversityT("allRecorders")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value={allRecordersValue}>All recorders</SelectItem>
-                {recordedByOptions.map((recordedBy) => <SelectItem key={recordedBy} value={recordedBy}>{recordedBy}</SelectItem>)}
+                <SelectItem value={allRecordersValue}>{biodiversityT("allRecorders")}</SelectItem>
+                {recordedByOptions.map((recordedBy, index) => <SelectItem key={recordedBy} value={recordedBy}>{getSafeRecorderDisplayName(recordedBy) ?? biodiversityT("recorderOptionFallback", { number: index + 1 })}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -1320,15 +1392,15 @@ function BiodiversityPicker({
         <section className="rounded-xl border border-border/60 bg-background p-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-foreground">Displayed biodiversity data</p>
-              <p className="text-xs text-muted-foreground">{displayedRows.length} of {rows.length} observations shown. Choose individual records from this filtered view.</p>
+              <p className="text-sm font-medium text-foreground">{biodiversityT("displayedTitle")}</p>
+              <p className="text-xs text-muted-foreground">{biodiversityT("displayedSummary", { shown: displayedRows.length, total: rows.length })}</p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={toggleDisplayedRows} disabled={isSubmitting || displayedRowUris.length === 0}>
-              {allDisplayedSelected ? "Clear displayed" : "Select displayed"}
+              {allDisplayedSelected ? biodiversityT("clearDisplayed") : biodiversityT("selectDisplayed")}
             </Button>
           </div>
           {displayedRows.length === 0 ? (
-            <p className="mt-3 rounded-lg border border-dashed border-border/70 px-3 py-4 text-center text-sm text-muted-foreground">No biodiversity data matches these filters.</p>
+            <p className="mt-3 rounded-lg border border-dashed border-border/70 px-3 py-4 text-center text-sm text-muted-foreground">{biodiversityT("noDataMatches")}</p>
           ) : (
             <div className="mt-3 grid max-h-[360px] gap-2 overflow-auto pr-1">
               {displayedRows.map((item) => {
@@ -1338,41 +1410,45 @@ function BiodiversityPicker({
                   item.kingdom,
                   formatDate(item.eventDate ?? item.createdAt),
                   item.locality,
-                  item.recordedBy ? `Recorded by ${item.recordedBy}` : null,
+                  item.recordedBy ? biodiversityT("recordedBy", { name: getSafeRecorderDisplayName(item.recordedBy) ?? biodiversityT("recorderFallback") }) : null,
                   datasetName,
                 ].filter(Boolean).join(" · ");
                 const alreadyLinked = linkedUris.has(item.atUri);
                 const coveredByDataset = isCoveredBySelectedOrLinkedDataset(item);
-                return <CheckRow key={item.atUri} selected={!alreadyLinked && !coveredByDataset && selectedOccurrences.has(item.atUri)} onToggle={() => toggleOccurrence(item.atUri)} icon={LeafIcon} primary={title} secondary={secondary} status={alreadyLinked ? "Already linked" : coveredByDataset ? "Covered by dataset" : undefined} disabled={isSubmitting || alreadyLinked || coveredByDataset} />;
+                return <CheckRow key={item.atUri} selected={!alreadyLinked && !coveredByDataset && selectedOccurrences.has(item.atUri)} onToggle={() => toggleOccurrence(item.atUri)} icon={LeafIcon} primary={title} secondary={secondary} status={alreadyLinked ? biodiversityT("alreadyLinked") : coveredByDataset ? biodiversityT("coveredByGroup") : undefined} disabled={isSubmitting || alreadyLinked || coveredByDataset} />;
               })}
             </div>
           )}
         </section>
 
         <section className="rounded-xl border border-border/60 bg-background p-3">
-          <p className="text-sm font-medium text-foreground">Grouped datasets</p>
-          <p className="mt-1 text-xs text-muted-foreground">Datasets are filtered by the same recorded-by and search choices.</p>
+          <p className="text-sm font-medium text-foreground">{biodiversityT("groupsTitle")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{biodiversityT("groupsDescription")}</p>
           {displayedDatasets.length === 0 ? (
-            <p className="mt-3 rounded-lg border border-dashed border-border/70 px-3 py-4 text-center text-sm text-muted-foreground">No grouped datasets match these filters.</p>
+            <p className="mt-3 rounded-lg border border-dashed border-border/70 px-3 py-4 text-center text-sm text-muted-foreground">{biodiversityT("noGroupsMatch")}</p>
           ) : (
             <div className="mt-3 grid gap-2">
               {displayedDatasets.map((group) => {
                 const alreadyLinked = linkedUris.has(group.uri);
-                const recorder = recordedBySummary(group.recordedByValues);
+                const recorder = formatRecorderSummary(group.recordedByValues, {
+                  fallback: biodiversityT("recorderFallback"),
+                  multiple: (count) => biodiversityT("multipleRecorders", { count }),
+                  firstAndMore: (name, count) => biodiversityT("firstRecorderAndMore", { name, count }),
+                });
                 const secondary = [
-                  `${formatNumber(group.matchingRecords.length)} shown`,
-                  `${formatNumber(group.recordCount)} total`,
-                  group.speciesCount > 0 ? `${formatNumber(group.speciesCount)} species` : null,
+                  biodiversityT("shownCount", { count: group.matchingRecords.length }),
+                  biodiversityT("totalCount", { count: group.recordCount }),
+                  group.speciesCount > 0 ? biodiversityT("speciesCount", { count: group.speciesCount }) : null,
                   group.dateRange,
-                  recorder ? `Recorded by ${recorder}` : null,
+                  recorder ? biodiversityT("recordedBy", { name: recorder }) : null,
                 ].filter(Boolean).join(" · ");
-                return <CheckRow key={group.uri} selected={!alreadyLinked && selectedDatasets.has(group.uri)} onToggle={() => toggleDataset(group.uri)} icon={DatabaseIcon} primary={group.name} secondary={secondary} status={alreadyLinked ? "Already linked" : "Grouped dataset"} disabled={isSubmitting || alreadyLinked} />;
+                return <CheckRow key={group.uri} selected={!alreadyLinked && selectedDatasets.has(group.uri)} onToggle={() => toggleDataset(group.uri)} icon={DatabaseIcon} primary={group.name} secondary={secondary} status={alreadyLinked ? biodiversityT("alreadyLinked") : biodiversityT("groupStatus")} disabled={isSubmitting || alreadyLinked} />;
               })}
             </div>
           )}
         </section>
       </div>
-      <ManageLink href="/manage/trees" label="Manage biodiversity data" />
+      <ManageLink href="/manage/trees" label={biodiversityT("manageData")} />
       <OptionalNote value={note} onChange={setNote} disabled={isSubmitting} />
       <SubmitButton count={selectedCount} isSubmitting={isSubmitting} onClick={submitSelection} />
     </>
@@ -1469,10 +1545,11 @@ function SelectedItem({ title, detail, onRemove, disabled }: { title: string; de
 }
 
 function PickerEmpty({ label, href }: { label: string; href?: string }) {
+  const evidenceT = useTranslations("bumicert.detail.evidenceAdder");
   return (
     <div className="rounded-xl border border-dashed border-border/70 p-5 text-center">
-      <p className="text-sm font-medium text-foreground">No {label} uploaded yet.</p>
-      {href ? <ManageLink href={href} label={`Manage ${label}`} /> : null}
+      <p className="text-sm font-medium text-foreground">{evidenceT("emptyUploaded", { type: label })}</p>
+      {href ? <ManageLink href={href} label={evidenceT("manageType", { type: label })} /> : null}
     </div>
   );
 }
@@ -1530,11 +1607,9 @@ export function buildTimelineReferences(args: {
       const item = treeByUri.get(uri);
       const stats = getTreeGroupStats(uri, args.occurrences);
       const purpose = datasetPurposes.get(uri) ?? "tree";
-      const title = item?.name ?? (purpose === "biodiversity" ? "Linked biodiversity dataset" : "Linked tree group");
+      const title = item?.name ?? (purpose === "biodiversity" ? "Linked biodiversity data" : "Linked tree group");
       const count = stats.itemCount || item?.recordCount || 0;
       if (purpose === "biodiversity") {
-        const records = args.occurrences.filter((occurrence) => occurrence.datasetRef === uri);
-        const recorders = recordedBySummary(uniqueRecordedByValues(records));
         return {
           id: uri,
           kind: "biodiversityDataset",
@@ -1542,7 +1617,6 @@ export function buildTimelineReferences(args: {
           description: [
             `${formatNumber(count)} observations`,
             stats.speciesCount > 0 ? `${formatNumber(stats.speciesCount)} species` : null,
-            recorders ? `Recorded by ${recorders}` : null,
           ].filter(Boolean).join(" · "),
           recordedAt: item?.createdAt ?? null,
           dateRange: stats.dateRange,
@@ -1554,7 +1628,7 @@ export function buildTimelineReferences(args: {
     }
     if (parsed?.collection === "app.gainforest.dwc.occurrence") {
       const item = occurrenceByUri.get(uri);
-      return { id: uri, kind: "occurrence", title: item ? occurrenceTitle(item) : "Linked observation", description: [item?.individualCount ? `${formatNumber(item.individualCount)} individuals` : null, formatDate(item?.eventDate ?? item?.createdAt), item?.recordedBy ? `Recorded by ${item.recordedBy}` : null].filter(Boolean).join(" · "), recordedAt: item?.eventDate ?? item?.createdAt ?? null, treeGroupUri: item?.datasetRef ?? null } satisfies TimelineReference;
+      return { id: uri, kind: "occurrence", title: item ? occurrenceTitle(item) : "Linked observation", description: [item?.individualCount ? `${formatNumber(item.individualCount)} individuals` : null, formatDate(item?.eventDate ?? item?.createdAt)].filter(Boolean).join(" · "), recordedAt: item?.eventDate ?? item?.createdAt ?? null, treeGroupUri: item?.datasetRef ?? null } satisfies TimelineReference;
     }
     if (parsed?.collection === "app.certified.location") {
       const item = placeByUri.get(uri);
