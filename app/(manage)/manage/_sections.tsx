@@ -27,8 +27,8 @@ import { ManageProjectsClient } from "./projects/_components/ManageProjectsClien
 import { SitesClient } from "./sites/_components/SitesClient";
 import { TreesPageClient } from "./trees/_components/TreesPageClient";
 import { AudioClient } from "./audio/_components/AudioClient";
-import { ManageBumicertsClient } from "./bumicerts/_components/ManageBumicertsClient";
-import { NewBumicertClient, type LinkedProjectPrefill } from "./bumicerts/new/_components/NewBumicertClient";
+import { ManageBumicertsClient } from "./certs/_components/ManageBumicertsClient";
+import { NewBumicertClient, type LinkedProjectPrefill } from "./certs/new/_components/NewBumicertClient";
 import { DroneAppFrame } from "./drone/_components/DroneAppFrame";
 import type { ManageTarget } from "@/lib/links";
 
@@ -146,7 +146,7 @@ export async function BumicertsSection({ target }: { target: ManageTarget }) {
     const page = await fetchBumicertsByDid(target.did, 24);
     return <ManageBumicertsClient target={target} did={target.did} ownerIdentifier={account.urlIdentifier} bumicerts={page.records} />;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load recent Bumicerts.";
+    const message = error instanceof Error ? error.message : "Failed to load recent Certs.";
     return <ManageBumicertsClient target={target} did={target.did} ownerIdentifier={account.urlIdentifier} bumicerts={[]} error={message} />;
   }
 }
