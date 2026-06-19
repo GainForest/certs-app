@@ -53,6 +53,8 @@
         "files": "Nyaraka"
       },
       "linking": "Inaunganisha...",
+      "loadingSources": "Inapakia ushahidi...",
+      "sourcesLoadError": "Haikuweza kupakia ushahidi uliopo. Onyesha upya na ujaribu tena.",
       "selectToLink": "Chagua ushahidi wa kuunganisha",
       "linkItems": "{count, plural, =1 {Unganisha kipengee 1} other {Unganisha vipengee #}}",
       "optionalNote": "Dokezo la Hiari",

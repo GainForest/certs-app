@@ -53,6 +53,8 @@
         "files": "Documentos"
       },
       "linking": "Vinculando…",
+      "loadingSources": "Cargando evidencia…",
+      "sourcesLoadError": "No se pudo cargar la evidencia disponible. Actualice e inténtelo de nuevo.",
       "selectToLink": "Seleccione la evidencia para vincular",
       "linkItems": "{count, plural, =1 {Vincular 1 elemento} other {Vincular # elementos}}",
       "optionalNote": "Nota opcional",

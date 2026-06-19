@@ -3091,6 +3091,51 @@ export async function fetchOccurrencesByDid(
   return { records: collected.slice(0, target), cursor, hasMore: hasNextPage && Boolean(cursor) };
 }
 
+async function fetchOccurrencesByDatasetRef(
+  did: string,
+  datasetRef: string,
+  signal?: AbortSignal,
+  target = INDEXER_MAX_PAGE,
+): Promise<OccurrenceRecord[]> {
+  const where = { did: { eq: did }, datasetRef: { eq: datasetRef } };
+  const collected: OccurrenceRecord[] = [];
+  let cursor: string | null = null;
+  let hasNextPage = true;
+
+  for (let page = 0; page < 50 && collected.length < target; page += 1) {
+    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    const res = await fetchOccurrencePage(Math.min(INDEXER_MAX_PAGE, target - collected.length), cursor, signal, where);
+    cursor = res.cursor;
+    hasNextPage = res.hasNextPage;
+    collected.push(...res.nodes.map(mapOccurrence));
+    if (!hasNextPage || !cursor) break;
+  }
+
+  return collected.slice(0, target);
+}
+
+export async function fetchOccurrencesByDatasetRefs(
+  did: string,
+  datasetRefs: string[],
+  signal?: AbortSignal,
+  targetPerDataset = INDEXER_MAX_PAGE,
+): Promise<OccurrenceRecord[]> {
+  const uniqueRefs = Array.from(new Set(datasetRefs.map((ref) => ref.trim()).filter(Boolean)));
+  const grouped: OccurrenceRecord[][] = [];
+  const concurrency = 4;
+
+  for (let index = 0; index < uniqueRefs.length; index += concurrency) {
+    const batch = uniqueRefs.slice(index, index + concurrency);
+    grouped.push(...await Promise.all(
+      batch.map((datasetRef) => fetchOccurrencesByDatasetRef(did, datasetRef, signal, targetPerDataset)),
+    ));
+  }
+
+  const byUri = new Map<string, OccurrenceRecord>();
+  for (const record of grouped.flat()) byUri.set(record.atUri, record);
+  return Array.from(byUri.values());
+}
+
 export async function fetchOccurrencesBySiteRef(
   did: string,
   siteRef: string,

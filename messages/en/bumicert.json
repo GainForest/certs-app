@@ -53,6 +53,8 @@
         "files": "Documents"
       },
       "linking": "Linking…",
+      "loadingSources": "Loading evidence…",
+      "sourcesLoadError": "Could not load available evidence. Refresh and try again.",
       "selectToLink": "Select evidence to link",
       "linkItems": "{count, plural, =1 {Link 1 item} other {Link # items}}",
       "optionalNote": "Optional Note",

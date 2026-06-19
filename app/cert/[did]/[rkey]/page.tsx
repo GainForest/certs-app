@@ -35,18 +35,14 @@ import { formatWorkScopeTag, type WorkScopeLabels } from "../../../_lib/work-sco
 import { fetchReviewCounts, fetchReviewsForSubject, type BumicertReviews, type ReviewComment, type ReviewCounts } from "../../../_lib/reviews";
 import {
   attachProjectTitlesToGalleries,
-  fetchAudioByDid,
   fetchBumicertsByDid,
   fetchImageOccurrencesByDid,
-  fetchLocationsByDid,
   fetchObservationSummaryByDid,
-  fetchOccurrencesByDid,
   fetchProjectImageGalleriesByDid,
   fetchProjectsByDid,
   fetchRecordByUri,
   fetchRecordDetail,
   fetchTimelineAttachmentsByDid,
-  fetchTreeDatasetsByDid,
   type BumicertRecord,
   type DetailBadge,
   type ObservationSummary,
@@ -67,6 +63,9 @@ import { BumicertObservationsGallery } from "./_components/BumicertObservationsG
 import { DonateButton } from "./_components/donate/DonateButton";
 import { FundingStatus } from "./_components/donate/FundingStatus";
 import { BumicertTimeline } from "./_components/timeline/BumicertTimeline";
+import { getEntriesForActivity } from "./_components/timeline/attachmentSubjects";
+import { resolveTimelineReferences } from "./_components/timeline/timelineReferenceResolver";
+import type { TimelineReference } from "./_components/timeline/timelineReferences";
 import { canCreateRecord, canDeleteRecord } from "@/app/(manage)/manage/_lib/cgs-permissions";
 
 export const revalidate = 60;
@@ -242,7 +241,7 @@ export default async function BumicertDetailPage({
         fetchImageOccurrencesByDid(record.did, 24).catch(() => []),
         fetchObservationSummaryByDid(record.did).catch(() => null),
         fetchTimelineAttachmentsByDid(record.did)
-          .then((items) => items.filter((item) => item.record.subjects?.[0]?.uri === record.atUri).length)
+          .then((items) => getEntriesForActivity(items, record.atUri).length)
           .catch(() => null),
         fetchReviewCounts(record.atUri).catch(() => null),
         fetchGalleriesForBumicertProject(record.did, record.atUri).catch(() => []),
@@ -254,39 +253,53 @@ export default async function BumicertDetailPage({
     : null;
 
   let timelineAttachments: TimelineAttachmentItem[] = [];
+  let timelineReferences: TimelineReference[] = [];
   let timelineAttachmentsUnavailable = false;
   const emptyTimelineSources = { audio: [], occurrences: [], occurrencesIncomplete: false, treeGroups: [], places: [] };
-  let timelineSources: {
-    audio: Awaited<ReturnType<typeof fetchAudioByDid>>;
-    occurrences: OccurrenceRecord[];
-    occurrencesIncomplete: boolean;
-    treeGroups: Awaited<ReturnType<typeof fetchTreeDatasetsByDid>>;
-    places: Awaited<ReturnType<typeof fetchLocationsByDid>>;
-  } = emptyTimelineSources;
 
   let timelineAccess = TIMELINE_DENIED;
 
   if (activeTab === "timeline") {
-    const [attachmentsResult, audio, occurrencePage, treeGroups, places, permissionT] = await Promise.all([
+    const [attachmentsResult, permissionT, timelineT, timelineEntryT, referenceT] = await Promise.all([
       fetchTimelineAttachmentsByDid(record.did).then(
         (items) => ({ ok: true as const, items }),
         () => ({ ok: false as const, items: [] as TimelineAttachmentItem[] }),
       ),
-      fetchAudioByDid(record.did).catch(() => []),
-      fetchOccurrencesByDid(record.did, 10000).catch(() => ({ records: [] as OccurrenceRecord[], cursor: null, hasMore: true })),
-      fetchTreeDatasetsByDid(record.did).catch(() => []),
-      fetchLocationsByDid(record.did).catch(() => []),
       getTranslations("bumicert.detail.evidenceAdder.permissions"),
+      getTranslations("bumicert.detail.timeline"),
+      getTranslations("bumicert.detail.timelineEntry"),
+      getTranslations("bumicert.detail.reference"),
     ]);
     timelineAttachments = attachmentsResult.items;
     timelineAttachmentsUnavailable = !attachmentsResult.ok;
-    timelineSources = { audio, occurrences: occurrencePage.records, occurrencesIncomplete: occurrencePage.hasMore, treeGroups, places };
+
+    const timelineEntries = getEntriesForActivity(timelineAttachments, record.atUri);
+    const referencePromise = resolveTimelineReferences({
+      entries: timelineEntries,
+      copy: {
+        linkedRecord: referenceT("linkedRecord"),
+        linkedAudioRecord: referenceT("linkedAudioRecord"),
+        audioEvidence: referenceT("audioEvidence"),
+        linkedDataset: referenceT("linkedDataset"),
+        linkedTreeRecord: referenceT("linkedTreeRecord"),
+        linkedSiteRecord: referenceT("linkedSiteRecord"),
+        siteEvidence: referenceT("siteEvidence"),
+        linkedNatureData: timelineT("fallbacks.linkedNatureData"),
+        treeCount: (count: number) => timelineEntryT("treeCount", { count }),
+        speciesCount: (count: number) => timelineEntryT("speciesCount", { count }),
+        observationCount: (count: number) => timelineEntryT("observationCount", { count }),
+        individualCount: (count: number) => referenceT("individualCount", { count }),
+      },
+    }).catch(() => []);
+
     timelineAccess = await resolveTimelineAccess(record.did, owner.kind, authSession, {
       signIn: permissionT("signIn"),
       notMember: permissionT("notMember"),
       createDenied: permissionT("createDenied"),
       deleteDenied: permissionT("deleteDenied"),
     });
+
+    timelineReferences = await referencePromise;
   }
 
   const jsonLd = buildBumicertJsonLd(record, owner, fundingConfig, detailHref, description ?? null);
@@ -376,7 +389,8 @@ export default async function BumicertDetailPage({
                 deletePermission={timelineAccess.deletePermission}
                 mutationRepo={timelineAccess.mutationRepo}
                 initialEntries={timelineAttachments}
-                sources={timelineSources}
+                sources={emptyTimelineSources}
+                references={timelineReferences}
                 attachmentsUnavailable={timelineAttachmentsUnavailable}
               />
             )}
