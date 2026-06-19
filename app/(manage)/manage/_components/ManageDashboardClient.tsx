@@ -67,6 +67,10 @@ function formatWebsite(url: string): string {
   return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 }
 
+function externalHref(url: string): string {
+  return /^[a-z][a-z0-9+.-]*:/i.test(url) ? url : `https://${url}`;
+}
+
 function publicAccountHref(identifier: string): string {
   return `/account/${encodeURIComponent(identifier)}`;
 }
@@ -445,15 +449,23 @@ function EditableHero({
             </Button>
           ) : null}
           {isOrg ? (
-            <Button variant="outline" onClick={onEditSocials} disabled={!canEdit} title={editDisabledReason ?? undefined} className={cn(!editState.socials.length && "text-muted-foreground")}>
-              <Link2Icon />
-              {t("hero.addSocialLinks")}
-              {editState.socials.length ? (
-                <span className="flex items-center gap-1">
-                  {editState.socials.map((url) => <SocialGlyph key={url} platform={classifySocial(url)} />)}
-                </span>
-              ) : null}
-            </Button>
+            <>
+              {editState.socials.map((url) => {
+                const label = formatWebsite(url);
+                return (
+                  <Button key={url} asChild variant="outline" className="max-w-full min-w-0 shrink" aria-label={t("hero.openSocialLink", { link: label })}>
+                    <Link href={externalHref(url)} target="_blank" rel="noopener noreferrer">
+                      <SocialGlyph platform={classifySocial(url)} />
+                      <span className="truncate">{label}</span>
+                    </Link>
+                  </Button>
+                );
+              })}
+              <Button variant="outline" onClick={onEditSocials} disabled={!canEdit} title={editDisabledReason ?? undefined} className={cn(!editState.socials.length && "text-muted-foreground")}>
+                <Link2Icon />
+                {t("hero.addSocialLinks")}
+              </Button>
+            </>
           ) : null}
         </div>
       </div>

@@ -688,6 +688,7 @@
       "addStartDate": "Tambahkan tanggal mulai",
       "addWebsite": "Tambahkan situs web",
       "addSocialLinks": "Tambahkan tautan sosial",
+      "openSocialLink": "Buka {link}",
       "viewPublicPage": "Lihat halaman publik"
     },
     "errors": {

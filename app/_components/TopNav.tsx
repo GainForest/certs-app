@@ -8,6 +8,7 @@ import { MenuIcon, XIcon } from "lucide-react";
 import { LogoMark } from "./Logo";
 import { StatusPill } from "./StatusPill";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
+import { Button } from "@/components/ui/button";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { ThemeToggle } from "./ThemeToggle";
 import type { StatusSnapshot } from "../_lib/status";
@@ -94,15 +95,17 @@ export function TopNav({ status }: { status: StatusSnapshot }) {
             </span>
             <ThemeToggle />
             <LanguageSelector />
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="icon"
               onClick={() => setMenuOpen((v) => !v)}
               aria-expanded={menuOpen}
               aria-label={menuOpen ? t("navigation.closeMenu") : t("navigation.openMenu")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border-soft text-foreground/75 transition-colors hover:border-foreground/35 hover:text-foreground lg:hidden"
+              className="lg:hidden"
             >
-              {menuOpen ? <XIcon className="h-4 w-4" aria-hidden /> : <MenuIcon className="h-[18px] w-[18px]" aria-hidden />}
-            </button>
+              {menuOpen ? <XIcon aria-hidden /> : <MenuIcon aria-hidden />}
+            </Button>
           </div>
         </div>
       </header>

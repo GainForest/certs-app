@@ -688,6 +688,7 @@
       "addStartDate": "Ongeza tarehe ya kuanza",
       "addWebsite": "Ongeza tovuti",
       "addSocialLinks": "Ongeza viungo vya kijamii",
+      "openSocialLink": "Fungua {link}",
       "viewPublicPage": "Tazama ukurasa wa umma"
     },
     "errors": {

@@ -2,6 +2,7 @@
 
 import { MoonIcon, SunIcon } from "lucide-react";
 import { useEffect, useState, type MouseEvent } from "react";
+import { Button } from "@/components/ui/button";
 
 // Light/dark toggle with a circular View-Transition reveal (ported from
 // broadlistening-frontend). On click we set the new theme inside
@@ -101,16 +102,18 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      size="icon"
       onClick={toggle}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       aria-pressed={mounted ? isDark : undefined}
       title={isDark ? "Light mode" : "Dark mode"}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-border-soft text-foreground/75 transition-colors hover:border-foreground/35 hover:text-foreground ${className}`}
+      className={className}
     >
       {/* Default to the moon (light mode) until mounted to match SSR. */}
-      {mounted && isDark ? <SunIcon className="h-[17px] w-[17px]" aria-hidden /> : <MoonIcon className="h-4 w-4" aria-hidden />}
-    </button>
+      {mounted && isDark ? <SunIcon aria-hidden /> : <MoonIcon aria-hidden />}
+    </Button>
   );
 }

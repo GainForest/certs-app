@@ -910,21 +910,12 @@ function getRouteHeaderActions(pathname: string, authSession: AuthSession) {
 function CreateBumicertHeaderButton({ isUnauthenticated }: { isUnauthenticated: boolean }) {
   const manageBasePath = useContextualManageBasePath();
   return (
-    <Link href={manageHref({ basePath: manageBasePath }, "projects", { mode: "new" })}>
-      <motion.span
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={cn(
-          "inline-flex items-center gap-1.5 rounded-full text-sm font-medium px-3.5 py-1.5 transition-colors border",
-          isUnauthenticated
-            ? "border-border text-foreground hover:bg-muted"
-            : "bg-primary text-primary-foreground border-transparent hover:bg-primary/90",
-        )}
-      >
-        <PlusIcon className="h-3.5 w-3.5" />
+    <Button asChild size="sm" variant={isUnauthenticated ? "outline" : "default"}>
+      <Link href={manageHref({ basePath: manageBasePath }, "projects", { mode: "new" })}>
+        <PlusIcon />
         <span className="hidden sm:inline">Create Project</span>
-      </motion.span>
-    </Link>
+      </Link>
+    </Button>
   );
 }
 
@@ -960,16 +951,16 @@ function Header({
       <div className="relative z-10 flex flex-col">
         <div className="h-14 flex items-center justify-between px-4 gap-3">
           {/* Hamburger — mobile only, extreme left */}
-          <motion.button
+          <Button
             type="button"
             onClick={onOpenMobileNav}
-            whileTap={{ scale: 0.88 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="md:hidden shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
             aria-label="Open navigation"
           >
-            <MenuIcon className="h-5 w-5" />
-          </motion.button>
+            <MenuIcon />
+          </Button>
 
           {/* Left slot */}
           <div className="flex-1 flex items-center gap-2 min-w-0">
@@ -1286,48 +1277,40 @@ function ThemeToggle({ className }: { className?: string }) {
   }
 
   return (
-    <motion.button
-      whileTap={{ scale: 0.96 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
       onClick={handleToggleTheme}
-      className={cn(
-        "relative inline-flex h-7 w-12 items-center rounded-full border border-border bg-muted/70 p-0.5 text-muted-foreground transition-colors hover:text-foreground dark:border-input dark:bg-background/80",
-        className,
-      )}
+      className={className}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       aria-pressed={mounted ? isDark : undefined}
       suppressHydrationWarning
     >
-      <motion.span
-        className="flex size-6 items-center justify-center rounded-full bg-background shadow-sm ring-1 ring-border/70 dark:bg-muted dark:ring-input"
-        animate={{ x: mounted && isDark ? 20 : 0 }}
-        transition={{ type: "spring", stiffness: 500, damping: 32 }}
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          {mounted && isDark ? (
-            <motion.span
-              key="moon"
-              initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-              animate={{ opacity: 1, rotate: 0, scale: 1 }}
-              exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-            >
-              <MoonIcon className="h-3.5 w-3.5" />
-            </motion.span>
-          ) : (
-            <motion.span
-              key="sun"
-              initial={{ opacity: 0, rotate: 90, scale: 0.5 }}
-              animate={{ opacity: 1, rotate: 0, scale: 1 }}
-              exit={{ opacity: 0, rotate: -90, scale: 0.5 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-            >
-              <SunIcon className="h-3.5 w-3.5" />
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </motion.span>
-    </motion.button>
+      <AnimatePresence mode="wait" initial={false}>
+        {mounted && isDark ? (
+          <motion.span
+            key="moon"
+            initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+          >
+            <MoonIcon />
+          </motion.span>
+        ) : (
+          <motion.span
+            key="sun"
+            initial={{ opacity: 0, rotate: 90, scale: 0.5 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={{ opacity: 0, rotate: -90, scale: 0.5 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+          >
+            <SunIcon />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </Button>
   );
 }
 

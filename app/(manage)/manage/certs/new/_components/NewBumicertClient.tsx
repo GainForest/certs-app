@@ -1472,8 +1472,8 @@ export function NewBumicertClient({
       <HeaderContent
         right={
           !publishResult ? (
-            <Button type="button" variant="ghost" size="sm" onClick={resetForm} className="text-muted-foreground">
-              <RotateCcwIcon className="size-4" /> <span className="hidden sm:inline">Start over</span>
+            <Button type="button" variant="ghost" size="sm" onClick={resetForm}>
+              <RotateCcwIcon /> <span className="hidden sm:inline">Start over</span>
             </Button>
           ) : null
         }

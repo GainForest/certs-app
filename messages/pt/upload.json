@@ -688,6 +688,7 @@
       "addStartDate": "Adicionar data de início",
       "addWebsite": "Adicionar site",
       "addSocialLinks": "Adicionar links sociais",
+      "openSocialLink": "Abrir {link}",
       "viewPublicPage": "Ver página pública"
     },
     "errors": {

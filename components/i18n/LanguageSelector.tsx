@@ -41,7 +41,6 @@ export function LanguageSelector() {
           type="button"
           variant="ghost"
           size="sm"
-          className="h-8 rounded-lg px-2 text-muted-foreground hover:text-foreground"
           aria-label={`${t("changeAria")}. ${t("currentLanguage")}: ${getLanguageLabel(locale)}`}
         >
           <Globe2Icon aria-hidden="true" />

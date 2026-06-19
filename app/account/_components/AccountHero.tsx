@@ -3,18 +3,28 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  GlobeIcon,
+  Building2Icon,
   CalendarIcon,
-  Share2Icon,
   CheckIcon,
+  GlobeIcon,
+  MapPinIcon,
+  PencilIcon,
+  Share2Icon,
 } from "lucide-react";
 import type { AccountRouteData } from "../_lib/account-route";
 import { formatCountry } from "../../_lib/format";
+import { SocialGlyph } from "@/app/_components/SocialIcon";
+import { Button } from "@/components/ui/button";
 
 function formatWebsite(url: string): string {
   return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+}
+
+function externalHref(url: string): string {
+  return /^[a-z][a-z0-9+.-]*:/i.test(url) ? url : `https://${url}`;
 }
 
 function formatSinceDate(value: string | null): { label: string | null; state: "empty" | "valid" | "invalid" } {
@@ -27,19 +37,31 @@ function formatSinceDate(value: string | null): { label: string | null; state: "
   };
 }
 
-export function AccountHero({ account }: { account: AccountRouteData }) {
+function classifySocial(url: string): string {
+  try {
+    const host = new URL(externalHref(url)).hostname.replace(/^www\./, "");
+    if (host.includes("x.com") || host.includes("twitter.com")) return "x";
+    if (host.includes("linkedin.com")) return "linkedin";
+    if (host.includes("github.com")) return "github";
+    if (host.includes("instagram.com")) return "instagram";
+    if (host.includes("facebook.com")) return "facebook";
+    if (host.includes("youtube.com") || host.includes("youtu.be")) return "youtube";
+    return "website";
+  } catch {
+    return "website";
+  }
+}
+
+export function AccountHero({ account, editHref = null }: { account: AccountRouteData; editHref?: string | null }) {
   const [copied, setCopied] = useState(false);
+  const heroT = useTranslations("upload.dashboardClient.hero");
+  const actionsT = useTranslations("upload.actions");
 
   const initial = account.displayName.charAt(0).toUpperCase();
-  const sinceDate = formatSinceDate(account.createdAt);
-  const sinceLabel = sinceDate.label;
+  const sinceDate = formatSinceDate(account.kind === "organization" ? account.foundedDate ?? account.createdAt : account.createdAt);
   const country = account.country ? formatCountry(account.country) : null;
-  const objectives = account.kind === "organization" ? [account.summary.certOrgType].filter((v): v is string => Boolean(v)) : [];
-  const hasPillRow =
-    sinceDate.state === "valid" ||
-    country ||
-    objectives.length > 0 ||
-    account.website;
+  const orgType = account.kind === "organization" ? account.orgType ?? account.summary.certOrgType : null;
+  const hasDetails = sinceDate.state === "valid" || country || orgType || account.website || account.socialLinks.length > 0;
 
   function handleShare() {
     const publicUrl = `${window.location.origin}/account/${encodeURIComponent(account.urlIdentifier)}`;
@@ -50,12 +72,12 @@ export function AccountHero({ account }: { account: AccountRouteData }) {
   }
 
   return (
-    <section className="relative min-h-[260px] md:min-h-[320px] flex flex-col overflow-hidden rounded-t-4xl border-t border-border">
-      <div className="absolute inset-0">
+    <section className="overflow-hidden rounded-3xl border border-border/60 bg-card">
+      <div className="relative h-32 sm:h-40 md:h-44">
         <motion.div
-          initial={{ scale: 1.08, opacity: 0 }}
+          initial={{ scale: 1.04, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.6, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={{ duration: 1.2, ease: [0.25, 0.1, 0.25, 1] }}
           className="absolute inset-0"
         >
           {account.coverUrl ? (
@@ -73,110 +95,122 @@ export function AccountHero({ account }: { account: AccountRouteData }) {
               className="absolute inset-0 bg-muted"
               style={{
                 backgroundImage:
-                  "radial-gradient(circle at 30% 50%, oklch(0.5 0.07 157 / 0.08) 0%, transparent 60%), radial-gradient(circle at 75% 25%, oklch(0.5 0.07 157 / 0.05) 0%, transparent 50%)",
+                  "radial-gradient(circle at 22% 40%, oklch(0.5 0.07 157 / 0.14) 0%, transparent 55%), radial-gradient(circle at 82% 18%, oklch(0.5 0.07 157 / 0.08) 0%, transparent 50%)",
               }}
             />
           )}
-          <div className="absolute inset-0 bg-linear-to-b from-background/0 via-background/75 to-background" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-linear-to-t from-card to-transparent" />
         </motion.div>
+
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={handleShare} aria-label="Copy link">
+            <AnimatePresence mode="wait" initial={false}>
+              {copied ? (
+                <motion.span
+                  key="copied"
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center gap-1.5"
+                >
+                  <CheckIcon className="size-3.5 text-primary" />
+                  <span className="hidden sm:inline">Copied</span>
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="share"
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center gap-1.5"
+                >
+                  <Share2Icon className="size-3.5" />
+                  <span className="hidden sm:inline">Share</span>
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </Button>
+          {editHref ? (
+            <Button asChild size="sm">
+              <Link href={editHref}>
+                <PencilIcon />
+                {actionsT("edit")}
+              </Link>
+            </Button>
+          ) : null}
+        </div>
       </div>
 
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-        <motion.button
-          onClick={handleShare}
-          whileTap={{ scale: 0.94 }}
-          transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/55 backdrop-blur-xl border border-white/20 shadow-lg cursor-pointer hover:bg-background/70 transition-colors"
-          aria-label="Copy link"
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            {copied ? (
-              <motion.span
-                key="check"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center gap-1.5"
-              >
-                <CheckIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-xs font-medium text-primary">Copied</span>
-              </motion.span>
-            ) : (
-              <motion.span
-                key="share"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center gap-1.5"
-              >
-                <Share2Icon className="h-3.5 w-3.5 text-foreground/80 shrink-0" />
-                <span className="text-xs font-medium text-foreground/80">Share</span>
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
-
-      </div>
-
-      <div className="relative z-10 flex-1 flex flex-col justify-end px-5 pb-6 pt-24">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-3 mb-3 org-animate org-fade-in-up org-delay-1">
-          <div className="relative h-24 w-24 rounded-full overflow-hidden bg-muted border border-white/15 shadow-sm shrink-0">
+      <div className="relative z-10 px-5 pb-5 sm:px-6 sm:pb-6">
+        <div className="-mt-12 flex flex-col gap-4 md:flex-row md:items-end md:gap-5">
+          <div className="relative size-24 shrink-0 overflow-hidden rounded-full border border-border/60 bg-muted ring-4 ring-card">
             {account.avatarUrl ? (
               <Image src={account.avatarUrl} alt={account.displayName} fill unoptimized className="object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm font-bold text-muted-foreground">
+              <div className="flex size-full items-center justify-center text-sm font-bold text-muted-foreground">
                 {initial}
               </div>
             )}
           </div>
-          <div className="max-w-3xl">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-light tracking-[-0.02em] leading-none text-foreground font-instrument italic">
+          <div className="min-w-0 max-w-2xl md:flex-1 md:pb-1">
+            <h1 className="font-instrument text-3xl font-light italic leading-[1.1] tracking-[-0.02em] text-foreground md:text-4xl">
               {account.displayName}
             </h1>
-            <p className="text-muted-foreground line-clamp-4 md:line-clamp-2 mt-1">
+            <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
               {account.description ?? ""}
             </p>
           </div>
         </div>
-        {hasPillRow && (
-          <div className="mt-4 flex flex-wrap items-center gap-2 org-animate org-fade-in-up org-delay-3">
-            {sinceLabel && (
-              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.08em] text-foreground/60 bg-background/40 backdrop-blur-md border border-border/50 rounded-full px-2.5 py-1 font-medium">
-                <CalendarIcon className="h-3 w-3 shrink-0" />
-                Since {sinceLabel}
-              </span>
-            )}
 
-            {country && (
-              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.08em] text-foreground/60 bg-background/40 backdrop-blur-md border border-border/50 rounded-full px-2.5 py-1 font-medium">
-                {country}
-              </span>
-            )}
-
-            {objectives.map((obj) => (
-              <span
-                key={obj}
-                className="text-[10px] uppercase tracking-[0.08em] text-foreground/60 bg-background/40 backdrop-blur-md border border-border/50 rounded-full px-2.5 py-1 font-medium"
-              >
-                {obj}
-              </span>
-            ))}
-
-            {account.website && (
-              <Link
-                href={account.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.08em] text-primary/80 hover:text-primary bg-background/40 backdrop-blur-md border border-primary/20 rounded-full px-2.5 py-1 font-medium transition-colors"
-              >
-                <GlobeIcon className="h-3 w-3 shrink-0" />
-                {formatWebsite(account.website)}
-              </Link>
-            )}
+        {hasDetails ? (
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            {orgType ? (
+              <Button asChild variant="outline">
+                <span>
+                  <Building2Icon />
+                  {orgType}
+                </span>
+              </Button>
+            ) : null}
+            {country ? (
+              <Button asChild variant="outline">
+                <span>
+                  <MapPinIcon />
+                  {country}
+                </span>
+              </Button>
+            ) : null}
+            {sinceDate.state === "valid" ? (
+              <Button asChild variant="outline">
+                <span>
+                  <CalendarIcon />
+                  {heroT("sinceDate", { date: sinceDate.label ?? "" })}
+                </span>
+              </Button>
+            ) : null}
+            {account.website ? (
+              <Button asChild variant="outline">
+                <Link href={account.website} target="_blank" rel="noopener noreferrer">
+                  <GlobeIcon />
+                  {formatWebsite(account.website)}
+                </Link>
+              </Button>
+            ) : null}
+            {account.socialLinks.map((url) => {
+              const label = formatWebsite(url);
+              return (
+                <Button key={url} asChild variant="outline" className="max-w-full min-w-0 shrink" aria-label={heroT("openSocialLink", { link: label })}>
+                  <Link href={externalHref(url)} target="_blank" rel="noopener noreferrer">
+                    <SocialGlyph platform={classifySocial(url)} />
+                    <span className="truncate">{label}</span>
+                  </Link>
+                </Button>
+              );
+            })}
           </div>
-        )}
+        ) : null}
       </div>
     </section>
   );
