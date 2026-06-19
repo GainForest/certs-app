@@ -53,6 +53,8 @@
         "files": "Documentos"
       },
       "linking": "Vinculando…",
+      "loadingSources": "Carregando evidências…",
+      "sourcesLoadError": "Não foi possível carregar as evidências disponíveis. Atualize e tente novamente.",
       "selectToLink": "Selecione a evidência para vincular",
       "linkItems": "{count, plural, =1 {Vincular 1 item} other {Vincular # itens}}",
       "optionalNote": "Nota Opcional",

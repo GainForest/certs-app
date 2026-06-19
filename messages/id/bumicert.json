@@ -53,6 +53,8 @@
         "files": "Dokumen"
       },
       "linking": "Menghubungkan…",
+      "loadingSources": "Memuat bukti…",
+      "sourcesLoadError": "Tidak dapat memuat bukti yang tersedia. Segarkan halaman dan coba lagi.",
       "selectToLink": "Pilih bukti untuk ditautkan",
       "linkItems": "{count, plural, =1 {Tautkan 1 item} other {Tautkan # item}}",
       "optionalNote": "Catatan Opsional",
