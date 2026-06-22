@@ -952,19 +952,19 @@ export function ManageDashboardClient({
               onCancel={() => { setEditLongDescription((pendingOptimisticSave?.state ?? accountState).longDescription); setSaveError(null); setInlineField(null); }}
               editDisabledReason={profileEditPermission.reason}
             />
-            {writeRepoDid && groupRole ? (
-              <GroupMembers
-                groupDid={writeRepoDid}
-                currentRole={groupRole}
-                currentUserDid={currentUserDid}
-                variant="section"
-                showDataCouncil
-              />
-            ) : null}
           </>
         ) : null}
         {account.kind === "user" ? <ManageGroupsClient sessionDid={account.did} /> : null}
         {children}
+        {account.kind === "organization" && writeRepoDid && groupRole ? (
+          <GroupMembers
+            groupDid={writeRepoDid}
+            currentRole={groupRole}
+            currentUserDid={currentUserDid}
+            variant="section"
+            showDataCouncil
+          />
+        ) : null}
       </Container>
     </>
   );
