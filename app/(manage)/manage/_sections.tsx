@@ -26,6 +26,7 @@ import { ManageDashboard } from "./_components/ManageDashboard";
 import { GroupMembers } from "./groups/_components/GroupMembers";
 import type { CgsRole } from "./_lib/cgs";
 import { ManageProjectsClient } from "./projects/_components/ManageProjectsClient";
+import { ProjectGalleryManagerClient } from "./projects/[rkey]/gallery/_components/ProjectGalleryManagerClient";
 import { SitesClient } from "./sites/_components/SitesClient";
 import { TreesPageClient } from "./trees/_components/TreesPageClient";
 import { AudioClient } from "./audio/_components/AudioClient";
@@ -92,6 +93,14 @@ export async function ProjectsSection({ target }: { target: ManageTarget }) {
   return (
     <Suspense fallback={null}>
       <ManageProjectsClient target={target} bumicerts={bumicerts} />
+    </Suspense>
+  );
+}
+
+export function ProjectGallerySection({ target, projectRkey }: { target: ManageTarget; projectRkey: string }) {
+  return (
+    <Suspense fallback={null}>
+      <ProjectGalleryManagerClient target={target} projectRkey={projectRkey} />
     </Suspense>
   );
 }

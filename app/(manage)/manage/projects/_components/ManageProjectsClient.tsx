@@ -242,6 +242,7 @@ export function ManageProjectsClient({ target, bumicerts }: { target: ManageTarg
                       key={project.atUri}
                       project={project}
                       index={index}
+                      galleryHref={`${target.basePath}/projects/${encodeURIComponent(project.rkey)}/gallery`}
                       onEdit={() => openEdit(project)}
                       disabledReason={updatePermission.reason}
                     />
@@ -276,11 +277,13 @@ function ProjectHero() {
 function ProjectCard({
   project,
   index,
+  galleryHref,
   onEdit,
   disabledReason = null,
 }: {
   project: ManagedProject;
   index: number;
+  galleryHref: string;
   onEdit: () => void;
   disabledReason?: string | null;
 }) {
@@ -366,6 +369,12 @@ function ProjectCard({
               </span>
             ) : null}
           </div>
+          <Button asChild type="button" variant="outline" size="sm" className="h-8" onClick={(event) => event.stopPropagation()}>
+            <Link href={galleryHref} aria-label={`Manage gallery for ${project.title}`}>
+              <ImageIcon className="size-3.5" />
+              Manage gallery
+            </Link>
+          </Button>
         </div>
       </div>
     </motion.article>
