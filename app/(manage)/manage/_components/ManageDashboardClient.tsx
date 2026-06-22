@@ -593,6 +593,36 @@ export function ManageDashboardClient({
     setCoverFile(next.coverFile);
   };
 
+  useEffect(() => {
+    if (inlineField !== null || isSaving) return;
+    applyState({
+      displayName: account.displayName,
+      description: account.description ?? "",
+      longDescription: account.longDescription ?? "",
+      website: account.website ?? "",
+      country: account.country ?? "",
+      startDate: initialStartDate,
+      visibility: initialVisibility,
+      orgType: account.orgType ?? "",
+      socials: account.socialLinks ?? [],
+      logoFile: null,
+      coverFile: null,
+    });
+  }, [
+    account.country,
+    account.description,
+    account.displayName,
+    account.foundedDate,
+    account.longDescription,
+    account.orgType,
+    account.socialLinks,
+    account.website,
+    initialStartDate,
+    initialVisibility,
+    inlineField,
+    isSaving,
+  ]);
+
   const resetState = () => {
     applyState({
       displayName: account.displayName,
