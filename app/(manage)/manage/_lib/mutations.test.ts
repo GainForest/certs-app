@@ -14,10 +14,12 @@ describe("normalizeUploadBlobResult", () => {
 
   it("unwraps raw PDS uploadBlob responses", () => {
     const blob = { $type: "blob", ref: { $link: "bafy-raw" }, mimeType: "image/jpeg", size: 1234 };
-    expect(normalizeUploadBlobResult({ blob })).toEqual({
-      ...blob,
-      blob,
-    });
+    expect(normalizeUploadBlobResult({ blob })).toEqual(blob);
+  });
+
+  it("strips wrapper fields from mixed upload responses", () => {
+    const blob = { $type: "blob", ref: { $link: "bafy-mixed" }, mimeType: "image/webp", size: 99 };
+    expect(normalizeUploadBlobResult({ ...blob, blob })).toEqual(blob);
   });
 
   it("fails loudly when the upload response has no image reference", () => {

@@ -326,17 +326,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function normalizeUploadBlobResult(value: unknown): UploadBlobResult {
-  const candidate = isRecord(value) && !("ref" in value) && isRecord(value.blob) ? value.blob : value;
+  const candidate = isRecord(value) && isRecord(value.blob) ? value.blob : value;
   if (!isRecord(candidate) || !("ref" in candidate)) {
     throw new Error("We could not upload this photo. Please try again.");
   }
 
   return {
-    ...candidate,
+    $type: typeof candidate.$type === "string" ? candidate.$type : "blob",
     ref: candidate.ref,
     mimeType: typeof candidate.mimeType === "string" ? candidate.mimeType : "application/octet-stream",
     size: typeof candidate.size === "number" ? candidate.size : 0,
-    ...(isRecord(value) && "blob" in value ? { blob: value.blob } : {}),
   };
 }
 
