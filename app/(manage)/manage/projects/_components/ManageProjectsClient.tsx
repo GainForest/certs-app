@@ -74,6 +74,13 @@ type ProjectDraft = {
   bumicertUris: string[];
 };
 
+type UploadedBlobLike = {
+  ref?: unknown;
+  mimeType?: unknown;
+  size?: unknown;
+  blob?: unknown;
+};
+
 type ProjectField = "title" | "shortDescription" | "description";
 type ProjectIssue = { field: ProjectField; section: "basics" | "story"; message: string };
 
@@ -479,7 +486,7 @@ function ProjectEditor({
     try {
       const writeOptions = target.kind === "group" ? { repo: target.did } : undefined;
       const cover = coverFile ? await uploadBlob(coverFile, writeOptions) : null;
-      const record = buildProjectRecord(draft, state.project, cover?.ref);
+      const record = buildProjectRecord(draft, state.project, cover && coverFile ? toLexImageBlob(cover, coverFile) : undefined);
       const result = isEdit
         ? await putRecord(PROJECT_COLLECTION, state.project.rkey, record, { ...(state.project.cid ? { swapRecord: state.project.cid } : {}), ...(writeOptions ?? {}) })
         : await createRecord(PROJECT_COLLECTION, record, undefined, writeOptions);
@@ -1040,10 +1047,27 @@ function draftFromProject(project: ManagedProject | null): ProjectDraft {
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function toLexImageBlob(uploaded: UploadedBlobLike, file: File): Record<string, unknown> {
+  const raw = isRecord(uploaded.blob) && !("ref" in uploaded) ? uploaded.blob : uploaded;
+  if (!isRecord(raw) || !("ref" in raw) || raw.ref === undefined || raw.ref === null) {
+    throw new Error("We could not upload this photo. Please try again.");
+  }
+  return {
+    $type: "blob",
+    ref: raw.ref,
+    mimeType: typeof raw.mimeType === "string" ? raw.mimeType : (file.type || "application/octet-stream"),
+    size: typeof raw.size === "number" ? raw.size : file.size,
+  };
+}
+
 function buildProjectRecord(
   draft: ProjectDraft,
   project: ManagedProject | null,
-  uploadedImageRef?: unknown,
+  uploadedImage?: Record<string, unknown>,
 ): Record<string, unknown> {
   const nextRecord: Record<string, unknown> = {
     ...(project?.rawRecord ?? {}),
@@ -1062,8 +1086,8 @@ function buildProjectRecord(
   if (description) nextRecord.description = { $type: "org.hypercerts.defs#descriptionString", value: description };
   else delete nextRecord.description;
 
-  if (uploadedImageRef) {
-    nextRecord.banner = { $type: "org.hypercerts.defs#largeImage", image: uploadedImageRef };
+  if (uploadedImage) {
+    nextRecord.banner = { $type: "org.hypercerts.defs#largeImage", image: uploadedImage };
   }
 
   return nextRecord;
