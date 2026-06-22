@@ -92,6 +92,7 @@ export function ProjectsExploreClient({ records: initialRecords = [] }: { record
   const sortMenuRef = useRef<HTMLDivElement | null>(null);
   const filtersMenuRef = useRef<HTMLDivElement | null>(null);
   const requestSeqRef = useRef(0);
+  const countSeqRef = useRef(0);
 
   const [query, setQuery] = useQueryState(
     "q",
@@ -153,9 +154,13 @@ export function ProjectsExploreClient({ records: initialRecords = [] }: { record
 
   useEffect(() => {
     const controller = new AbortController();
+    const requestSeq = ++countSeqRef.current;
+    const isCurrent = () => countSeqRef.current === requestSeq && !controller.signal.aborted;
     setTotalCount(null);
     fetchProjectTotalCount(controller.signal, { query: deferredQuery, filters, sort, featuredBadgesOnly: true, badgeFilters })
-      .then((count) => setTotalCount(count))
+      .then((count) => {
+        if (isCurrent()) setTotalCount(count);
+      })
       .catch((error) => {
         if ((error as Error).name !== "AbortError") console.warn("[projects] count failed", error);
       });

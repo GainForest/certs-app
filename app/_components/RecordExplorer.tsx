@@ -278,6 +278,7 @@ export function RecordExplorer({
 
   const controller = useRef<AbortController | null>(null);
   const loadSeqRef = useRef(0);
+  const totalCountSeqRef = useRef(0);
   const occurrenceStatsStartedRef = useRef(false);
   const hasLoadedRecords = records.length > 0;
   const badgeFilterOptions = useMemo<BadgeFilterOption[]>(() => [
@@ -496,11 +497,13 @@ export function RecordExplorer({
 
   const canShowTotalCount = kind === "occurrence" && !ownerDid && occCategory === "all";
   useEffect(() => {
+    const requestSeq = ++totalCountSeqRef.current;
     if (!canShowTotalCount) {
       setTotalCount(null);
       return;
     }
     const controller = new AbortController();
+    const isCurrent = () => totalCountSeqRef.current === requestSeq && !controller.signal.aborted;
     setTotalCount(null);
     fetchOccurrenceTotalCount({
       media: occMedia,
@@ -510,7 +513,9 @@ export function RecordExplorer({
       badgeFilters,
       signal: controller.signal,
     })
-      .then((count) => setTotalCount(count))
+      .then((count) => {
+        if (isCurrent()) setTotalCount(count);
+      })
       .catch((error) => {
         if ((error as Error).name !== "AbortError") console.warn("[explorer] occurrence count failed", error);
       });

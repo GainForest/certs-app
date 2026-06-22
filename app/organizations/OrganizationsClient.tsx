@@ -109,6 +109,7 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
   const [autoLoadMore, setAutoLoadMore] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const requestSeqRef = useRef(0);
+  const countSeqRef = useRef(0);
   const countryHydrationKeyRef = useRef("");
   const badgeFilterOptions = useMemo<BadgeFilterOption[]>(() => [
     { key: "gainforest", label: exploreT("filters.badges.gainforest"), logoSrc: "/assets/media/images/gainforest-logo.svg" },
@@ -146,9 +147,13 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
 
   useEffect(() => {
     const controller = new AbortController();
+    const requestSeq = ++countSeqRef.current;
+    const isCurrent = () => countSeqRef.current === requestSeq && !controller.signal.aborted;
     setTotalCount(null);
     fetchSiteTotalCount(controller.signal, { query: deferredQuery, country: countryFilter, orgType: typeFilter, quickFilters, sort, featuredBadgesOnly: true, badgeFilters })
-      .then((count) => setTotalCount(count))
+      .then((count) => {
+        if (isCurrent()) setTotalCount(count);
+      })
       .catch((error) => {
         if ((error as Error).name !== "AbortError") console.warn("[organizations] count failed", error);
       });

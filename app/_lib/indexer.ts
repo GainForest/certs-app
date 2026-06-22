@@ -13,6 +13,7 @@
  */
 
 import { cachedAsync } from "./async-cache";
+import { PUBLIC_EXPLORE_CACHE_TTL_MS, publicExploreCache } from "./public-explore-cache";
 import { INDEXER_URL } from "./urls";
 import { countryCodeFromCertifiedLocation, fetchCertifiedLocationCountryCode, type CertifiedLocationLike } from "./country-location";
 import { blobUrl, resolveBlobUrl, resolvePdsHost, normaliseRef } from "./pds";
@@ -90,7 +91,7 @@ type StatsPage<N> = {
 
 const RESOLVE_CONCURRENCY = 8;
 const SITE_IMAGE_RESOLVE_LIMIT = 96;
-const TOTAL_STATS_CACHE_MS = 15 * 60 * 1000;
+const TOTAL_STATS_CACHE_MS = PUBLIC_EXPLORE_CACHE_TTL_MS;
 
 /** The indexer caps every connection query at 1000 edges regardless of the
  *  requested `first` (it was 100 before the upgrade), so loads beyond 1000 must
@@ -687,17 +688,32 @@ async function fetchOccurrenceStatsUncached(signal?: AbortSignal): Promise<Occur
 }
 
 export async function fetchOccurrenceStats(signal?: AbortSignal): Promise<OccurrenceStats> {
-  return fetchOccurrenceStatsUncached(signal);
+  return publicExploreCache("occurrence-stats", {}, () => fetchOccurrenceStatsUncached(), signal);
 }
 
-export async function fetchOccurrenceTotalCount(options: {
+type OccurrenceTotalCountOptions = {
   media: OccurrenceFilter;
   query?: string;
   ownerDid?: string;
   featuredBadgesOnly?: boolean;
   badgeFilters?: BumicertBadgeFilter[];
   signal?: AbortSignal;
-}): Promise<number> {
+};
+
+export async function fetchOccurrenceTotalCount(options: OccurrenceTotalCountOptions): Promise<number> {
+  if (!options.ownerDid) {
+    const { signal, ...cacheOptions } = options;
+    return publicExploreCache(
+      "occurrence-total-count",
+      cacheOptions,
+      () => fetchOccurrenceTotalCountUncached({ ...cacheOptions, signal: undefined }),
+      signal,
+    );
+  }
+  return fetchOccurrenceTotalCountUncached(options);
+}
+
+async function fetchOccurrenceTotalCountUncached(options: OccurrenceTotalCountOptions): Promise<number> {
   const badgeIndex = options.featuredBadgesOnly ? await fetchFeaturedBadgeIndex(options.signal) : undefined;
   const variants = occurrenceWhereVariants(options.media, options.query, options.ownerDid, badgeIndex, options.badgeFilters);
   if (variants.length === 0) return 0;
@@ -765,7 +781,7 @@ async function walkAudioRecordIdsForCount(
  * thumbnails (on the sparser Restor records) render immediately. Returns the
  * final cursor + `hasMore` so "load more" continues from where it stopped.
  */
-export async function walkOccurrences(opts: {
+type OccurrenceWalkOptions = {
   media: OccurrenceFilter;
   target: number;
   after: string | null;
@@ -777,7 +793,25 @@ export async function walkOccurrences(opts: {
   resolveMedia?: boolean;
   featuredBadgesOnly?: boolean;
   badgeFilters?: BumicertBadgeFilter[];
-}): Promise<OccurrenceWalkResult> {
+};
+
+export async function walkOccurrences(opts: OccurrenceWalkOptions): Promise<OccurrenceWalkResult> {
+  if (!opts.ownerDid) {
+    const { signal, onProgress, ...cacheOptions } = opts;
+    const pagePromise = publicExploreCache(
+      "occurrences-page",
+      cacheOptions,
+      () => walkOccurrencesUncached({ ...cacheOptions, signal: undefined, onProgress: undefined }),
+      signal,
+    );
+    if (onProgress) void pagePromise.then((page) => onProgress(page.records)).catch(() => {});
+    return pagePromise;
+  }
+
+  return walkOccurrencesUncached(opts);
+}
+
+async function walkOccurrencesUncached(opts: OccurrenceWalkOptions): Promise<OccurrenceWalkResult> {
   const { media, target, signal } = opts;
   const badgeIndex = opts.featuredBadgesOnly ? await fetchFeaturedBadgeIndex(signal) : undefined;
   const whereVariants = occurrenceWhereVariants(media, opts.query, opts.ownerDid, badgeIndex, opts.badgeFilters);
@@ -1103,7 +1137,7 @@ const FEATURED_BADGE_KEYS = new Set(FEATURED_BADGES.map((badge) => badge.key));
 const FEATURED_BADGE_KEY_BY_TITLE = new Map(
   FEATURED_BADGES.map((badge) => [normalizeFeaturedBadgeTitle(badge.title), badge.key]),
 );
-const FEATURED_BADGE_INDEX_CACHE_MS = 10 * 60 * 1000;
+const FEATURED_BADGE_INDEX_CACHE_MS = PUBLIC_EXPLORE_CACHE_TTL_MS;
 const FEATURED_BADGE_FILTER_IN_LIMIT = 100;
 
 const FEATURED_BADGE_INDEX_QUERY = `
@@ -1355,10 +1389,14 @@ async function fetchFeaturedBadgeIndexUncached(signal?: AbortSignal): Promise<Fe
 }
 
 function fetchFeaturedBadgeIndex(signal?: AbortSignal): Promise<FeaturedBadgeIndex> {
-  return cachedAsync(
-    "featured-badge-index:gainforest-maearth:v2",
-    FEATURED_BADGE_INDEX_CACHE_MS,
-    () => fetchFeaturedBadgeIndexUncached(signal),
+  return publicExploreCache(
+    "featured-badge-index",
+    { version: "gainforest-maearth:v2", ttl: FEATURED_BADGE_INDEX_CACHE_MS },
+    // The featured-badge index is shared by count and list requests across the
+    // public Explore pages. Keep the cached loader independent from any one
+    // component effect's abort signal; otherwise an aborted count refresh can
+    // cancel work that a still-current list request is awaiting.
+    () => fetchFeaturedBadgeIndexUncached(),
     signal,
   );
 }
@@ -1830,10 +1868,14 @@ async function fetchBumicertsFromActivityCount(signal?: AbortSignal, options?: A
 }
 
 export async function fetchBumicertTotalCount(signal?: AbortSignal, options?: ActivityQueryOptions): Promise<number> {
-  if (options?.filters?.includes("donations")) {
-    return fetchDonationEnabledBumicertCount(signal, options);
-  }
-  return fetchBumicertsFromActivityCount(signal, options);
+  return publicExploreCache(
+    "bumicert-total-count",
+    { options },
+    () => options?.filters?.includes("donations")
+      ? fetchDonationEnabledBumicertCount(undefined, options)
+      : fetchBumicertsFromActivityCount(undefined, options),
+    signal,
+  );
 }
 
 async function fetchBumicertsFromActivity(
@@ -1906,10 +1948,16 @@ export async function fetchBumicerts(
   onProgress?: (records: BumicertRecord[]) => void,
   options?: ActivityQueryOptions,
 ): Promise<Page<BumicertRecord>> {
-  if (options?.filters?.includes("donations")) {
-    return fetchDonationEnabledBumicerts(target, after, signal, onProgress, options);
-  }
-  return fetchBumicertsFromActivity(target, after, signal, onProgress, options);
+  const pagePromise = publicExploreCache(
+    "bumicerts-page",
+    { target, after, options },
+    () => options?.filters?.includes("donations")
+      ? fetchDonationEnabledBumicerts(target, after, undefined, undefined, options)
+      : fetchBumicertsFromActivity(target, after, undefined, undefined, options),
+    signal,
+  );
+  if (onProgress) void pagePromise.then((page) => onProgress(page.records)).catch(() => {});
+  return pagePromise;
 }
 
 /** Load Bumicerts created by a single account DID. */
@@ -2009,7 +2057,7 @@ async function fetchBumicertStatsUncached(): Promise<BumicertStats> {
 }
 
 export async function fetchBumicertStats(signal?: AbortSignal): Promise<BumicertStats> {
-  return cachedAsync("bumicert-total-stats", TOTAL_STATS_CACHE_MS, fetchBumicertStatsUncached, signal);
+  return publicExploreCache("bumicert-total-stats", {}, fetchBumicertStatsUncached, signal);
 }
 
 // ── 3. Projects (hypercert collections) ────────────────────────────────────
@@ -2363,6 +2411,10 @@ async function fetchProjectsFromCollections(
 }
 
 export async function fetchProjectTotalCount(signal?: AbortSignal, options?: ProjectQueryOptions): Promise<number> {
+  return publicExploreCache("project-total-count", { options }, () => fetchProjectTotalCountUncached(undefined, options), signal);
+}
+
+async function fetchProjectTotalCountUncached(signal?: AbortSignal, options?: ProjectQueryOptions): Promise<number> {
   const badgeIndex = options?.featuredBadgesOnly ? await fetchFeaturedBadgeIndex(signal) : undefined;
   const variants = projectWhereVariants(options, badgeIndex);
   if (variants.length === 0) return 0;
@@ -2390,7 +2442,14 @@ export async function fetchProjects(
   onProgress?: (records: ProjectRecord[]) => void,
   options?: ProjectQueryOptions,
 ): Promise<Page<ProjectRecord>> {
-  return fetchProjectsFromCollections(target, after, signal, onProgress, options);
+  const pagePromise = publicExploreCache(
+    "projects-page",
+    { target, after, options },
+    () => fetchProjectsFromCollections(target, after, undefined, undefined, options),
+    signal,
+  );
+  if (onProgress) void pagePromise.then((page) => onProgress(page.records)).catch(() => {});
+  return pagePromise;
 }
 
 /** Load project collections created by a single account DID. */
@@ -2472,7 +2531,7 @@ async function fetchProjectStatsUncached(): Promise<ProjectStats> {
 }
 
 export async function fetchProjectStats(signal?: AbortSignal): Promise<ProjectStats> {
-  return cachedAsync("project-total-stats", TOTAL_STATS_CACHE_MS, fetchProjectStatsUncached, signal);
+  return publicExploreCache("project-total-stats", {}, fetchProjectStatsUncached, signal);
 }
 
 // ── 4. Project sites (organizations) ───────────────────────────────────────
@@ -2538,19 +2597,29 @@ async function fetchCountsByDid(
 }
 
 function fetchBumicertCountsByDid(dids: string[], signal?: AbortSignal): Promise<Map<string, number>> {
-  return fetchCountsByDid(
-    dids,
-    "OrganizationBumicertCounts",
-    (did, index) => `c${index}: orgHypercertsClaimActivity(first: 0, where: { did: { eq: ${JSON.stringify(did)} } }) { totalCount }`,
+  const uniqueDids = Array.from(new Set(dids.filter(Boolean))).sort();
+  return publicExploreCache(
+    "bumicert-counts-by-did",
+    { dids: uniqueDids },
+    () => fetchCountsByDid(
+      uniqueDids,
+      "OrganizationBumicertCounts",
+      (did, index) => `c${index}: orgHypercertsClaimActivity(first: 0, where: { did: { eq: ${JSON.stringify(did)} } }) { totalCount }`,
+    ),
     signal,
   );
 }
 
 export function fetchObservationCountsByDid(dids: string[], signal?: AbortSignal): Promise<Map<string, number>> {
-  return fetchCountsByDid(
-    dids,
-    "OrganizationObservationCounts",
-    (did, index) => `c${index}: appGainforestDwcOccurrence(first: 0, where: { did: { eq: ${JSON.stringify(did)} } }) { totalCount }`,
+  const uniqueDids = Array.from(new Set(dids.filter(Boolean))).sort();
+  return publicExploreCache(
+    "observation-counts-by-did",
+    { dids: uniqueDids },
+    () => fetchCountsByDid(
+      uniqueDids,
+      "OrganizationObservationCounts",
+      (did, index) => `c${index}: appGainforestDwcOccurrence(first: 0, where: { did: { eq: ${JSON.stringify(did)} } }) { totalCount }`,
+    ),
     signal,
   );
 }
@@ -2927,9 +2996,18 @@ export async function fetchCertifiedLocationCountriesByUri(
   uris: string[],
   signal?: AbortSignal,
 ): Promise<Map<string, string>> {
-  const uniqueUris = Array.from(new Set(uris.filter(Boolean)));
+  const uniqueUris = Array.from(new Set(uris.filter(Boolean))).sort();
+  return publicExploreCache(
+    "certified-location-countries",
+    { uris: uniqueUris },
+    () => fetchCertifiedLocationCountriesByUriUncached(uniqueUris),
+    signal,
+  );
+}
+
+async function fetchCertifiedLocationCountriesByUriUncached(uris: string[]): Promise<Map<string, string>> {
   const countries = new Map<string, string>();
-  if (uniqueUris.length === 0) return countries;
+  if (uris.length === 0) return countries;
 
   const fields = `{
     name
@@ -2940,8 +3018,8 @@ export async function fetchCertifiedLocationCountriesByUri(
   }`;
 
   const batches = Array.from(
-    { length: Math.ceil(uniqueUris.length / LOCATION_COUNTRY_BATCH_SIZE) },
-    (_, index) => uniqueUris.slice(index * LOCATION_COUNTRY_BATCH_SIZE, (index + 1) * LOCATION_COUNTRY_BATCH_SIZE),
+    { length: Math.ceil(uris.length / LOCATION_COUNTRY_BATCH_SIZE) },
+    (_, index) => uris.slice(index * LOCATION_COUNTRY_BATCH_SIZE, (index + 1) * LOCATION_COUNTRY_BATCH_SIZE),
   );
 
   await Promise.all(batches.map(async (batch) => {
@@ -2949,7 +3027,7 @@ export async function fetchCertifiedLocationCountriesByUri(
       .map((uri, index) => `l${index}: appCertifiedLocationByUri(uri: ${JSON.stringify(uri)}) ${fields}`)
       .join("\n")}\n}`;
 
-    const data = await indexerQuery<Record<string, CertifiedLocationStatsNode | null>>(query, {}, signal);
+    const data = await indexerQuery<Record<string, CertifiedLocationStatsNode | null>>(query, {});
     batch.forEach((uri, index) => {
       const country = countryCodeFromCertifiedLocation(data?.[`l${index}`]);
       if (country) countries.set(uri, country);
@@ -3030,20 +3108,15 @@ async function fetchCertifiedOrganizationStats(signal?: AbortSignal): Promise<Or
   };
 }
 
-async function fetchOrganizationStatsUncached(_source: SiteSourceFilter, signal?: AbortSignal): Promise<OrganizationStats> {
-  return fetchCertifiedOrganizationStats(signal);
+async function fetchOrganizationStatsUncached(_source: SiteSourceFilter): Promise<OrganizationStats> {
+  return fetchCertifiedOrganizationStats();
 }
 
 export async function fetchOrganizationStats(
   source: SiteSourceFilter = "both",
   signal?: AbortSignal,
 ): Promise<OrganizationStats> {
-  return cachedAsync(
-    `organization-total-stats:${source}`,
-    TOTAL_STATS_CACHE_MS,
-    () => fetchOrganizationStatsUncached(source, signal),
-    signal,
-  );
+  return publicExploreCache("organization-total-stats", { source }, () => fetchOrganizationStatsUncached(source), signal);
 }
 
 function siteTime(iso: string | null | undefined): number {
@@ -3053,6 +3126,10 @@ function siteTime(iso: string | null | undefined): number {
 }
 
 export async function fetchSiteTotalCount(signal?: AbortSignal, options?: SiteQueryOptions): Promise<number> {
+  return publicExploreCache("site-total-count", { options }, () => fetchSiteTotalCountUncached(undefined, options), signal);
+}
+
+async function fetchSiteTotalCountUncached(signal?: AbortSignal, options?: SiteQueryOptions): Promise<number> {
   const includeBumicertCounts = options?.quickFilters?.includes("bumicerts") ?? false;
   const includeObservationCounts = options?.quickFilters?.includes("observations") ?? false;
   const badgeIndex = options?.featuredBadgesOnly ? await fetchFeaturedBadgeIndex(signal) : undefined;
@@ -3082,6 +3159,24 @@ export async function fetchSiteTotalCount(signal?: AbortSignal, options?: SiteQu
  * sites that pass "both" still receive certified organization records.
  */
 export async function fetchSites(
+  target: number,
+  after: string | null,
+  signal?: AbortSignal,
+  onProgress?: (records: SiteRecord[]) => void,
+  _source: SiteSourceFilter = "both",
+  options?: SiteQueryOptions,
+): Promise<Page<SiteRecord>> {
+  const pagePromise = publicExploreCache(
+    "sites-page",
+    { target, after, source: _source, options },
+    () => fetchSitesUncached(target, after, undefined, undefined, _source, options),
+    signal,
+  );
+  if (onProgress) void pagePromise.then((page) => onProgress(page.records)).catch(() => {});
+  return pagePromise;
+}
+
+async function fetchSitesUncached(
   target: number,
   after: string | null,
   signal?: AbortSignal,
