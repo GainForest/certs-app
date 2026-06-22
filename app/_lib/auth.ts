@@ -1,11 +1,13 @@
-const DEFAULT_AUTH_BASE_URL = "https://auth.gainforest.app";
-
 export type AuthSession =
   | { isLoggedIn: false }
   | { isLoggedIn: true; did: string; handle: string; email?: string };
 
 export function getAuthBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_AUTH_BASE_URL || DEFAULT_AUTH_BASE_URL).replace(/\/$/, "");
+  const baseUrl = process.env.NEXT_PUBLIC_AUTH_BASE_URL?.trim();
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_AUTH_BASE_URL is required");
+  }
+  return baseUrl.replace(/\/$/, "");
 }
 
 export function getAuthProvider(): string | null {
