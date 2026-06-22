@@ -1,40 +1,64 @@
 import { existsSync, readFileSync } from "node:fs";
-import { rm } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { cleanupCreatedPdsRecords } from "./support/pds";
 import {
-  clearDisposableAccountMetadataAt,
   listDisposableEmailMessages,
   disposableAccountMetadataPath,
   memberDisposableAccountMetadataPath,
   readDisposableAccountMetadataAt,
   waitForInboxDeletionToken,
   waitForInboxPasswordResetToken,
+  writeDisposableAccountMetadataAt,
   type DisposableAccountMetadata,
+  type DisposableInbox,
 } from "./support/disposable-email";
-import { clearCgsOrgMetadata, groupIdentifier, readCgsOrgMetadata, type CgsOrgMetadata } from "./support/cgs-org";
+import { groupIdentifier, patchCgsOrgMetadata, readCgsOrgMetadata, writeCgsOrgMetadata, type CgsOrgMetadata } from "./support/cgs-org";
+import { getE2EEnv } from "./support/env";
 
 const authStatePath = "e2e/.auth/user.json";
 const memberAuthStatePath = "e2e/.auth/member.json";
+const cleanupSmokeReportPath = "reports/e2e/cleanup-smoke.json";
 
 type PdsSession = {
   did: string;
   accessJwt: string;
 };
 
+type CleanupAccount = {
+  did: string;
+  handle: string | null;
+  email: string;
+  inbox: DisposableInbox;
+  serviceEndpoint: string;
+  password?: string | null;
+};
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function makeTemporaryPassword(): string {
-  return `Delete-${Date.now()}-${Math.random().toString(36).slice(2)}-Aa1!`;
+function now(): string {
+  return new Date().toISOString();
+}
+
+function makeTemporaryPassword(label: string): string {
+  return `${label}-${Date.now()}-${Math.random().toString(36).slice(2)}-Aa1!`;
+}
+
+function normalizeEndpoint(endpoint: string | null | undefined): string {
+  const env = getE2EEnv();
+  const fallback = env.testPdsDomain
+    ? env.testPdsDomain.startsWith("http") ? env.testPdsDomain : `https://${env.testPdsDomain}`
+    : "https://dev.certified.app";
+  return (endpoint || fallback).replace(/\/$/, "");
 }
 
 function disposableServiceEndpoint(metadata: DisposableAccountMetadata): string {
-  return (metadata.serviceEndpoint || "https://certified.one").replace(/\/$/, "");
+  return normalizeEndpoint(metadata.serviceEndpoint);
 }
 
-async function xrpc(metadata: DisposableAccountMetadata, method: string, init: RequestInit = {}): Promise<unknown> {
-  const response = await fetch(`${disposableServiceEndpoint(metadata)}/xrpc/${method}`, init);
+async function fetchText(url: string, init?: RequestInit): Promise<{ ok: boolean; status: number; text: string; body: unknown }> {
+  const response = await fetch(url, init);
   const text = await response.text();
   let body: unknown = null;
   try {
@@ -42,100 +66,131 @@ async function xrpc(metadata: DisposableAccountMetadata, method: string, init: R
   } catch {
     body = text;
   }
-
-  if (!response.ok) {
-    const message = isObject(body) && typeof body.message === "string"
-      ? body.message
-      : isObject(body) && typeof body.error === "string"
-        ? body.error
-        : text || `${response.status} ${response.statusText}`;
-    throw new Error(`${method} failed: ${message}`);
-  }
-
-  return body;
+  return { ok: response.ok, status: response.status, text, body };
 }
 
-async function requestPasswordReset(metadata: DisposableAccountMetadata): Promise<void> {
-  await xrpc(metadata, "com.atproto.server.requestPasswordReset", {
+async function xrpcEndpoint(endpoint: string, method: string, init: RequestInit = {}): Promise<unknown> {
+  const response = await fetchText(`${normalizeEndpoint(endpoint)}/xrpc/${method}`, init);
+  if (!response.ok) {
+    const message = isObject(response.body) && typeof response.body.message === "string"
+      ? response.body.message
+      : isObject(response.body) && typeof response.body.error === "string"
+        ? response.body.error
+        : response.text || `${response.status}`;
+    throw new Error(`${method} failed: ${message}`);
+  }
+  return response.body;
+}
+
+async function xrpcMetadata(metadata: DisposableAccountMetadata, method: string, init: RequestInit = {}): Promise<unknown> {
+  return xrpcEndpoint(disposableServiceEndpoint(metadata), method, init);
+}
+
+async function requestPasswordReset(account: CleanupAccount): Promise<void> {
+  await xrpcEndpoint(account.serviceEndpoint, "com.atproto.server.requestPasswordReset", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email: metadata.email }),
+    body: JSON.stringify({ email: account.email }),
   });
 }
 
-async function resetPassword(metadata: DisposableAccountMetadata, token: string, password: string): Promise<void> {
-  await xrpc(metadata, "com.atproto.server.resetPassword", {
+async function resetPassword(account: CleanupAccount, token: string, password: string): Promise<void> {
+  await xrpcEndpoint(account.serviceEndpoint, "com.atproto.server.resetPassword", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ token, password }),
   });
 }
 
-async function createSessionWithIdentifier(metadata: DisposableAccountMetadata, identifier: string, password: string): Promise<PdsSession> {
-  const value = await xrpc(metadata, "com.atproto.server.createSession", {
+async function createSessionWithIdentifier(account: CleanupAccount, identifier: string, password: string): Promise<PdsSession> {
+  const value = await xrpcEndpoint(account.serviceEndpoint, "com.atproto.server.createSession", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ identifier, password }),
   });
 
   if (!isObject(value) || typeof value.did !== "string" || typeof value.accessJwt !== "string") {
-    throw new Error("Disposable account session response had an unexpected shape.");
+    throw new Error("PDS session response had an unexpected shape.");
   }
 
   return { did: value.did, accessJwt: value.accessJwt };
 }
 
-async function createSession(metadata: DisposableAccountMetadata, password: string): Promise<PdsSession> {
-  return createSessionWithIdentifier(metadata, metadata.email, password);
-}
-
-async function requestAccountDelete(metadata: DisposableAccountMetadata, session: PdsSession): Promise<void> {
-  await xrpc(metadata, "com.atproto.server.requestAccountDelete", {
+async function requestAccountDelete(account: CleanupAccount, session: PdsSession): Promise<void> {
+  await xrpcEndpoint(account.serviceEndpoint, "com.atproto.server.requestAccountDelete", {
     method: "POST",
     headers: { authorization: `Bearer ${session.accessJwt}` },
   });
 }
 
-async function deleteAccount(metadata: DisposableAccountMetadata, session: PdsSession, password: string, token: string): Promise<void> {
-  if (metadata.did && session.did !== metadata.did) {
-    throw new Error(`Refusing to delete ${session.did}; expected ${metadata.did}.`);
+async function deleteAccount(account: CleanupAccount, session: PdsSession, password: string, token: string): Promise<void> {
+  if (session.did !== account.did) {
+    throw new Error(`Refusing to delete ${session.did}; expected ${account.did}.`);
   }
 
-  await xrpc(metadata, "com.atproto.server.deleteAccount", {
+  await xrpcEndpoint(account.serviceEndpoint, "com.atproto.server.deleteAccount", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ did: session.did, password, token }),
   });
 }
 
-async function canCreateSession(metadata: DisposableAccountMetadata, password: string): Promise<boolean> {
+async function canCreateSession(account: CleanupAccount, identifier: string, password: string): Promise<boolean> {
   try {
-    await createSession(metadata, password);
+    await createSessionWithIdentifier(account, identifier, password);
     return true;
   } catch {
     return false;
   }
 }
 
-async function resetDisposablePassword(metadata: DisposableAccountMetadata, password: string): Promise<void> {
-  let lastError: unknown = null;
+async function repoExists(account: CleanupAccount): Promise<boolean> {
+  const params = new URLSearchParams({ repo: account.did });
+  const response = await fetch(`${account.serviceEndpoint}/xrpc/com.atproto.repo.describeRepo?${params.toString()}`).catch(() => null);
+  return Boolean(response?.ok);
+}
 
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const existingMessages = await listDisposableEmailMessages(metadata.inbox);
-    const ignoredMessageIds = new Set(existingMessages.map((message) => message.id));
+async function handleStillPointsToAccount(account: CleanupAccount): Promise<boolean> {
+  if (!account.handle) return false;
+  const params = new URLSearchParams({ handle: account.handle });
+  const response = await fetch(`${account.serviceEndpoint}/xrpc/com.atproto.identity.resolveHandle?${params.toString()}`).catch(() => null);
+  if (!response?.ok) return false;
+  const body = await response.json().catch(() => null) as unknown;
+  return isObject(body) && body.did === account.did;
+}
 
-    try {
-      await requestPasswordReset(metadata);
-      const resetToken = await waitForInboxPasswordResetToken(metadata.inbox, ignoredMessageIds);
-      await resetPassword(metadata, resetToken, password);
+async function verifyAccountGone(account: CleanupAccount, identifier: string, password: string | null | undefined, label: string): Promise<void> {
+  const deadline = Date.now() + 90_000;
+  let latest = "";
+  while (Date.now() <= deadline) {
+    const sessionOk = password ? await canCreateSession(account, identifier, password) : false;
+    const describeOk = await repoExists(account);
+    const handleOk = await handleStillPointsToAccount(account);
+    latest = `sessionOk=${sessionOk} describeOk=${describeOk} handleStillPointsHere=${handleOk}`;
+    if (!sessionOk && !describeOk && !handleOk) {
+      console.log(`[e2e] Verified ${label} PDS account is gone (${account.did}).`);
       return;
-    } catch (error) {
-      lastError = error;
-      console.log(`[e2e] Password reset attempt ${attempt} failed for ${metadata.email}: ${error instanceof Error ? error.message : String(error)}`);
     }
+    await new Promise((resolve) => setTimeout(resolve, 3_000));
   }
+  throw new Error(`Timed out verifying ${label} deletion for ${account.did}: ${latest}`);
+}
 
-  throw lastError instanceof Error ? lastError : new Error("Could not reset disposable account password.");
+async function establishPassword(
+  account: CleanupAccount,
+  label: string,
+  onPatch: (patch: { password?: string; passwordResetToken?: string; cleanupError?: string | null }) => Promise<void>,
+): Promise<string> {
+  if (account.password) return account.password;
+
+  const password = makeTemporaryPassword(`${label}Delete`);
+  await onPatch({ password });
+  const ignoredMessageIds = new Set((await listDisposableEmailMessages(account.inbox)).map((message) => message.id));
+  await requestPasswordReset(account);
+  const resetToken = await waitForInboxPasswordResetToken(account.inbox, ignoredMessageIds);
+  await onPatch({ password, passwordResetToken: resetToken });
+  await resetPassword(account, resetToken, password);
+  return password;
 }
 
 function authCookieFromStorageState(path: string): string | null {
@@ -153,58 +208,33 @@ function authCookieFromStorageState(path: string): string | null {
   return cookies.length > 0 ? cookies.join("; ") : null;
 }
 
-function groupDisposableMetadata(org: CgsOrgMetadata): DisposableAccountMetadata {
-  return {
-    source: "disposable-email-auth",
-    createdAt: org.createdAt,
-    email: groupIdentifier(org),
-    inbox: {
-      provider: "guerrillamail",
-      email: groupIdentifier(org),
-      sidToken: "",
-      cookie: "",
-    },
-    did: org.groupDid,
-    handle: org.handle,
-    serviceEndpoint: "https://certified.one",
-  };
-}
-
-async function destroyCgsOrganization(org: CgsOrgMetadata): Promise<boolean> {
+async function destroyCgsOrganization(org: CgsOrgMetadata): Promise<void> {
+  if (org.destroyedAt) return;
   const cookie = authCookieFromStorageState(authStatePath);
   if (!cookie) {
-    console.log("[e2e] No owner auth cookie available for CGS organization destroy.");
-    return false;
+    console.log("[e2e] No owner auth cookie available for CGS destroy; continuing with PDS account deletion.");
+    return;
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_AUTH_BASE_URL ?? process.env.E2E_AUTH_BASE_URL ?? "https://dev.auth.gainforest.app";
-  const payloads = [
-    { operation: "destroyGroup", repo: org.groupDid },
-    { operation: "destroy", repo: org.groupDid },
-    { operation: "group.destroy", repo: org.groupDid },
-  ];
-  let lastMessage = "";
+  const baseUrl = getE2EEnv().authBaseUrl;
+  const response = await fetch(new URL("/api/cgs/mutation", baseUrl), {
+    method: "POST",
+    headers: { "content-type": "application/json", cookie },
+    body: JSON.stringify({ operation: "destroyGroup", repo: org.groupDid }),
+  }).catch((error: unknown) => {
+    console.log(`[e2e] CGS destroy request failed: ${error instanceof Error ? error.message : String(error)}`);
+    return null;
+  });
 
-  for (const payload of payloads) {
-    const response = await fetch(new URL("/api/cgs/mutation", baseUrl), {
-      method: "POST",
-      headers: { "content-type": "application/json", cookie },
-      body: JSON.stringify(payload),
-    }).catch((error: unknown) => {
-      lastMessage = error instanceof Error ? error.message : String(error);
-      return null;
-    });
-    if (!response) continue;
-    const text = await response.text().catch(() => "");
-    if (response.ok) {
-      console.log(`[e2e] Destroyed CGS organization state for ${org.groupDid}.`);
-      return true;
-    }
-    lastMessage = text || `${response.status} ${response.statusText}`;
+  if (!response) return;
+  const text = await response.text().catch(() => "");
+  if (response.ok || /unknown group|not found|already/i.test(text)) {
+    await patchCgsOrgMetadata({ destroyedAt: now(), cleanupError: null });
+    console.log(`[e2e] Destroyed CGS service state for ${org.groupDid}.`);
+    return;
   }
 
-  console.log(`[e2e] CGS organization destroy did not complete for ${org.groupDid}: ${lastMessage}`);
-  return false;
+  console.log(`[e2e] CGS destroy did not complete for ${org.groupDid}: ${response.status} ${text}`);
 }
 
 async function deleteCgsOrganizationAccount(): Promise<void> {
@@ -214,34 +244,42 @@ async function deleteCgsOrganizationAccount(): Promise<void> {
     return;
   }
 
-  let pdsAccountDeleted = false;
+  try {
+    await destroyCgsOrganization(org);
+    const latest = readCgsOrgMetadata() ?? org;
+    if (latest.verifiedGoneAt) return;
 
-  if (org.accountPassword) {
     const owner = readDisposableAccountMetadataAt(disposableAccountMetadataPath);
-    if (owner) {
-      try {
-        const groupMetadata = groupDisposableMetadata(org);
-        const session = await createSessionWithIdentifier(groupMetadata, groupIdentifier(org), org.accountPassword);
-        if (session.did !== org.groupDid) throw new Error(`Refusing to delete ${session.did}; expected ${org.groupDid}.`);
-        const ignoredMessageIds = new Set((await listDisposableEmailMessages(owner.inbox)).map((message) => message.id));
-        await requestAccountDelete(groupMetadata, session);
-        const deletionToken = await waitForInboxDeletionToken(owner.inbox, ignoredMessageIds, 45_000);
-        await deleteAccount(groupMetadata, session, org.accountPassword, deletionToken);
-        pdsAccountDeleted = true;
-        console.log(`[e2e] Deleted CGS organization PDS account ${org.groupDid}.`);
-      } catch (error) {
-        console.log(`[e2e] CGS organization PDS account deletion failed: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-  } else {
-    console.log(`[e2e] No CGS organization account password captured for ${org.groupDid}; skipping PDS account deletion.`);
-  }
+    const recoveryInbox = latest.recoveryInbox ?? owner?.inbox;
+    const recoveryEmail = latest.recoveryEmail ?? owner?.email;
+    if (!recoveryInbox || !recoveryEmail) throw new Error("Missing recovery inbox/email for CGS organization cleanup.");
 
-  const cgsDestroyed = await destroyCgsOrganization(org);
-  if (pdsAccountDeleted && cgsDestroyed) {
-    await clearCgsOrgMetadata();
-  } else {
-    console.log(`[e2e] Keeping CGS organization metadata for inspection/retry (${org.groupDid}).`);
+    const account: CleanupAccount = {
+      did: latest.groupDid,
+      handle: latest.handle,
+      email: recoveryEmail,
+      inbox: recoveryInbox,
+      serviceEndpoint: normalizeEndpoint(latest.serviceEndpoint ?? owner?.serviceEndpoint),
+      password: latest.accountPassword,
+    };
+    const identifier = groupIdentifier(latest);
+    const password = await establishPassword(account, "Group", async (patch) => {
+      await patchCgsOrgMetadata({ accountPassword: patch.password ?? latest.accountPassword, passwordResetToken: patch.passwordResetToken ?? latest.passwordResetToken, cleanupError: null });
+    });
+    const session = await createSessionWithIdentifier(account, identifier, password);
+    const ignoredMessageIds = new Set((await listDisposableEmailMessages(account.inbox)).map((message) => message.id));
+    await requestAccountDelete(account, session);
+    const deletionToken = await waitForInboxDeletionToken(account.inbox, ignoredMessageIds);
+    await patchCgsOrgMetadata({ deletionToken, cleanupError: null });
+    await deleteAccount(account, session, password, deletionToken);
+    await patchCgsOrgMetadata({ accountPassword: password, deletedAt: now(), cleanupError: null });
+    await verifyAccountGone(account, identifier, password, "CGS organization");
+    await patchCgsOrgMetadata({ verifiedGoneAt: now(), cleanupError: null });
+    console.log(`[e2e] Deleted CGS organization PDS account ${latest.groupDid}.`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await patchCgsOrgMetadata({ cleanupError: message });
+    throw new Error(`Mandatory CGS organization cleanup failed: ${message}`);
   }
 }
 
@@ -253,36 +291,39 @@ async function deleteDisposableAccountFromPath(metadataPath: string, authState: 
   }
 
   if (!metadata.did) {
-    console.log(`[e2e] ${label} disposable account ${metadata.email} never completed sign-in; clearing metadata only.`);
-    await clearDisposableAccountMetadataAt(metadataPath);
+    console.log(`[e2e] ${label} disposable account ${metadata.email} never completed sign-in; keeping metadata and clearing browser state.`);
     await rm(authState, { force: true });
     return;
   }
 
-  if (!metadata.email.endsWith("@guerrillamailblock.com")) {
-    throw new Error(`Refusing to delete non-disposable E2E account ${metadata.email}.`);
+  try {
+    const account: CleanupAccount = {
+      did: metadata.did,
+      handle: metadata.handle,
+      email: metadata.email,
+      inbox: metadata.inbox,
+      serviceEndpoint: disposableServiceEndpoint(metadata),
+      password: metadata.password,
+    };
+    const password = await establishPassword(account, label, async (patch) => {
+      await writeDisposableAccountMetadataAt(metadataPath, { ...metadata, password: patch.password ?? metadata.password, passwordResetToken: patch.passwordResetToken ?? metadata.passwordResetToken, cleanupError: null });
+      Object.assign(metadata, patch, { cleanupError: null });
+    });
+    const ignoredMessageIds = new Set((await listDisposableEmailMessages(account.inbox)).map((message) => message.id));
+    const session = await createSessionWithIdentifier(account, metadata.email, password);
+    await requestAccountDelete(account, session);
+    const deletionToken = await waitForInboxDeletionToken(account.inbox, ignoredMessageIds);
+    await writeDisposableAccountMetadataAt(metadataPath, { ...metadata, password, deletionToken, cleanupError: null });
+    await deleteAccount(account, session, password, deletionToken);
+    await verifyAccountGone(account, metadata.email, password, label);
+    await writeDisposableAccountMetadataAt(metadataPath, { ...metadata, password, deletionToken, deletedAt: now(), verifiedGoneAt: now(), cleanupError: null });
+    await rm(authState, { force: true });
+    console.log(`[e2e] Deleted ${label} disposable account ${metadata.did} (${metadata.email}).`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await writeDisposableAccountMetadataAt(metadataPath, { ...metadata, cleanupError: message });
+    throw new Error(`Mandatory ${label} disposable account cleanup failed: ${message}`);
   }
-
-  const password = makeTemporaryPassword();
-
-  console.log(`[e2e] Resetting password before deleting ${label} disposable account ${metadata.email}.`);
-  await resetDisposablePassword(metadata, password);
-
-  const afterResetMessages = await listDisposableEmailMessages(metadata.inbox);
-  const ignoredMessageIds = new Set(afterResetMessages.map((message) => message.id));
-
-  const session = await createSession(metadata, password);
-  await requestAccountDelete(metadata, session);
-  const deletionToken = await waitForInboxDeletionToken(metadata.inbox, ignoredMessageIds);
-  await deleteAccount(metadata, session, password, deletionToken);
-
-  if (await canCreateSession(metadata, password)) {
-    throw new Error(`Disposable account deletion did not take effect for ${metadata.email}.`);
-  }
-
-  await clearDisposableAccountMetadataAt(metadataPath);
-  await rm(authState, { force: true });
-  console.log(`[e2e] Deleted ${label} disposable account ${session.did} (${metadata.email}).`);
 }
 
 async function globalTeardown(): Promise<void> {
@@ -291,13 +332,35 @@ async function globalTeardown(): Promise<void> {
     `[e2e] Deleted ${result.deleted} test Cert record(s)${result.skipped ? `; disposable records are handled by account deletion (${result.skipped} tracked)` : ""}${result.failed ? `; ${result.failed} failed` : ""}.`,
   );
 
-  try {
-    await deleteCgsOrganizationAccount();
-    await deleteDisposableAccountFromPath(memberDisposableAccountMetadataPath, memberAuthStatePath, "member");
-    await deleteDisposableAccountFromPath(disposableAccountMetadataPath, authStatePath, "owner");
-  } catch (error) {
-    console.log(`[e2e] Disposable account deletion failed: ${error instanceof Error ? error.message : String(error)}`);
-    throw error;
+  const errors: string[] = [];
+  for (const task of [
+    () => deleteCgsOrganizationAccount(),
+    () => deleteDisposableAccountFromPath(memberDisposableAccountMetadataPath, memberAuthStatePath, "member"),
+    () => deleteDisposableAccountFromPath(disposableAccountMetadataPath, authStatePath, "owner"),
+  ]) {
+    try {
+      await task();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.log(`[e2e] ${message}`);
+      errors.push(message);
+    }
+  }
+
+  const report = {
+    createdAt: now(),
+    ok: errors.length === 0,
+    errors,
+    cgsOrganization: readCgsOrgMetadata(),
+    owner: readDisposableAccountMetadataAt(disposableAccountMetadataPath),
+    member: readDisposableAccountMetadataAt(memberDisposableAccountMetadataPath),
+  };
+  await mkdir("reports/e2e", { recursive: true });
+  await writeFile(cleanupSmokeReportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  console.log(`[e2e] Cleanup smoke report written to ${cleanupSmokeReportPath}.`);
+
+  if (errors.length > 0) {
+    throw new Error(`Mandatory E2E cleanup failed:\n- ${errors.join("\n- ")}`);
   }
 }
 

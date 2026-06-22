@@ -2,7 +2,7 @@ const DEFAULT_AUTH_BASE_URL = "https://auth.gainforest.app";
 
 export type AuthSession =
   | { isLoggedIn: false }
-  | { isLoggedIn: true; did: string; handle: string };
+  | { isLoggedIn: true; did: string; handle: string; email?: string };
 
 export function getAuthBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_AUTH_BASE_URL || DEFAULT_AUTH_BASE_URL).replace(/\/$/, "");
@@ -55,7 +55,14 @@ export function parseAuthSession(value: unknown): AuthSession {
     "handle" in value &&
     typeof value.handle === "string"
   ) {
-    return { isLoggedIn: true, did: value.did, handle: value.handle };
+    return {
+      isLoggedIn: true,
+      did: value.did,
+      handle: value.handle,
+      ...("email" in value && typeof value.email === "string" && value.email.trim()
+        ? { email: value.email.trim() }
+        : {}),
+    };
   }
 
   return { isLoggedIn: false };

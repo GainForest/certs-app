@@ -71,7 +71,7 @@ export async function ManageHomeSection({ target, wrapDashboard = true }: { targ
   const groupRole: CgsRole | undefined = target.kind === "group"
     ? target.role === "owner" ? "owner" : target.role === "admin" ? "admin" : "member"
     : undefined;
-  const session = target.kind === "group" && !target.currentUserDid ? await fetchAuthSession() : null;
+  const session = await fetchAuthSession();
 
   return (
     <ManageDashboard
@@ -79,7 +79,8 @@ export async function ManageHomeSection({ target, wrapDashboard = true }: { targ
       basePath={target.basePath}
       writeRepoDid={target.kind === "group" ? target.did : undefined}
       groupRole={groupRole}
-      currentUserDid={target.currentUserDid ?? (session?.isLoggedIn ? session.did : null)}
+      currentUserDid={target.currentUserDid ?? (target.kind === "group" && session.isLoggedIn ? session.did : null)}
+      recoveryEmail={session.isLoggedIn ? session.email ?? null : null}
     >
       {overview}
     </ManageDashboard>

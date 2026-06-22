@@ -387,10 +387,12 @@ const organizationStepVariants = {
 function AccountSetupForm({
   kind,
   ownerDid,
+  recoveryEmail,
   onBack,
 }: {
   kind: OnboardingKind;
   ownerDid: string;
+  recoveryEmail?: string | null;
   onBack: () => void;
 }) {
   const router = useRouter();
@@ -546,6 +548,7 @@ function AccountSetupForm({
             ownerDid,
             displayName: trimmedName,
             description: trimmedBio,
+            ...(recoveryEmail?.trim() ? { email: recoveryEmail.trim() } : {}),
             ...(normalizedWebsite ? { website: normalizedWebsite } : {}),
           })
         : null;
@@ -620,6 +623,7 @@ function AccountSetupForm({
     longDescription,
     ownerDid,
     primaryImage,
+    recoveryEmail,
     router,
     shortDescription,
     startDate,
@@ -864,7 +868,7 @@ function AccountSetupForm({
 
 // ── Page wrapper ──────────────────────────────────────────────────────────────
 
-export function ManageAccountSetup({ did, mode }: { did: string; mode: ManageMode | null }) {
+export function ManageAccountSetup({ did, mode, recoveryEmail }: { did: string; mode: ManageMode | null; recoveryEmail?: string | null }) {
   const router = useRouter();
   const onboardingKind: OnboardingKind = mode === "onboard-org" ? "organization" : "user";
 
@@ -883,7 +887,7 @@ export function ManageAccountSetup({ did, mode }: { did: string; mode: ManageMod
           exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
         >
-          <AccountSetupForm kind={onboardingKind} ownerDid={did} onBack={() => router.push("/manage")} />
+          <AccountSetupForm kind={onboardingKind} ownerDid={did} recoveryEmail={recoveryEmail} onBack={() => router.push("/manage")} />
         </motion.div>
       </AnimatePresence>
     </motion.div>

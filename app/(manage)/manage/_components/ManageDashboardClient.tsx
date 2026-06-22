@@ -499,6 +499,7 @@ export function ManageDashboardClient({
   writeRepoDid,
   groupRole,
   currentUserDid,
+  recoveryEmail,
   children,
 }: {
   account: AccountRouteData;
@@ -508,6 +509,7 @@ export function ManageDashboardClient({
   /** When scoped into an organization, the current user's role — enables the members list. */
   groupRole?: CgsRole;
   currentUserDid?: string | null;
+  recoveryEmail?: string | null;
   children?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -822,7 +824,7 @@ export function ManageDashboardClient({
   if (isOnboarding) {
     return (
       <Container className="pt-4 pb-8">
-        <ManageAccountSetup did={account.did} mode={resolvedMode} />
+        <ManageAccountSetup did={account.did} mode={resolvedMode} recoveryEmail={recoveryEmail} />
       </Container>
     );
   }
