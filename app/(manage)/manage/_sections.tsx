@@ -12,11 +12,9 @@ import {
   fetchTreeDatasetsByDid,
 } from "@/app/_lib/indexer";
 import { droneAppHref } from "@/app/_lib/urls";
-import { TAINA_SIM } from "@/app/_lib/taina-sim";
 import { resolveBlobUrl, resolvePdsHost } from "@/app/_lib/pds";
 import { RecordExplorer } from "@/app/_components/RecordExplorer";
 import { Button } from "@/components/ui/button";
-import TelegramIcon from "@/icons/TelegramIcon";
 import { getAccountRouteData } from "@/app/account/_lib/account-route";
 import { fetchAuthSession } from "@/app/_lib/auth-server";
 import { AccountSettingsSections } from "@/app/account/_components/AccountSettingsSections";
@@ -31,6 +29,7 @@ import { ProjectCertsManagerClient } from "./projects/[rkey]/certs/_components/P
 import { SitesClient } from "./sites/_components/SitesClient";
 import { TreesPageClient } from "./trees/_components/TreesPageClient";
 import { AudioClient } from "./audio/_components/AudioClient";
+import { ObservationsClient } from "./observations/_components/ObservationsClient";
 import { ManageBumicertsClient } from "./certs/_components/ManageBumicertsClient";
 import { NewBumicertClient, type LinkedProjectPrefill } from "./certs/new/_components/NewBumicertClient";
 import { DroneAppFrame } from "./drone/_components/DroneAppFrame";
@@ -218,87 +217,16 @@ export async function SettingsSection({ target }: { target: ManageTarget }) {
   );
 }
 
-const TAINA_BOT_URL = "https://t.me/The" + "Tain" + "aBot";
-
 export async function ObservationsSection({ target }: { target: ManageTarget }) {
   if (target.accountKind !== "organization") notFound();
-  const [t, initialObservations] = await Promise.all([
-    getTranslations("upload.observations"),
-    walkOccurrences({
-      media: "all",
-      target: 24,
-      after: null,
-      ownerDid: target.did,
-      resolveMedia: false,
-    }).catch(() => ({ records: [], cursor: null, hasMore: false })),
-  ]);
-  return (
-    <div className="bg-background pb-4">
-      {/* Hero — aligned to the RecordExplorer's max-w-6xl px-6 column below. */}
-      <div className="mx-auto max-w-6xl px-6 pt-4">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-xl">
-            <h1 className="font-instrument text-2xl font-medium italic tracking-[-0.03em] text-foreground sm:text-3xl">
-              Observations
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Review the biodiversity occurrence records attached to this organization.
-            </p>
-          </div>
-        </header>
-
-        <div className="group relative mt-5 overflow-hidden rounded-3xl border border-dashed border-primary/20 bg-gradient-to-br from-primary/[0.07] via-accent/30 to-background p-5 sm:p-6">
-          {/* Soft brand glow, top-right */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-16 -top-20 size-52 rounded-full bg-primary/15 blur-3xl"
-          />
-          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
-            {/* Tainá's portrait, with a live Telegram presence badge */}
-            <div className="relative w-fit shrink-0">
-              <div className="grid size-16 place-items-center overflow-visible rounded-2xl bg-gradient-to-br from-accent/70 to-primary/10 ring-1 ring-primary/15 transition-transform duration-300 group-hover:-rotate-2 group-hover:scale-105 sm:size-20">
-                <img
-                  src={TAINA_SIM.posterUrl}
-                  alt={TAINA_SIM.name}
-                  width={80}
-                  height={80}
-                  loading="lazy"
-                  className="h-[115%] w-[115%] -translate-y-2 object-contain sm:-translate-y-3"
-                />
-              </div>
-              <span className="absolute -bottom-1.5 -right-1.5 grid size-7 place-items-center rounded-full bg-[#229ED9] text-white ring-2 ring-background">
-                <TelegramIcon className="size-3.5" />
-              </span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="font-instrument text-xl font-medium italic tracking-[-0.02em] text-foreground sm:text-2xl">
-                  {t("tainaTitle")}
-                </p>
-                <Button asChild className="hidden sm:inline-flex sm:shrink-0">
-                  <Link href={TAINA_BOT_URL} target="_blank" rel="noreferrer">
-                    <TelegramIcon />
-                    {t("tainaCta")}
-                  </Link>
-                </Button>
-              </div>
-              <p className="mt-1.5 max-w-prose text-sm leading-6 text-muted-foreground">{t("tainaBody")}</p>
-              <Button asChild className="mt-4 w-full sm:hidden">
-                <Link href={TAINA_BOT_URL} target="_blank" rel="noreferrer">
-                  <TelegramIcon />
-                  {t("tainaCta")}
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <Suspense fallback={null}>
-        <RecordExplorer kind="occurrence" ownerDid={target.did} showHero={false} initialPage={initialObservations} defaultOccurrenceMedia="all" />
-      </Suspense>
-    </div>
-  );
+  const initialObservations = await walkOccurrences({
+    media: "all",
+    target: 24,
+    after: null,
+    ownerDid: target.did,
+    resolveMedia: false,
+  }).catch(() => ({ records: [], cursor: null, hasMore: false }));
+  return <ObservationsClient target={target} initialPage={initialObservations} />;
 }
 
 type PdsRecordResponse = {
