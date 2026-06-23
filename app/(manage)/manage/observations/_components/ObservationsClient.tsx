@@ -73,6 +73,8 @@ type ObservationUploadItem = {
   uploadedUri: string | null;
 };
 
+type SharedOccurrenceKey = Exclude<keyof ObservationAnalysis, "subjectPart" | "caption" | "confidence">;
+
 const TAINA_BOT_URL = "https://t.me/The" + "Tain" + "aBot";
 const QUERY_STATE_OPTIONS = { history: "replace", scroll: false, shallow: true } as const;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
@@ -103,6 +105,143 @@ function dateFromFile(file: File): string {
   const date = file.lastModified ? new Date(file.lastModified) : new Date();
   if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10);
   return date.toISOString().slice(0, 10);
+}
+
+function parseExifDate(value: string | null): string | null {
+  if (!value) return null;
+  const match = value.match(/^(\d{4}):(\d{2}):(\d{2})/);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : null;
+}
+
+function formatCoordinate(value: number): string | null {
+  if (!Number.isFinite(value)) return null;
+  return Number(value.toFixed(7)).toString();
+}
+
+function rationalAt(view: DataView, offset: number, littleEndian: boolean): number | null {
+  if (offset < 0 || offset + 8 > view.byteLength) return null;
+  const numerator = view.getUint32(offset, littleEndian);
+  const denominator = view.getUint32(offset + 4, littleEndian);
+  if (denominator === 0) return null;
+  return numerator / denominator;
+}
+
+function gpsCoordinate(parts: Array<number | null>, ref: string | null): string | null {
+  if (parts.some((part) => part === null)) return null;
+  const [degrees, minutes, seconds] = parts as [number, number, number];
+  let value = degrees + minutes / 60 + seconds / 3600;
+  if (ref === "S" || ref === "W") value *= -1;
+  return formatCoordinate(value);
+}
+
+type TiffEntry = { tag: number; type: number; count: number; valueOffset: number; inlineOffset: number; size: number };
+
+function parseExifMetadata(buffer: ArrayBuffer): Partial<ObservationAnalysis> {
+  const view = new DataView(buffer);
+  if (view.byteLength < 14 || view.getUint16(0) !== 0xffd8) return {};
+
+  let offset = 2;
+  while (offset + 4 <= view.byteLength) {
+    if (view.getUint8(offset) !== 0xff) break;
+    const marker = view.getUint8(offset + 1);
+    const length = view.getUint16(offset + 2, false);
+    if (length < 2) break;
+    if (marker === 0xe1 && length >= 8) {
+      const exifStart = offset + 4;
+      const header = String.fromCharCode(...new Uint8Array(buffer, exifStart, Math.min(6, view.byteLength - exifStart)));
+      if (header === "Exif\0\0") {
+        const tiffStart = exifStart + 6;
+        if (tiffStart + 8 > view.byteLength) return {};
+        const littleEndian = view.getUint16(tiffStart, false) === 0x4949;
+        if (view.getUint16(tiffStart + 2, littleEndian) !== 42) return {};
+
+        const typeSize = (type: number) => {
+          if (type === 1 || type === 2 || type === 7) return 1;
+          if (type === 3) return 2;
+          if (type === 4 || type === 9) return 4;
+          if (type === 5 || type === 10) return 8;
+          return 0;
+        };
+        const readEntries = (ifdOffset: number): TiffEntry[] => {
+          const start = tiffStart + ifdOffset;
+          if (start < 0 || start + 2 > view.byteLength) return [];
+          const count = view.getUint16(start, littleEndian);
+          const entries: TiffEntry[] = [];
+          for (let index = 0; index < count; index += 1) {
+            const entryOffset = start + 2 + index * 12;
+            if (entryOffset + 12 > view.byteLength) break;
+            const type = view.getUint16(entryOffset + 2, littleEndian);
+            const itemCount = view.getUint32(entryOffset + 4, littleEndian);
+            const size = typeSize(type) * itemCount;
+            entries.push({
+              tag: view.getUint16(entryOffset, littleEndian),
+              type,
+              count: itemCount,
+              valueOffset: view.getUint32(entryOffset + 8, littleEndian),
+              inlineOffset: entryOffset + 8,
+              size,
+            });
+          }
+          return entries;
+        };
+        const valueOffset = (entry: TiffEntry) => entry.size <= 4 ? entry.inlineOffset : tiffStart + entry.valueOffset;
+        const readAscii = (entry: TiffEntry | undefined): string | null => {
+          if (!entry) return null;
+          const start = valueOffset(entry);
+          if (start < 0 || start + entry.count > view.byteLength) return null;
+          return String.fromCharCode(...new Uint8Array(buffer, start, entry.count)).replace(/\0+$/, "").trim() || null;
+        };
+        const readRationals = (entry: TiffEntry | undefined): Array<number | null> => {
+          if (!entry) return [];
+          const start = valueOffset(entry);
+          return Array.from({ length: entry.count }, (_, index) => rationalAt(view, start + index * 8, littleEndian));
+        };
+        const readLong = (entry: TiffEntry | undefined): number | null => {
+          if (!entry) return null;
+          const start = valueOffset(entry);
+          if (start < 0 || start + 4 > view.byteLength) return null;
+          return view.getUint32(start, littleEndian);
+        };
+
+        const ifd0 = readEntries(view.getUint32(tiffStart + 4, littleEndian));
+        const byTag = (entries: TiffEntry[], tag: number) => entries.find((entry) => entry.tag === tag);
+        const exifIfd = readLong(byTag(ifd0, 0x8769));
+        const gpsIfd = readLong(byTag(ifd0, 0x8825));
+        const exifEntries = exifIfd !== null ? readEntries(exifIfd) : [];
+        const gpsEntries = gpsIfd !== null ? readEntries(gpsIfd) : [];
+
+        const date = parseExifDate(readAscii(byTag(exifEntries, 0x9003)) ?? readAscii(byTag(ifd0, 0x0132)));
+        const latitude = gpsCoordinate(readRationals(byTag(gpsEntries, 0x0002)), readAscii(byTag(gpsEntries, 0x0001)));
+        const longitude = gpsCoordinate(readRationals(byTag(gpsEntries, 0x0004)), readAscii(byTag(gpsEntries, 0x0003)));
+
+        return {
+          ...(date ? { eventDate: date } : {}),
+          ...(latitude ? { decimalLatitude: latitude } : {}),
+          ...(longitude ? { decimalLongitude: longitude } : {}),
+        };
+      }
+    }
+    offset += 2 + length;
+  }
+
+  return {};
+}
+
+async function imageMetadata(file: File): Promise<Partial<ObservationAnalysis>> {
+  try {
+    return parseExifMetadata(await file.arrayBuffer());
+  } catch {
+    return {};
+  }
+}
+
+function mergeAnalysisWithDefaults(analysis: ObservationAnalysis, defaults: Partial<ObservationAnalysis>): ObservationAnalysis {
+  return {
+    ...analysis,
+    eventDate: analysis.eventDate || defaults.eventDate || "",
+    decimalLatitude: analysis.decimalLatitude || defaults.decimalLatitude || "",
+    decimalLongitude: analysis.decimalLongitude || defaults.decimalLongitude || "",
+  };
 }
 
 function formatBytes(bytes: number): string {
@@ -201,6 +340,37 @@ function sharedOccurrencePatch(patch: Partial<ObservationAnalysis>): Partial<Obs
 
 function sharedOccurrenceAnalysis(analysis: ObservationAnalysis): Partial<ObservationAnalysis> {
   return sharedOccurrencePatch(analysis);
+}
+
+function occurrenceAnalysisForUpload(items: ObservationUploadItem[]): ObservationAnalysis {
+  const [primary] = items;
+  const analysis = { ...(primary?.analysis ?? EMPTY_ANALYSIS) };
+  const sharedKeys: SharedOccurrenceKey[] = [
+    "scientificName",
+    "vernacularName",
+    "kingdom",
+    "eventDate",
+    "recordedBy",
+    "decimalLatitude",
+    "decimalLongitude",
+    "country",
+    "locality",
+    "habitat",
+    "occurrenceRemarks",
+  ];
+
+  for (const item of items) {
+    for (const key of sharedKeys) {
+      const current = analysis[key];
+      const candidate = item.analysis[key];
+      const shouldReplaceUnknownName = key === "scientificName" && current === "Unidentified organism" && typeof candidate === "string" && candidate.trim() !== "" && candidate !== current;
+      if ((typeof current !== "string" || current.trim() === "" || shouldReplaceUnknownName) && typeof candidate === "string" && candidate.trim() !== "") {
+        analysis[key] = candidate;
+      }
+    }
+  }
+
+  return analysis;
 }
 
 export function ObservationsClient({ target, initialPage }: { target: ManageTarget; initialPage: InitialPage }) {
@@ -347,7 +517,13 @@ function ObservationBulkAddPanel({
       if (!response.ok || data.error) throw new Error(analysisErrorMessage(data.error, t));
       setItems((current) => current.map((candidate) =>
         candidate.id === item.id
-          ? { ...candidate, status: "ready", analysis: normalizeAnalysis(data.analysis, item.file), error: null, selected: true }
+          ? {
+              ...candidate,
+              status: "ready",
+              analysis: mergeAnalysisWithDefaults(normalizeAnalysis(data.analysis, item.file), candidate.analysis),
+              error: null,
+              selected: true,
+            }
           : candidate,
       ));
     } catch (error) {
@@ -363,8 +539,17 @@ function ObservationBulkAddPanel({
     if (files.length === 0) return;
     setIsPreparing(true);
     try {
+      const defaultGroupId = itemsRef.current.find((item) => item.status !== "uploaded")?.groupId ?? crypto.randomUUID();
       const nextItems = await Promise.all(files.map(async (sourceFile) => {
         const id = `${sourceFile.name}-${sourceFile.size}-${sourceFile.lastModified}-${crypto.randomUUID()}`;
+        const metadata = await imageMetadata(sourceFile);
+        const analysis = {
+          ...EMPTY_ANALYSIS,
+          eventDate: metadata.eventDate || dateFromFile(sourceFile),
+          decimalLatitude: metadata.decimalLatitude || "",
+          decimalLongitude: metadata.decimalLongitude || "",
+          caption: cleanFileName(sourceFile.name),
+        };
         try {
           const prepared = await compressImageIfNeeded(sourceFile);
           return {
@@ -373,11 +558,11 @@ function ObservationBulkAddPanel({
             previewUrl: URL.createObjectURL(prepared.file),
             originalSize: prepared.originalSize,
             compressed: prepared.compressed,
-            groupId: id,
+            groupId: defaultGroupId,
             selected: false,
             status: "analyzing" as const,
             progress: 0,
-            analysis: { ...EMPTY_ANALYSIS, eventDate: dateFromFile(sourceFile), caption: cleanFileName(sourceFile.name) },
+            analysis,
             error: null,
             uploadedUri: null,
           };
@@ -388,11 +573,11 @@ function ObservationBulkAddPanel({
             previewUrl: URL.createObjectURL(sourceFile),
             originalSize: sourceFile.size,
             compressed: false,
-            groupId: id,
+            groupId: defaultGroupId,
             selected: false,
             status: "error" as const,
             progress: 0,
-            analysis: { ...EMPTY_ANALYSIS, eventDate: dateFromFile(sourceFile), caption: cleanFileName(sourceFile.name) },
+            analysis,
             error: t("compressionFailed"),
             uploadedUri: null,
           };
@@ -475,11 +660,10 @@ function ObservationBulkAddPanel({
     setBulkError(null);
     try {
       setItems((current) => current.map((candidate) => uploadIds.has(candidate.id) ? { ...candidate, status: "uploading", progress: 15, error: null } : candidate));
-      const primary = uploadItems[0];
       const existingOccurrenceUri = snapshot.find((item) => item.groupId === groupId && item.uploadedUri)?.uploadedUri ?? null;
       let occurrenceUri = existingOccurrenceUri;
       if (!occurrenceUri) {
-        const data = primary.analysis;
+        const data = occurrenceAnalysisForUpload(uploadItems);
         const occurrence = await createObservationOccurrence({
           basisOfRecord: "MachineObservation",
           scientificName: data.scientificName.trim(),
