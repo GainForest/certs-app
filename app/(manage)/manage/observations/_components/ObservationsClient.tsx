@@ -6,12 +6,14 @@ import { Suspense, useEffect, useRef, useState, type ChangeEvent, type Component
 import { parseAsStringEnum, useQueryState } from "nuqs";
 import {
   AlertTriangleIcon,
+  CalendarIcon,
   CheckCircle2Icon,
-  ChevronDownIcon,
   ChevronLeftIcon,
   ImagePlusIcon,
   Layers2Icon,
   Loader2Icon,
+  MapPinIcon,
+  PencilIcon,
   SparklesIcon,
   UngroupIcon,
   UploadCloudIcon,
@@ -77,6 +79,12 @@ type SharedOccurrenceKey = Exclude<keyof ObservationAnalysis, "subjectPart" | "c
 
 const TAINA_BOT_URL = "https://t.me/The" + "Tain" + "aBot";
 const QUERY_STATE_OPTIONS = { history: "replace", scroll: false, shallow: true } as const;
+// Shared column template so the table header and each row line up. Columns:
+// checkbox · thumbnail · organism · date · location · trailing actions.
+// Every non-flex track is a fixed width (and the trailing column is fixed too)
+// so the header grid and each row grid resolve their fr columns identically.
+const ROW_GRID =
+  "grid items-center gap-x-3 grid-cols-[1.5rem_2.5rem_minmax(0,1fr)_8.5rem] md:grid-cols-[1.5rem_2.5rem_minmax(0,2fr)_6.5rem_minmax(0,1.3fr)_8.5rem]";
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const EMPTY_ANALYSIS: ObservationAnalysis = {
   scientificName: "",
@@ -323,14 +331,40 @@ function itemCanUpload(item: ObservationUploadItem): boolean {
   return (item.status === "ready" || item.status === "uploadError") && item.analysis.scientificName.trim().length > 0 && item.analysis.eventDate.trim().length > 0;
 }
 
-function observationGroupOptions(items: ObservationUploadItem[]): Array<{ id: string; number: number; count: number }> {
-  const order: string[] = [];
-  const counts = new Map<string, number>();
+type GroupOption = { id: string; number: number; count: number; label: string; previewUrl: string };
+
+function groupDisplayName(items: ObservationUploadItem[]): string {
   for (const item of items) {
-    if (!counts.has(item.groupId)) order.push(item.groupId);
-    counts.set(item.groupId, (counts.get(item.groupId) ?? 0) + 1);
+    const scientific = item.analysis.scientificName.trim();
+    if (scientific && scientific !== "Unidentified organism") return scientific;
   }
-  return order.map((id, index) => ({ id, number: index + 1, count: counts.get(id) ?? 0 }));
+  for (const item of items) {
+    const common = item.analysis.vernacularName.trim();
+    if (common) return common;
+  }
+  return "";
+}
+
+function observationGroupOptions(items: ObservationUploadItem[]): GroupOption[] {
+  const order: string[] = [];
+  const groups = new Map<string, ObservationUploadItem[]>();
+  for (const item of items) {
+    if (!groups.has(item.groupId)) {
+      order.push(item.groupId);
+      groups.set(item.groupId, []);
+    }
+    groups.get(item.groupId)?.push(item);
+  }
+  return order.map((id, index) => {
+    const groupItems = groups.get(id) ?? [];
+    return {
+      id,
+      number: index + 1,
+      count: groupItems.length,
+      label: groupDisplayName(groupItems),
+      previewUrl: groupItems[0]?.previewUrl ?? "",
+    };
+  });
 }
 
 function sharedOccurrencePatch(patch: Partial<ObservationAnalysis>): Partial<ObservationAnalysis> {
@@ -485,6 +519,7 @@ function ObservationBulkAddPanel({
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [isPreparing, setIsPreparing] = useState(false);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const itemsRef = useRef<ObservationUploadItem[]>([]);
 
@@ -801,25 +836,35 @@ function ObservationBulkAddPanel({
             <p className="mt-3 text-xs leading-5 text-muted-foreground">{t("groupingHelp")}</p>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-1">
               <h2 className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">{t("listTitle")}</h2>
               <span className="text-sm text-muted-foreground">{t("selectedCount", { selected: readySelectedItems.length, total: uploadableCount })}</span>
             </div>
-            {items.map((item, index) => (
-              <ObservationListItem
-                key={item.id}
-                item={item}
-                index={index}
-                groupOptions={groupOptions}
-                disabledReason={disabledReason}
-                onAnalysisChange={updateAnalysis}
-                onGroupChange={(groupId) => updateGroup(item.id, groupId)}
-                onToggleSelected={(checked) => setItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, selected: checked } : candidate))}
-                onUpload={() => void uploadGroup(item.groupId)}
-                onRemove={() => removeItem(item.id)}
-              />
-            ))}
+            <div className="overflow-hidden rounded-2xl border bg-card shadow-xs">
+              <ObservationListHeader />
+              <div className="divide-y divide-border/60">
+                {items.map((item, index) => (
+                  <ObservationListItem
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    groupOptions={groupOptions}
+                    expanded={item.id === expandedId}
+                    disabledReason={disabledReason}
+                    onToggleExpanded={() => setExpandedId((current) => (current === item.id ? null : item.id))}
+                    onAnalysisChange={updateAnalysis}
+                    onGroupChange={(groupId) => updateGroup(item.id, groupId)}
+                    onToggleSelected={(checked) => setItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, selected: checked } : candidate))}
+                    onUpload={() => void uploadGroup(item.groupId)}
+                    onRemove={() => {
+                      if (item.id === expandedId) setExpandedId(null);
+                      removeItem(item.id);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </>
       )}
@@ -827,11 +872,27 @@ function ObservationBulkAddPanel({
   );
 }
 
+function ObservationListHeader() {
+  const t = useTranslations("upload.observations");
+  return (
+    <div className={`${ROW_GRID} hidden border-b bg-muted/40 px-3 py-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80 md:grid`}>
+      <span aria-hidden />
+      <span aria-hidden />
+      <span>{t("colOrganism")}</span>
+      <span>{t("colDate")}</span>
+      <span>{t("colLocation")}</span>
+      <span aria-hidden />
+    </div>
+  );
+}
+
 function ObservationListItem({
   item,
   index,
   groupOptions,
+  expanded,
   disabledReason,
+  onToggleExpanded,
   onAnalysisChange,
   onGroupChange,
   onToggleSelected,
@@ -840,8 +901,10 @@ function ObservationListItem({
 }: {
   item: ObservationUploadItem;
   index: number;
-  groupOptions: Array<{ id: string; number: number; count: number }>;
+  groupOptions: GroupOption[];
+  expanded: boolean;
   disabledReason?: string | null;
+  onToggleExpanded: () => void;
   onAnalysisChange: (id: string, patch: Partial<ObservationAnalysis>) => void;
   onGroupChange: (groupId: string) => void;
   onToggleSelected: (checked: boolean) => void;
@@ -849,34 +912,33 @@ function ObservationListItem({
   onRemove: () => void;
 }) {
   const t = useTranslations("upload.observations");
-  const [expanded, setExpanded] = useState(false);
   const canUpload = itemCanUpload(item) && !disabledReason;
   const showAnalysis = item.status === "ready" || item.status === "uploading" || item.status === "uploaded" || item.status === "uploadError";
   const currentGroup = groupOptions.find((group) => group.id === item.groupId);
   const groupedCount = currentGroup?.count ?? 1;
-  const groupLabel = currentGroup ? t("groupName", { number: currentGroup.number }) : t("newObservationGroup");
   const groupingDisabled = item.status === "uploading" || item.status === "uploaded";
-  const isUploaded = item.status === "uploaded";
   const showUploadAction = item.status === "ready" || item.status === "uploadError";
+  const canEdit = showAnalysis;
 
-  const title = item.analysis.scientificName.trim() || cleanFileName(item.file.name);
-  const summaryBits = [
-    item.analysis.vernacularName.trim(),
-    item.analysis.eventDate.trim(),
-    (item.analysis.locality || item.analysis.country).trim(),
-  ].filter(Boolean);
-  const subtitle = showAnalysis && summaryBits.length > 0
-    ? summaryBits.join(" · ")
-    : `${item.file.name} · ${formatBytes(item.file.size)}`;
+  const organism = item.analysis.scientificName.trim() || cleanFileName(item.file.name);
+  const commonName = item.analysis.vernacularName.trim();
+  const dateText = item.analysis.eventDate.trim();
+  const locationText = (item.analysis.locality || item.analysis.country).trim();
+  const hasCoords = Boolean(item.analysis.decimalLatitude.trim() && item.analysis.decimalLongitude.trim());
+  const coordsText = hasCoords ? `${item.analysis.decimalLatitude.trim()}, ${item.analysis.decimalLongitude.trim()}` : "";
+  const locationDisplay = locationText || coordsText;
+  // On mobile the date/location columns are hidden, so fold them into a meta line.
+  const metaBits = showAnalysis ? [dateText, locationDisplay].filter(Boolean) : [formatBytes(item.file.size)];
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 8 }}
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(index * 0.04, 0.24) }}
-      className={`overflow-hidden rounded-2xl border bg-card transition-colors ${expanded ? "border-primary/40" : isUploaded ? "border-primary/30" : "hover:border-primary/30"}`}
+      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(index * 0.03, 0.18) }}
+      className={`group/row relative transition-colors ${expanded ? "bg-primary/[0.045]" : item.selected ? "bg-primary/[0.025]" : "hover:bg-muted/40"}`}
     >
-      <div className="flex items-center gap-3 p-3">
+      {expanded ? <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-primary" /> : null}
+      <div className={`${ROW_GRID} gap-y-1 px-3 py-2`}>
         <Checkbox
           checked={item.selected}
           disabled={!itemCanUpload(item)}
@@ -884,56 +946,76 @@ function ObservationListItem({
           aria-label={t("selectForUpload")}
           className="shrink-0"
         />
-        <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border">
+        <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border">
           <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover" />
           {groupedCount > 1 ? (
-            <span className="absolute left-1 top-1 inline-flex items-center gap-0.5 rounded-full bg-background/90 px-1.5 py-0.5 text-[0.6rem] font-medium text-primary shadow-sm backdrop-blur">
-              <Layers2Icon className="size-2.5" /> {groupedCount}
+            <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[0.55rem] font-semibold text-primary-foreground ring-2 ring-background">
+              {groupedCount}
             </span>
           ) : null}
         </div>
 
-        {showAnalysis ? (
-          <button
-            type="button"
-            onClick={() => setExpanded((value) => !value)}
-            aria-expanded={expanded}
-            className="min-w-0 flex-1 text-left"
-          >
-            <ItemSummary title={title} subtitle={subtitle} />
+        {/* Organism */}
+        {canEdit ? (
+          <button type="button" onClick={onToggleExpanded} aria-expanded={expanded} className="group/name min-w-0 text-left" title={t("editDetails")}>
+            <OrganismCell organism={organism} commonName={commonName} metaBits={metaBits} interactive />
           </button>
         ) : (
-          <div className="min-w-0 flex-1">
-            <ItemSummary title={title} subtitle={subtitle} />
+          <div className="min-w-0">
+            <OrganismCell organism={organism} commonName={commonName} metaBits={metaBits} />
           </div>
         )}
 
-        <div className="flex shrink-0 items-center gap-1.5">
-          {groupedCount > 1 ? (
-            <span className="hidden rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary sm:inline">{groupLabel}</span>
-          ) : null}
-          <StatusPill status={item.status} />
+        {/* Date (desktop column) */}
+        <div className="hidden min-w-0 items-center gap-1.5 md:flex">
+          <CalendarIcon className="size-3.5 shrink-0 text-muted-foreground/45" />
+          <span className="truncate text-sm tabular-nums text-muted-foreground">{dateText || "—"}</span>
+        </div>
+
+        {/* Location (desktop column) */}
+        <div className="hidden min-w-0 items-center gap-1.5 md:flex">
+          <MapPinIcon className={`size-3.5 shrink-0 ${hasCoords ? "text-primary/70" : "text-muted-foreground/45"}`} />
+          <span className="truncate text-sm text-muted-foreground">{locationDisplay || "—"}</span>
+        </div>
+
+        {/* Trailing: status · actions */}
+        <div className="flex shrink-0 items-center justify-end gap-0.5">
+          <StatusIcon status={item.status} />
           {showUploadAction ? (
-            <Button size="sm" disabled={!canUpload} title={disabledReason ?? undefined} onClick={onUpload}>
+            <Button
+              size="icon-sm"
+              disabled={!canUpload}
+              title={disabledReason ?? (groupedCount > 1 ? t("uploadGroup") : t("uploadOne"))}
+              aria-label={groupedCount > 1 ? t("uploadGroup") : t("uploadOne")}
+              onClick={onUpload}
+              className="ml-0.5"
+            >
               <UploadCloudIcon className="size-4" />
-              <span className="hidden sm:inline">{groupedCount > 1 ? t("uploadGroup") : t("uploadOne")}</span>
             </Button>
           ) : null}
-          {showAnalysis ? (
+          {canEdit ? (
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => setExpanded((value) => !value)}
+              onClick={onToggleExpanded}
               aria-expanded={expanded}
               aria-label={expanded ? t("hideDetails") : t("editDetails")}
               title={expanded ? t("hideDetails") : t("editDetails")}
+              className={expanded ? "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary" : "text-muted-foreground"}
             >
-              <ChevronDownIcon className={`size-4 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+              <PencilIcon className="size-4" />
             </Button>
           ) : null}
-          <button type="button" onClick={onRemove} aria-label={t("removeImage")} className="rounded-full p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onRemove}
+            aria-label={t("removeImage")}
+            title={t("removeImage")}
+            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          >
             <XIcon className="size-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -958,7 +1040,7 @@ function ObservationListItem({
             transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
             className="overflow-hidden"
           >
-            <div className="border-t bg-muted/20 p-4 sm:p-5">
+            <div className="border-t border-primary/10 bg-muted/30 p-4 sm:p-5">
               <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                 <SparklesIcon className="size-3.5 shrink-0 text-primary" />
                 <span className="min-w-0 truncate">
@@ -971,58 +1053,72 @@ function ObservationListItem({
                   </span>
                 ) : null}
               </div>
-              <div className="mb-5 flex flex-col gap-3 rounded-xl border bg-background p-3 sm:flex-row sm:items-center sm:gap-4">
-                <div className="flex items-center gap-2 sm:w-48 sm:shrink-0">
+              <div className="mb-5 rounded-xl border bg-background p-3">
+                <div className="mb-1.5 flex items-center gap-2">
                   <Layers2Icon className="size-4 text-muted-foreground" />
                   <span className="text-sm font-medium text-foreground">{t("groupControlLabel")}</span>
                 </div>
+                <p className="mb-3 text-xs leading-5 text-muted-foreground">{t("groupItemHelp")}</p>
                 <Select value={item.groupId} onValueChange={onGroupChange} disabled={groupingDisabled}>
-                  <SelectTrigger className="sm:max-w-xs">
+                  <SelectTrigger className="w-full sm:max-w-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={item.id}>{item.groupId === item.id ? groupLabel : t("newObservationGroup")}</SelectItem>
+                    <SelectItem value={item.id}>{t("keepSeparate")}</SelectItem>
                     {groupOptions.filter((group) => group.id !== item.id).map((group) => (
                       <SelectItem key={group.id} value={group.id}>
-                        {t("groupName", { number: group.number })} · {group.count}
+                        <span className="flex items-center gap-2">
+                          {group.previewUrl ? (
+                            <img src={group.previewUrl} alt="" className="size-5 shrink-0 rounded object-cover ring-1 ring-border" />
+                          ) : null}
+                          <span className="truncate">{group.label || t("unidentified")}</span>
+                          <span className="shrink-0 text-muted-foreground">· {t("photoCount", { count: group.count })}</span>
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs leading-5 text-muted-foreground">{t("groupItemHelp")}</p>
               </div>
               <ObservationAnalysisFields item={item} onChange={(patch) => onAnalysisChange(item.id, patch)} />
             </div>
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </motion.article>
+    </motion.div>
   );
 }
 
-function ItemSummary({ title, subtitle }: { title: string; subtitle: string }) {
+function OrganismCell({ organism, commonName, metaBits, interactive }: { organism: string; commonName: string; metaBits: string[]; interactive?: boolean }) {
   return (
     <>
-      <span className="block truncate text-sm font-medium text-foreground">{title}</span>
-      <span className="mt-0.5 block truncate text-xs text-muted-foreground">{subtitle}</span>
+      <span className={`block truncate text-sm font-medium text-foreground ${interactive ? "underline-offset-2 group-hover/name:text-primary group-hover/name:underline group-hover/name:decoration-dotted" : ""}`}>
+        {organism}
+      </span>
+      {commonName ? <span className="block truncate text-xs italic text-muted-foreground">{commonName}</span> : null}
+      {metaBits.length > 0 ? (
+        <span className="mt-0.5 block truncate text-xs text-muted-foreground md:hidden">{metaBits.join(" · ")}</span>
+      ) : null}
     </>
   );
 }
 
-function StatusPill({ status }: { status: ItemStatus }) {
+function StatusIcon({ status }: { status: ItemStatus }) {
   const t = useTranslations("upload.observations.status");
+  const label = t(status);
   const isError = status === "error" || status === "uploadError";
-  const className = status === "uploaded"
-    ? "bg-primary/10 text-primary ring-primary/20"
+  const isBusy = status === "analyzing" || status === "uploading";
+  const tone = status === "uploaded"
+    ? "text-primary"
     : isError
-      ? "bg-destructive/10 text-destructive ring-destructive/20"
-      : "bg-muted text-muted-foreground ring-border";
+      ? "text-destructive"
+      : "text-muted-foreground";
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${className}`}>
-      {status === "analyzing" || status === "uploading" ? <Loader2Icon className="size-3 animate-spin" /> : null}
-      {status === "uploaded" ? <CheckCircle2Icon className="size-3" /> : null}
-      {isError ? <AlertTriangleIcon className="size-3" /> : null}
-      {t(status)}
+    <span title={label} className={`grid size-7 shrink-0 place-items-center ${tone}`}>
+      {isBusy ? <Loader2Icon className="size-4 animate-spin" /> : null}
+      {status === "uploaded" ? <CheckCircle2Icon className="size-4" /> : null}
+      {isError ? <AlertTriangleIcon className="size-4" /> : null}
+      {status === "ready" ? <span className="size-2 rounded-full bg-primary ring-2 ring-primary/20" /> : null}
+      <span className="sr-only">{label}</span>
     </span>
   );
 }
