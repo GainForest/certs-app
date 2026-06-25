@@ -737,6 +737,8 @@
       "picked": "Pinned at {lat}, {lng}",
       "useMyLocation": "Use my location",
       "confirm": "Use this location",
+      "cancel": "Cancel",
+      "close": "Close location picker",
       "geoUnsupported": "Your browser cannot share a location.",
       "geoDenied": "We could not get your location. Choose a pin on the map instead.",
       "geoBlocked": "Location access is blocked. Allow location access for this site, or choose a pin on the map.",

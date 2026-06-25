@@ -737,6 +737,8 @@
       "picked": "Imewekwa alama {lat}, {lng}",
       "useMyLocation": "Tumia eneo langu",
       "confirm": "Tumia eneo hili",
+      "cancel": "Ghairi",
+      "close": "Funga kichagua eneo",
       "geoUnsupported": "Kivinjari chako hakiwezi kushiriki eneo.",
       "geoDenied": "Hatukuweza kupata eneo lako. Chagua alama kwenye ramani badala yake.",
       "geoBlocked": "Ufikiaji wa eneo umezuiwa. Ruhusu ufikiaji wa eneo kwa tovuti hii, au chagua alama kwenye ramani.",

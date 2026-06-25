@@ -3,7 +3,7 @@
 import "leaflet/dist/leaflet.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LeafletMouseEvent, Map as LeafletMap, Marker, TileLayer } from "leaflet";
-import { ChevronLeftIcon, Loader2Icon, LocateFixedIcon, MapPinIcon } from "lucide-react";
+import { ChevronLeftIcon, Loader2Icon, LocateFixedIcon, MapPinIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -205,15 +205,20 @@ export function LocationPickerModal({ initial, defaultCenter, onSelect }: Locati
     locate(0);
   }, [clearGeoRequest, geolocationErrorText, placeMarker, t]);
 
-  const handleConfirm = useCallback(() => {
-    if (!picked) return;
-    onSelect(picked);
+  const closeModal = useCallback(() => {
+    clearGeoRequest();
     if (stack.length === 1) {
       void hide().then(() => popModal());
     } else {
       popModal();
     }
-  }, [picked, onSelect, stack.length, hide, popModal]);
+  }, [clearGeoRequest, stack.length, hide, popModal]);
+
+  const handleConfirm = useCallback(() => {
+    if (!picked) return;
+    onSelect(picked);
+    closeModal();
+  }, [picked, onSelect, closeModal]);
 
   return (
     <ModalContent className="px-0 py-0" dismissible={false}>
@@ -224,7 +229,19 @@ export function LocationPickerModal({ initial, defaultCenter, onSelect }: Locati
         </ModalHeader>
       </div>
       <div className="px-5 pt-5">
-        <h2 className="font-instrument text-xl font-medium italic tracking-[-0.02em] text-foreground">{t("title")}</h2>
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="font-instrument text-xl font-medium italic tracking-[-0.02em] text-foreground">{t("title")}</h2>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={closeModal}
+            aria-label={t("close")}
+            className="-mr-2 -mt-1 rounded-full text-muted-foreground hover:text-foreground"
+          >
+            <XIcon className="size-4" />
+          </Button>
+        </div>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">{t("description")}</p>
       </div>
       <div className="relative mt-4 w-full">
@@ -266,6 +283,9 @@ export function LocationPickerModal({ initial, defaultCenter, onSelect }: Locati
       </div>
       {geoError ? <p className="px-5 pt-1.5 text-xs text-destructive">{geoError}</p> : null}
       <ModalFooter>
+        <Button type="button" variant="outline" onClick={closeModal}>
+          {t("cancel")}
+        </Button>
         <Button onClick={handleConfirm} disabled={!picked}>
           {t("confirm")}
         </Button>

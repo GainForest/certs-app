@@ -737,6 +737,8 @@
       "picked": "Disematkan di {lat}, {lng}",
       "useMyLocation": "Gunakan lokasi saya",
       "confirm": "Gunakan lokasi ini",
+      "cancel": "Batal",
+      "close": "Tutup pemilih lokasi",
       "geoUnsupported": "Peramban Anda tidak dapat membagikan lokasi.",
       "geoDenied": "Kami tidak bisa mendapatkan lokasi Anda. Pilih pin di peta saja.",
       "geoBlocked": "Akses lokasi diblokir. Izinkan akses lokasi untuk situs ini, atau pilih pin di peta.",

@@ -737,6 +737,8 @@
       "picked": "Marcado em {lat}, {lng}",
       "useMyLocation": "Usar minha localização",
       "confirm": "Usar este local",
+      "cancel": "Cancelar",
+      "close": "Fechar seletor de local",
       "geoUnsupported": "Seu navegador não consegue compartilhar uma localização.",
       "geoDenied": "Não conseguimos obter sua localização. Escolha um marcador no mapa.",
       "geoBlocked": "O acesso à localização está bloqueado. Permita a localização para este site ou escolha um marcador no mapa.",
