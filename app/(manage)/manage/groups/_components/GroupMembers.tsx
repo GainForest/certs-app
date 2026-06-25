@@ -4,17 +4,15 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
-import { CheckIcon, Loader2Icon, LockIcon, MailIcon, RefreshCwIcon, Trash2Icon, UserPlusIcon, UsersIcon } from "lucide-react";
+import { CheckIcon, Loader2Icon, LockIcon, MailIcon, RefreshCwIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { formatCgsErrorMessage } from "@/app/_lib/cgs-errors";
 import { monogram, resolveDidProfile, type DidProfile } from "@/app/_lib/did-profile";
 import {
-  addCgsMember,
   inviteCgsMember,
   removeCgsMember,
-  resolveCgsMemberIdentity,
   setCgsMemberRole,
   type CgsMember,
   type CgsPendingInvitation,
@@ -341,46 +339,24 @@ export function GroupMembers({
   const handleAdd = (event: FormEvent) => {
     event.preventDefault();
     if (!canAddRemove) return;
-    const identifier = memberIdentifier.trim();
-    if (!identifier) return;
+    const email = memberIdentifier.trim();
+    if (!email) return;
+    if (!isLikelyEmail(email)) {
+      setSuccess(null);
+      setError(invitationsT("invalidEmail"));
+      return;
+    }
     const nextRole = canSetRoles ? role : "member";
     runPending(async () => {
       setError(null);
       setSuccess(null);
-      const previousMembers = members;
       try {
-        if (isLikelyEmail(identifier)) {
-          const { invitation } = await inviteCgsMember(groupDid, identifier, nextRole);
-          setPendingInvitations((current) => upsertInvitation(current, invitation));
-          setMemberIdentifier("");
-          setSuccess(invitationsT("sent", { email: identifier }));
-          return;
-        }
-
-        const identity = await resolveCgsMemberIdentity(identifier);
-        const optimisticMember: CgsMember = {
-          did: identity.did,
-          role: nextRole,
-          addedBy: currentUserDid,
-          addedAt: new Date().toISOString(),
-        };
-        setProfiles((current) => ({
-          ...current,
-          [identity.did]: {
-            did: identity.did,
-            handle: identity.handle ?? null,
-            displayName: identity.displayName ?? null,
-            avatar: identity.avatarUrl ?? null,
-          },
-        }));
-        setMembers((current) => current.some((member) => member.did === identity.did)
-          ? current.map((member) => (member.did === identity.did ? { ...member, role: nextRole } : member))
-          : [...current, optimisticMember]);
+        const { invitation } = await inviteCgsMember(groupDid, email, nextRole);
+        setPendingInvitations((current) => upsertInvitation(current, invitation));
         setMemberIdentifier("");
-        await addCgsMember(groupDid, identity.did, nextRole);
+        setSuccess(invitationsT("sent", { email }));
       } catch (err) {
-        setMembers(previousMembers);
-        setError(memberErrorMessage(err, isLikelyEmail(identifier) ? invitationsT("sendError") : invitationsT("addError")));
+        setError(memberErrorMessage(err, invitationsT("sendError")));
       }
     });
   };
@@ -471,7 +447,8 @@ export function GroupMembers({
           value={memberIdentifier}
           onChange={(event) => setMemberIdentifier(event.target.value)}
           placeholder={invitationsT("inputPlaceholder")}
-          autoComplete="email username"
+          type="email"
+          autoComplete="email"
           disabled={isPending}
           aria-label={invitationsT("inputAria")}
         />
@@ -488,7 +465,7 @@ export function GroupMembers({
           </select>
         ) : null}
         <Button type="submit" disabled={isPending || !memberIdentifier.trim()}>
-          {isLikelyEmail(memberIdentifier) ? <MailIcon /> : <UserPlusIcon />} {isLikelyEmail(memberIdentifier) ? invitationsT("invite") : invitationsT("add")}
+          <MailIcon /> {invitationsT("invite")}
         </Button>
       </form>
       <p className="text-xs text-muted-foreground">
@@ -615,10 +592,10 @@ export function GroupMembers({
             </div>
             <p className="text-sm text-muted-foreground">
               {canSetRoles
-                ? "Add people and control who can make changes for this organization."
+                ? invitationsT("ownerDescription")
                 : canAddRemove
-                  ? "Add or remove regular members. Only owners can change roles."
-                  : "You can view members but not change them."}
+                  ? invitationsT("adminDescription")
+                  : invitationsT("viewerDescription")}
             </p>
           </div>
         </div>
