@@ -14,6 +14,7 @@
 /playwright-report
 *.tsbuildinfo
 next-env.d.ts.bak
+pi-session-*.html
 
 # Local Claude Code state
 .claude/

@@ -1,5 +1,5 @@
-import { parseAtUri } from "../atUri";
-import { parseAttachmentContent } from "../attachmentContentParser";
+import { parseAtUri } from "./atUri";
+import { parseAttachmentContent } from "./attachmentContentParser";
 import {
   getTimelineDocumentFormat,
   type TimelineDocumentFormat,

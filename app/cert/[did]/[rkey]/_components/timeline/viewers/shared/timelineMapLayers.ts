@@ -1,7 +1,7 @@
 import type { TimelineAttachmentItem } from "@/app/_lib/indexer";
-import { getAttachmentContextSubject } from "../../attachmentSubjects";
-import { parseAtUri } from "../../atUri";
-import type { TimelineReference } from "../../timelineReferences";
+import { getAttachmentContextSubject } from "../../shared/attachmentSubjects";
+import { parseAtUri } from "../../shared/atUri";
+import type { TimelineReference } from "./referenceResolution/timelineReferences";
 
 export type TimelineMapLayer = {
   datasetUri: string;

@@ -1,6 +1,6 @@
 import type { TimelineAttachmentItem } from "@/app/_lib/indexer";
-import { parseAtUri } from "../atUri";
-import { parseAttachmentContent } from "../attachmentContentParser";
+import { parseAtUri } from "../../shared/atUri";
+import { parseAttachmentContent } from "../../shared/attachmentContentParser";
 import { CONTENT_TYPE_NATURE, CONTENT_TYPE_NATURE_DATASET } from "./types";
 
 const TREE_DATASET_COLLECTION = "app.gainforest.dwc.dataset";

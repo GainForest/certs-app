@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TimelineAttachmentItem } from "@/app/_lib/indexer";
-import type { TimelineReference } from "../../timelineReferences";
+import type { TimelineReference } from "./referenceResolution/timelineReferences";
 import { getTimelineMapLayerState } from "./timelineMapLayerState";
 import { buildTimelineMapLayers, type TimelineMapLayer } from "./timelineMapLayers";
 

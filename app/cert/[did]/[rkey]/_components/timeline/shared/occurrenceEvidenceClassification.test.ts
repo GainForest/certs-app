@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getOccurrenceDatasetRef,
   isTreeDatasetOccurrence,
-} from "./treeEvidenceClassification";
+} from "./occurrenceEvidenceClassification";
 
 const datasetUri = "at://org/app.gainforest.dwc.dataset/trees";
 

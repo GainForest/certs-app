@@ -13,8 +13,8 @@ import {
   getAccountRouteData,
   readAccountRouteParams,
 } from "../../_lib/account-route";
-import { resolveTimelineReferences } from "@/app/cert/[did]/[rkey]/_components/timeline/timelineReferenceResolver";
-import type { TimelineReference } from "@/app/cert/[did]/[rkey]/_components/timeline/timelineReferences";
+import { resolveTimelineReferences } from "@/app/cert/[did]/[rkey]/_components/timeline/viewers/shared/referenceResolution/timelineReferenceResolver";
+import type { TimelineReference } from "@/app/cert/[did]/[rkey]/_components/timeline/viewers/shared/referenceResolution/timelineReferences";
 import { canDeleteRecord } from "@/app/(manage)/manage/_lib/cgs-permissions";
 
 type TimelineDeleteAccess = {

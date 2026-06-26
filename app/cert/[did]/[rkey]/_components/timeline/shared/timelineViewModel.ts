@@ -4,7 +4,7 @@ import {
   getTimelineReferenceUrisForEntry,
   type TimelineReference,
   type TimelineReferenceCopy,
-} from "../timelineReferences";
+} from "../viewers/shared/referenceResolution/timelineReferences";
 import type { TimelineSourceData } from "../EvidenceAdder";
 import {
   getTimelineEvidenceKind,

@@ -13,27 +13,27 @@ import {
   getDatasetSiteContext,
   groupDatasetUrisBySite,
   type DatasetSiteContext,
-} from "../datasetSiteContext";
+} from "./shared/datasetSiteContext";
 import {
   buildSelectableTreeDatasetUris,
   getTreeDatasetSelectionState,
   type DatasetSelectionDisabledReason,
-} from "../datasetEvidenceSelection";
-import type { AttachmentDraft } from "../contextAttachmentMutations";
+} from "./shared/datasetEvidenceSelection";
+import type { AttachmentDraft } from "../shared/contextAttachmentMutations";
 import {
   getOccurrenceDatasetRef,
   hasTreeDatasetMetadata,
   isTreeDatasetOccurrence,
-} from "../treeEvidenceClassification";
-import { getTreeGroupStats } from "../timelineReferences";
-import { CheckRow } from "./CheckRow";
-import { ListLayout, ManageLink, PickerEmpty } from "./ListHelpers";
-import { OptionalNote } from "./OptionalNote";
-import { SubmitButton } from "./SubmitButton";
+} from "../shared/occurrenceEvidenceClassification";
+import { getTreeGroupStats } from "../shared/datasetStats";
+import { CheckRow } from "./shared/CheckRow";
+import { ListLayout, ManageLink, PickerEmpty } from "./shared/ListHelpers";
+import { OptionalNote } from "./shared/OptionalNote";
+import { SubmitButton } from "./shared/SubmitButton";
 import {
   CONTENT_TYPE_TREE_DATASET,
   type EvidenceSubmitter,
-} from "./types";
+} from "./shared/types";
 
 export function TreeEvidencePicker({
   data,
