@@ -1011,9 +1011,9 @@ function OverviewPanel({
       )}
 
       {detail?.richBody && detail.richBody.length > 0 ? (
-        <RichText blocks={detail.richBody} className="text-lg leading-8 md:text-xl md:leading-9" />
+        <RichText blocks={detail.richBody} className="text-base leading-7 md:text-lg md:leading-8" />
       ) : description ? (
-        <p className="mt-6 whitespace-pre-line text-lg leading-8 text-foreground/76 md:text-xl md:leading-9">{description}</p>
+        <p className="mt-6 whitespace-pre-line text-base leading-7 text-foreground/76 md:text-lg md:leading-8">{description}</p>
       ) : (
         <p className="text-[15px] leading-8 text-muted-foreground">
           No long-form description has been published for this Cert yet.

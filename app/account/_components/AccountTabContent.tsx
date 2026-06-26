@@ -124,13 +124,13 @@ export async function AccountHomeTabContent({ account }: { account: AccountRoute
       {hasAbout ? (
         <section className="py-1 md:py-2 org-animate org-fade-in-up org-delay-1">
           {account.kind === "organization" ? (
-            <p className="mt-5 max-w-3xl whitespace-pre-line text-lg leading-8 text-foreground/85 md:text-xl md:leading-9">
+            <p className="mt-5 max-w-3xl whitespace-pre-line text-base leading-7 text-foreground/85 md:text-lg md:leading-8">
               {organizationAbout}
             </p>
           ) : account.detail?.richBody?.length ? (
             <RichText blocks={account.detail.richBody} />
           ) : (
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-foreground/85 md:text-xl md:leading-9">
+            <p className="mt-5 max-w-3xl text-base leading-7 text-foreground/85 md:text-lg md:leading-8">
               {account.detail?.blurb}
             </p>
           )}
@@ -179,7 +179,7 @@ export async function AccountOverviewTabContent({ account, did }: { account: Acc
           {account.detail?.richBody?.length ? (
             <RichText blocks={account.detail.richBody} />
           ) : (
-            <p className="max-w-3xl text-lg leading-8 text-foreground/85 md:text-xl md:leading-9">{account.detail?.blurb}</p>
+            <p className="max-w-3xl text-base leading-7 text-foreground/85 md:text-lg md:leading-8">{account.detail?.blurb}</p>
           )}
         </section>
       ) : null}
