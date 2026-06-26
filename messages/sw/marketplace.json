@@ -309,6 +309,18 @@
       "observations": "{count, plural, one {# uoni} other {# uoni}}",
       "openCollector": "Fungua wasifu wa mkusanyaji katika kichupo kipya",
       "rankAriaLabel": "Nafasi ya {rank}",
+      "org": {
+        "label": "Shirika",
+        "members": "{count, plural, one {mwanachama #} other {wanachama #}}",
+        "types": {
+          "nonprofit": "Isiyo ya faida",
+          "business": "Biashara",
+          "company": "Kampuni",
+          "community": "Kikundi cha jamii",
+          "government": "Serikali",
+          "academic": "Kitaaluma"
+        }
+      },
       "stats": {
         "observations": "Uoni katika raundi hii",
         "collectors": "Wakusanyaji",

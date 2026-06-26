@@ -8,6 +8,7 @@ import {
   ArrowRightIcon,
   BadgeCheckIcon,
   BinocularsIcon,
+  Building2Icon,
   CalendarCheckIcon,
   CalendarClockIcon,
   CameraIcon,
@@ -31,12 +32,25 @@ import {
   countdownTo,
   endedRounds,
   featuredRound,
+  fetchCollectorOrgs,
   fetchRoundCollectors,
   roundStatus,
   type BioblitzRound,
+  type CollectorOrg,
   type RoundBoard,
   type RoundStatus,
 } from "../_lib/bioblitz";
+
+/** Org-type tokens we have a friendly translated label for; anything else
+ *  falls back to the generic "Organization" label. */
+const KNOWN_ORG_TYPES = new Set([
+  "nonprofit",
+  "business",
+  "company",
+  "community",
+  "government",
+  "academic",
+]);
 
 export function BioblitzClient() {
   // Resolve "now"-dependent state after mount so the server-rendered shell
@@ -62,12 +76,33 @@ export function BioblitzClient() {
 
   const [board, setBoard] = useState<RoundBoard | null>(null);
   const [error, setError] = useState(false);
+  // Organisation membership per collector account, resolved after the board
+  // loads and merged in progressively so the standings never wait on it.
+  const [orgs, setOrgs] = useState<Map<string, CollectorOrg>>(new Map());
 
   // Reset to the loading state whenever the active round changes.
   useEffect(() => {
     setBoard(null);
     setError(false);
+    setOrgs(new Map());
   }, [round.id]);
+
+  // Resolve organisation labels for the collectors currently on the board.
+  useEffect(() => {
+    if (!board || board.collectors.length === 0) return;
+    const dids = board.collectors.slice(0, BOARD_LIMIT).map((c) => c.did);
+    const ctrl = new AbortController();
+    let cancelled = false;
+    fetchCollectorOrgs(dids, ctrl.signal)
+      .then((map) => {
+        if (!cancelled) setOrgs(map);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      ctrl.abort();
+    };
+  }, [board]);
 
   // Load on round change, then refresh silently every two minutes so the live
   // standings stay current without flashing the skeleton.
@@ -107,7 +142,7 @@ export function BioblitzClient() {
 
         <HowItWorks />
 
-        <Board round={round} status={status} board={board} error={error} now={now} />
+        <Board round={round} status={status} board={board} orgs={orgs} error={error} now={now} />
 
         {past.length > 0 ? <Winners rounds={past} /> : null}
       </div>
@@ -360,16 +395,21 @@ function HowItWorks() {
 
 // ── Leaderboard ──────────────────────────────────────────────────────────────
 
+/** How many collectors the board renders (and resolves org labels for). */
+const BOARD_LIMIT = 20;
+
 function Board({
   round,
   status,
   board,
+  orgs,
   error,
   now,
 }: {
   round: BioblitzRound;
   status: RoundStatus;
   board: RoundBoard | null;
+  orgs: Map<string, CollectorOrg>;
   error: boolean;
   now: number | null;
 }) {
@@ -432,7 +472,7 @@ function Board({
             <BoardMessage icon={<BinocularsIcon />} title={t("empty.title")} description={t("empty.description")} />
           ) : (
             <div className="divide-y divide-border/60 overflow-hidden rounded-3xl bg-card/70 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur">
-              {board.collectors.slice(0, 20).map((collector, index) => (
+              {board.collectors.slice(0, BOARD_LIMIT).map((collector, index) => (
                 <CollectorRow
                   key={collector.did}
                   rank={index + 1}
@@ -440,6 +480,7 @@ function Board({
                   name={collector.displayName}
                   avatarRef={collector.avatarRef}
                   count={collector.count}
+                  org={orgs.get(collector.did)}
                 />
               ))}
             </div>
@@ -474,12 +515,14 @@ function CollectorRow({
   name,
   avatarRef,
   count,
+  org,
 }: {
   rank: number;
   did: string;
   name: string | null;
   avatarRef: string | null;
   count: number;
+  org?: CollectorOrg;
 }) {
   const t = useTranslations("marketplace.bioblitz.board");
   return (
@@ -499,16 +542,19 @@ function CollectorRow({
         {rank}
       </span>
 
-      <div className="min-w-0 flex-1 space-y-1">
+      <div className="min-w-0 flex-1 space-y-1.5">
         <span className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold text-foreground">
           <AuthorInline did={did} nameOverride={name} avatarRefOverride={avatarRef} />
         </span>
-        {rank === 1 ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium leading-none text-primary">
-            <CrownIcon className="size-3" />
-            {t("leader")}
-          </span>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {rank === 1 ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium leading-none text-primary">
+              <CrownIcon className="size-3" />
+              {t("leader")}
+            </span>
+          ) : null}
+          <OrgLabel org={org} />
+        </div>
       </div>
 
       <span className="shrink-0 whitespace-nowrap text-right text-sm font-medium text-muted-foreground">
@@ -521,6 +567,25 @@ function CollectorRow({
         className="size-4 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary"
       />
     </PreferredAccountLink>
+  );
+}
+
+/** Subtle organisation-membership chip shown under a collector's name: the
+ *  account's organisation type (when known) plus its member-roster size. Only
+ *  rendered for accounts that resolve to an organisation; degrades to nothing
+ *  while the label is still loading or when the account isn't an org. */
+function OrgLabel({ org }: { org?: CollectorOrg }) {
+  const t = useTranslations("marketplace.bioblitz.board.org");
+  if (!org || !org.isOrganization) return null;
+  const typeLabel =
+    org.orgType && KNOWN_ORG_TYPES.has(org.orgType) ? t(`types.${org.orgType}`) : t("label");
+  const parts = [typeLabel];
+  if (org.memberCount > 0) parts.push(t("members", { count: org.memberCount }));
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2 py-0.5 text-[11px] font-medium leading-none text-muted-foreground">
+      <Building2Icon className="size-3 shrink-0" aria-hidden />
+      {parts.join(" · ")}
+    </span>
   );
 }
 

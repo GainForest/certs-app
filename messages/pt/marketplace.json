@@ -309,6 +309,18 @@
       "observations": "{count, plural, one {# observação} other {# observações}}",
       "openCollector": "Abrir o perfil em uma nova aba",
       "rankAriaLabel": "Posição {rank}",
+      "org": {
+        "label": "Organização",
+        "members": "{count, plural, one {# integrante} other {# integrantes}}",
+        "types": {
+          "nonprofit": "Sem fins lucrativos",
+          "business": "Empresa",
+          "company": "Companhia",
+          "community": "Grupo comunitário",
+          "government": "Governo",
+          "academic": "Acadêmica"
+        }
+      },
       "stats": {
         "observations": "Observações nesta rodada",
         "collectors": "Participantes",

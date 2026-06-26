@@ -309,6 +309,18 @@
       "observations": "{count, plural, one {# pengamatan} other {# pengamatan}}",
       "openCollector": "Buka profil pengumpul di tab baru",
       "rankAriaLabel": "Peringkat {rank}",
+      "org": {
+        "label": "Organisasi",
+        "members": "{count, plural, one {# anggota} other {# anggota}}",
+        "types": {
+          "nonprofit": "Nirlaba",
+          "business": "Bisnis",
+          "company": "Perusahaan",
+          "community": "Kelompok komunitas",
+          "government": "Pemerintah",
+          "academic": "Akademik"
+        }
+      },
       "stats": {
         "observations": "Pengamatan ronde ini",
         "collectors": "Pengumpul",

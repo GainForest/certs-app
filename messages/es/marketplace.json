@@ -309,6 +309,18 @@
       "observations": "{count, plural, one {# observación} other {# observaciones}}",
       "openCollector": "Abrir el perfil en una pestaña nueva",
       "rankAriaLabel": "Puesto {rank}",
+      "org": {
+        "label": "Organización",
+        "members": "{count, plural, one {# integrante} other {# integrantes}}",
+        "types": {
+          "nonprofit": "Sin fines de lucro",
+          "business": "Empresa",
+          "company": "Compañía",
+          "community": "Grupo comunitario",
+          "government": "Gobierno",
+          "academic": "Académica"
+        }
+      },
       "stats": {
         "observations": "Observaciones esta ronda",
         "collectors": "Participantes",

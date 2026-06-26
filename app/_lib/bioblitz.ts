@@ -264,3 +264,84 @@ function profileName(n: RawNode): string | null {
 function profileAvatarRef(n: RawNode): string | null {
   return normaliseRef(n.certifiedProfileData?.avatar?.image?.ref);
 }
+
+// ── Organisation membership ──────────────────────────────────────────────────────────────────
+//
+// In this stack, observations are written to an organisation's shared account,
+// so a top collector is usually an organisation. For each collector we resolve
+// whether the account is a certified organisation, its type (nonprofit /
+// business / …), and how many people are on its member roster — enough to label
+// the leaderboard card with its organisational membership without ever showing
+// a technical identifier.
+
+export type CollectorOrg = {
+  /** True when the account is a certified organisation (or has a roster). */
+  isOrganization: boolean;
+  /** Lowercased organisation-type token (e.g. "nonprofit"), when known. */
+  orgType: string | null;
+  /** Number of people on the organisation's member roster. */
+  memberCount: number;
+};
+
+const COLLECTOR_ORG_QUERY = `
+  query BioblitzCollectorOrg($did: String!) {
+    org: appCertifiedActorOrganization(where: { did: { eq: $did } }) {
+      totalCount
+      edges { node { organizationType } }
+    }
+    members: appGainforestOrganizationMember(first: 0, where: { did: { eq: $did } }) {
+      totalCount
+    }
+  }
+`;
+
+/**
+ * Resolve organisation membership for a set of collector accounts (the rendered
+ * top of the board). One small aliased query per account, run with bounded
+ * concurrency; failures degrade to "no label" rather than breaking the board.
+ */
+export async function fetchCollectorOrgs(
+  dids: string[],
+  signal?: AbortSignal,
+): Promise<Map<string, CollectorOrg>> {
+  const out = new Map<string, CollectorOrg>();
+  const CONCURRENCY = 6;
+  let cursor = 0;
+  async function worker() {
+    while (cursor < dids.length) {
+      const did = dids[cursor++]!;
+      try {
+        const res = await fetch(INDEXER_URL, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ query: COLLECTOR_ORG_QUERY, variables: { did } }),
+          signal,
+        });
+        const json = (await res.json()) as {
+          data?: {
+            org?: { totalCount?: number; edges?: Array<{ node?: { organizationType?: unknown } | null } | null> | null } | null;
+            members?: { totalCount?: number } | null;
+          } | null;
+        };
+        const org = json.data?.org;
+        const members = json.data?.members;
+        out.set(did, {
+          isOrganization: (org?.totalCount ?? 0) > 0 || (members?.totalCount ?? 0) > 0,
+          orgType: normalizeOrgType(org?.edges?.[0]?.node?.organizationType),
+          memberCount: members?.totalCount ?? 0,
+        });
+      } catch (err) {
+        if ((err as Error).name === "AbortError") throw err;
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, dids.length) }, worker));
+  return out;
+}
+
+function normalizeOrgType(value: unknown): string | null {
+  const token = Array.isArray(value) ? value[0] : value;
+  if (typeof token !== "string") return null;
+  const trimmed = token.trim().toLowerCase();
+  return trimmed || null;
+}

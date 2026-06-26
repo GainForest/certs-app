@@ -309,6 +309,18 @@
       "observations": "{count, plural, one {# observation} other {# observations}}",
       "openCollector": "Open collector profile in a new tab",
       "rankAriaLabel": "Rank {rank}",
+      "org": {
+        "label": "Organization",
+        "members": "{count, plural, one {# member} other {# members}}",
+        "types": {
+          "nonprofit": "Nonprofit",
+          "business": "Business",
+          "company": "Company",
+          "community": "Community group",
+          "government": "Government",
+          "academic": "Academic"
+        }
+      },
       "stats": {
         "observations": "Observations this round",
         "collectors": "Collectors",
