@@ -1,9 +1,9 @@
-import { parseAtUri } from "../atUri";
+import { parseAtUri } from "./atUri";
 import {
   parseAttachmentContent,
   type ParsedAttachmentContent,
-} from "../attachmentContentParser";
-import type { TimelineReference } from "../timelineReferences";
+} from "./attachmentContentParser";
+import type { TimelineReference } from "../viewers/shared/referenceResolution/timelineReferences";
 import { classifyAttachmentPreview } from "./evidenceContentTypeRegistry";
 import type { TimelineDocumentFormat } from "./timelineDocumentFormats";
 

@@ -64,9 +64,9 @@ import { BumicertObservationsGallery } from "./_components/BumicertObservationsG
 import { DonateButton } from "./_components/donate/DonateButton";
 import { FundingStatus } from "./_components/donate/FundingStatus";
 import { BumicertTimeline } from "./_components/timeline/BumicertTimeline";
-import { getEntriesForActivity } from "./_components/timeline/attachmentSubjects";
-import { resolveTimelineReferences } from "./_components/timeline/timelineReferenceResolver";
-import type { TimelineReference } from "./_components/timeline/timelineReferences";
+import { getEntriesForActivity } from "./_components/timeline/shared/attachmentSubjects";
+import { resolveTimelineReferences } from "./_components/timeline/viewers/shared/referenceResolution/timelineReferenceResolver";
+import type { TimelineReference } from "./_components/timeline/viewers/shared/referenceResolution/timelineReferences";
 import { canCreateRecord, canDeleteRecord } from "@/app/(manage)/manage/_lib/cgs-permissions";
 
 export const revalidate = 60;

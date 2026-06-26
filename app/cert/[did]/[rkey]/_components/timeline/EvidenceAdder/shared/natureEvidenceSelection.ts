@@ -1,5 +1,5 @@
 import type { OccurrenceRecord, UploadTreeDatasetRecord } from "@/app/_lib/indexer";
-import { formatEvidenceDateRangeFromValues } from "../timelineReferences";
+import { formatEvidenceDateRangeFromValues } from "../../shared/timelineDates";
 
 export type NatureDatasetGroup = {
   uri: string;

@@ -7,7 +7,7 @@ import type {
   TimelineMutationPermission,
   TimelineSourceData,
 } from "@/app/cert/[did]/[rkey]/_components/timeline/EvidenceAdder";
-import type { TimelineReference } from "@/app/cert/[did]/[rkey]/_components/timeline/timelineReferences";
+import type { TimelineReference } from "@/app/cert/[did]/[rkey]/_components/timeline/viewers/shared/referenceResolution/timelineReferences";
 import { TimelinePanel } from "@/app/cert/[did]/[rkey]/_components/timeline/viewers/TimelinePanel";
 import { TimelineMotion } from "./TimelineMotion";
 

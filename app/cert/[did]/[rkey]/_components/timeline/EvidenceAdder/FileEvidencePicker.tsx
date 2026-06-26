@@ -16,15 +16,15 @@ import { cn } from "@/lib/utils";
 import {
   ATTACHMENT_MAX_FILE_BYTES,
   type AttachmentDraft,
-} from "../contextAttachmentMutations";
+} from "../shared/contextAttachmentMutations";
 import {
   getFilePickerEvidenceContentTypeOptions,
   type FilePickerEvidenceContentType,
 } from "../shared/evidenceContentTypeRegistry";
-import { formatFileSize, toFileKey } from "./fileUtils";
-import { OptionalNote } from "./OptionalNote";
-import { SubmitButton } from "./SubmitButton";
-import type { EvidenceSubmitter } from "./types";
+import { formatFileSize, toFileKey } from "./shared/fileUtils";
+import { OptionalNote } from "./shared/OptionalNote";
+import { SubmitButton } from "./shared/SubmitButton";
+import type { EvidenceSubmitter } from "./shared/types";
 
 const FILE_CONTENT_TYPE_OPTIONS = getFilePickerEvidenceContentTypeOptions();
 

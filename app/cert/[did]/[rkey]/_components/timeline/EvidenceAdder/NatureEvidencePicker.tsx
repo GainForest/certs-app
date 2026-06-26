@@ -14,16 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { AttachmentDraft } from "../contextAttachmentMutations";
+import type { AttachmentDraft } from "../shared/contextAttachmentMutations";
 import {
   getOccurrenceDatasetRef,
   hasTreeDatasetMetadata,
   isTreeDatasetOccurrence,
-} from "../treeEvidenceClassification";
-import { CheckRow } from "./CheckRow";
-import { ManageLink, PickerEmpty } from "./ListHelpers";
-import { OptionalNote } from "./OptionalNote";
-import { SubmitButton } from "./SubmitButton";
+} from "../shared/occurrenceEvidenceClassification";
+import { CheckRow } from "./shared/CheckRow";
+import { ManageLink, PickerEmpty } from "./shared/ListHelpers";
+import { OptionalNote } from "./shared/OptionalNote";
+import { SubmitButton } from "./shared/SubmitButton";
 import {
   buildNatureDatasetGroups,
   formatRecorderSummary,
@@ -32,12 +32,12 @@ import {
   occurrenceSearchText,
   occurrenceTitle,
   uniqueRecordedByValues,
-} from "./natureEvidenceSelection";
+} from "./shared/natureEvidenceSelection";
 import {
   CONTENT_TYPE_NATURE,
   CONTENT_TYPE_NATURE_DATASET,
   type EvidenceSubmitter,
-} from "./types";
+} from "./shared/types";
 
 const ALL_RECORDERS_VALUE = "__all_recorders__";
 

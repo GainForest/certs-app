@@ -4,7 +4,7 @@ import type {
   OccurrenceRecord,
   UploadTreeDatasetRecord,
 } from "@/app/_lib/indexer";
-import type { AttachmentDraft } from "../contextAttachmentMutations";
+import type { AttachmentDraft } from "../../shared/contextAttachmentMutations";
 
 export const CONTENT_TYPE_TREE_DATASET = "tree-dataset";
 export const CONTENT_TYPE_NATURE = "biodiversity";

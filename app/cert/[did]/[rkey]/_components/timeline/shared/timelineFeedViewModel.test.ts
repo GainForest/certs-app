@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildTimelineFeedTiles, type TimelineFeedCopy } from "./timelineFeedViewModel";
-import type { TimelineReference } from "../timelineReferences";
+import type { TimelineReference } from "../viewers/shared/referenceResolution/timelineReferences";
 
 const copy: TimelineFeedCopy = {
   linkedNatureDataGroup: "Linked nature data group",

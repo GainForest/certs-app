@@ -6,15 +6,14 @@ import type {
   TimelineDatasetRecord,
   UploadTreeDatasetRecord,
 } from "@/app/_lib/indexer";
+import { formatDate } from "@/app/_lib/format";
 import { greenGlobeTreePreviewHref } from "@/app/_lib/urls";
-import { formatDate, formatNumber } from "../../../../../_lib/format";
-import { parseAtUri } from "./atUri";
-import { parseAttachmentContent } from "./attachmentContentParser";
-import { getOccurrenceDatasetRef } from "./treeEvidenceClassification";
-
-const CONTENT_TYPE_TREE_DATASET = "tree-dataset";
-const CONTENT_TYPE_BIODIVERSITY = "biodiversity";
-const CONTENT_TYPE_BIODIVERSITY_DATASET = "biodiversity-dataset";
+import { getTreeGroupStats } from "../../../shared/datasetStats";
+import { parseAtUri } from "../../../shared/atUri";
+import {
+  getDatasetEvidencePurposes,
+  getTimelineReferenceUrisForEntry,
+} from "./referenceLookup";
 
 export type TimelineReference = {
   id: string;
@@ -27,13 +26,6 @@ export type TimelineReference = {
   metrics?: { itemCount?: number; speciesCount?: number; treeCount?: number };
   mapHref?: string;
   actionHref?: string;
-};
-
-export type TimelineReferenceLookupInput = {
-  audioUris: string[];
-  occurrenceUris: string[];
-  datasetUris: string[];
-  locationUris: string[];
 };
 
 export type TimelineReferenceCopy = {
@@ -51,157 +43,8 @@ export type TimelineReferenceCopy = {
   individualCount: (count: number) => string;
 };
 
-type ParsedDateRange = { start: Date; end: Date };
-
-function normalizePartialIsoDate(value: string): string {
-  if (/^\d{4}$/.test(value)) return `${value}-01-01`;
-  if (/^\d{4}-\d{2}$/.test(value)) return `${value}-01`;
-  return value;
-}
-
-function parseDatePart(value: string | null | undefined): Date | null {
-  const trimmed = value?.trim();
-  if (!trimmed) return null;
-  const parsed = new Date(normalizePartialIsoDate(trimmed));
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function parseEvidenceDateRange(value: string | null | undefined): ParsedDateRange | null {
-  const trimmed = value?.trim();
-  if (!trimmed) return null;
-
-  const [startRaw, endRaw] = trimmed.split("/");
-  const start = parseDatePart(startRaw);
-  const end = parseDatePart(endRaw ?? startRaw);
-  if (!start || !end) return null;
-
-  return start.getTime() <= end.getTime()
-    ? { start, end }
-    : { start: end, end: start };
-}
-
-function formatMonthYear(date: Date): string {
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    timeZone: "UTC",
-    year: "numeric",
-  });
-}
-
-function formatDateRange(start: Date, end: Date): string {
-  const sameMonth =
-    start.getUTCFullYear() === end.getUTCFullYear() &&
-    start.getUTCMonth() === end.getUTCMonth();
-  return sameMonth ? formatMonthYear(start) : `${formatMonthYear(start)} – ${formatMonthYear(end)}`;
-}
-
-export function formatEvidenceDateRangeFromValues(values: Array<string | null | undefined>): string | null {
-  const parsedRanges = values
-    .map(parseEvidenceDateRange)
-    .filter((range): range is ParsedDateRange => range !== null);
-  if (parsedRanges.length === 0) return null;
-
-  const first = parsedRanges.reduce((current, next) =>
-    next.start.getTime() < current.start.getTime() ? next : current,
-  ).start;
-  const last = parsedRanges.reduce((current, next) =>
-    next.end.getTime() > current.end.getTime() ? next : current,
-  ).end;
-
-  return formatDateRange(first, last);
-}
-
 function occurrenceTitle(item: OccurrenceRecord): string {
   return item.scientificName ?? item.vernacularName ?? item.remarks ?? "";
-}
-
-export function getTimelineReferenceUrisForEntry(entry: TimelineAttachmentItem): string[] {
-  const uris: string[] = [];
-  const seen = new Set<string>();
-
-  function addUri(uri: string | null | undefined) {
-    if (!uri?.startsWith("at://") || seen.has(uri)) return;
-    seen.add(uri);
-    uris.push(uri);
-  }
-
-  for (const item of parseAttachmentContent(entry.record.content)) {
-    if (item.kind === "uri") addUri(item.uri);
-  }
-
-  for (const subject of entry.record.subjects?.slice(1) ?? []) {
-    addUri(subject.uri);
-  }
-
-  return uris;
-}
-
-function unique(values: Iterable<string>): string[] {
-  return Array.from(new Set(Array.from(values).filter((value) => value.length > 0)));
-}
-
-export function collectTimelineReferenceLookupInput(
-  entries: readonly TimelineAttachmentItem[],
-): TimelineReferenceLookupInput {
-  const audioUris: string[] = [];
-  const occurrenceUris: string[] = [];
-  const datasetUris: string[] = [];
-  const locationUris: string[] = [];
-
-  for (const entry of entries) {
-    for (const uri of getTimelineReferenceUrisForEntry(entry)) {
-      const parsed = parseAtUri(uri);
-      if (!parsed) continue;
-
-      if (parsed.collection === "app.gainforest.ac.audio") audioUris.push(uri);
-      if (parsed.collection === "app.gainforest.dwc.occurrence") occurrenceUris.push(uri);
-      if (parsed.collection === "app.gainforest.dwc.dataset") datasetUris.push(uri);
-      if (parsed.collection === "app.certified.location") locationUris.push(uri);
-    }
-  }
-
-  return {
-    audioUris: unique(audioUris),
-    occurrenceUris: unique(occurrenceUris),
-    datasetUris: unique(datasetUris),
-    locationUris: unique(locationUris),
-  };
-}
-
-export function getDatasetEvidencePurposes(entries: TimelineAttachmentItem[]): Map<string, "tree" | "biodiversity"> {
-  const purposes = new Map<string, "tree" | "biodiversity">();
-  for (const entry of entries) {
-    const normalized = entry.record.contentType?.trim().toLowerCase();
-    const purpose = normalized === CONTENT_TYPE_TREE_DATASET
-      ? "tree"
-      : normalized === CONTENT_TYPE_BIODIVERSITY || normalized === CONTENT_TYPE_BIODIVERSITY_DATASET
-        ? "biodiversity"
-        : null;
-    if (!purpose) continue;
-
-    for (const item of parseAttachmentContent(entry.record.content)) {
-      if (item.kind !== "uri" || parseAtUri(item.uri)?.collection !== "app.gainforest.dwc.dataset") continue;
-      if (purpose === "tree" || !purposes.has(item.uri)) purposes.set(item.uri, purpose);
-    }
-  }
-  return purposes;
-}
-
-export function getTreeGroupStats(
-  treeGroupUri: string,
-  occurrences: OccurrenceRecord[],
-): { itemCount: number; speciesCount: number; dateRange: string | null } {
-  const items = occurrences.filter((item) => getOccurrenceDatasetRef(item) === treeGroupUri);
-  const species = new Set(
-    items
-      .map((item) => occurrenceTitle(item).trim().toLowerCase())
-      .filter(Boolean),
-  );
-  return {
-    itemCount: items.length,
-    speciesCount: species.size,
-    dateRange: formatEvidenceDateRangeFromValues(items.map((item) => item.eventDate ?? item.createdAt)),
-  };
 }
 
 function greenGlobeTreePreview(did: string, treeGroupUri: string): string {

@@ -9,7 +9,7 @@ import {
   type TimelineAttachmentItem,
   type TimelineDatasetRecord,
 } from "@/app/_lib/indexer";
-import { parseAtUri } from "./atUri";
+import { parseAtUri } from "../../../shared/atUri";
 import {
   buildTimelineReferences,
   collectTimelineReferenceLookupInput,

@@ -104,7 +104,7 @@ export type ContextAttachmentMutationResult = {
 };
 
 async function getMutationApi() {
-  return import("../../../../../(manage)/manage/_lib/mutations");
+  return import("../../../../../../(manage)/manage/_lib/mutations");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

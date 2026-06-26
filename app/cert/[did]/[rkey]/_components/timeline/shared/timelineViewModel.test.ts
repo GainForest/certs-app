@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TimelineAttachmentItem } from "@/app/_lib/indexer";
-import type { TimelineReferenceCopy } from "../timelineReferences";
+import type { TimelineReferenceCopy } from "../viewers/shared/referenceResolution/timelineReferences";
 import type { TimelineFeedCopy } from "./timelineFeedViewModel";
 import {
   buildTimelineEntryViewModels,

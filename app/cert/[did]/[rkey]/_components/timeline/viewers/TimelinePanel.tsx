@@ -7,7 +7,7 @@ import type { TimelineAttachmentItem } from "@/app/_lib/indexer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { TimelineMutationPermission, TimelineSourceData } from "../EvidenceAdder";
-import type { TimelineReference, TimelineReferenceCopy } from "../timelineReferences";
+import type { TimelineReference, TimelineReferenceCopy } from "./shared/referenceResolution/timelineReferences";
 import {
   TIMELINE_EVIDENCE_FILTERS,
   type TimelineEvidenceFilter,
@@ -19,22 +19,17 @@ import {
   getFilteredTimelineEntries,
   getTimelineFilterCounts,
   paginateTimelineEntries,
-  type TimelineEntryViewModel,
 } from "../shared/timelineViewModel";
 import { TimelineEntryList } from "./TimelineEntryList";
 import { TimelineEmpty } from "./shared/TimelineEmpty";
 import { TimelineGreenGlobePreview } from "./shared/TimelineGreenGlobePreview";
 import {
-  buildTimelineMapLayers,
-  type TimelineMapLayer,
-} from "./shared/timelineMapLayers";
+  buildTimelineEntryListItems,
+  getUniqueTimelineMapLayers,
+} from "./shared/timelinePanelViewModel";
 import { TimelineViewerStoreProvider } from "./shared/timelineViewerStore";
 
 const DEFAULT_PAGE_SIZE = 8;
-
-type TimelineEntryListItem = TimelineEntryViewModel & {
-  mapLayers: TimelineMapLayer[];
-};
 
 export function TimelinePanel({
   organizationDid,
@@ -114,30 +109,14 @@ export function TimelinePanel({
       }),
     [entries, feedCopy, referenceCopy, references, sources],
   );
-  const entryListItems = useMemo<TimelineEntryListItem[]>(
-    () =>
-      entryModels.map((entry) => ({
-        ...entry,
-        mapLayers: buildTimelineMapLayers([
-          { item: entry.item, references: entry.refs },
-        ]),
-      })),
+  const entryListItems = useMemo(
+    () => buildTimelineEntryListItems(entryModels),
     [entryModels],
   );
-  const mapLayers = useMemo<TimelineMapLayer[]>(() => {
-    const seenDatasetUris = new Set<string>();
-    const layers: TimelineMapLayer[] = [];
-
-    for (const entry of entryListItems) {
-      for (const layer of entry.mapLayers) {
-        if (seenDatasetUris.has(layer.datasetUri)) continue;
-        seenDatasetUris.add(layer.datasetUri);
-        layers.push(layer);
-      }
-    }
-
-    return layers;
-  }, [entryListItems]);
+  const mapLayers = useMemo(
+    () => getUniqueTimelineMapLayers(entryListItems),
+    [entryListItems],
+  );
   const counts = useMemo(() => getTimelineFilterCounts(entryModels), [entryModels]);
   const filteredEntries = useMemo(
     () => getFilteredTimelineEntries(entryListItems, activeFilter),

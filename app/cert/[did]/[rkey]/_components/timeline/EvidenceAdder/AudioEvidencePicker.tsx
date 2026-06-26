@@ -5,12 +5,12 @@ import { MicIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ManagedAudio } from "@/app/_lib/indexer";
 import { formatDate } from "@/app/_lib/format";
-import type { AttachmentDraft } from "../contextAttachmentMutations";
-import { CheckRow } from "./CheckRow";
-import { ListLayout, ManageLink, PickerEmpty } from "./ListHelpers";
-import { OptionalNote } from "./OptionalNote";
-import { SubmitButton } from "./SubmitButton";
-import type { EvidenceSubmitter } from "./types";
+import type { AttachmentDraft } from "../shared/contextAttachmentMutations";
+import { CheckRow } from "./shared/CheckRow";
+import { ListLayout, ManageLink, PickerEmpty } from "./shared/ListHelpers";
+import { OptionalNote } from "./shared/OptionalNote";
+import { SubmitButton } from "./shared/SubmitButton";
+import type { EvidenceSubmitter } from "./shared/types";
 
 export function AudioEvidencePicker({
   data,

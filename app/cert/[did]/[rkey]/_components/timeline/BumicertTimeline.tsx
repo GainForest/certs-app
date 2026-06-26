@@ -3,15 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useTranslations } from "next-intl";
 import type { TimelineAttachmentItem } from "@/app/_lib/indexer";
-import { isAttachmentForActivity } from "./attachmentSubjects";
-import {
-  EvidenceAdder,
-  type TimelineMutationPermission,
-  type TimelineSourceData,
-} from "./EvidenceAdder";
-import type { TimelineReference } from "./timelineReferences";
+import { isAttachmentForActivity } from "./shared/attachmentSubjects";
+import type { TimelineMutationPermission, TimelineSourceData } from "./EvidenceAdder";
+import { TimelineEvidenceManager } from "./EvidenceAdder/TimelineEvidenceManager";
+import type { TimelineReference } from "./viewers/shared/referenceResolution/timelineReferences";
 import { TimelinePanel } from "./viewers/TimelinePanel";
 
 type BumicertTimelineProps = {
@@ -44,18 +40,15 @@ export function BumicertTimeline({
   attachmentsUnavailable,
 }: BumicertTimelineProps) {
   const router = useRouter();
-  const timelineT = useTranslations("bumicert.detail.timeline");
   const [entries, setEntries] = useState(() =>
     initialEntries.filter((entry) => isAttachmentForActivity(entry, activityUri)),
   );
-  const [status, setStatus] = useState<string | null>(null);
 
   function handleCreated(created: TimelineAttachmentItem) {
     setEntries((current) => [
       created,
       ...current.filter((entry) => entry.metadata.rkey !== created.metadata.rkey),
     ]);
-    setStatus(timelineT("linkSuccess"));
   }
 
   function handleDeleted(rkey: string) {
@@ -73,50 +66,19 @@ export function BumicertTimeline({
     >
       <div className="flex flex-col gap-6">
         {canManageEvidence ? (
-          <section
-            className="rounded-3xl border border-primary/25 bg-primary/5 p-4 shadow-sm ring-1 ring-primary/10"
-            aria-labelledby="link-evidence-heading"
-          >
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                  {timelineT("timelineTools")}
-                </p>
-                <h2
-                  id="link-evidence-heading"
-                  className="mt-1 text-2xl tracking-tight text-foreground"
-                >
-                  {timelineT("linkEvidenceTitle")}
-                </h2>
-                <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-                  {timelineT("linkEvidenceDescription", { title: bumicertTitle })}
-                </p>
-              </div>
-              <span className="inline-flex w-fit rounded-full border border-primary/25 bg-background/80 px-3 py-1 text-xs font-medium text-primary">
-                {timelineT("notTimelineYet")}
-              </span>
-            </div>
-            {attachmentsUnavailable ? (
-              <p className="mt-3 rounded-2xl border border-warn/20 bg-warn/10 px-3 py-2 text-sm text-warn">
-                {timelineT("linksUnavailable")}
-              </p>
-            ) : null}
-            <div className="mt-4 rounded-2xl border border-border/60 bg-background/85 p-4 shadow-xs">
-              <EvidenceAdder
-                organizationDid={organizationDid}
-                activityUri={activityUri}
-                activityCid={activityCid}
-                sources={sources}
-                entries={entries}
-                attachmentsUnavailable={attachmentsUnavailable}
-                createPermission={createPermission}
-                mutationRepo={mutationRepo}
-                onCreated={handleCreated}
-                onChanged={() => router.refresh()}
-              />
-            </div>
-            {status ? <p className="mt-3 text-sm text-primary">{status}</p> : null}
-          </section>
+          <TimelineEvidenceManager
+            organizationDid={organizationDid}
+            activityUri={activityUri}
+            activityCid={activityCid}
+            bumicertTitle={bumicertTitle}
+            sources={sources}
+            entries={entries}
+            attachmentsUnavailable={attachmentsUnavailable}
+            createPermission={createPermission}
+            mutationRepo={mutationRepo}
+            onCreated={handleCreated}
+            onChanged={() => router.refresh()}
+          />
         ) : null}
 
         <TimelinePanel

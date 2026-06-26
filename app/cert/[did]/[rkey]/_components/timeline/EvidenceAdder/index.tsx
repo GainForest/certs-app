@@ -1,52 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import {
-  ChevronLeftIcon,
-  FileTextIcon,
-  LeafIcon,
-  Loader2Icon,
-  MicIcon,
-  TreesIcon,
-  type LucideIcon,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronLeftIcon, Loader2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { OccurrenceRecord, TimelineAttachmentItem } from "@/app/_lib/indexer";
-import {
-  fetchAudioByDid,
-  fetchLocationsByDid,
-  fetchOccurrencesByDid,
-  fetchTreeDatasetsByDid,
-} from "@/app/_lib/indexer";
+import type { TimelineAttachmentItem } from "@/app/_lib/indexer";
 import { Button } from "@/components/ui/button";
-import {
-  ATTACHMENT_MAX_FILE_BYTES,
-  createContextAttachment,
-  isAttachmentMutationInputError,
-  type AttachmentDraft,
-} from "../contextAttachmentMutations";
-import { formatFileSize } from "./fileUtils";
-import { getLinkedNatureUris, getLinkedTreeGroupUris } from "./linkedEvidence";
+import { EVIDENCE_TABS } from "./shared/evidenceRegistry";
+import { getLinkedNatureUris, getLinkedTreeGroupUris } from "./shared/linkedEvidence";
 import { AudioEvidencePicker } from "./AudioEvidencePicker";
 import { TreeEvidencePicker } from "./TreeEvidencePicker";
 import { NatureEvidencePicker } from "./NatureEvidencePicker";
 import { FileEvidencePicker } from "./FileEvidencePicker";
 import {
-  hasTimelineSourceData,
   type EvidenceTab,
   type TimelineMutationPermission,
   type TimelineSourceData,
-  type TimelineSourceStatus,
-} from "./types";
+} from "./shared/types";
+import { useEvidenceSubmission } from "./shared/useEvidenceSubmission";
+import { useTimelineSourceData } from "./shared/useTimelineSourceData";
 
-export type { TimelineMutationPermission, TimelineSourceData } from "./types";
-
-const EVIDENCE_TABS: Array<{ id: EvidenceTab; icon: LucideIcon }> = [
-  { id: "audio", icon: MicIcon },
-  { id: "trees", icon: TreesIcon },
-  { id: "nature", icon: LeafIcon },
-  { id: "files", icon: FileTextIcon },
-];
+export type { TimelineMutationPermission, TimelineSourceData } from "./shared/types";
 
 export function EvidenceAdder({
   organizationDid,
@@ -73,15 +46,16 @@ export function EvidenceAdder({
 }) {
   const evidenceT = useTranslations("bumicert.detail.evidenceAdder");
   const [activeTab, setActiveTab] = useState<EvidenceTab | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sourceState, setSourceState] = useState<{
-    status: TimelineSourceStatus;
-    data: TimelineSourceData;
-  }>(() => ({
-    status: hasTimelineSourceData(sources) ? "ready" : "idle",
-    data: sources,
-  }));
+  const sourceState = useTimelineSourceData({ organizationDid, sources, activeTab });
+  const { error, isSubmitting, submitDrafts } = useEvidenceSubmission({
+    activityUri,
+    activityCid,
+    organizationDid,
+    createPermission,
+    mutationRepo,
+    onCreated,
+    onChanged,
+  });
   const linkedTreeGroups = useMemo(() => getLinkedTreeGroupUris(entries), [entries]);
   const linkedNatureUris = useMemo(() => getLinkedNatureUris(entries), [entries]);
   const tabLabels: Record<EvidenceTab, string> = {
@@ -97,140 +71,6 @@ export function EvidenceAdder({
     files: evidenceT("tabDescriptions.files"),
   };
 
-  useEffect(() => {
-    if (activeTab === null || activeTab === "files" || sourceState.status !== "idle") {
-      return;
-    }
-
-    setSourceState((current) =>
-      current.status === "idle" ? { ...current, status: "loading" } : current,
-    );
-  }, [activeTab, sourceState.status]);
-
-  useEffect(() => {
-    if (sourceState.status !== "loading") {
-      return;
-    }
-
-    const controller = new AbortController();
-    let cancelled = false;
-
-    Promise.all([
-      fetchAudioByDid(organizationDid, controller.signal).catch(() => []),
-      fetchOccurrencesByDid(organizationDid, 10000, null, controller.signal).catch(() => ({
-        records: [] as OccurrenceRecord[],
-        cursor: null,
-        hasMore: true,
-      })),
-      fetchTreeDatasetsByDid(organizationDid, controller.signal).catch(() => []),
-      fetchLocationsByDid(organizationDid, controller.signal).catch(() => []),
-    ])
-      .then(([audio, occurrencePage, treeGroups, places]) => {
-        if (cancelled) return;
-        setSourceState({
-          status: "ready",
-          data: {
-            audio,
-            occurrences: occurrencePage.records,
-            occurrencesIncomplete: occurrencePage.hasMore,
-            treeGroups,
-            places,
-          },
-        });
-      })
-      .catch((err) => {
-        if (cancelled || (err instanceof Error && err.name === "AbortError")) return;
-        setSourceState((current) => ({ ...current, status: "error" }));
-      });
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [organizationDid, sourceState.status]);
-
-  function mutationErrorMessage(error: unknown): string {
-    if (!isAttachmentMutationInputError(error)) {
-      console.error("Unable to link timeline evidence", error);
-      return evidenceT("linkError");
-    }
-
-    switch (error.code) {
-      case "file-too-large":
-        return evidenceT("validation.fileTooLarge", {
-          maxSize: formatFileSize(ATTACHMENT_MAX_FILE_BYTES),
-        });
-      case "file-type-not-allowed":
-        return evidenceT("validation.fileTypeNotAllowed");
-      case "invalid-link":
-        return evidenceT("invalidUrl");
-      case "too-many-items":
-        return evidenceT("validation.tooManyItems");
-      case "invalid-activity":
-        return evidenceT("incompleteBumicertReference");
-      case "invalid-context":
-        return evidenceT("validation.invalidContext");
-      default:
-        return evidenceT("linkError");
-    }
-  }
-
-  async function submitDrafts(
-    drafts: AttachmentDraft | AttachmentDraft[],
-    onSuccess?: () => void,
-  ) {
-    const items = (Array.isArray(drafts) ? drafts : [drafts]).filter(
-      (draft) => draft.contents.length > 0,
-    );
-    if (items.length === 0) return;
-
-    if (!createPermission.allowed) {
-      setError(createPermission.reason ?? evidenceT("permissions.createDenied"));
-      return;
-    }
-
-    if (!activityCid) {
-      setError(evidenceT("incompleteBumicertReference"));
-      return;
-    }
-
-    setError(null);
-    setIsSubmitting(true);
-    const created: TimelineAttachmentItem[] = [];
-    const activitySubject = { uri: activityUri, cid: activityCid };
-
-    try {
-      for (const draft of items) {
-        const result = await createContextAttachment({
-          draft,
-          activitySubject,
-          organizationDid,
-          repo: mutationRepo,
-        });
-        created.push(result.optimisticItem);
-        onCreated(result.optimisticItem);
-      }
-      if (created.length > 0) onChanged();
-      onSuccess?.();
-    } catch (err) {
-      const message = mutationErrorMessage(err);
-      if (created.length > 0) {
-        setError(
-          evidenceT("partialLinkSuccess", {
-            createdCount: created.length,
-            totalCount: items.length,
-            error: message,
-          }),
-        );
-        onChanged();
-        onSuccess?.();
-      } else {
-        setError(message);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
 
   if (activeTab === null) {
     return (

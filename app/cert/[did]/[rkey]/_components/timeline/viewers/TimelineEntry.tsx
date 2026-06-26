@@ -10,10 +10,7 @@ import { cn } from "@/lib/utils";
 import {
   deleteContextAttachment,
   isAttachmentMutationInputError,
-} from "../contextAttachmentMutations";
-import type { TimelineReference } from "../timelineReferences";
-import type { TimelineEvidenceKind } from "../shared/evidenceKind";
-import { formatDateRangeFromValues } from "../shared/timelineDates";
+} from "../shared/contextAttachmentMutations";
 import type { TimelineEntryViewModel } from "../shared/timelineViewModel";
 import { getTimelineDeleteControlState } from "../shared/timelineDeleteControls";
 import { TimelineDeleteConfirm } from "./shared/TimelineDeleteConfirm";
@@ -22,116 +19,14 @@ import { TimelineOptionalNote } from "./shared/TimelineOptionalNote";
 import { TimelinePreviewPanel } from "./shared/TimelinePreviewPanel";
 import { TimelineTileRow } from "./shared/TimelineTileRow";
 import type { TimelineMapLayer } from "./shared/timelineMapLayers";
-
-type EntryKindLabels = Record<TimelineEvidenceKind, string>;
-
-type MetricCopy = {
-  treeCount: (count: number) => string;
-  speciesCount: (count: number) => string;
-  natureSightingCount: (count: number) => string;
-  dataGroupCount: (count: number) => string;
-  recordingCount: (count: number) => string;
-  itemCount: (count: number) => string;
-};
-
-function cleanText(value: string | null | undefined): string | null {
-  const text = value?.trim();
-  return text ? text : null;
-}
-
-function kindLabel(kind: TimelineEvidenceKind, labels: EntryKindLabels): string {
-  return labels[kind] ?? labels.other;
-}
-
-function titleForEntry({
-  entry,
-  labels,
-  natureFallback,
-}: {
-  entry: TimelineEntryViewModel;
-  labels: EntryKindLabels;
-  natureFallback: string;
-}): string {
-  const explicit = cleanText(entry.item.record.title);
-  const treeRef = entry.refs.find((ref) => ref.kind === "tree");
-  if (entry.kind === "tree" && treeRef) return treeRef.title;
-  if (entry.kind === "nature") return explicit ?? natureFallback;
-  return explicit ?? kindLabel(entry.kind, labels);
-}
-
-function recordedDateForEntry(
-  kind: TimelineEvidenceKind,
-  references: TimelineReference[],
-  notSpecified: string,
-): string {
-  const referenceRange = references.find((ref) => ref.dateRange)?.dateRange;
-  if (referenceRange) return referenceRange;
-
-  const dates = references
-    .map((ref) => ref.recordedAt)
-    .filter((value): value is string => Boolean(value));
-  const range = formatDateRangeFromValues(dates);
-  if (range) return range;
-  if (kind === "audio") return formatDate(dates[0]) || notSpecified;
-  return notSpecified;
-}
-
-function metricBadges(
-  kind: TimelineEvidenceKind,
-  references: TimelineReference[],
-  tileCount: number,
-  copy: MetricCopy,
-): string[] {
-  if (kind === "tree") {
-    const treeCount = references.reduce(
-      (sum, ref) => sum + (ref.metrics?.treeCount ?? ref.metrics?.itemCount ?? 0),
-      0,
-    );
-    const speciesCount = references.reduce(
-      (sum, ref) => sum + (ref.metrics?.speciesCount ?? 0),
-      0,
-    );
-    return [
-      treeCount > 0 ? copy.treeCount(treeCount) : null,
-      speciesCount > 0 ? copy.speciesCount(speciesCount) : null,
-    ].filter((value): value is string => Boolean(value));
-  }
-
-  if (kind === "nature") {
-    const sightings = references.filter((ref) => ref.kind === "occurrence");
-    const datasets = references.filter((ref) => ref.kind === "biodiversityDataset");
-    const datasetSightingCount = datasets.reduce(
-      (sum, ref) => sum + (ref.metrics?.itemCount ?? 0),
-      0,
-    );
-    const sightingCount = sightings.length + datasetSightingCount;
-    const species = new Set(
-      sightings.map((ref) => ref.title.trim().toLowerCase()).filter(Boolean),
-    );
-    const datasetSpeciesCount = datasets.reduce(
-      (sum, ref) => sum + (ref.metrics?.speciesCount ?? 0),
-      0,
-    );
-    return [
-      sightingCount > 0
-        ? copy.natureSightingCount(sightingCount)
-        : datasets.length > 0
-          ? copy.dataGroupCount(datasets.length)
-          : null,
-      species.size + datasetSpeciesCount > 0
-        ? copy.speciesCount(species.size + datasetSpeciesCount)
-        : null,
-    ].filter((value): value is string => Boolean(value));
-  }
-
-  if (kind === "audio") {
-    const referenceCount = references.filter((ref) => ref.kind === "audio").length;
-    return [copy.recordingCount(Math.max(tileCount, referenceCount))];
-  }
-
-  if (kind === "file") return [copy.itemCount(tileCount)];
-  return [];
-}
+import {
+  getTimelineEntryKindLabel,
+  getTimelineEntryMetricBadges,
+  getTimelineEntryRecordedDate,
+  getTimelineEntryTitle,
+  type EntryKindLabels,
+  type MetricCopy,
+} from "./shared/timelineEntryPresentation";
 
 export function TimelineEntry({
   entry,
@@ -174,16 +69,16 @@ export function TimelineEntry({
     recordingCount: (count) => entryT("recordingCount", { count }),
     itemCount: (count) => entryT("itemCount", { count }),
   };
-  const title = titleForEntry({
+  const title = getTimelineEntryTitle({
     entry,
     labels,
     natureFallback: entryT("natureObservationsFallback"),
   });
-  const badges = metricBadges(entry.kind, entry.refs, entry.tiles.length, metricCopy);
+  const badges = getTimelineEntryMetricBadges(entry.kind, entry.refs, entry.tiles.length, metricCopy);
   const linkedDate =
     formatDate(entry.item.record.createdAt ?? entry.item.metadata.createdAt) ||
     entryT("notSpecified");
-  const recordedDate = recordedDateForEntry(
+  const recordedDate = getTimelineEntryRecordedDate(
     entry.kind,
     entry.refs,
     entryT("notSpecified"),
@@ -259,7 +154,7 @@ export function TimelineEntry({
           className="min-w-0 flex-1 text-left"
         >
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-primary">{kindLabel(entry.kind, labels)}</span>
+            <span className="text-xs text-primary">{getTimelineEntryKindLabel(entry.kind, labels)}</span>
             {badges.map((badge) => (
               <span
                 key={badge}

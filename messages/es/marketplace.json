@@ -241,6 +241,12 @@
       "title": "Reto BioBlitz Semanal — GainForest",
       "description": "Sal a la calle, fotografía seres vivos y añade tus avistamientos. Cada semana, quien más registre y la mejor foto ganan un premio."
     },
+    "banner": {
+      "message": "El Reto BioBlitz Semanal está activo. Fotografía la naturaleza y gana premios.",
+      "cta": "Más información",
+      "dismiss": "Descartar este banner",
+      "close": "Cerrar"
+    },
     "hero": {
       "eyebrow": "Reto BioBlitz Semanal",
       "titlePrefix": "Reto",
