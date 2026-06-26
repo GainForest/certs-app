@@ -92,7 +92,8 @@
     },
     "creationCard": {
       "createBumicert": "Criar um certificado",
-      "createProject": "Criar um projeto"
+      "createProject": "Criar um projeto",
+      "addObservations": "Adicionar observações"
     },
     "tabs": {
       "explore": "Explorar",

@@ -15,6 +15,7 @@ import {
   FolderKanbanIcon,
   HeartHandshakeIcon,
   HeartIcon,
+  ImagePlusIcon,
   LayoutDashboardIcon,
   LeafIcon,
   MapPinIcon,
@@ -565,7 +566,14 @@ function UnifiedSidebar({
             </LayoutGroup>
 
             <div className="mt-auto flex flex-col gap-3 pt-4">
-              {authSession?.isLoggedIn ? <BumicertCreationCard sessionDid={authSession.did} /> : <SignInPrompt collapsed={collapsed} />}
+              {authSession?.isLoggedIn ? (
+                <>
+                  <BumicertCreationCard sessionDid={authSession.did} />
+                  <ObservationCreationCard sessionDid={authSession.did} />
+                </>
+              ) : (
+                <SignInPrompt collapsed={collapsed} />
+              )}
             </div>
           </>
         ) : (
@@ -764,41 +772,88 @@ function NavLeaf({ item, isActive, index, paired = false }: { item: NavLeaf; isA
 }
 
 const PERSONAL_PROJECT_NEW_HREF = manageHref({ basePath: "/manage" }, "projects", { mode: "new" });
+const PERSONAL_OBSERVATION_ADD_HREF = manageHref({ basePath: "/manage" }, "observations", { mode: "add" });
 
 function createProjectHrefForGroup(identifier: string): string {
   return manageHref({ basePath: groupManageBasePath(identifier) }, "projects", { mode: "new" });
 }
 
-function CreateProjectLink({
-  sessionDid,
-  className,
-  children,
-}: {
+function addObservationHrefForGroup(identifier: string): string {
+  return manageHref({ basePath: groupManageBasePath(identifier) }, "observations", { mode: "add" });
+}
+
+type ContextLinkProps = {
   sessionDid: string | null;
   className?: string;
   children: React.ReactNode;
+};
+
+function CreateProjectLink({ sessionDid, className, children }: ContextLinkProps) {
+  return (
+    <ManageContextLink
+      sessionDid={sessionDid}
+      personalHref={PERSONAL_PROJECT_NEW_HREF}
+      hrefForGroup={createProjectHrefForGroup}
+      className={className}
+    >
+      {children}
+    </ManageContextLink>
+  );
+}
+
+function AddObservationLink({ sessionDid, className, children }: ContextLinkProps) {
+  return (
+    <ManageContextLink
+      sessionDid={sessionDid}
+      personalHref={PERSONAL_OBSERVATION_ADD_HREF}
+      hrefForGroup={addObservationHrefForGroup}
+      className={className}
+    >
+      {children}
+    </ManageContextLink>
+  );
+}
+
+function ManageContextLink({
+  sessionDid,
+  personalHref,
+  hrefForGroup,
+  className,
+  children,
+}: ContextLinkProps & {
+  personalHref: string;
+  hrefForGroup: (identifier: string) => string;
 }) {
   if (!sessionDid) {
     return (
-      <Link href={manageHref({ basePath: "/manage" }, "projects", { mode: "new" })} className={className}>
+      <Link href={personalHref} className={className}>
         {children}
       </Link>
     );
   }
 
   return (
-    <AuthenticatedCreateProjectLink sessionDid={sessionDid} className={className}>
+    <AuthenticatedManageContextLink
+      sessionDid={sessionDid}
+      personalHref={personalHref}
+      hrefForGroup={hrefForGroup}
+      className={className}
+    >
       {children}
-    </AuthenticatedCreateProjectLink>
+    </AuthenticatedManageContextLink>
   );
 }
 
-function AuthenticatedCreateProjectLink({
+function AuthenticatedManageContextLink({
   sessionDid,
+  personalHref,
+  hrefForGroup,
   className,
   children,
 }: {
   sessionDid: string;
+  personalHref: string;
+  hrefForGroup: (identifier: string) => string;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -807,18 +862,18 @@ function AuthenticatedCreateProjectLink({
   const [activeContext, setActiveContext] = useActiveAccountContext(sessionDid);
 
   const activeGroup = activeContext.type === "group" ? groups.find((group) => group.groupDid === activeContext.did) ?? null : null;
-  // Honor the active account context: an organization context creates the
-  // project in that organization, a personal context creates it in the
-  // signed-in user's own account — no organization required.
+  // Honor the active account context: an organization context targets that
+  // organization's repo, a personal context targets the signed-in user's own
+  // account — no organization required.
   const href = activeContext.type === "group"
-    ? createProjectHrefForGroup(activeGroup ? switcherGroupIdentifier(activeGroup) : activeContext.identifier?.trim() || activeContext.did)
-    : PERSONAL_PROJECT_NEW_HREF;
+    ? hrefForGroup(activeGroup ? switcherGroupIdentifier(activeGroup) : activeContext.identifier?.trim() || activeContext.did)
+    : personalHref;
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-    // Personal context: let the Link navigate to the personal "new project"
-    // route without any organization detour.
+    // Personal context: let the Link navigate to the personal route without any
+    // organization detour.
     if (activeContext.type !== "group") return;
 
     event.preventDefault();
@@ -826,7 +881,7 @@ function AuthenticatedCreateProjectLink({
     if (activeGroup) {
       setActiveContext({ type: "group", did: activeGroup.groupDid, identifier, role: activeGroup.role });
     }
-    router.push(createProjectHrefForGroup(identifier));
+    router.push(hrefForGroup(identifier));
   };
 
   return (
@@ -906,6 +961,60 @@ function BumicertCreationCard({ sessionDid }: { sessionDid: string }) {
       >
         <PlusIcon /> {t("createProject")}
       </CreateProjectLink>
+    </div>
+  );
+}
+
+function ObservationCreationCard({ sessionDid }: { sessionDid: string }) {
+  const t = useTranslations("common.sidebar.creationCard");
+  const collapsed = useSidebarCollapsed();
+
+  if (collapsed) {
+    return (
+      <SidebarTooltip label={t("addObservations")}>
+        <span className="mx-auto flex w-fit">
+          <AddObservationLink
+            sessionDid={sessionDid}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "icon" }),
+              "bg-background hover:bg-primary hover:text-primary-foreground",
+            )}
+          >
+            <ImagePlusIcon />
+            <span className="sr-only">{t("addObservations")}</span>
+          </AddObservationLink>
+        </span>
+      </SidebarTooltip>
+    );
+  }
+
+  return (
+    <div className="group flex flex-col w-full h-20 border border-border bg-background rounded-2xl p-1">
+      <div className="flex-1 relative">
+        {/*Left fanning photo tile*/}
+        <div className="absolute z-0 -bottom-3 left-1/2 h-16 w-12 -translate-x-1/2 -rotate-12 group-hover:-rotate-24 group-hover:-translate-x-9 transition-transform duration-300 bg-background border border-border shadow-lg rounded-xl p-1">
+          <div className="h-full w-full rounded-lg bg-gradient-to-br from-emerald-400/30 to-primary/10" />
+        </div>
+        {/*Right fanning photo tile*/}
+        <div className="absolute z-0 -bottom-3 left-1/2 h-16 w-12 -translate-x-1/2 rotate-12 group-hover:rotate-24 group-hover:translate-x-3 transition-transform duration-300 bg-background border border-border shadow-lg rounded-xl p-1">
+          <div className="h-full w-full rounded-lg bg-gradient-to-br from-sky-400/30 to-primary/10" />
+        </div>
+        {/*Front tile with the observations motif*/}
+        <div className="absolute z-1 -bottom-3 left-1/2 flex h-16 w-12 -translate-x-1/2 scale-100 items-center justify-center group-hover:scale-110 transition-transform duration-300 bg-background border border-border shadow-xl rounded-xl p-1">
+          <BinocularsIcon className="text-primary size-6 opacity-80" />
+        </div>
+      </div>
+
+      {/*CTA*/}
+      <AddObservationLink
+        sessionDid={sessionDid}
+        className={cn(
+          buttonVariants({ variant: "outline", size: "sm" }),
+          "relative z-2 w-full bg-background hover:bg-primary hover:text-primary-foreground",
+        )}
+      >
+        <ImagePlusIcon /> {t("addObservations")}
+      </AddObservationLink>
     </div>
   );
 }
