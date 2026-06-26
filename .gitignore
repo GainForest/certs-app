@@ -17,3 +17,6 @@ next-env.d.ts.bak
 
 # Local Claude Code state
 .claude/
+
+# Raw landing video downloads (trimmed/encoded into the same folder)
+public/assets/media/video/_raw/

@@ -125,6 +125,7 @@
       "alt": "Ícono de la app GainForest"
     },
     "stats": {
+      "liveLabel": "Impacto en vivo",
       "bumicertsShared": "certificados compartidos",
       "organizationProfiles": "perfiles de organizaciones",
       "natureSightingsShared": "avistamientos de naturaleza compartidos",

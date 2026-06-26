@@ -125,6 +125,7 @@
       "alt": "GainForest app icon"
     },
     "stats": {
+      "liveLabel": "Live impact",
       "bumicertsShared": "Certs shared",
       "organizationProfiles": "organization profiles",
       "natureSightingsShared": "nature sightings shared",

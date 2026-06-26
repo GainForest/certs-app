@@ -35,11 +35,15 @@ const OPTION_CARDS = [
     key: "funders",
     href: "/certs",
     image: "/assets/media/images/landing/supporter-river.jpg",
+    // Optional ambient animal b-roll; falls back to `image` until the clip
+    // exists at public/assets/media/video/card-funders.{webm,mp4}.
+    video: "/assets/media/video/card-funders",
   },
   {
     key: "organizations",
     href: "/manage/organizations",
     image: "/assets/media/images/landing/steward-waterfall.jpg",
+    video: "/assets/media/video/card-organizations",
   },
 ] as const;
 
@@ -144,6 +148,10 @@ function LandingTopNavbar() {
 
 function LandingHero() {
   const t = useTranslations("landing.hero");
+  // The ambient biodiversity clip fades in over the poster image once it can
+  // actually play. If the clip is missing (not yet provided) or the browser
+  // blocks autoplay, the poster image simply remains — identical to before.
+  const [videoReady, setVideoReady] = useState(false);
   return (
     <section className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-background">
       <div className="absolute inset-y-0 right-0 w-full overflow-hidden">
@@ -153,6 +161,8 @@ function LandingHero() {
           transition={{ duration: 1.4, ease: [0.25, 0.1, 0.25, 1] }}
           className="absolute inset-0"
         >
+          {/* Base poster image: preserves the original LCP and is the graceful
+              fallback whenever the ambient clip can't play. */}
           <Image
             src="/assets/media/images/landing/hero-rainforest@2x.webp"
             alt={t("imageAlt")}
@@ -162,6 +172,25 @@ function LandingHero() {
             sizes="100vw"
             className="object-cover object-center"
           />
+          {/* Ambient biodiversity loop, iNaturalist-style: muted, autoplaying,
+              looping, decorative. Drop the clip at
+              public/assets/media/video/hero-biodiversity.{webm,mp4}; it fades in
+              over the poster on first playback and stays hidden until then. */}
+          <video
+            className={cn(
+              "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-out",
+              videoReady ? "opacity-100" : "opacity-0",
+            )}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+            onPlaying={() => setVideoReady(true)}
+          >
+            <source src="/assets/media/video/hero-biodiversity.mp4" type="video/mp4" />
+          </video>
           <div className="absolute inset-0 bg-linear-to-t from-background via-background/75 to-transparent md:bg-linear-to-r" />
           <div className="absolute inset-x-0 bottom-0 h-56 bg-linear-to-b from-transparent via-background/80 to-background" />
         </motion.div>
@@ -306,7 +335,18 @@ function HomeStats({ kpis }: { kpis: ExplorerKpis | null }) {
 
   return (
     <section className="px-6 pb-10 pt-0 sm:px-12 sm:pb-12 md:px-6 md:pb-12">
-      <div className="mx-auto -mt-24 max-w-6xl rounded-[2rem] bg-background/65 p-2 shadow-sm shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur-xl">
+      <div className="mx-auto -mt-28 max-w-6xl rounded-[2rem] bg-background/80 p-3 shadow-xl shadow-foreground/10 ring-1 ring-foreground/10 backdrop-blur-2xl sm:p-4">
+        {/* "Live" eyebrow: these impact numbers stream from Hyperindex, so we
+            flag them as live (iNaturalist-style social proof). */}
+        <div className="mb-2 flex items-center gap-2 px-3 pt-1 sm:mb-3">
+          <span className="relative flex size-2" aria-hidden="true">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
+            <span className="relative inline-flex size-2 rounded-full bg-primary" />
+          </span>
+          <span className="text-[11px] font-semibold tracking-[0.18em] text-primary uppercase">
+            {t("liveLabel")}
+          </span>
+        </div>
         <StatsTileGrid items={stats} columns={4} />
       </div>
     </section>
@@ -384,56 +424,89 @@ function UserOptionCards() {
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {OPTION_CARDS.map((card, index) => (
-            <motion.div
-              key={card.key}
-              initial={{ opacity: 0, y: 22 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.08 + 0.08, ease: [0.25, 0.1, 0.25, 1] }}
-            >
-              <Link href={card.href} className="group block">
-                <div className="relative h-[320px] overflow-hidden rounded-2xl border border-border bg-card shadow-lg shadow-foreground/5 transition-all duration-500 hover:border-primary/20 hover:shadow-xl sm:h-[360px]">
-                  <Image
-                    src={card.image}
-                    alt={t(`cards.${card.key}.alt`)}
-                    fill
-                    sizes="(min-width: 640px) 50vw, calc(100vw - 3rem)"
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-card via-card/88 to-card/0" />
-                  <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
-                    <span
-                      className={cn(
-                        "inline-flex rounded-full text-xs font-bold tracking-[0.12em] uppercase backdrop-blur",
-                        card.key === "funders"
-                          ? "bg-primary px-4 py-1.5 text-primary-foreground shadow-lg shadow-primary/25 ring-1 ring-primary/30"
-                          : "bg-background/75 px-3 py-1 text-foreground/70 shadow-sm",
-                      )}
-                    >
-                      {t(`cards.${card.key}.label`)}
-                    </span>
-                    <h3 className="font-garamond mt-4 text-4xl leading-[1.05] font-light tracking-[-0.015em] text-foreground">
-                      {t(`cards.${card.key}.title`)}
-                      <br />
-                      <span className="font-instrument text-primary italic">{t(`cards.${card.key}.emphasis`)}</span>
-                    </h3>
-                    <p className="mt-4 max-w-sm text-base leading-relaxed text-muted-foreground dark:text-foreground/75">{t(`cards.${card.key}.description`)}</p>
-                    <motion.div
-                      className="mt-5 flex items-center gap-2 text-sm font-semibold text-foreground transition-colors group-hover:text-primary"
-                      whileHover={{ x: 4 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    >
-                      {t(`cards.${card.key}.cta`)}
-                      <ArrowUpRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                    </motion.div>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
+            <OptionCard key={card.key} card={card} index={index} />
           ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function OptionCard({
+  card,
+  index,
+}: {
+  card: (typeof OPTION_CARDS)[number];
+  index: number;
+}) {
+  const t = useTranslations("landing.paths");
+  // Ambient animal b-roll fades in over the photo once it can play; if the
+  // clip is absent or autoplay is blocked, the photo simply stays — identical
+  // to before. Decorative, so muted + aria-hidden.
+  const [videoReady, setVideoReady] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.08 + 0.08, ease: [0.25, 0.1, 0.25, 1] }}
+    >
+      <Link href={card.href} className="group block">
+        <div className="relative h-[320px] overflow-hidden rounded-2xl border border-border bg-card shadow-lg shadow-foreground/5 transition-all duration-500 hover:border-primary/20 hover:shadow-xl sm:h-[360px]">
+          <Image
+            src={card.image}
+            alt={t(`cards.${card.key}.alt`)}
+            fill
+            sizes="(min-width: 640px) 50vw, calc(100vw - 3rem)"
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+          {card.video ? (
+            <video
+              className={cn(
+                "absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-105",
+                videoReady ? "opacity-100" : "opacity-0",
+              )}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="none"
+              aria-hidden="true"
+              onPlaying={() => setVideoReady(true)}
+            >
+              <source src={`${card.video}.mp4`} type="video/mp4" />
+            </video>
+          ) : null}
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/88 to-card/0" />
+          <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+            <span
+              className={cn(
+                "inline-flex rounded-full text-xs font-bold tracking-[0.12em] uppercase backdrop-blur",
+                card.key === "funders"
+                  ? "bg-primary px-4 py-1.5 text-primary-foreground shadow-lg shadow-primary/25 ring-1 ring-primary/30"
+                  : "bg-background/75 px-3 py-1 text-foreground/70 shadow-sm",
+              )}
+            >
+              {t(`cards.${card.key}.label`)}
+            </span>
+            <h3 className="font-garamond mt-4 text-4xl leading-[1.05] font-light tracking-[-0.015em] text-foreground">
+              {t(`cards.${card.key}.title`)}
+              <br />
+              <span className="font-instrument text-primary italic">{t(`cards.${card.key}.emphasis`)}</span>
+            </h3>
+            <p className="mt-4 max-w-sm text-base leading-relaxed text-muted-foreground dark:text-foreground/75">{t(`cards.${card.key}.description`)}</p>
+            <motion.div
+              className="mt-5 flex items-center gap-2 text-sm font-semibold text-foreground transition-colors group-hover:text-primary"
+              whileHover={{ x: 4 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            >
+              {t(`cards.${card.key}.cta`)}
+              <ArrowUpRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </motion.div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
   );
 }
 
@@ -561,11 +634,6 @@ function OpenNetworkSection() {
                       : "border-border hover:border-primary/20",
                   )}
                 >
-                  {app.isSelf && (
-                    <span className="absolute top-3 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary-foreground uppercase">
-                      {t("youBadge")}
-                    </span>
-                  )}
                   <div className="flex h-9 items-center justify-center">
                     {app.isSelf ? (
                       <span className="flex items-center gap-2">
