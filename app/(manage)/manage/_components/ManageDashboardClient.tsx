@@ -295,7 +295,7 @@ function AboutSection({
         </div>
       ) : (
         <>
-          <p className={cn("mt-3 max-w-3xl whitespace-pre-line text-lg leading-8 md:text-xl md:leading-9", text ? "text-foreground/85" : "text-muted-foreground/60")}>
+          <p className={cn("mt-3 max-w-3xl whitespace-pre-line text-base leading-7 md:text-lg md:leading-8", text ? "text-foreground/85" : "text-muted-foreground/60")}>
             {text || t("about.empty")}
           </p>
           {editDisabledReason ? <p className="mt-2 text-xs text-muted-foreground">{editDisabledReason}</p> : null}
@@ -918,20 +918,6 @@ export function ManageDashboardClient({
   return (
     <>
       <Container className="space-y-6 pt-4 pb-12">
-        {account.kind === "organization" ? (
-          <AboutSection
-            value={editLongDescription}
-            draft={editLongDescription}
-            isEditing={inlineField === "about"}
-            isSaving={isSaving}
-            saveError={inlineField === "about" ? saveError : null}
-            onEdit={() => { setSaveError(null); setInlineField("about"); }}
-            onChange={setEditLongDescription}
-            onSave={() => void saveChanges({ longDescription: editLongDescription })}
-            onCancel={() => { setEditLongDescription((pendingOptimisticSave?.state ?? accountState).longDescription); setSaveError(null); setInlineField(null); }}
-            editDisabledReason={profileEditPermission.reason}
-          />
-        ) : null}
         <EditableHero
           account={account}
           basePath={basePath}
@@ -955,6 +941,18 @@ export function ManageDashboardClient({
         />
         {account.kind === "organization" ? (
           <>
+            <AboutSection
+              value={editLongDescription}
+              draft={editLongDescription}
+              isEditing={inlineField === "about"}
+              isSaving={isSaving}
+              saveError={inlineField === "about" ? saveError : null}
+              onEdit={() => { setSaveError(null); setInlineField("about"); }}
+              onChange={setEditLongDescription}
+              onSave={() => void saveChanges({ longDescription: editLongDescription })}
+              onCancel={() => { setEditLongDescription((pendingOptimisticSave?.state ?? accountState).longDescription); setSaveError(null); setInlineField(null); }}
+              editDisabledReason={profileEditPermission.reason}
+            />
             {children}
             {writeRepoDid && groupRole ? (
               <GroupMembers
