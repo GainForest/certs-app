@@ -653,6 +653,7 @@
     "hideDetails": "Hide details",
     "selectForUpload": "Select for upload",
     "progressLabel": "{progress}% complete",
+    "uploadFailedSummary": "{failed} of {total} failed to upload",
     "noReadySelected": "Select at least one analyzed image before uploading.",
     "analysisFailed": "Image analysis failed. Try again or choose another image.",
     "analysisNotConfigured": "Image analysis is not configured yet.",

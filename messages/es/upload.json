@@ -653,6 +653,7 @@
     "hideDetails": "Ocultar detalles",
     "selectForUpload": "Seleccionar para subir",
     "progressLabel": "{progress}% completado",
+    "uploadFailedSummary": "{failed} de {total} no se pudieron subir",
     "noReadySelected": "Selecciona al menos una imagen analizada antes de subir.",
     "analysisFailed": "Falló el análisis de la imagen. Inténtalo de nuevo o elige otra imagen.",
     "analysisNotConfigured": "El análisis de imágenes aún no está configurado.",

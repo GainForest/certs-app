@@ -920,8 +920,12 @@ function ObservationBulkAddPanel({
   const uploadableCount = items.filter(itemCanUpload).length;
   const analyzingCount = items.filter((item) => item.status === "analyzing").length;
   const uploadProgressItems = uploadProgressIds.size > 0 ? items.filter((item) => uploadProgressIds.has(item.id)) : [];
-  const showUploadProgress = isBulkUploading && uploadProgressItems.length > 0;
+  const uploadFailedCount = uploadProgressItems.filter((item) => item.status === "uploadError").length;
+  // Keep the bar visible after the run finishes when some uploads failed, so the
+  // failed share can be shown in red (the all-success case navigates away).
+  const showUploadProgress = uploadProgressItems.length > 0 && (isBulkUploading || uploadFailedCount > 0);
   const overallProgress = uploadProgressItems.length > 0 ? Math.round(uploadProgressItems.reduce((sum, item) => sum + item.progress, 0) / uploadProgressItems.length) : 0;
+  const failedProgress = uploadProgressItems.length > 0 ? Math.round((uploadFailedCount / uploadProgressItems.length) * 100) : 0;
   const groups = observationGroups(items);
   const allEditableSelected = editableItems.length > 0 && selectedEditableItems.length === editableItems.length;
   const someEditableSelected = selectedEditableItems.length > 0 && !allEditableSelected;
@@ -1429,7 +1433,15 @@ function ObservationBulkAddPanel({
                 </div>
               </div>
               {showUploadProgress ? (
-                <ProgressBar value={overallProgress} label={t("progressLabel", { progress: overallProgress })} />
+                <ProgressBar
+                  value={overallProgress}
+                  errorValue={failedProgress}
+                  label={
+                    !isBulkUploading && uploadFailedCount > 0
+                      ? t("uploadFailedSummary", { failed: uploadFailedCount, total: uploadProgressItems.length })
+                      : t("progressLabel", { progress: overallProgress })
+                  }
+                />
               ) : null}
             </div>
 
@@ -2064,12 +2076,14 @@ function TextareaField({ label, value, onChange, disabled }: { label: string; va
   );
 }
 
-function ProgressBar({ value, label, className }: { value: number; label: string; className?: string }) {
+function ProgressBar({ value, errorValue = 0, label, className }: { value: number; errorValue?: number; label: string; className?: string }) {
   const bounded = Math.max(0, Math.min(100, value));
+  const failed = Math.max(0, Math.min(100 - bounded, errorValue));
   return (
     <div className={className} aria-label={label} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={bounded}>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${bounded}%` }} />
+      <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+        <div className="h-full bg-primary transition-all" style={{ width: `${bounded}%` }} />
+        <div className="h-full bg-destructive transition-all" style={{ width: `${failed}%` }} />
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{label}</p>
     </div>

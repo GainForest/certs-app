@@ -653,6 +653,7 @@
     "hideDetails": "Sembunyikan detail",
     "selectForUpload": "Pilih untuk diunggah",
     "progressLabel": "{progress}% selesai",
+    "uploadFailedSummary": "{failed} dari {total} gagal diunggah",
     "noReadySelected": "Pilih setidaknya satu gambar yang sudah dianalisis sebelum mengunggah.",
     "analysisFailed": "Analisis gambar gagal. Coba lagi atau pilih gambar lain.",
     "analysisNotConfigured": "Analisis gambar belum dikonfigurasi.",

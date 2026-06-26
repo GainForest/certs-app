@@ -653,6 +653,7 @@
     "hideDetails": "Ocultar detalhes",
     "selectForUpload": "Selecionar para enviar",
     "progressLabel": "{progress}% concluído",
+    "uploadFailedSummary": "{failed} de {total} não foram enviadas",
     "noReadySelected": "Selecione pelo menos uma imagem analisada antes de enviar.",
     "analysisFailed": "A análise da imagem falhou. Tente novamente ou escolha outra imagem.",
     "analysisNotConfigured": "A análise de imagens ainda não está configurada.",

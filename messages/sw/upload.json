@@ -653,6 +653,7 @@
     "hideDetails": "Ficha maelezo",
     "selectForUpload": "Chagua kwa kupakia",
     "progressLabel": "{progress}% imekamilika",
+    "uploadFailedSummary": "{failed} kati ya {total} hazikupakiwa",
     "noReadySelected": "Chagua angalau picha moja iliyochambuliwa kabla ya kupakia.",
     "analysisFailed": "Uchambuzi wa picha umeshindwa. Jaribu tena au chagua picha nyingine.",
     "analysisNotConfigured": "Uchambuzi wa picha haujasanidiwa bado.",
