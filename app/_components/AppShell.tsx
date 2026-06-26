@@ -121,14 +121,6 @@ const NAV_ITEMS: NavSection[] = [
       },
       {
         kind: "leaf",
-        id: "leaderboard",
-        text: "Leaderboard",
-        Icon: TrophyIcon,
-        href: "/leaderboard",
-        pathCheck: { startsWith: "/leaderboard" },
-      },
-      {
-        kind: "leaf",
         id: "bioblitz",
         text: "BioBlitz",
         Icon: LeafIcon,
@@ -142,6 +134,14 @@ const NAV_ITEMS: NavSection[] = [
         Icon: HeartHandshakeIcon,
         href: "/donations",
         pathCheck: { startsWith: "/donations" },
+      },
+      {
+        kind: "leaf",
+        id: "leaderboard",
+        text: "Leaderboard",
+        Icon: TrophyIcon,
+        href: "/leaderboard",
+        pathCheck: { startsWith: "/leaderboard" },
       },
     ],
   },
@@ -667,9 +667,10 @@ function ExploreNav() {
           item={{ ...item, text: t(item.id) }}
           isActive={isLeafActive(item.pathCheck, pathname)}
           index={index + 1}
-          // Certs are minted from a Project, so visually hang Certs under
-          // Projects (which sits directly above it).
-          paired={item.id === "bumicerts"}
+          // Certs hang under Projects (they're minted from a Project) and the
+          // Leaderboard hangs under Donations (it ranks donors) — both pair to
+          // the row directly above them.
+          paired={item.id === "bumicerts" || item.id === "leaderboard"}
         />
       ))}
     </ul>
