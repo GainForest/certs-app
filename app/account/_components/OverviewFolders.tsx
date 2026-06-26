@@ -24,11 +24,11 @@ function formatCount(value: number | null | undefined): string {
 
 function CardArt({ header, lines = [8, 14] }: { header: ReactNode; lines?: number[] }) {
   return (
-    <div className="flex h-16 w-14 flex-col gap-1 rounded-lg border border-border/70 bg-background/85 p-1.5 shadow-md backdrop-blur-sm">
-      <div className="flex h-8 w-full items-center justify-center rounded-md bg-primary/15">{header}</div>
+    <div className="flex h-[52px] w-11 flex-col gap-1 rounded-lg border border-border/70 bg-background/85 p-1.5 shadow-md backdrop-blur-sm">
+      <div className="flex h-6 w-full items-center justify-center rounded-md bg-primary/15">{header}</div>
       <div className="mt-auto space-y-1">
         {lines.map((w, i) => (
-          <div key={i} className="h-1.5 rounded-full bg-muted" style={{ width: `${w * 4}px` }} />
+          <div key={i} className="h-1 rounded-full bg-muted" style={{ width: `${w * 3.5}px` }} />
         ))}
       </div>
     </div>
@@ -37,9 +37,9 @@ function CardArt({ header, lines = [8, 14] }: { header: ReactNode; lines?: numbe
 
 function MedallionArt({ icon }: { icon: ReactNode }) {
   return (
-    <div className="flex h-16 w-14 flex-col items-center justify-center gap-1.5 rounded-lg border border-border/70 bg-background/85 shadow-md backdrop-blur-sm">
-      <div className="flex size-9 items-center justify-center rounded-full bg-primary/15 ring-2 ring-primary/20">{icon}</div>
-      <div className="h-1.5 w-8 rounded-full bg-muted" />
+    <div className="flex h-[52px] w-11 flex-col items-center justify-center gap-1.5 rounded-lg border border-border/70 bg-background/85 shadow-md backdrop-blur-sm">
+      <div className="flex size-7 items-center justify-center rounded-full bg-primary/15 ring-2 ring-primary/20">{icon}</div>
+      <div className="h-1 w-7 rounded-full bg-muted" />
     </div>
   );
 }
@@ -49,30 +49,30 @@ export const OVERVIEW_FOLDER_ART: Record<string, ReactNode> = {
   donations: <MedallionArt icon={<HeartIcon className="size-4 text-primary/80" fill="currentColor" />} />,
   projects: <CardArt header={<LeafIcon className="size-4 text-primary/80" />} lines={[7, 11]} />,
   gallery: (
-    <div className="flex h-16 w-14 flex-col gap-1 rounded-lg border border-border/70 bg-background/85 p-1.5 shadow-md backdrop-blur-sm">
-      <div className="flex h-9 w-full items-center justify-center rounded-md bg-primary/15">
-        <ImageIcon className="size-4 text-primary/80" />
+    <div className="flex h-[52px] w-11 flex-col gap-1 rounded-lg border border-border/70 bg-background/85 p-1.5 shadow-md backdrop-blur-sm">
+      <div className="flex h-6 w-full items-center justify-center rounded-md bg-primary/15">
+        <ImageIcon className="size-3.5 text-primary/80" />
       </div>
       <div className="mt-auto flex gap-1">
-        <div className="h-2 flex-1 rounded-sm bg-muted" />
-        <div className="h-2 w-3 rounded-sm bg-primary/40" />
+        <div className="h-1.5 flex-1 rounded-sm bg-muted" />
+        <div className="h-1.5 w-2.5 rounded-sm bg-primary/40" />
       </div>
     </div>
   ),
   observations: (
-    <div className="flex h-16 w-14 flex-col gap-1 rounded-lg border border-border/70 bg-background/85 p-1.5 shadow-md backdrop-blur-sm">
-      <div className="flex h-7 w-full items-center justify-center rounded-md bg-primary/15">
-        <BinocularsIcon className="size-4 text-primary/80" />
+    <div className="flex h-[52px] w-11 flex-col gap-1 rounded-lg border border-border/70 bg-background/85 p-1.5 shadow-md backdrop-blur-sm">
+      <div className="flex h-5 w-full items-center justify-center rounded-md bg-primary/15">
+        <BinocularsIcon className="size-3.5 text-primary/80" />
       </div>
       <div className="mt-auto flex items-end gap-[3px]">
-        {[8, 14, 10, 6, 12].map((h, i) => (
-          <div key={i} className={i === 1 ? "w-1.5 rounded-sm bg-primary/40" : "w-1.5 rounded-sm bg-muted"} style={{ height: `${h}px` }} />
+        {[7, 12, 9, 5, 10].map((h, i) => (
+          <div key={i} className={i === 1 ? "w-1 rounded-sm bg-primary/40" : "w-1 rounded-sm bg-muted"} style={{ height: `${h}px` }} />
         ))}
       </div>
     </div>
   ),
   sites: (
-    <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-border/70 bg-primary/5 shadow-md">
+    <div className="relative h-[52px] w-[52px] overflow-hidden rounded-lg border border-border/70 bg-primary/5 shadow-md">
       <div
         className="absolute inset-0 opacity-40"
         style={{
@@ -88,18 +88,18 @@ export const OVERVIEW_FOLDER_ART: Record<string, ReactNode> = {
     </div>
   ),
   trees: (
-    <div className="flex h-16 w-16 flex-col justify-center gap-1.5 rounded-lg border border-border/70 bg-background/85 px-2 shadow-md backdrop-blur-sm">
+    <div className="flex h-[52px] w-[52px] flex-col justify-center gap-1 rounded-lg border border-border/70 bg-background/85 px-2 shadow-md backdrop-blur-sm">
       {[0, 1, 2].map((i) => (
         <div key={i} className="flex items-center gap-1.5">
-          <TreePineIcon className="size-3.5 shrink-0 text-primary/70" />
-          <div className="h-1.5 flex-1 rounded-full bg-muted" />
+          <TreePineIcon className="size-3 shrink-0 text-primary/70" />
+          <div className="h-1 flex-1 rounded-full bg-muted" />
         </div>
       ))}
     </div>
   ),
   audio: (
-    <div className="flex h-16 w-16 items-center justify-center gap-[3px] rounded-lg border border-border/70 bg-background/85 shadow-md backdrop-blur-sm">
-      {[10, 18, 28, 14, 24, 8, 20].map((h, i) => (
+    <div className="flex h-[52px] w-[52px] items-center justify-center gap-[3px] rounded-lg border border-border/70 bg-background/85 shadow-md backdrop-blur-sm">
+      {[8, 14, 22, 11, 19, 7, 16].map((h, i) => (
         <div key={i} className="w-1 rounded-full bg-primary/50" style={{ height: `${h}px` }} />
       ))}
     </div>
@@ -115,20 +115,20 @@ function Folder({ tile, index }: { tile: OverviewFolderTile; index: number }) {
     >
       <Link href={tile.href} className="group relative block">
         {/* Art peeking from behind the folder, tucked to the right */}
-        <div className="pointer-events-none absolute inset-x-0 top-1 z-0 flex justify-end pr-4">
-          <div className="rotate-6 transition-transform duration-300 ease-out group-hover:-translate-y-1.5 group-hover:rotate-0">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-end pr-3.5">
+          <div className="rotate-6 transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:rotate-0">
             {OVERVIEW_FOLDER_ART[tile.id]}
           </div>
         </div>
 
         {/* Folder shape */}
-        <div className="relative pt-10">
+        <div className="relative pt-7">
           {/* tab */}
-          <div className="absolute left-0 top-[18px] z-20 h-[24px] w-[44%] rounded-t-xl border border-b-0 border-border/60 bg-card transition-colors duration-300 group-hover:border-primary/40" />
+          <div className="absolute left-0 top-[12px] z-20 h-[19px] w-[42%] rounded-t-lg border border-b-0 border-border/60 bg-card transition-colors duration-300 group-hover:border-primary/40" />
           {/* body */}
-          <div className="relative z-10 flex min-h-[132px] flex-col justify-end rounded-3xl rounded-tl-none border border-border/60 bg-card p-4 transition-all duration-300 group-hover:border-primary/40 group-hover:shadow-[0_18px_44px_-18px_oklch(0_0_0/0.28)]">
-            <div className="font-instrument text-4xl italic leading-[0.8] text-foreground">{formatCount(tile.count)}</div>
-            <p className="mt-2 text-sm font-medium text-foreground transition-colors duration-300 group-hover:text-primary">{tile.title}</p>
+          <div className="relative z-10 flex min-h-[86px] flex-col justify-end rounded-[18px] rounded-tl-none border border-border/60 bg-card p-3.5 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-[0_14px_32px_-16px_oklch(0_0_0/0.26)]">
+            <div className="font-instrument text-[28px] italic leading-[0.85] text-foreground">{formatCount(tile.count)}</div>
+            <p className="mt-1 text-[13px] font-medium text-foreground/75 transition-colors duration-300 group-hover:text-primary">{tile.title}</p>
           </div>
         </div>
       </Link>
@@ -140,7 +140,7 @@ export function OverviewFolders({ tiles }: { tiles: OverviewFolderTile[] }) {
   if (tiles.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-3 lg:grid-cols-4">
       {tiles.map((tile, index) => (
         <Folder key={tile.id} tile={tile} index={index} />
       ))}
