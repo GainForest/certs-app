@@ -36,8 +36,6 @@ import { createRecord, deleteRecord, putRecord, uploadBlob } from "../../_lib/mu
 const PROJECT_COLLECTION = "org.hypercerts.collection";
 const PROJECT_MODES = ["list", "new", "edit"] as const;
 const TITLE_MAX = 90;
-const SUMMARY_MAX = 300;
-const STORY_MIN = 80;
 const FIELD =
   "w-full rounded-xl border border-border bg-background text-foreground shadow-none outline-none transition-colors placeholder:text-muted-foreground/65 focus:border-primary/45 focus:bg-background focus:ring-2 focus:ring-primary/20";
 const FIELD_ERROR = "!border-2 !border-destructive ring-2 ring-destructive/25 focus:!border-destructive focus:ring-2 focus:ring-destructive/30";
@@ -597,32 +595,14 @@ function ProjectEditor({
                 <div className="mt-1.5 text-right text-xs text-muted-foreground">{draft.title.length} / {TITLE_MAX}</div>
               </Field>
 
-              <Field label="Short summary" hint="one or two sentences" htmlFor="project-summary" error={issuesByName.shortDescription?.message}>
+              <Field label="Short summary" hint="optional — one or two sentences" htmlFor="project-summary" error={issuesByName.shortDescription?.message}>
                 <textarea
                   id="project-summary"
                   value={draft.shortDescription}
-                  maxLength={SUMMARY_MAX}
-                  onChange={(event) => updateDraft("shortDescription", event.target.value.slice(0, SUMMARY_MAX))}
+                  onChange={(event) => updateDraft("shortDescription", event.target.value)}
                   placeholder="Local stewards are restoring forest plots, tracking tree growth, and sharing updates from the field."
-                  className={cn(FIELD, "min-h-24 resize-none px-4 py-3 text-[15px] leading-7", issuesByName.shortDescription && FIELD_ERROR)}
+                  className={cn(FIELD, "min-h-24 resize-y px-4 py-3 text-[15px] leading-7", issuesByName.shortDescription && FIELD_ERROR)}
                 />
-                <div className="mt-1.5 flex justify-between text-xs text-muted-foreground">
-                  <span>{draft.shortDescription.trim().length < 30 ? "At least 30 characters" : "Looks good"}</span>
-                  <span>{draft.shortDescription.trim().length} / {SUMMARY_MAX}</span>
-                </div>
-              </Field>
-
-              <Field label="Longer description" hint="add the details people need to understand the work" htmlFor="project-description" error={issuesByName.description?.message}>
-                <textarea
-                  id="project-description"
-                  value={draft.description}
-                  onChange={(event) => updateDraft("description", event.target.value)}
-                  placeholder={"What is this project about?\n\nWho is doing the work?\n\nWhere is it happening?\n\nWhat progress has been made so far?"}
-                  className={cn(FIELD, "min-h-64 resize-y px-4 py-3.5 text-[15px] leading-7", issuesByName.description && FIELD_ERROR)}
-                />
-                <div className="mt-1.5 text-xs text-muted-foreground">
-                  {draft.description.trim().length < STORY_MIN ? `${STORY_MIN - draft.description.trim().length} more characters helps this read like a real project page.` : "Story has enough detail."}
-                </div>
               </Field>
 
             </div>
@@ -966,8 +946,6 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 function getProjectIssues(draft: ProjectDraft): ProjectIssue[] {
   const issues: ProjectIssue[] = [];
   if (draft.title.trim().length < 3) issues.push({ field: "title", section: "basics", message: "Add a project name with at least 3 characters." });
-  if (draft.shortDescription.trim().length < 30) issues.push({ field: "shortDescription", section: "story", message: "Write at least 30 characters for the short summary." });
-  if (draft.description.trim().length < STORY_MIN) issues.push({ field: "description", section: "story", message: `Write at least ${STORY_MIN} characters for the project story.` });
   return issues;
 }
 
