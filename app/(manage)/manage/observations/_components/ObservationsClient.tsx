@@ -1319,17 +1319,17 @@ function ObservationBulkAddPanel({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
-      <Container className="space-y-6 pt-4 pb-12">
+      <Container className="space-y-4 pt-3 pb-12">
         <div>
-          <Button variant="ghost" onClick={onBack} className="-ml-2 mb-3 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2 mb-1 h-7 text-muted-foreground hover:text-foreground">
             <ChevronLeftIcon className="size-4" /> {t("backToObservations")}
           </Button>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-2xl">
-              <h1 className="font-instrument text-2xl font-medium italic tracking-[-0.03em] text-foreground sm:text-3xl">
+              <h1 className="font-instrument text-xl font-medium italic tracking-[-0.03em] text-foreground sm:text-2xl">
                 {t("bulkTitle")}
               </h1>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("bulkIntro")}</p>
+              <p className="mt-0.5 text-sm leading-snug text-muted-foreground">{t("bulkIntro")}</p>
             </div>
             <div className="flex shrink-0 gap-2">
               <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFilesChanged} className="sr-only" />
@@ -1347,14 +1347,14 @@ function ObservationBulkAddPanel({
         </div>
 
         {bulkError || disabledReason ? (
-          <div className="flex items-start gap-2.5 rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
+          <div className="flex items-start gap-2.5 rounded-xl border border-destructive/20 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive">
             <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
             <span>{bulkError ?? disabledReason}</span>
           </div>
         ) : null}
 
         {draftRestored && items.length > 0 ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/[0.05] px-4 py-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/20 bg-primary/[0.05] px-3.5 py-1.5 text-sm">
             <span className="flex items-center gap-2 text-foreground">
               <RotateCcwIcon className="size-4 shrink-0 text-primary" /> {t("draftRestored")}
             </span>
@@ -1362,7 +1362,7 @@ function ObservationBulkAddPanel({
               variant="ghost"
               size="sm"
               onClick={discardDraft}
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className="h-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
               <Trash2Icon className="size-4" /> {t("discardDraft")}
             </Button>
@@ -1495,16 +1495,14 @@ function LocationStep({ onChoose }: { onChoose: () => void }) {
 function LocationBar({ location, onChange }: { location: PickedLocation; onChange: () => void }) {
   const t = useTranslations("upload.observations.location");
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-primary/[0.04] px-4 py-3">
-      <div className="flex min-w-0 items-center gap-2.5 text-sm">
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-          <MapPinIcon className="size-4" />
-        </span>
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/15 bg-primary/[0.04] px-3.5 py-1.5">
+      <div className="flex min-w-0 items-center gap-2 text-sm">
+        <MapPinIcon className="size-4 shrink-0 text-primary" />
         <span className="truncate text-foreground tabular-nums">
           {t("locationReady", { lat: location.lat, lng: location.lng })}
         </span>
       </div>
-      <Button variant="outline" size="sm" onClick={onChange}>
+      <Button variant="outline" size="sm" onClick={onChange} className="h-7">
         <PencilIcon className="size-4" /> {t("changeLocation")}
       </Button>
     </div>
