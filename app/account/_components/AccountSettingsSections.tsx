@@ -136,7 +136,8 @@ function HandleSection({ did, handle: initialHandle }: { did: string; handle: st
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ handle: newHandle }),
       });
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      const data = (await response.json().catch(() => null)) as { error?: string; code?: string } | null;
+      if (data?.code === "handle_unavailable") throw new Error(t("errors.unavailable"));
       if (!response.ok || data?.error) throw new Error(data?.error ?? t("errors.generic"));
       setHandle(newHandle);
       setMode("display");

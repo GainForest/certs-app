@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Container from "@/components/ui/container";
 import { fetchAuthSession } from "@/app/_lib/auth-server";
 import { fetchUserCgsGroups } from "@/app/_lib/manage-server";
 import { canEditGroupProfile } from "@/app/(manage)/manage/_lib/cgs-permissions";
-import { groupManageBasePath } from "@/lib/links";
+import { accountManageBasePath, groupManageBasePath } from "@/lib/links";
+import { AccountChrome } from "../_components/AccountChrome";
 import { AccountHero } from "../_components/AccountHero";
 import { AccountTabBar } from "../_components/AccountTabBar";
 import { getAccountRouteData, readAccountRouteParams, readOptionalAccountRouteParams, type AccountRouteData } from "../_lib/account-route";
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ did: stri
 async function getEditHref(account: AccountRouteData): Promise<string | null> {
   const session = await fetchAuthSession();
   if (!session.isLoggedIn) return null;
-  if (session.did === account.did) return "/manage";
+  if (session.did === account.did) return accountManageBasePath(account.urlIdentifier);
   if (account.kind !== "organization") return null;
 
   const groups = await fetchUserCgsGroups();
@@ -55,11 +55,16 @@ export default async function AccountLayout({
 
   return (
     <main className="w-full">
-      <Container className="pt-4 pb-8">
-        <AccountHero account={account} editHref={editHref} />
-        <AccountTabBar did={account.urlIdentifier} accountKind={account.kind} />
+      <AccountChrome
+        hero={
+          <>
+            <AccountHero account={account} editHref={editHref} />
+            <AccountTabBar did={account.urlIdentifier} accountKind={account.kind} />
+          </>
+        }
+      >
         {children}
-      </Container>
+      </AccountChrome>
     </main>
   );
 }

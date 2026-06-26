@@ -24,7 +24,7 @@ function groupDescription(group: CgsGroupMembership, fallback: string): string {
 }
 
 function groupHref(group: CgsGroupMembership): string {
-  return `/manage/groups/${encodeURIComponent(group.handle?.trim() || group.groupDid)}`;
+  return `/account/${encodeURIComponent(group.handle?.trim() || group.groupDid)}/manage`;
 }
 
 function groupInitial(group: CgsGroupMembership, fallback: string): string {

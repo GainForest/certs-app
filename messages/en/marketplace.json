@@ -1121,6 +1121,19 @@
       "manageObservationsFor": "Observations for {title}"
     }
   },
+  "manageBumicerts": {
+    "actions": {
+      "delete": "Delete Cert",
+      "deleteAria": "Delete {title}"
+    },
+    "deleteModal": {
+      "title": "Delete Cert?",
+      "description": "This will permanently remove “{title}” from your account. This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete Cert",
+      "error": "This Cert could not be deleted. Please try again."
+    }
+  },
   "observations": {
     "footer": {
       "showing": "Showing {shown} of {total} nature sightings."

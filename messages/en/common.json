@@ -129,7 +129,8 @@
         "length": "Username must be 3–18 characters.",
         "prefixChars": "Use only lowercase letters, numbers, and hyphens. It can’t start or end with a hyphen.",
         "full": "Enter a full username like alice.example.com.",
-        "generic": "Could not update your username. Please try again."
+        "generic": "Could not update your username. Please try again.",
+        "unavailable": "Changing your username isn’t available yet. Please try again later."
       }
     }
   },

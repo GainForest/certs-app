@@ -1121,6 +1121,19 @@
       "manageObservationsFor": "Uchunguzi wa {title}"
     }
   },
+  "manageBumicerts": {
+    "actions": {
+      "delete": "Futa Cert",
+      "deleteAria": "Futa {title}"
+    },
+    "deleteModal": {
+      "title": "Futa Cert?",
+      "description": "Hii itaondoa “{title}” kabisa kwenye akaunti yako. Kitendo hiki hakiwezi kutenduliwa.",
+      "cancel": "Ghairi",
+      "confirm": "Futa Cert",
+      "error": "Cert hii haikuweza kufutwa. Tafadhali jaribu tena."
+    }
+  },
   "observations": {
     "footer": {
       "showing": "Inaonyesha uchunguzi wa asili {shown} kati ya {total}."

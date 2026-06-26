@@ -129,7 +129,8 @@
         "length": "Nama pengguna harus 3–18 karakter.",
         "prefixChars": "Gunakan hanya huruf kecil, angka, dan tanda hubung. Tidak boleh diawali atau diakhiri tanda hubung.",
         "full": "Masukkan nama pengguna lengkap seperti alice.example.com.",
-        "generic": "Tidak dapat memperbarui nama pengguna Anda. Silakan coba lagi."
+        "generic": "Tidak dapat memperbarui nama pengguna Anda. Silakan coba lagi.",
+        "unavailable": "Mengubah nama pengguna Anda belum tersedia. Silakan coba lagi nanti."
       }
     }
   },

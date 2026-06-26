@@ -129,7 +129,8 @@
         "length": "O nome de usuário deve ter entre 3 e 18 caracteres.",
         "prefixChars": "Use apenas letras minúsculas, números e hifens. Não pode começar nem terminar com hífen.",
         "full": "Digite um nome de usuário completo como alice.example.com.",
-        "generic": "Não foi possível atualizar seu nome de usuário. Tente novamente."
+        "generic": "Não foi possível atualizar seu nome de usuário. Tente novamente.",
+        "unavailable": "Alterar seu nome de usuário ainda não está disponível. Tente novamente mais tarde."
       }
     }
   },

@@ -34,7 +34,7 @@ import {
 } from "react";
 import { useTranslations } from "next-intl";
 import type { CgsGroupMembership } from "@/app/(manage)/manage/_lib/cgs";
-import { groupIdentifierFromManagePath, groupManageBasePath, manageHref, type ManageAccountKind } from "@/lib/links";
+import { accountIdentifierFromManagePath, groupManageBasePath, manageHref, type ManageAccountKind } from "@/lib/links";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import {
   findSwitcherGroupByIdentifier,
@@ -688,8 +688,12 @@ function AuthenticatedMenu({
   const profileNameLoading = isProfileNameLoading && profileName === undefined;
   const personalDisplayLabel = cleanProfileName ?? (profileNameLoading ? "Account" : "Personal account");
   const personalSecondaryLabel = cleanProfileName ? "Signed in" : profileNameLoading ? "Loading profile" : "Personal account";
-  const routeGroupIdentifier = groupIdentifierFromManagePath(pathname);
-  const routeGroup = routeGroupIdentifier ? findSwitcherGroupByIdentifier(groups, routeGroupIdentifier) : null;
+  // Manage now lives at /account/<id>/manage for both personal and group
+  // accounts, so the identifier alone can't say which it is — cross-reference
+  // memberships, and only treat it as a group route when it matches one.
+  const routeAccountIdentifier = accountIdentifierFromManagePath(pathname);
+  const routeGroup = routeAccountIdentifier ? findSwitcherGroupByIdentifier(groups, routeAccountIdentifier) : null;
+  const routeGroupIdentifier = routeGroup ? routeAccountIdentifier : null;
   const activeGroup = activeContext.type === "group" ? groups.find((group) => group.groupDid === activeContext.did) ?? null : null;
   const currentGroup = routeGroup ?? (activeContext.type === "group" ? activeGroup : null);
   const showingGroup = Boolean(routeGroup) || activeContext.type === "group";

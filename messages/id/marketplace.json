@@ -1121,6 +1121,19 @@
       "manageObservationsFor": "Observasi untuk {title}"
     }
   },
+  "manageBumicerts": {
+    "actions": {
+      "delete": "Hapus Cert",
+      "deleteAria": "Hapus {title}"
+    },
+    "deleteModal": {
+      "title": "Hapus Cert?",
+      "description": "Ini akan menghapus “{title}” secara permanen dari akun Anda. Tindakan ini tidak dapat dibatalkan.",
+      "cancel": "Batal",
+      "confirm": "Hapus Cert",
+      "error": "Cert ini tidak dapat dihapus. Silakan coba lagi."
+    }
+  },
   "observations": {
     "footer": {
       "showing": "Menampilkan {shown} dari {total} observasi alam."

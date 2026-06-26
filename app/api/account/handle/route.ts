@@ -56,7 +56,12 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({ handle }),
     });
-    const result = await upstream.json().catch(() => ({ error: "Invalid response from auth server" }));
+    // The auth service may not expose the handle endpoint yet. Surface a clear,
+    // client-translatable signal instead of a confusing parse error.
+    if (upstream.status === 404) {
+      return NextResponse.json({ code: "handle_unavailable", error: "Changing your username isn’t available yet." }, { status: 501 });
+    }
+    const result = await upstream.json().catch(() => ({ error: "Could not update your username right now. Please try again later." }));
     return NextResponse.json(result, { status: upstream.status });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update username";

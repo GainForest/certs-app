@@ -129,7 +129,8 @@
         "length": "Jina la mtumiaji lazima liwe na herufi 3–18.",
         "prefixChars": "Tumia herufi ndogo, nambari na vistari pekee. Haliwezi kuanza au kuishia na kistari.",
         "full": "Weka jina kamili la mtumiaji kama alice.example.com.",
-        "generic": "Haikuwezekana kusasisha jina lako la mtumiaji. Tafadhali jaribu tena."
+        "generic": "Haikuwezekana kusasisha jina lako la mtumiaji. Tafadhali jaribu tena.",
+        "unavailable": "Kubadilisha jina lako la mtumiaji bado hakupatikani. Tafadhali jaribu tena baadaye."
       }
     }
   },

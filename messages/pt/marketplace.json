@@ -1121,6 +1121,19 @@
       "manageObservationsFor": "Observações de {title}"
     }
   },
+  "manageBumicerts": {
+    "actions": {
+      "delete": "Excluir Cert",
+      "deleteAria": "Excluir {title}"
+    },
+    "deleteModal": {
+      "title": "Excluir Cert?",
+      "description": "Isto removerá permanentemente “{title}” da sua conta. Esta ação não pode ser desfeita.",
+      "cancel": "Cancelar",
+      "confirm": "Excluir Cert",
+      "error": "Não foi possível excluir este Cert. Tente novamente."
+    }
+  },
   "observations": {
     "footer": {
       "showing": "Mostrando {shown} de {total} observações da natureza."

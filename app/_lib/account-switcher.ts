@@ -11,7 +11,7 @@
 // the two consumers never double-fetch.
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { ACTIVE_MANAGE_CONTEXT_KEY, groupIdentifierFromManagePath, isPersonalManageContextPath } from "@/lib/links";
+import { ACTIVE_MANAGE_CONTEXT_KEY, accountIdentifierFromManagePath } from "@/lib/links";
 import type { CgsGroupMembership } from "@/app/(manage)/manage/_lib/cgs";
 
 export type AccountCard = { displayName: string | null; avatarUrl: string | null; handle: string | null };
@@ -337,11 +337,12 @@ export function useManagePathContextSync(options: {
   }, [activeContext]);
 
   useEffect(() => {
-    const urlIdentifier = groupIdentifierFromManagePath(pathname);
-    if (urlIdentifier) {
-      const match = findSwitcherGroupByIdentifier(groups, urlIdentifier);
-      if (!match) return;
+    const accountIdentifier = accountIdentifierFromManagePath(pathname);
+    // Not on a manage route (/account/<id>/manage): leave the context untouched.
+    if (!accountIdentifier) return;
 
+    const match = findSwitcherGroupByIdentifier(groups, accountIdentifier);
+    if (match) {
       const current = activeContextRef.current;
       if (current.type === "group" && current.did === match.groupDid) return;
 
@@ -354,8 +355,8 @@ export function useManagePathContextSync(options: {
       return;
     }
 
-    if (!isPersonalManageContextPath(pathname)) return;
-
+    // A manage route whose account is not one of the user's organizations is the
+    // user's own personal manage surface.
     const current = activeContextRef.current;
     if (current.type === "personal" && current.did === sessionDid) return;
     setActiveContext({ type: "personal", did: sessionDid });

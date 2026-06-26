@@ -12,11 +12,6 @@ const IMPORTANT_ROUTES = [
   "/devices",
   "/status",
   "/donations",
-  "/manage",
-  "/manage/certs",
-  "/manage/certs/new",
-  "/manage/sites",
-  "/manage/trees",
 ] as const;
 
 const MAX_ANCHOR_PREFETCHES = 80;
