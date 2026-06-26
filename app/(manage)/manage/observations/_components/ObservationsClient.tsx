@@ -764,7 +764,7 @@ export function ObservationsClient({ target, initialPage, forProject = null }: {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border-soft bg-surface/70 px-4 py-3">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-muted px-4 py-3">
           <p className="text-sm text-muted-foreground">
             {selectedRecords.size > 0 ? t("selectedForDelete", { count: selectedRecords.size }) : t("selectToDeleteHint")}
           </p>
