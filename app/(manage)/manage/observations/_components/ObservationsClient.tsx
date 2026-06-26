@@ -635,6 +635,8 @@ export function ObservationsClient({ target, initialPage }: { target: ManageTarg
             destructive
             onConfirm={async () => {
               setIsDeletingSelected(true);
+              await modal.hide();
+              modal.popModal();
               try {
                 const options = target.kind === "group" ? { repo: target.did } : undefined;
                 await Promise.all(records.map((record) => deleteOccurrenceCascade(record.rkey, options)));
@@ -642,8 +644,6 @@ export function ObservationsClient({ target, initialPage }: { target: ManageTarg
                 setDeletedRecordIds((current) => new Set([...current, ...ids]));
                 setFreshRecords((current) => current.filter((record) => !ids.has(record.id)));
                 setSelectedRecords(new Map());
-                await modal.hide();
-                modal.popModal();
               } finally {
                 setIsDeletingSelected(false);
               }
@@ -748,7 +748,7 @@ export function ObservationsClient({ target, initialPage }: { target: ManageTarg
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
               {isDeletingSelected ? <Loader2Icon className="size-4 animate-spin" /> : <Trash2Icon className="size-4" />}
-              {t("deleteSelected")}
+              {isDeletingSelected ? t("deletingSelected") : t("deleteSelected")}
             </Button>
           </div>
         </div>

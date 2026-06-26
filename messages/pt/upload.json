@@ -768,7 +768,8 @@
     "deleteSelected": "Excluir selecionadas",
     "deleteSelectedTitle": "Excluir observações selecionadas?",
     "deleteSelectedDescription": "{count, plural, one {Isto remove # observação selecionada e suas mídias vinculadas. Não pode ser desfeito.} other {Isto remove # observações selecionadas e suas mídias vinculadas. Não pode ser desfeito.}}",
-    "deleteSelectedConfirm": "Excluir selecionadas"
+    "deleteSelectedConfirm": "Excluir selecionadas",
+    "deletingSelected": "Excluindo…"
   },
   "settings": {
     "organizationTitle": "Configurações da organização",

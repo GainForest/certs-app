@@ -768,7 +768,8 @@
     "deleteSelected": "Delete selected",
     "deleteSelectedTitle": "Delete selected observations?",
     "deleteSelectedDescription": "{count, plural, one {This removes # selected observation and its linked media. This cannot be undone.} other {This removes # selected observations and their linked media. This cannot be undone.}}",
-    "deleteSelectedConfirm": "Delete selected"
+    "deleteSelectedConfirm": "Delete selected",
+    "deletingSelected": "Deleting…"
   },
   "settings": {
     "organizationTitle": "Organization settings",

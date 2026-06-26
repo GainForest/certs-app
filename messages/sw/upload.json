@@ -768,7 +768,8 @@
     "deleteSelected": "Futa vilivyochaguliwa",
     "deleteSelectedTitle": "Futa uchunguzi uliochaguliwa?",
     "deleteSelectedDescription": "{count, plural, one {Hii itaondoa uchunguzi # uliochaguliwa na media iliyounganishwa. Haiwezi kutenduliwa.} other {Hii itaondoa uchunguzi # uliochaguliwa na media zilizounganishwa. Haiwezi kutenduliwa.}}",
-    "deleteSelectedConfirm": "Futa vilivyochaguliwa"
+    "deleteSelectedConfirm": "Futa vilivyochaguliwa",
+    "deletingSelected": "Inafuta…"
   },
   "settings": {
     "organizationTitle": "Mipangilio ya shirika",

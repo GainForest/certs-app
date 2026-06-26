@@ -768,7 +768,8 @@
     "deleteSelected": "Hapus yang dipilih",
     "deleteSelectedTitle": "Hapus observasi yang dipilih?",
     "deleteSelectedDescription": "{count, plural, one {Ini menghapus # observasi yang dipilih beserta media tertautnya. Tindakan ini tidak dapat dibatalkan.} other {Ini menghapus # observasi yang dipilih beserta media tertautnya. Tindakan ini tidak dapat dibatalkan.}}",
-    "deleteSelectedConfirm": "Hapus yang dipilih"
+    "deleteSelectedConfirm": "Hapus yang dipilih",
+    "deletingSelected": "Menghapus…"
   },
   "settings": {
     "organizationTitle": "Pengaturan organisasi",
