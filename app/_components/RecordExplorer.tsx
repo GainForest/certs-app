@@ -199,15 +199,23 @@ const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
 export function RecordExplorer({
   kind,
   initialPage,
+  extraInitialRecords,
   showHero = true,
   ownerDid,
   defaultOccurrenceMedia = DEFAULT_OCCURRENCE_MEDIA,
+  leadingCard,
+  emptyState,
 }: {
   kind: RecordKind;
   initialPage?: InitialExplorerPage;
+  /** Records to surface ahead of the server page — e.g. just-uploaded items that
+   *  the indexer has not picked up yet. Deduped against the server page by id. */
+  extraInitialRecords?: ExplorerRecord[];
   showHero?: boolean;
   ownerDid?: string;
   defaultOccurrenceMedia?: OccurrenceFilter;
+  leadingCard?: ReactNode;
+  emptyState?: ReactNode;
 }) {
   const meta = KIND_META[kind];
   const exploreT = useTranslations("marketplace.explore");
@@ -253,7 +261,14 @@ export function RecordExplorer({
     "record",
     parseAsString.withOptions(QUERY_STATE_OPTIONS),
   );
-  const initialRecords = initialPage?.records ?? [];
+  const initialRecords = useMemo(() => {
+    const base = initialPage?.records ?? [];
+    if (!extraInitialRecords?.length) return base;
+    const seen = new Set(extraInitialRecords.map((record) => record.id));
+    return [...extraInitialRecords, ...base.filter((record) => !seen.has(record.id))];
+    // Seeded once at mount (useState initializer below); the panel remounts when
+    // returning from add mode, so a changing `extraInitialRecords` is picked up then.
+  }, [initialPage, extraInitialRecords]);
   const shouldLoadFromUrl = Boolean(query.trim()) || sort !== "newest" || (kind === "occurrence" && occMedia !== defaultOccurrenceMedia) || (kind === "site" && siteSource !== "both");
 
   const [records, setRecords] = useState<ExplorerRecord[]>(shouldLoadFromUrl ? [] : initialRecords);
@@ -573,7 +588,11 @@ export function RecordExplorer({
 
         {/* Toolbar */}
         <div className="relative z-20 mt-5 space-y-2.5">
-          <div className="flex items-center gap-2 animate-in" style={{ animationDelay: "80ms" }}>
+          {/* z-30 keeps the sort popover above the filter-pill row below it: both
+              rows freeze a `transform` once `animate-in` settles, so each becomes
+              its own stacking context. Without this the filter row's z-20 would
+              paint over the popover regardless of its own high z-index. */}
+          <div className="relative z-30 flex items-center gap-2 animate-in" style={{ animationDelay: "80ms" }}>
             <div className="group/input-group relative flex h-10 min-w-0 flex-1 items-center rounded-full border border-border-soft bg-surface shadow-xs backdrop-blur transition-colors focus-within:border-primary/40">
               <SearchIcon
                 aria-hidden
@@ -709,6 +728,8 @@ export function RecordExplorer({
                 onRetry={() => changeMedia("all")}
                 retryLabel="Remove filters"
               />
+            ) : emptyState ? (
+              emptyState
             ) : (
               <EmptyState title="Nothing here yet" body="There is nothing to show right now." />
             )
@@ -716,8 +737,13 @@ export function RecordExplorer({
             <RecordList records={renderedRecords} onOpen={setDrawer} />
           ) : (
             <ul role="list" className={gridCls}>
+              {leadingCard ? (
+                <li className="animate-in" style={{ animationDelay: "0ms" }}>
+                  {leadingCard}
+                </li>
+              ) : null}
               {renderedRecords.map((r, i) => (
-                <li key={r.id} className="animate-in" style={{ animationDelay: `${Math.min(i, 12) * 18}ms` }}>
+                <li key={r.id} className="animate-in" style={{ animationDelay: `${Math.min(i + (leadingCard ? 1 : 0), 12) * 18}ms` }}>
                   <RecordCard record={r} onOpen={setDrawer} />
                 </li>
               ))}

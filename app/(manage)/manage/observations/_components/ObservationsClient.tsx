@@ -16,7 +16,7 @@ import {
   PencilIcon,
   RotateCcwIcon,
   SparklesIcon,
-  UngroupIcon,
+  Trash2Icon,
   UploadCloudIcon,
   XIcon,
 } from "lucide-react";
@@ -24,21 +24,34 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { RecordExplorer } from "@/app/_components/RecordExplorer";
 import { TAINA_SIM } from "@/app/_lib/taina-sim";
+import type { ExplorerRecord, OccurrenceRecord } from "@/app/_lib/indexer";
+import { resolveBlobUrl } from "@/app/_lib/pds";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import Container from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useModal } from "@/components/ui/modal/context";
+import QuickTooltip from "@/components/ui/quick-tooltip";
 import TelegramIcon from "@/icons/TelegramIcon";
 import { manageHref, type ManageTarget } from "@/lib/links";
+import { ManageConfirmModal } from "../../_components/ManageConfirmModal";
 import { canCreateRecord } from "../../_lib/cgs-permissions";
 import {
   configureObservationMutationRepo,
   createObservationOccurrence,
   createObservationPhoto,
   formatObservationMutationError,
+  setObservationPrimaryImage,
+  type ObservationBlobRef,
 } from "./observation-mutations";
+import { LocationPickerModal, LocationPickerModalId } from "./LocationPickerModal";
+import {
+  fetchDefaultObservationCenter,
+  isValidLocation,
+  type PickedLocation,
+} from "./default-location";
+import { clearDraft, loadDraft, saveDraft } from "./observation-draft-store";
 
 type InitialPage = NonNullable<ComponentProps<typeof RecordExplorer>["initialPage"]>;
 type Mode = "list" | "add";
@@ -78,15 +91,39 @@ type ObservationUploadItem = {
 
 type SharedOccurrenceKey = Exclude<keyof ObservationAnalysis, "subjectPart" | "caption" | "confidence">;
 
+// The slice of an upload item that is safe to persist to IndexedDB between
+// visits (the File blob is structured-cloneable). Transient fields — preview
+// object URL, progress, uploaded URI — are rebuilt on restore.
+type DraftItemStatus = "analyzing" | "ready" | "error" | "uploadError";
+type DraftItem = {
+  id: string;
+  file: File;
+  originalSize: number;
+  compressed: boolean;
+  groupId: string;
+  selected: boolean;
+  status: DraftItemStatus;
+  error: string | null;
+  analysis: ObservationAnalysis;
+};
+
 const TAINA_BOT_URL = "https://t.me/The" + "Tain" + "aBot";
 const QUERY_STATE_OPTIONS = { history: "replace", scroll: false, shallow: true } as const;
-// Shared column template so the table header and each row line up. Columns:
-// checkbox · thumbnail · organism · date · location · trailing actions.
-// Every non-flex track is a fixed width (and the trailing column is fixed too)
-// so the header grid and each row grid resolve their fr columns identically.
+// Shared column template so the table header and each row line up. Columns are
+// ordered by review value: select · photo · organism · date · location · kind ·
+// observation grouping · AI confidence · trailing action. Lower-priority columns
+// disappear first on narrower screens.
 const ROW_GRID =
-  "grid items-center gap-x-3 grid-cols-[1.5rem_2.5rem_minmax(0,1fr)_8.5rem] md:grid-cols-[1.5rem_2.5rem_minmax(0,2fr)_6.5rem_minmax(0,1.3fr)_8.5rem]";
+  "grid items-center gap-x-3 grid-cols-[1.5rem_2.5rem_minmax(0,1fr)_6.5rem] md:grid-cols-[1.5rem_2.5rem_minmax(0,1.7fr)_6.5rem_minmax(0,1.15fr)_6.5rem] lg:grid-cols-[1.5rem_2.5rem_minmax(0,1.5fr)_6.5rem_minmax(0,1fr)_5.5rem_minmax(0,0.85fr)_6.5rem] xl:grid-cols-[1.5rem_2.5rem_minmax(0,1.45fr)_6.5rem_minmax(0,1fr)_5.5rem_minmax(0,0.85fr)_5.5rem_6.5rem]";
+// How long a freshly uploaded row lingers in its green "Uploaded" state before
+// it animates out, and how long that exit animation runs.
+const UPLOADED_LINGER_MS = 850;
+const ROW_EXIT_MS = 350;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+// Hard ceiling on how many images one add session can hold, to keep the browser
+// (and the per-photo PDS writes) from being overwhelmed.
+const MAX_IMAGES = 100;
+const UNIDENTIFIED_NAME = "Unidentified organism";
 // The analyze route already retries Gemini internally; this is a thin extra
 // layer so a flaky client network connection also recovers on its own.
 const ANALYZE_CLIENT_ATTEMPTS = 3;
@@ -336,7 +373,7 @@ function itemCanUpload(item: ObservationUploadItem): boolean {
   return (item.status === "ready" || item.status === "uploadError") && item.analysis.scientificName.trim().length > 0 && item.analysis.eventDate.trim().length > 0;
 }
 
-type GroupOption = { id: string; number: number; count: number; label: string; previewUrl: string };
+type ObservationGroup = { id: string; number: number; items: ObservationUploadItem[]; label: string; previewUrls: string[] };
 
 function groupDisplayName(items: ObservationUploadItem[]): string {
   for (const item of items) {
@@ -350,7 +387,7 @@ function groupDisplayName(items: ObservationUploadItem[]): string {
   return "";
 }
 
-function observationGroupOptions(items: ObservationUploadItem[]): GroupOption[] {
+function observationGroups(items: ObservationUploadItem[]): ObservationGroup[] {
   const order: string[] = [];
   const groups = new Map<string, ObservationUploadItem[]>();
   for (const item of items) {
@@ -365,16 +402,123 @@ function observationGroupOptions(items: ObservationUploadItem[]): GroupOption[] 
     return {
       id,
       number: index + 1,
-      count: groupItems.length,
+      items: groupItems,
       label: groupDisplayName(groupItems),
-      previewUrl: groupItems[0]?.previewUrl ?? "",
+      previewUrls: groupItems.slice(0, 3).map((item) => item.previewUrl),
     };
   });
+}
+
+/** Normalized identity for auto-grouping: a confident, named identification.
+ *  Empty for blanks or the "Unidentified organism" placeholder so unknowns
+ *  never collapse into one another. */
+function speciesGroupKey(analysis: ObservationAnalysis): string {
+  const name = analysis.scientificName.trim().toLowerCase();
+  if (!name || name === UNIDENTIFIED_NAME.toLowerCase()) return "";
+  return name;
+}
+
+function refToCid(ref: unknown): string | null {
+  if (typeof ref === "string") return ref || null;
+  if (ref && typeof ref === "object" && "$link" in (ref as Record<string, unknown>)) {
+    const link = (ref as Record<string, unknown>).$link;
+    return typeof link === "string" ? link : null;
+  }
+  return null;
+}
+
+/**
+ * Build a placeholder explorer record for a just-uploaded observation so it shows
+ * in the listing immediately, before the indexer has caught up. Resolves the PDS
+ * blob URL up front (the in-memory object URL is revoked when the add panel
+ * unmounts). Shares the indexer's `${did}-${rkey}` id so the indexed copy dedupes
+ * cleanly once it lands.
+ */
+async function buildOptimisticOccurrence(input: {
+  did: string;
+  uri: string;
+  rkey: string;
+  analysis: ObservationAnalysis;
+  blobRef: ObservationBlobRef | null;
+  isoTimestamp: string;
+}): Promise<OccurrenceRecord> {
+  const { did, uri, rkey, analysis } = input;
+  const lat = Number.parseFloat(analysis.decimalLatitude);
+  const lon = Number.parseFloat(analysis.decimalLongitude);
+  const cid = refToCid(input.blobRef?.ref);
+  const imageUrl = cid ? await resolveBlobUrl(did, cid).catch(() => null) : null;
+  return {
+    kind: "occurrence",
+    id: `${did}-${rkey}`,
+    did,
+    rkey,
+    cid: null,
+    atUri: uri,
+    scientificName: analysis.scientificName.trim() || null,
+    vernacularName: analysis.vernacularName.trim() || null,
+    kingdom: analysis.kingdom.trim() || null,
+    family: null,
+    genus: null,
+    basisOfRecord: "MachineObservation",
+    recordedBy: analysis.recordedBy.trim() || null,
+    individualCount: null,
+    country: analysis.country.trim() || null,
+    countryCode: null,
+    stateProvince: null,
+    locality: analysis.locality.trim() || null,
+    lat: Number.isFinite(lat) ? lat : null,
+    lon: Number.isFinite(lon) ? lon : null,
+    eventDate: analysis.eventDate.trim() || null,
+    habitat: analysis.habitat.trim() || null,
+    siteRef: null,
+    datasetRef: null,
+    datasetName: null,
+    dynamicProperties: null,
+    establishmentMeans: null,
+    createdAt: input.isoTimestamp,
+    creatorName: null,
+    creatorAvatarRef: null,
+    remarks: analysis.occurrenceRemarks.trim() || null,
+    imageUrl,
+    imageRef: cid,
+    audioRef: null,
+    audioUrl: null,
+    media: ["image"],
+  };
 }
 
 function sharedOccurrencePatch(patch: Partial<ObservationAnalysis>): Partial<ObservationAnalysis> {
   const { subjectPart: _subjectPart, caption: _caption, confidence: _confidence, ...shared } = patch;
   return shared;
+}
+
+/**
+ * After a photo is analyzed, merge it into an existing observation that shares
+ * the same confident identification. Only auto-groups a still-solo photo into the
+ * first matching group, so it never overrides manual grouping or pulls photos out
+ * of an existing group. Returns the items unchanged when there is no match.
+ */
+function autoGroupByIdentification(items: ObservationUploadItem[], analyzedId: string): ObservationUploadItem[] {
+  const me = items.find((item) => item.id === analyzedId);
+  if (!me) return items;
+  const key = speciesGroupKey(me.analysis);
+  if (!key) return items;
+  // Leave it alone if the user already grouped this photo with others.
+  if (items.filter((item) => item.groupId === me.groupId).length > 1) return items;
+  const match = items.find(
+    (item) =>
+      item.id !== me.id &&
+      item.groupId !== me.groupId &&
+      item.status !== "uploading" &&
+      item.status !== "uploaded" &&
+      speciesGroupKey(item.analysis) === key,
+  );
+  if (!match) return items;
+  const targetItems = items.filter((item) => item.groupId === match.groupId);
+  const shared = sharedOccurrenceAnalysis(occurrenceAnalysisForUpload([...targetItems, me]));
+  return items.map((item) =>
+    item.id === me.id ? { ...item, groupId: match.groupId, analysis: { ...item.analysis, ...shared } } : item,
+  );
 }
 
 function sharedOccurrenceAnalysis(analysis: ObservationAnalysis): Partial<ObservationAnalysis> {
@@ -419,6 +563,9 @@ export function ObservationsClient({ target, initialPage }: { target: ManageTarg
     "mode",
     parseAsStringEnum<Mode>(["list", "add"]).withDefault("list").withOptions(QUERY_STATE_OPTIONS),
   );
+  // Observations created in this session, kept so the list shows them on return
+  // even before the indexer has caught up. Newest first; deduped by id.
+  const [freshRecords, setFreshRecords] = useState<ExplorerRecord[]>([]);
   const createPermission = canCreateRecord(target);
 
   useEffect(() => {
@@ -431,6 +578,12 @@ export function ObservationsClient({ target, initialPage }: { target: ManageTarg
       <ObservationBulkAddPanel
         target={target}
         disabledReason={createPermission.reason}
+        onUploaded={(records) =>
+          setFreshRecords((prev) => {
+            const seen = new Set(records.map((record) => record.id));
+            return [...records, ...prev.filter((record) => !seen.has(record.id))];
+          })
+        }
         onBack={() => {
           void setMode("list").then(() => router.refresh());
         }}
@@ -441,24 +594,11 @@ export function ObservationsClient({ target, initialPage }: { target: ManageTarg
   return (
     <div className="bg-background pb-4">
       <div className="mx-auto max-w-6xl px-6 pt-4">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-xl">
-            <h1 className="font-instrument text-2xl font-medium italic tracking-[-0.03em] text-foreground sm:text-3xl">
-              {t("title")}
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("description")}</p>
-          </div>
-          {createPermission.allowed ? (
-            <Button asChild>
-              <Link href={manageHref(target, "observations", { mode: "add" })}>
-                <ImagePlusIcon className="size-4" /> {t("addObservation")}
-              </Link>
-            </Button>
-          ) : (
-            <Button disabled title={createPermission.reason ?? undefined}>
-              <ImagePlusIcon className="size-4" /> {t("addObservation")}
-            </Button>
-          )}
+        <header className="max-w-xl">
+          <h1 className="font-instrument text-2xl font-medium italic tracking-[-0.03em] text-foreground sm:text-3xl">
+            {t("title")}
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("description")}</p>
         </header>
 
         <div className="group relative mt-5 overflow-hidden rounded-3xl border border-dashed border-primary/20 bg-gradient-to-br from-primary/[0.07] via-accent/30 to-background p-5 sm:p-6">
@@ -504,49 +644,308 @@ export function ObservationsClient({ target, initialPage }: { target: ManageTarg
       </div>
 
       <Suspense fallback={null}>
-        <RecordExplorer kind="occurrence" ownerDid={target.did} showHero={false} initialPage={initialPage} defaultOccurrenceMedia="all" />
+        <RecordExplorer
+          kind="occurrence"
+          ownerDid={target.did}
+          showHero={false}
+          initialPage={initialPage}
+          extraInitialRecords={freshRecords}
+          defaultOccurrenceMedia="all"
+          leadingCard={<AddObservationTile target={target} disabledReason={createPermission.reason} />}
+          emptyState={<ObservationEmptyState target={target} disabledReason={createPermission.reason} />}
+        />
       </Suspense>
     </div>
   );
 }
 
+function AddObservationTile({ target, disabledReason }: { target: ManageTarget; disabledReason?: string | null }) {
+  const t = useTranslations("upload.observations");
+  const content = (
+    <>
+      <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15 transition-transform duration-300 group-hover/tile:scale-105">
+        <ImagePlusIcon className="size-6" />
+      </span>
+      <span className="mt-3 block font-instrument text-xl font-medium italic tracking-[-0.02em] text-foreground">
+        {t("addTileTitle")}
+      </span>
+      <span className="mt-1.5 block text-xs leading-5 text-muted-foreground">
+        {disabledReason ?? t("addTileBody")}
+      </span>
+    </>
+  );
+
+  const className = "group/tile flex aspect-square w-full flex-col items-center justify-center rounded-3xl border border-dashed border-primary/25 bg-gradient-to-b from-primary/[0.06] to-background p-4 text-center transition-colors hover:border-primary/45 hover:from-primary/[0.1]";
+  if (disabledReason) {
+    return (
+      <button type="button" disabled title={disabledReason} className={`${className} cursor-not-allowed opacity-65`}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={manageHref(target, "observations", { mode: "add" })} className={className}>
+      {content}
+    </Link>
+  );
+}
+
+function ObservationEmptyState({ target, disabledReason }: { target: ManageTarget; disabledReason?: string | null }) {
+  const t = useTranslations("upload.observations");
+  return (
+    <div className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-dashed border-primary/20 bg-gradient-to-b from-primary/[0.04] to-transparent p-8 text-center">
+      <span className="mb-5 grid size-16 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
+        <ImagePlusIcon className="size-7" />
+      </span>
+      <h2 className="font-instrument text-2xl font-medium italic tracking-[-0.02em] text-foreground">
+        {t("emptyObservationsTitle")}
+      </h2>
+      <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+        {disabledReason ?? t("emptyObservationsBody")}
+      </p>
+      {disabledReason ? (
+        <Button type="button" disabled title={disabledReason} className="mt-5">
+          <ImagePlusIcon className="size-4" /> {t("addObservation")}
+        </Button>
+      ) : (
+        <Button asChild className="mt-5">
+          <Link href={manageHref(target, "observations", { mode: "add" })}>
+            <ImagePlusIcon className="size-4" /> {t("addObservation")}
+          </Link>
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function ObservationBulkAddPanel({
+  target,
   disabledReason,
+  onUploaded,
   onBack,
 }: {
   target: ManageTarget;
   disabledReason?: string | null;
+  onUploaded: (records: OccurrenceRecord[]) => void;
   onBack: () => void;
 }) {
   const t = useTranslations("upload.observations");
+  const modal = useModal();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [items, setItems] = useState<ObservationUploadItem[]>([]);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [isPreparing, setIsPreparing] = useState(false);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
+  // A frozen snapshot of the counts shown in the status bar during an upload
+  // run. Once the user clicks "Upload", the totals stay put even as uploaded
+  // rows animate away, so the displayed total never appears to shrink. Cleared
+  // a moment after the run settles, when the counts can safely reflect reality.
+  const [uploadSession, setUploadSession] = useState<{ total: number; uploaded: number; uploadableTotal: number } | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  // The mandatory observation location chosen before any image can be added.
+  const [chosenLocation, setChosenLocation] = useState<PickedLocation | null>(null);
+  // Best-effort starting point for the picker (default site → any site).
+  const [defaultCenter, setDefaultCenter] = useState<PickedLocation | null>(null);
+  // True once we have a draft restored from a previous visit (shows the notice).
+  const [draftRestored, setDraftRestored] = useState(false);
 
   const itemsRef = useRef<ObservationUploadItem[]>([]);
+  const chosenLocationRef = useRef<PickedLocation | null>(null);
+  // Gate persistence until the initial draft load has run, so the empty initial
+  // state never clobbers a saved draft before it is restored.
+  const draftLoadedRef = useRef(false);
   // Counts enter/leave events so nested children don't flicker the drop overlay.
   const dragDepth = useRef(0);
+  // Pending row-removal / navigation timeouts, cleared on unmount so they never
+  // fire against a torn-down component.
+  const pendingTimers = useRef<Set<number>>(new Set());
+  const hasLocation = isValidLocation(chosenLocation);
 
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
 
   useEffect(() => {
+    chosenLocationRef.current = chosenLocation;
+  }, [chosenLocation]);
+
+  // Restore any in-progress draft for this target once, on mount.
+  useEffect(() => {
+    let cancelled = false;
+    void loadDraft<DraftItem>(target.did)
+      .then((draft) => {
+        if (cancelled) {
+          draftLoadedRef.current = true;
+          return;
+        }
+        if (draft && draft.items.length > 0) {
+          const restored: ObservationUploadItem[] = draft.items.map((stored) => ({
+            ...stored,
+            previewUrl: URL.createObjectURL(stored.file),
+            progress: 0,
+            uploadedUri: null,
+          }));
+          setItems(restored);
+          if (isValidLocation(draft.chosenLocation)) setChosenLocation(draft.chosenLocation);
+          setDraftRestored(true);
+          // Resume any analysis that was interrupted mid-flight.
+          for (const item of restored) if (item.status === "analyzing") void analyzeItem(item);
+        }
+        draftLoadedRef.current = true;
+      })
+      .catch(() => {
+        draftLoadedRef.current = true;
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Restore is intentionally a once-per-mount effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target.did]);
+
+  // Persist the draft (debounced) whenever the reviewable items or chosen
+  // location change. Uploaded items are dropped; an empty draft is cleared.
+  useEffect(() => {
+    if (!draftLoadedRef.current) return;
+    const timer = window.setTimeout(() => {
+      const persistItems: DraftItem[] = items
+        .filter((item) => item.status !== "uploaded")
+        .map((item) => ({
+          id: item.id,
+          file: item.file,
+          originalSize: item.originalSize,
+          compressed: item.compressed,
+          groupId: item.groupId,
+          selected: item.selected,
+          status: item.status === "uploading" || item.status === "uploaded" ? "ready" : item.status,
+          error: item.error,
+          analysis: item.analysis,
+        }));
+      if (persistItems.length === 0) {
+        void clearDraft(target.did);
+      } else {
+        void saveDraft<DraftItem>({
+          did: target.did,
+          chosenLocation,
+          items: persistItems,
+          updatedAt: Date.now(),
+        });
+      }
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [items, chosenLocation, target.did]);
+
+  function discardDraft() {
+    setItems((current) => {
+      for (const item of current) URL.revokeObjectURL(item.previewUrl);
+      return [];
+    });
+    setExpandedId(null);
+    setDraftRestored(false);
+    setBulkError(null);
+    void clearDraft(target.did);
+  }
+
+  // Seed the picker's default centre from the owner's default site once.
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchDefaultObservationCenter(target.did, controller.signal)
+      .then((center) => {
+        if (center) setDefaultCenter(center);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [target.did]);
+
+  useEffect(() => {
+    const timers = pendingTimers.current;
     return () => {
       for (const item of itemsRef.current) URL.revokeObjectURL(item.previewUrl);
+      for (const timer of timers) window.clearTimeout(timer);
     };
   }, []);
 
+  function scheduleTimer(fn: () => void, delay: number) {
+    const id = window.setTimeout(() => {
+      pendingTimers.current.delete(id);
+      fn();
+    }, delay);
+    pendingTimers.current.add(id);
+  }
+
+  // Drop fully-uploaded rows from state (and revoke their previews). Removing
+  // them from `items` also drops them from the persisted draft on the next save,
+  // so they never reappear on reload.
+  function dropItems(ids: Set<string>) {
+    setItems((current) => {
+      for (const item of current) {
+        if (ids.has(item.id)) URL.revokeObjectURL(item.previewUrl);
+      }
+      return current.filter((candidate) => !ids.has(candidate.id));
+    });
+  }
+
+  function openLocationPicker(opts: { initial?: PickedLocation | null; onSelect: (location: PickedLocation) => void }) {
+    modal.pushModal(
+      {
+        id: LocationPickerModalId,
+        dialogWidth: "max-w-2xl",
+        content: (
+          <LocationPickerModal
+            initial={opts.initial ?? null}
+            defaultCenter={defaultCenter}
+            onSelect={opts.onSelect}
+          />
+        ),
+      },
+      true,
+    );
+    void modal.show();
+  }
+
+  function chooseObservationLocation() {
+    openLocationPicker({
+      initial: chosenLocation,
+      onSelect: (location) => {
+        setChosenLocation(location);
+        setBulkError(null);
+      },
+    });
+  }
+
+  function changeItemLocation(itemId: string) {
+    const item = itemsRef.current.find((candidate) => candidate.id === itemId);
+    const lat = Number.parseFloat(item?.analysis.decimalLatitude ?? "");
+    const lng = Number.parseFloat(item?.analysis.decimalLongitude ?? "");
+    const initial = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : chosenLocation;
+    openLocationPicker({
+      initial,
+      onSelect: (location) => {
+        updateAnalysis(itemId, {
+          decimalLatitude: String(location.lat),
+          decimalLongitude: String(location.lng),
+        });
+      },
+    });
+  }
+
   const readySelectedItems = items.filter((item) => item.selected && itemCanUpload(item));
-  const selectedEditableItems = items.filter((item) => item.selected && item.status !== "uploading" && item.status !== "uploaded");
+  const editableItems = items.filter((item) => item.status !== "uploading" && item.status !== "uploaded");
+  const selectedEditableItems = editableItems.filter((item) => item.selected);
   const uploadedCount = items.filter((item) => item.status === "uploaded").length;
   const uploadableCount = items.filter(itemCanUpload).length;
-  const overallProgress = items.length > 0 ? Math.round((uploadedCount / items.length) * 100) : 0;
-  const groupOptions = observationGroupOptions(items);
+  // While an upload run is in flight the status bar reads from the frozen
+  // snapshot so the total never shrinks as uploaded rows vanish; otherwise it
+  // tracks the live counts.
+  const displayTotal = uploadSession ? uploadSession.total : items.length;
+  const displayUploaded = uploadSession ? uploadSession.uploaded : uploadedCount;
+  const displayUploadableTotal = uploadSession ? uploadSession.uploadableTotal : uploadableCount;
+  const overallProgress = displayTotal > 0 ? Math.round((displayUploaded / displayTotal) * 100) : 0;
+  const groups = observationGroups(items);
+  const allEditableSelected = editableItems.length > 0 && selectedEditableItems.length === editableItems.length;
+  const someEditableSelected = selectedEditableItems.length > 0 && !allEditableSelected;
 
   function dragHasFiles(event: DragEvent<HTMLDivElement>): boolean {
     return Array.from(event.dataTransfer?.types ?? []).includes("Files");
@@ -577,12 +976,16 @@ function ObservationBulkAddPanel({
     dragDepth.current = 0;
     setIsDragging(false);
     if (!dragHasFiles(event)) return;
+    if (!hasLocation) {
+      setBulkError(t("location.locationRequired"));
+      return;
+    }
     void addFiles(event.dataTransfer.files);
   }
 
   function markItemError(id: string, message: string) {
     setItems((current) => current.map((candidate) =>
-      candidate.id === id ? { ...candidate, status: "error", error: message, selected: false } : candidate,
+      candidate.id === id ? { ...candidate, status: "error", error: message } : candidate,
     ));
   }
 
@@ -611,17 +1014,20 @@ function ObservationBulkAddPanel({
           return;
         }
 
-        setItems((current) => current.map((candidate) =>
-          candidate.id === item.id
-            ? {
-                ...candidate,
-                status: "ready",
-                analysis: mergeAnalysisWithDefaults(normalizeAnalysis(data.analysis, item.file), candidate.analysis),
-                error: null,
-                selected: true,
-              }
-            : candidate,
-        ));
+        setItems((current) => {
+          const updated = current.map((candidate) =>
+            candidate.id === item.id
+              ? {
+                  ...candidate,
+                  status: "ready" as const,
+                  analysis: mergeAnalysisWithDefaults(normalizeAnalysis(data.analysis, item.file), candidate.analysis),
+                  error: null,
+                  selected: candidate.selected,
+                }
+              : candidate,
+          );
+          return autoGroupByIdentification(updated, item.id);
+        });
         return;
       } catch {
         // Thrown fetch == network/connection blip; retry a couple of times.
@@ -641,19 +1047,37 @@ function ObservationBulkAddPanel({
   }
 
   async function addFiles(fileList: FileList | null) {
-    const files = Array.from(fileList ?? []).filter((file) => file.type.startsWith("image/"));
+    // A location must be chosen first; every photo without its own GPS inherits it.
+    const location = chosenLocationRef.current;
+    if (!isValidLocation(location)) {
+      setBulkError(t("location.locationRequired"));
+      return;
+    }
+    const imageFiles = Array.from(fileList ?? []).filter((file) => file.type.startsWith("image/"));
+    if (imageFiles.length === 0) return;
+
+    // Cap the total at MAX_IMAGES; tell the user how many were dropped.
+    const remainingSlots = Math.max(0, MAX_IMAGES - itemsRef.current.length);
+    const files = imageFiles.slice(0, remainingSlots);
+    const ignored = imageFiles.length - files.length;
+    if (ignored > 0) setBulkError(t("tooManyImages", { max: MAX_IMAGES, ignored }));
+    else setBulkError(null);
     if (files.length === 0) return;
+
     setIsPreparing(true);
     try {
-      const defaultGroupId = itemsRef.current.find((item) => item.status !== "uploaded")?.groupId ?? crypto.randomUUID();
+      const fallbackLat = String(location.lat);
+      const fallbackLng = String(location.lng);
       const nextItems = await Promise.all(files.map(async (sourceFile) => {
+        // Each photo starts as its own observation (groupId === id); identical
+        // identifications are auto-grouped after analysis. No batch grouping.
         const id = `${sourceFile.name}-${sourceFile.size}-${sourceFile.lastModified}-${crypto.randomUUID()}`;
         const metadata = await imageMetadata(sourceFile);
         const analysis = {
           ...EMPTY_ANALYSIS,
           eventDate: metadata.eventDate || dateFromFile(sourceFile),
-          decimalLatitude: metadata.decimalLatitude || "",
-          decimalLongitude: metadata.decimalLongitude || "",
+          decimalLatitude: metadata.decimalLatitude || fallbackLat,
+          decimalLongitude: metadata.decimalLongitude || fallbackLng,
           caption: cleanFileName(sourceFile.name),
         };
         try {
@@ -664,8 +1088,8 @@ function ObservationBulkAddPanel({
             previewUrl: URL.createObjectURL(prepared.file),
             originalSize: prepared.originalSize,
             compressed: prepared.compressed,
-            groupId: defaultGroupId,
-            selected: false,
+            groupId: id,
+            selected: true,
             status: "analyzing" as const,
             progress: 0,
             analysis,
@@ -679,8 +1103,8 @@ function ObservationBulkAddPanel({
             previewUrl: URL.createObjectURL(sourceFile),
             originalSize: sourceFile.size,
             compressed: false,
-            groupId: defaultGroupId,
-            selected: false,
+            groupId: id,
+            selected: true,
             status: "error" as const,
             progress: 0,
             analysis,
@@ -717,59 +1141,96 @@ function ObservationBulkAddPanel({
     });
   }
 
-  function removeItem(id: string) {
+  function removeItems(ids: Set<string>) {
     setItems((current) => {
-      const item = current.find((candidate) => candidate.id === id);
-      if (item) URL.revokeObjectURL(item.previewUrl);
-      return current.filter((candidate) => candidate.id !== id);
+      for (const item of current) {
+        if (ids.has(item.id)) URL.revokeObjectURL(item.previewUrl);
+      }
+      return current.filter((candidate) => !ids.has(candidate.id));
     });
+    setExpandedId((current) => current && ids.has(current) ? null : current);
+    setBulkError(null);
   }
 
-  function groupSelected() {
-    if (selectedEditableItems.length < 2) {
-      setBulkError(t("selectTwoToGroup"));
+  function selectAllEditable() {
+    setItems((current) => current.map((item) => item.status === "uploading" || item.status === "uploaded" ? item : { ...item, selected: true }));
+    setBulkError(null);
+  }
+
+  function deselectAll() {
+    setItems((current) => current.map((item) => item.selected ? { ...item, selected: false } : item));
+    setBulkError(null);
+  }
+
+  function openRemoveSelectedModal() {
+    const ids = new Set(selectedEditableItems.map((item) => item.id));
+    if (ids.size === 0) {
+      setBulkError(t("noSelectedToRemove"));
       return;
     }
-    const target = selectedEditableItems[0];
-    const targetGroupId = target?.groupId;
-    if (!target || !targetGroupId) return;
-    const selectedIds = new Set(selectedEditableItems.map((item) => item.id));
-    const shared = sharedOccurrenceAnalysis(target.analysis);
-    setItems((current) => current.map((item) => selectedIds.has(item.id) ? { ...item, groupId: targetGroupId, analysis: { ...item.analysis, ...shared } } : item));
+    modal.pushModal(
+      {
+        id: "remove-selected-observation-images",
+        content: (
+          <ManageConfirmModal
+            title={t("removeSelectedTitle")}
+            description={t("removeSelectedDescription", { count: ids.size })}
+            confirmLabel={t("removeSelectedConfirm")}
+            cancelLabel={t("cancel")}
+            destructive
+            onConfirm={async () => {
+              removeItems(ids);
+              await modal.hide();
+              modal.popModal();
+            }}
+          />
+        ),
+      },
+      true,
+    );
+    void modal.show();
+  }
+
+  function separateItemFromGroup(itemId: string, sourceGroupId: string) {
+    const nextGroupId = itemId === sourceGroupId ? crypto.randomUUID() : itemId;
+    setItems((current) => current.map((item) => item.id === itemId ? { ...item, groupId: nextGroupId, selected: true } : item));
+    setExpandedId(nextGroupId);
     setBulkError(null);
   }
 
-  function ungroupSelected() {
-    const selectedIds = new Set(selectedEditableItems.map((item) => item.id));
-    setItems((current) => current.map((item) => selectedIds.has(item.id) ? { ...item, groupId: item.id } : item));
-    setBulkError(null);
-  }
-
-  function updateGroup(itemId: string, groupId: string) {
+  function addItemToGroup(groupId: string, itemId: string) {
     setItems((current) => {
-      const targetGroupItem = current.find((item) => item.groupId === groupId);
-      const shared = targetGroupItem ? sharedOccurrenceAnalysis(targetGroupItem.analysis) : null;
-      return current.map((item) => item.id === itemId ? { ...item, groupId, analysis: shared ? { ...item.analysis, ...shared } : item.analysis } : item);
+      const targetItems = current.filter((item) => item.groupId === groupId);
+      const shared = targetItems.length > 0 ? sharedOccurrenceAnalysis(occurrenceAnalysisForUpload(targetItems)) : null;
+      return current.map((item) => item.id === itemId
+        ? { ...item, groupId, selected: true, analysis: shared ? { ...item.analysis, ...shared } : item.analysis }
+        : item,
+      );
     });
+    setExpandedId(groupId);
+    setBulkError(null);
   }
 
-  async function uploadGroup(groupId: string, itemIds?: Set<string>) {
+  async function uploadGroup(groupId: string, itemIds?: Set<string>): Promise<OccurrenceRecord | null> {
     const snapshot = itemsRef.current;
     const groupItems = snapshot.filter((item) => item.groupId === groupId && (!itemIds || itemIds.has(item.id)));
     const uploadItems = groupItems.filter(itemCanUpload);
     if (uploadItems.length === 0 || disabledReason) {
       if (disabledReason) setBulkError(disabledReason);
-      return;
+      return null;
     }
 
     const uploadIds = new Set(uploadItems.map((item) => item.id));
+    const data = occurrenceAnalysisForUpload(uploadItems);
     setBulkError(null);
     try {
       setItems((current) => current.map((candidate) => uploadIds.has(candidate.id) ? { ...candidate, status: "uploading", progress: 15, error: null } : candidate));
       const existingOccurrenceUri = snapshot.find((item) => item.groupId === groupId && item.uploadedUri)?.uploadedUri ?? null;
       let occurrenceUri = existingOccurrenceUri;
+      // Only fresh occurrences carry the record/cid we need to set imageEvidence
+      // and to build an optimistic listing entry.
+      let occurrenceContext: { rkey: string; cid: string; record: Record<string, unknown> } | null = null;
       if (!occurrenceUri) {
-        const data = occurrenceAnalysisForUpload(uploadItems);
         const occurrence = await createObservationOccurrence({
           basisOfRecord: "MachineObservation",
           scientificName: data.scientificName.trim(),
@@ -786,23 +1247,50 @@ function ObservationBulkAddPanel({
           associatedMedia: uploadItems.map((item) => item.file.name).join(", "),
         });
         occurrenceUri = occurrence.uri;
+        occurrenceContext = { rkey: occurrence.rkey, cid: occurrence.cid, record: occurrence.record ?? {} };
       }
       if (!occurrenceUri) throw new Error(t("analysisFailed"));
 
+      let primaryBlobRef: ObservationBlobRef | null = null;
       for (const item of uploadItems) {
         setItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, progress: 60 } : candidate));
-        await createObservationPhoto({
+        const photo = await createObservationPhoto({
           imageFile: item.file,
           occurrenceRef: occurrenceUri,
           subjectPart: item.analysis.subjectPart.trim() || "wholeOrganism",
           caption: item.analysis.caption.trim() || undefined,
         });
+        if (!primaryBlobRef && photo.blobRef) primaryBlobRef = photo.blobRef;
         setItems((current) => current.map((candidate) =>
           candidate.id === item.id
             ? { ...candidate, status: "uploaded", progress: 100, selected: false, uploadedUri: occurrenceUri, error: null }
             : candidate,
         ));
       }
+
+      // The explorer surfaces a photo through the occurrence's own imageEvidence,
+      // so copy the first uploaded blob there. Non-fatal: the photos are already
+      // saved as ac.multimedia records either way.
+      if (occurrenceContext && primaryBlobRef) {
+        await setObservationPrimaryImage({
+          rkey: occurrenceContext.rkey,
+          record: occurrenceContext.record,
+          swapCid: occurrenceContext.cid,
+          blobRef: primaryBlobRef,
+        }).catch(() => {});
+      }
+
+      if (occurrenceContext) {
+        return await buildOptimisticOccurrence({
+          did: target.did,
+          uri: occurrenceUri,
+          rkey: occurrenceContext.rkey,
+          analysis: data,
+          blobRef: primaryBlobRef,
+          isoTimestamp: new Date().toISOString(),
+        }).catch(() => null);
+      }
+      return null;
     } catch (error) {
       const message = formatObservationMutationError(error);
       setItems((current) => current.map((candidate) =>
@@ -810,6 +1298,7 @@ function ObservationBulkAddPanel({
           ? { ...candidate, status: "uploadError", progress: 0, error: message }
           : candidate,
       ));
+      return null;
     }
   }
 
@@ -818,12 +1307,44 @@ function ObservationBulkAddPanel({
       setBulkError(t("noReadySelected"));
       return;
     }
+    // Collapse every expanded row and freeze the status-bar counts for the run.
+    setExpandedId(null);
     setIsBulkUploading(true);
+    setUploadSession({
+      total: items.length,
+      uploaded: items.filter((item) => item.status === "uploaded").length,
+      uploadableTotal: uploadableCount,
+    });
     try {
       const selectedIds = new Set(readySelectedItems.map((item) => item.id));
       const groupIds = Array.from(new Set(readySelectedItems.map((item) => item.groupId)));
+      const created: OccurrenceRecord[] = [];
       for (const groupId of groupIds) {
-        await uploadGroup(groupId, selectedIds);
+        const record = await uploadGroup(groupId, selectedIds);
+        if (record) created.push(record);
+        // The group's rows now read as "uploaded" — count them toward the frozen
+        // progress, then let them linger green before animating out.
+        const justUploaded = itemsRef.current
+          .filter((item) => item.groupId === groupId && selectedIds.has(item.id) && item.status === "uploaded")
+          .map((item) => item.id);
+        if (justUploaded.length > 0) {
+          const ids = new Set(justUploaded);
+          setUploadSession((session) => session ? { ...session, uploaded: session.uploaded + ids.size } : session);
+          scheduleTimer(() => dropItems(ids), UPLOADED_LINGER_MS);
+        }
+      }
+      // Surface the new observations in the list right away (the indexer lags).
+      if (created.length > 0) onUploaded([...created].reverse());
+      // Mirror the audio flow: once everything is uploaded, clear the saved draft
+      // and return to the list — but only after the green rows have animated out.
+      const remaining = itemsRef.current;
+      if (remaining.length > 0 && remaining.every((item) => item.status === "uploaded")) {
+        void clearDraft(target.did);
+        scheduleTimer(onBack, UPLOADED_LINGER_MS + ROW_EXIT_MS);
+      } else {
+        // Some rows remain (failed or unselected): thaw the counts once the
+        // uploaded rows have gone so the bar reflects what is actually left.
+        scheduleTimer(() => setUploadSession(null), UPLOADED_LINGER_MS + ROW_EXIT_MS);
       }
     } finally {
       setIsBulkUploading(false);
@@ -852,16 +1373,15 @@ function ObservationBulkAddPanel({
             </div>
             <div className="flex shrink-0 gap-2">
               <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFilesChanged} className="sr-only" />
-              <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isPreparing}>
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isPreparing || !hasLocation}
+                title={!hasLocation ? t("location.locationRequired") : undefined}
+              >
                 {isPreparing ? <Loader2Icon className="size-4 animate-spin" /> : <ImagePlusIcon className="size-4" />}
                 {isPreparing ? t("preparingImages") : items.length > 0 ? t("chooseMoreImages") : t("chooseImages")}
               </Button>
-              {items.length > 0 ? (
-                <Button onClick={() => void uploadSelected()} disabled={isBulkUploading || readySelectedItems.length === 0 || Boolean(disabledReason)} title={disabledReason ?? undefined}>
-                  {isBulkUploading ? <Loader2Icon className="size-4 animate-spin" /> : <UploadCloudIcon className="size-4" />}
-                  {isBulkUploading ? t("uploadingSelected") : t("uploadSelected")}
-                </Button>
-              ) : null}
             </div>
           </div>
         </div>
@@ -873,7 +1393,29 @@ function ObservationBulkAddPanel({
           </div>
         ) : null}
 
-        {items.length === 0 ? (
+        {draftRestored && items.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/[0.05] px-4 py-3 text-sm">
+            <span className="flex items-center gap-2 text-foreground">
+              <RotateCcwIcon className="size-4 shrink-0 text-primary" /> {t("draftRestored")}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={discardDraft}
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2Icon className="size-4" /> {t("discardDraft")}
+            </Button>
+          </div>
+        ) : null}
+
+        {hasLocation ? (
+          <LocationBar location={chosenLocation!} onChange={chooseObservationLocation} />
+        ) : null}
+
+        {!hasLocation ? (
+          <LocationStep onChoose={chooseObservationLocation} />
+        ) : items.length === 0 && !uploadSession ? (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -888,56 +1430,66 @@ function ObservationBulkAddPanel({
           </button>
         ) : (
           <>
-            <div className="rounded-2xl border bg-card p-4 shadow-xs sm:p-5">
+            <div className="space-y-4 rounded-2xl bg-muted/45 p-4 sm:p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                    <UploadCloudIcon className="size-5" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">
-                      {t("uploadedCount", { uploaded: uploadedCount, total: items.length })}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{t("selectedCount", { selected: readySelectedItems.length, total: uploadableCount })}</p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {t("uploadedCount", { uploaded: displayUploaded, total: displayTotal })}
+                  </p>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {t("selectedCount", { selected: readySelectedItems.length, total: displayUploadableTotal })}
+                    <span className="mx-1.5 text-muted-foreground/50">·</span>
+                    {t("mediaGroupHint")}
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={groupSelected} disabled={selectedEditableItems.length < 2}>
-                    <Layers2Icon className="size-4" /> {t("groupSelected")}
+                  <Button variant="ghost" size="sm" onClick={openRemoveSelectedModal} disabled={selectedEditableItems.length === 0} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                    <Trash2Icon className="size-4" /> {t("removeSelected")}
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={ungroupSelected} disabled={selectedEditableItems.length === 0}>
-                    <UngroupIcon className="size-4" /> {t("ungroupSelected")}
+                  <Button size="sm" onClick={() => void uploadSelected()} disabled={isBulkUploading || readySelectedItems.length === 0 || Boolean(disabledReason)} title={disabledReason ?? undefined}>
+                    {isBulkUploading ? <Loader2Icon className="size-4 animate-spin" /> : <UploadCloudIcon className="size-4" />}
+                    {isBulkUploading ? t("uploadingSelected") : t("uploadSelected")}
                   </Button>
                 </div>
               </div>
-              <ProgressBar value={overallProgress} label={t("progressLabel", { progress: overallProgress })} className="mt-4" />
+              <ProgressBar value={overallProgress} label={t("progressLabel", { progress: overallProgress })} />
             </div>
 
-            <div className="space-y-2">
-              <h2 className="px-1 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">{t("listTitle")}</h2>
+            <div>
               <div className="overflow-hidden rounded-2xl border bg-card shadow-xs">
-                <ObservationListHeader />
+                <ObservationListHeader
+                  checked={allEditableSelected ? true : someEditableSelected ? "indeterminate" : false}
+                  disabled={editableItems.length === 0}
+                  onCheckedChange={(checked) => {
+                    if (checked === true) selectAllEditable();
+                    else deselectAll();
+                  }}
+                />
                 <div className="divide-y divide-border/60">
-                  {items.map((item, index) => (
+                  <AnimatePresence initial={false}>
+                  {groups.map((group, index) => (
                     <ObservationListItem
-                      key={item.id}
-                      item={item}
+                      key={group.id}
+                      group={group}
+                      groups={groups}
                       index={index}
-                      groupOptions={groupOptions}
-                      expanded={item.id === expandedId}
-                      disabledReason={disabledReason}
-                      onToggleExpanded={() => setExpandedId((current) => (current === item.id ? null : item.id))}
-                      onAnalysisChange={updateAnalysis}
-                      onGroupChange={(groupId) => updateGroup(item.id, groupId)}
-                      onToggleSelected={(checked) => setItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, selected: checked } : candidate))}
-                      onUpload={() => void uploadGroup(item.groupId)}
-                      onRetry={() => retryAnalysis(item.id)}
-                      onRemove={() => {
-                        if (item.id === expandedId) setExpandedId(null);
-                        removeItem(item.id);
+                      expanded={group.id === expandedId}
+                      onToggleExpanded={() => {
+                        if (isBulkUploading) return;
+                        setExpandedId((current) => (current === group.id ? null : group.id));
                       }}
+                      onAnalysisChange={updateAnalysis}
+                      onToggleSelected={(checked) => {
+                        const groupItemIds = new Set(group.items.map((item) => item.id));
+                        setItems((current) => current.map((candidate) => groupItemIds.has(candidate.id) ? { ...candidate, selected: checked } : candidate));
+                      }}
+                      onRetry={(id) => retryAnalysis(id)}
+                      onSeparateItem={(id) => separateItemFromGroup(id, group.id)}
+                      onAddItem={addItemToGroup}
+                      onChangeLocation={changeItemLocation}
                     />
                   ))}
+                  </AnimatePresence>
                 </div>
               </div>
             </div>
@@ -967,91 +1519,188 @@ function ObservationBulkAddPanel({
   );
 }
 
-function ObservationListHeader() {
+function LocationStep({ onChoose }: { onChoose: () => void }) {
+  const t = useTranslations("upload.observations.location");
+  return (
+    <div className="flex min-h-[280px] flex-col items-center justify-center rounded-3xl border border-dashed border-primary/30 bg-gradient-to-b from-primary/[0.06] to-transparent p-8 text-center">
+      <span className="mb-5 grid size-16 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
+        <MapPinIcon className="size-7" />
+      </span>
+      <h2 className="font-instrument text-2xl font-medium italic tracking-[-0.02em] text-foreground">{t("stepTitle")}</h2>
+      <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{t("stepBody")}</p>
+      <Button className="mt-5" onClick={onChoose}>
+        <MapPinIcon className="size-4" /> {t("setLocation")}
+      </Button>
+    </div>
+  );
+}
+
+function LocationBar({ location, onChange }: { location: PickedLocation; onChange: () => void }) {
+  const t = useTranslations("upload.observations.location");
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-primary/[0.04] px-4 py-3">
+      <div className="flex min-w-0 items-center gap-2.5 text-sm">
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+          <MapPinIcon className="size-4" />
+        </span>
+        <span className="truncate text-foreground tabular-nums">
+          {t("locationReady", { lat: location.lat, lng: location.lng })}
+        </span>
+      </div>
+      <Button variant="outline" size="sm" onClick={onChange}>
+        <PencilIcon className="size-4" /> {t("changeLocation")}
+      </Button>
+    </div>
+  );
+}
+
+function ObservationLocationRow({
+  analysis,
+  disabled,
+  onChange,
+}: {
+  analysis: ObservationAnalysis;
+  disabled: boolean;
+  onChange: () => void;
+}) {
+  const t = useTranslations("upload.observations.location");
+  const lat = analysis.decimalLatitude.trim();
+  const lng = analysis.decimalLongitude.trim();
+  const hasCoords = Boolean(lat && lng);
+  return (
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background px-4 py-3">
+      <div className="flex min-w-0 items-center gap-2.5 text-sm">
+        <MapPinIcon className={`size-4 shrink-0 ${hasCoords ? "text-primary" : "text-muted-foreground/50"}`} />
+        <span className="min-w-0">
+          <span className="block text-xs font-medium text-muted-foreground">{t("itemLocation")}</span>
+          <span className="block truncate text-foreground tabular-nums">{hasCoords ? `${lat}, ${lng}` : "—"}</span>
+        </span>
+      </div>
+      <Button variant="outline" size="sm" onClick={onChange} disabled={disabled}>
+        <MapPinIcon className="size-4" /> {t("editItemLocation")}
+      </Button>
+    </div>
+  );
+}
+
+function ObservationListHeader({
+  checked,
+  disabled,
+  onCheckedChange,
+}: {
+  checked: boolean | "indeterminate";
+  disabled: boolean;
+  onCheckedChange: (checked: boolean | "indeterminate") => void;
+}) {
   const t = useTranslations("upload.observations");
   return (
-    <div className={`${ROW_GRID} hidden border-b bg-muted/40 px-3 py-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80 md:grid`}>
-      <span aria-hidden />
+    <div className={`${ROW_GRID} border-b bg-muted/40 px-3 py-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80`}>
+      <Checkbox
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+        aria-label={checked === true ? t("deselectAll") : t("selectAll")}
+        className="shrink-0"
+      />
       <span aria-hidden />
       <span>{t("colOrganism")}</span>
-      <span>{t("colDate")}</span>
-      <span>{t("colLocation")}</span>
-      <span aria-hidden />
+      <span className="hidden md:block">{t("colDate")}</span>
+      <span className="hidden md:block">{t("colLocation")}</span>
+      <span className="hidden lg:block">{t("colKind")}</span>
+      <span className="hidden lg:block">{t("colGroup")}</span>
+      <span className="hidden xl:block">{t("colConfidence")}</span>
+      <span className="text-right">{t("colStatus")}</span>
     </div>
   );
 }
 
 function ObservationListItem({
-  item,
+  group,
+  groups,
   index,
-  groupOptions,
   expanded,
-  disabledReason,
   onToggleExpanded,
   onAnalysisChange,
-  onGroupChange,
   onToggleSelected,
-  onUpload,
   onRetry,
-  onRemove,
+  onSeparateItem,
+  onAddItem,
+  onChangeLocation,
 }: {
-  item: ObservationUploadItem;
+  group: ObservationGroup;
+  groups: ObservationGroup[];
   index: number;
-  groupOptions: GroupOption[];
   expanded: boolean;
-  disabledReason?: string | null;
   onToggleExpanded: () => void;
   onAnalysisChange: (id: string, patch: Partial<ObservationAnalysis>) => void;
-  onGroupChange: (groupId: string) => void;
   onToggleSelected: (checked: boolean) => void;
-  onUpload: () => void;
-  onRetry: () => void;
-  onRemove: () => void;
+  onRetry: (id: string) => void;
+  onSeparateItem: (id: string) => void;
+  onAddItem: (groupId: string, itemId: string) => void;
+  onChangeLocation: (id: string) => void;
 }) {
   const t = useTranslations("upload.observations");
-  const canUpload = itemCanUpload(item) && !disabledReason;
-  const showRetry = item.status === "error";
-  const showAnalysis = item.status === "ready" || item.status === "uploading" || item.status === "uploaded" || item.status === "uploadError";
-  const currentGroup = groupOptions.find((group) => group.id === item.groupId);
-  const groupedCount = currentGroup?.count ?? 1;
-  const groupingDisabled = item.status === "uploading" || item.status === "uploaded";
-  const showUploadAction = item.status === "ready" || item.status === "uploadError";
-  const canEdit = showAnalysis;
+  const [item] = group.items;
+  const analysis = occurrenceAnalysisForUpload(group.items);
+  const groupedCount = group.items.length;
+  const editableItems = group.items.filter((candidate) => candidate.status !== "uploading" && candidate.status !== "uploaded");
+  const selectedEditableCount = editableItems.filter((candidate) => candidate.selected).length;
+  const checked = editableItems.length > 0 && selectedEditableCount === editableItems.length ? true : selectedEditableCount > 0 ? "indeterminate" : false;
+  const disabled = editableItems.length === 0;
+  const showAnalysis = group.items.some((candidate) => candidate.status === "ready" || candidate.status === "uploading" || candidate.status === "uploaded" || candidate.status === "uploadError");
+  const canEdit = group.items.some((candidate) => candidate.status === "ready" || candidate.status === "uploadError");
+  const primaryStatus = groupStatus(group.items);
+  const isUploaded = primaryStatus === "uploaded";
+  const retryItem = group.items.find((candidate) => candidate.status === "error");
 
-  const organism = item.analysis.scientificName.trim() || cleanFileName(item.file.name);
-  const commonName = item.analysis.vernacularName.trim();
-  const dateText = item.analysis.eventDate.trim();
-  const locationText = (item.analysis.locality || item.analysis.country).trim();
-  const hasCoords = Boolean(item.analysis.decimalLatitude.trim() && item.analysis.decimalLongitude.trim());
-  const coordsText = hasCoords ? `${item.analysis.decimalLatitude.trim()}, ${item.analysis.decimalLongitude.trim()}` : "";
+  const organism = analysis.scientificName.trim() || group.label || (item ? cleanFileName(item.file.name) : t("unidentified"));
+  const commonName = analysis.vernacularName.trim();
+  const dateText = analysis.eventDate.trim();
+  const locationText = (analysis.locality || analysis.country).trim();
+  const hasCoords = Boolean(analysis.decimalLatitude.trim() && analysis.decimalLongitude.trim());
+  const coordsText = hasCoords ? `${analysis.decimalLatitude.trim()}, ${analysis.decimalLongitude.trim()}` : "";
   const locationDisplay = locationText || coordsText;
-  // On mobile the date/location columns are hidden, so fold them into a meta line.
-  const metaBits = showAnalysis ? [dateText, locationDisplay].filter(Boolean) : [formatBytes(item.file.size)];
+  const groupText = groupedCount > 1 ? t("photoCount", { count: groupedCount }) : t("singlePhoto");
+  const kindText = analysis.kingdom.trim();
+  const confidenceValues = group.items.map((candidate) => candidate.analysis.confidence).filter((value): value is number => typeof value === "number");
+  const confidenceText = confidenceValues.length > 0 ? `${Math.round((confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length) * 100)}%` : "—";
+  const groupProgress = groupedCount > 0 ? Math.round(group.items.reduce((sum, candidate) => sum + candidate.progress, 0) / groupedCount) : 0;
+  const errorItems = group.items.filter((candidate) => candidate.error);
+  // On mobile the extra review columns are hidden, so fold the essentials into a meta line.
+  const metaBits = showAnalysis ? [dateText, locationDisplay, kindText, groupedCount > 1 ? groupText : null].filter((value): value is string => Boolean(value)) : item ? [formatBytes(item.file.size)] : [];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(index * 0.03, 0.18) }}
-      className={`group/row relative transition-colors ${expanded ? "bg-primary/[0.045]" : item.selected ? "bg-primary/[0.025]" : "hover:bg-muted/40"}`}
+      animate={{ opacity: 1, y: 0, transition: { duration: 0.25, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(index * 0.03, 0.18) } }}
+      exit={{ opacity: 0, height: 0, transition: { duration: ROW_EXIT_MS / 1000, ease: [0.25, 0.1, 0.25, 1] } }}
+      className={`group/row relative transition-colors duration-300 ${isUploaded ? "overflow-hidden bg-primary text-primary-foreground" : expanded ? "bg-primary/[0.045]" : item.selected ? "bg-primary/[0.025]" : "hover:bg-muted/40"}`}
     >
+      {isUploaded ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="flex items-center gap-3 px-3 py-3.5"
+        >
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-foreground/15">
+            <CheckCircle2Icon className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold">{organism}</span>
+          <span className="shrink-0 text-sm font-semibold">{t("status.uploaded")}</span>
+        </motion.div>
+      ) : (
+      <>
       {expanded ? <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-primary" /> : null}
       <div className={`${ROW_GRID} gap-y-1 px-3 py-2`}>
         <Checkbox
-          checked={item.selected}
-          disabled={!itemCanUpload(item)}
+          checked={checked}
+          disabled={disabled}
           onCheckedChange={(value) => onToggleSelected(value === true)}
-          aria-label={t("selectForUpload")}
+          aria-label={t("selectImage")}
           className="shrink-0"
         />
-        <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border">
-          <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover" />
-          {groupedCount > 1 ? (
-            <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[0.55rem] font-semibold text-primary-foreground ring-2 ring-background">
-              {groupedCount}
-            </span>
-          ) : null}
-        </div>
+        <StackedThumbnails group={group} />
 
         {/* Organism */}
         {canEdit ? (
@@ -1076,67 +1725,46 @@ function ObservationListItem({
           <span className="truncate text-sm text-muted-foreground">{locationDisplay || "—"}</span>
         </div>
 
-        {/* Trailing: status · actions */}
-        <div className="flex shrink-0 items-center justify-end gap-0.5">
-          <StatusIcon status={item.status} />
-          {showRetry ? (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onRetry}
-              aria-label={t("retryAnalysis")}
-              title={t("retryAnalysis")}
-              className="text-muted-foreground hover:text-primary"
-            >
-              <RotateCcwIcon className="size-4" />
-            </Button>
-          ) : null}
-          {showUploadAction ? (
-            <Button
-              size="icon-sm"
-              disabled={!canUpload}
-              title={disabledReason ?? (groupedCount > 1 ? t("uploadGroup") : t("uploadOne"))}
-              aria-label={groupedCount > 1 ? t("uploadGroup") : t("uploadOne")}
-              onClick={onUpload}
-              className="ml-0.5"
-            >
-              <UploadCloudIcon className="size-4" />
-            </Button>
-          ) : null}
-          {canEdit ? (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onToggleExpanded}
-              aria-expanded={expanded}
-              aria-label={expanded ? t("hideDetails") : t("editDetails")}
-              title={expanded ? t("hideDetails") : t("editDetails")}
-              className={expanded ? "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary" : "text-muted-foreground"}
-            >
-              <PencilIcon className="size-4" />
-            </Button>
-          ) : null}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onRemove}
-            aria-label={t("removeImage")}
-            title={t("removeImage")}
-            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-          >
-            <XIcon className="size-4" />
-          </Button>
+        {/* Kind (wide desktop column) */}
+        <div className="hidden min-w-0 lg:block">
+          <span className="truncate text-sm text-muted-foreground">{kindText || "—"}</span>
+        </div>
+
+        {/* Observation grouping (wide desktop column) */}
+        <div className="hidden min-w-0 items-center gap-1.5 lg:flex">
+          <Layers2Icon className={`size-3.5 shrink-0 ${groupedCount > 1 ? "text-primary/70" : "text-muted-foreground/45"}`} />
+          <span className="truncate text-sm text-muted-foreground">{groupText}</span>
+        </div>
+
+        {/* AI confidence (widest desktop column) */}
+        <div className="hidden min-w-0 xl:block">
+          <span className="truncate text-sm text-muted-foreground">{confidenceText}</span>
+        </div>
+
+        {/* Trailing: one status or action */}
+        <div className="flex shrink-0 items-center justify-end">
+          <ObservationRowAction
+            status={primaryStatus}
+            expanded={expanded}
+            canEdit={canEdit}
+            analysisProgress={{
+              done: group.items.filter((candidate) => candidate.status !== "analyzing").length,
+              total: group.items.length,
+            }}
+            onEdit={onToggleExpanded}
+            onRetry={() => retryItem ? onRetry(retryItem.id) : undefined}
+          />
         </div>
       </div>
 
-      {item.status === "uploading" ? (
+      {primaryStatus === "uploading" ? (
         <div className="px-3 pb-3">
-          <ProgressBar value={item.progress} label={t("progressLabel", { progress: item.progress })} />
+          <ProgressBar value={groupProgress} label={t("progressLabel", { progress: groupProgress })} />
         </div>
       ) : null}
-      {item.error ? (
+      {errorItems.length > 0 ? (
         <p className="flex items-center gap-1.5 px-3 pb-3 text-xs text-destructive">
-          <AlertTriangleIcon className="size-3.5 shrink-0" /> {item.error}
+          <AlertTriangleIcon className="size-3.5 shrink-0" /> {errorItems[0]?.error}
         </p>
       ) : null}
 
@@ -1154,47 +1782,155 @@ function ObservationListItem({
               <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                 <SparklesIcon className="size-3.5 shrink-0 text-primary" />
                 <span className="min-w-0 truncate">
-                  {item.file.name} · {formatBytes(item.file.size)}
-                  {item.compressed ? ` · ${t("compressedFrom", { size: formatBytes(item.originalSize) })}` : ""}
+                  {t("photoCount", { count: groupedCount })}
                 </span>
-                {item.analysis.confidence !== null ? (
+                {confidenceValues.length > 0 ? (
                   <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
-                    {t("aiConfidence", { confidence: Math.round(item.analysis.confidence * 100) })}
+                    {t("aiConfidence", { confidence: Math.round((confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length) * 100) })}
                   </span>
                 ) : null}
               </div>
-              <div className="mb-5 rounded-xl border bg-background p-3">
-                <div className="mb-1.5 flex items-center gap-2">
-                  <Layers2Icon className="size-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-foreground">{t("groupControlLabel")}</span>
-                </div>
-                <p className="mb-3 text-xs leading-5 text-muted-foreground">{t("groupItemHelp")}</p>
-                <Select value={item.groupId} onValueChange={onGroupChange} disabled={groupingDisabled}>
-                  <SelectTrigger className="w-full sm:max-w-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={item.id}>{t("keepSeparate")}</SelectItem>
-                    {groupOptions.filter((group) => group.id !== item.id).map((group) => (
-                      <SelectItem key={group.id} value={group.id}>
-                        <span className="flex items-center gap-2">
-                          {group.previewUrl ? (
-                            <img src={group.previewUrl} alt="" className="size-5 shrink-0 rounded object-cover ring-1 ring-border" />
-                          ) : null}
-                          <span className="truncate">{group.label || t("unidentified")}</span>
-                          <span className="shrink-0 text-muted-foreground">· {t("photoCount", { count: group.count })}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <ObservationAnalysisFields item={item} onChange={(patch) => onAnalysisChange(item.id, patch)} />
+              <GroupMediaEditor group={group} groups={groups} onSeparateItem={onSeparateItem} onAddItem={onAddItem} />
+              {item ? (
+                <ObservationLocationRow
+                  analysis={analysis}
+                  disabled={item.status === "uploading" || item.status === "uploaded"}
+                  onChange={() => onChangeLocation(item.id)}
+                />
+              ) : null}
+              {item ? <ObservationAnalysisFields item={item} onChange={(patch) => onAnalysisChange(item.id, patch)} /> : null}
             </div>
           </motion.div>
         ) : null}
       </AnimatePresence>
+      </>
+      )}
     </motion.div>
+  );
+}
+
+function groupStatus(items: ObservationUploadItem[]): ItemStatus {
+  if (items.some((item) => item.status === "uploading")) return "uploading";
+  if (items.some((item) => item.status === "analyzing")) return "analyzing";
+  if (items.some((item) => item.status === "ready")) return "ready";
+  if (items.some((item) => item.status === "uploadError")) return "uploadError";
+  if (items.length > 0 && items.every((item) => item.status === "uploaded")) return "uploaded";
+  return "error";
+}
+
+function StackedThumbnails({ group, size = "sm" }: { group: ObservationGroup; size?: "sm" | "lg" }) {
+  const visible = group.items.slice(0, 3);
+  const count = group.items.length;
+  const large = size === "lg";
+  return (
+    <div className={`${large ? "size-20" : "size-10"} relative shrink-0 overflow-visible`}>
+      {visible.map((item, index) => (
+        <div
+          key={item.id}
+          className={`absolute overflow-hidden bg-muted ring-1 ring-background ${large ? "h-20 w-20 rounded-2xl" : "h-10 w-10 rounded-lg"}`}
+          style={{ transform: `translate(${index * (large ? 5 : 4)}px, ${index * (large ? -4 : -3)}px)`, zIndex: 3 - index }}
+        >
+          <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover" />
+        </div>
+      ))}
+      {count > 1 ? (
+        <span className={`absolute z-10 grid place-items-center rounded-full bg-primary font-semibold text-primary-foreground ring-2 ring-background ${large ? "-right-3 -top-3 h-6 min-w-6 px-1.5 text-[0.7rem]" : "-right-3 -top-2 h-5 min-w-5 px-1 text-[0.6rem]"}`}>
+          {count}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function GroupMediaEditor({
+  group,
+  groups,
+  onSeparateItem,
+  onAddItem,
+}: {
+  group: ObservationGroup;
+  groups: ObservationGroup[];
+  onSeparateItem: (id: string) => void;
+  onAddItem: (groupId: string, itemId: string) => void;
+}) {
+  const t = useTranslations("upload.observations");
+  const [showChooser, setShowChooser] = useState(false);
+  const availableItems = groups
+    .filter((candidate) => candidate.id !== group.id)
+    .flatMap((candidate) => candidate.items)
+    .filter((item) => item.status !== "uploading" && item.status !== "uploaded");
+
+  return (
+    <div className="mb-5">
+      <div className="mb-2 flex items-center gap-2">
+        <Layers2Icon className="size-4 text-muted-foreground" />
+        <span className="text-sm font-medium text-foreground">{t("mediaInObservation")}</span>
+      </div>
+      <p className="mb-3 text-xs leading-5 text-muted-foreground">{t("mediaEditorHint")}</p>
+      <div className="flex flex-wrap gap-2.5">
+        {group.items.map((item) => {
+          const canSeparate = group.items.length > 1 && item.status !== "uploading" && item.status !== "uploaded";
+          return (
+            <div key={item.id} className="group/media relative size-20 overflow-hidden rounded-2xl bg-muted ring-1 ring-border">
+              <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover" />
+              {canSeparate ? (
+                <QuickTooltip content={t("removeFromObservation")} asChild>
+                  <button
+                    type="button"
+                    onClick={() => onSeparateItem(item.id)}
+                    aria-label={t("removeFromObservation")}
+                    className="absolute right-1.5 top-1.5 grid size-7 place-items-center rounded-full bg-background/90 text-foreground opacity-0 shadow-sm ring-1 ring-border transition-opacity hover:bg-background group-hover/media:opacity-100 focus:opacity-100"
+                  >
+                    <XIcon className="size-4" />
+                  </button>
+                </QuickTooltip>
+              ) : null}
+            </div>
+          );
+        })}
+        {availableItems.length > 0 ? (
+          <QuickTooltip content={t("addMediaTitle")} asChild>
+            <button
+              type="button"
+              onClick={() => setShowChooser((current) => !current)}
+              aria-expanded={showChooser}
+              aria-label={t("addMediaTitle")}
+              className="grid size-20 place-items-center rounded-2xl border border-dashed border-primary/30 bg-primary/[0.04] text-primary transition-colors hover:border-primary/50 hover:bg-primary/[0.08] focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <ImagePlusIcon className="size-6" />
+            </button>
+          </QuickTooltip>
+        ) : null}
+      </div>
+
+      {showChooser && availableItems.length > 0 ? (
+        <div className="mt-4 rounded-2xl border border-border/70 bg-background p-3">
+          <p className="mb-3 text-xs leading-5 text-muted-foreground">{t("addMediaHint")}</p>
+          <div className="flex flex-wrap gap-2.5">
+            {availableItems.map((item) => (
+              <QuickTooltip key={item.id} content={t("addToObservation")} asChild>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAddItem(group.id, item.id);
+                    setShowChooser(false);
+                  }}
+                  aria-label={t("addToObservation")}
+                  className="group/add relative size-20 overflow-hidden rounded-2xl bg-muted ring-1 ring-border transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover" />
+                  <span className="absolute inset-0 grid place-items-center bg-background/0 transition-colors group-hover/add:bg-background/45 group-focus:bg-background/45">
+                    <span className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-sm transition-opacity group-hover/add:opacity-100 group-focus:opacity-100">
+                      <ImagePlusIcon className="size-4" />
+                    </span>
+                  </span>
+                </button>
+              </QuickTooltip>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -1212,23 +1948,109 @@ function OrganismCell({ organism, commonName, metaBits, interactive }: { organis
   );
 }
 
-function StatusIcon({ status }: { status: ItemStatus }) {
-  const t = useTranslations("upload.observations.status");
-  const label = t(status);
-  const isError = status === "error" || status === "uploadError";
-  const isBusy = status === "analyzing" || status === "uploading";
+function ObservationRowAction({
+  status,
+  expanded,
+  canEdit,
+  analysisProgress,
+  onEdit,
+  onRetry,
+}: {
+  status: ItemStatus;
+  expanded: boolean;
+  canEdit: boolean;
+  analysisProgress?: { done: number; total: number };
+  onEdit: () => void;
+  onRetry: () => void;
+}) {
+  const t = useTranslations("upload.observations");
+  const statusT = useTranslations("upload.observations.status");
+
+  if (status === "error") {
+    return (
+      <Button variant="ghost" size="sm" onClick={onRetry} className="h-8 px-2.5 text-muted-foreground hover:text-primary">
+        <RotateCcwIcon className="size-3.5" /> {t("retryAnalysis")}
+      </Button>
+    );
+  }
+
+  if (status === "analyzing" && analysisProgress) {
+    return <CircularAnalysisProgress done={analysisProgress.done} total={analysisProgress.total} />;
+  }
+
+  if (canEdit) {
+    return (
+      <Button
+        variant={expanded ? "default" : "outline"}
+        size="sm"
+        onClick={onEdit}
+        aria-expanded={expanded}
+        className={expanded ? "h-9 min-w-20 px-3 shadow-sm" : "h-9 min-w-20 border-primary/35 bg-primary/10 px-3 font-semibold text-primary shadow-sm hover:bg-primary/15 hover:text-primary"}
+      >
+        {expanded ? t("doneEditing") : t("editShort")}
+      </Button>
+    );
+  }
+
+  const busy = status === "analyzing" || status === "uploading";
+  const icon = busy
+    ? <Loader2Icon className="size-3.5 animate-spin" />
+    : status === "uploaded"
+      ? <CheckCircle2Icon className="size-3.5" />
+      : status === "uploadError"
+        ? <AlertTriangleIcon className="size-3.5" />
+        : null;
   const tone = status === "uploaded"
     ? "text-primary"
-    : isError
+    : status === "uploadError"
       ? "text-destructive"
       : "text-muted-foreground";
+
   return (
-    <span title={label} className={`grid size-7 shrink-0 place-items-center ${tone}`}>
-      {isBusy ? <Loader2Icon className="size-4 animate-spin" /> : null}
-      {status === "uploaded" ? <CheckCircle2Icon className="size-4" /> : null}
-      {isError ? <AlertTriangleIcon className="size-4" /> : null}
-      {status === "ready" ? <span className="size-2 rounded-full bg-primary ring-2 ring-primary/20" /> : null}
-      <span className="sr-only">{label}</span>
+    <span className={`inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium ${tone}`}>
+      {icon}
+      {statusT(status)}
+    </span>
+  );
+}
+
+function CircularAnalysisProgress({ done, total }: { done: number; total: number }) {
+  const t = useTranslations("upload.observations");
+  const boundedTotal = Math.max(1, total);
+  const boundedDone = Math.max(0, Math.min(done, boundedTotal));
+  const radius = 15;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (boundedDone / boundedTotal) * circumference;
+  const label = t("status.analyzing");
+  const valueText = t("analysisProgress", { done: boundedDone, total: boundedTotal });
+
+  return (
+    <span
+      className="inline-flex h-9 min-w-24 items-center justify-end gap-2 text-xs font-medium text-muted-foreground"
+      aria-label={valueText}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={boundedTotal}
+      aria-valuenow={boundedDone}
+    >
+      <span className="relative grid size-7 place-items-center">
+        <svg className="size-7 -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
+          <circle cx="18" cy="18" r={radius} fill="none" stroke="currentColor" strokeWidth="3" className="text-muted/80" />
+          <circle
+            cx="18"
+            cy="18"
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className="text-primary transition-[stroke-dashoffset] duration-300"
+          />
+        </svg>
+      </span>
+      <span>{label}</span>
     </span>
   );
 }
