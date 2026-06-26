@@ -4,10 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { ArrowLeftIcon, ArrowUpRightIcon, BadgeIcon, CalendarIcon, FolderKanbanIcon } from "lucide-react";
-import { fetchRecordByUri, type BumicertRecord } from "../../../_lib/indexer";
+import { ArrowLeftIcon, ArrowUpRightIcon, BadgeIcon, CalendarIcon, CompassIcon, FolderKanbanIcon, MapPinIcon, UsersIcon } from "lucide-react";
+import { fetchCertifiedLocationCountriesByUri, fetchRecordByUri, type BumicertRecord } from "../../../_lib/indexer";
 import { isPdsBlobUrl } from "../../../_lib/pds";
-import { formatDate, formatNumber } from "../../../_lib/format";
+import { formatCountry, formatDate, formatNumber } from "../../../_lib/format";
+import { formatWorkScopeTag, type WorkScopeLabels } from "../../../_lib/work-scope-labels";
 import { getAccountRouteData, readAccountRouteParams } from "../../../account/_lib/account-route";
 import { accountHref, localProjectHref } from "../../../_lib/urls";
 import { AccountBumicertsGrid } from "../../../account/_components/AccountBumicertsGrid";
@@ -69,6 +70,24 @@ export default async function ProjectDetailPage({ params }: { params: ProjectPag
 
   const ownerIdentifier = owner?.urlIdentifier ?? urlIdentifier;
   const ownerName = owner?.displayName ?? record.creatorName ?? "";
+
+  // Overview synthesised from the project's Certs: total contributors, distinct
+  // mapped places (+ the countries they fall in), the union of focus areas, and
+  // the overall active date range.
+  const workScopeT = await getTranslations("common.workScopes");
+  const workScopeLabels: WorkScopeLabels = {
+    reforestation: workScopeT("reforestation"),
+    forest_protection: workScopeT("forestProtection"),
+    biodiversity_monitoring: workScopeT("natureMonitoring"),
+    community_stewardship: workScopeT("communityStewardship"),
+    carbon_removal: workScopeT("carbonRemoval"),
+    restoration_maintenance: workScopeT("restorationMaintenance"),
+  };
+  const locationUris = [...new Set(certs.flatMap((cert) => cert.locationUris))];
+  const countryMap = locationUris.length
+    ? await fetchCertifiedLocationCountriesByUri(locationUris).catch(() => new Map<string, string>())
+    : new Map<string, string>();
+  const overview = buildProjectOverview(certs, workScopeLabels, locationUris, countryMap);
 
   return (
     <main className="min-h-screen bg-background pb-20">
@@ -166,6 +185,58 @@ export default async function ProjectDetailPage({ params }: { params: ProjectPag
           </aside>
         </div>
 
+        {certs.length > 0 ? (
+          <section className="mt-10 border-t border-border-soft pt-8">
+            <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              {t("overviewTitle")}
+            </h2>
+            <p className="max-w-3xl text-base leading-7 text-foreground/80 md:text-lg md:leading-8">
+              {t("overviewLead", { certs: certs.length })}
+            </p>
+
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <OverviewStat icon={<BadgeIcon className="h-4 w-4" aria-hidden />} label={t("certs")} value={formatNumber(record.bumicertCount)} />
+              <OverviewStat icon={<UsersIcon className="h-4 w-4" aria-hidden />} label={t("contributors")} value={formatNumber(overview.contributorTotal)} />
+              <OverviewStat icon={<MapPinIcon className="h-4 w-4" aria-hidden />} label={t("places")} value={formatNumber(overview.placeCount)} />
+              <OverviewStat icon={<CompassIcon className="h-4 w-4" aria-hidden />} label={t("focusAreasLabel")} value={formatNumber(overview.focusAreas.length)} />
+            </div>
+
+            {overview.focusAreas.length > 0 ? (
+              <div className="mt-6">
+                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-foreground/45">{t("focusAreasLabel")}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {overview.focusAreas.map((area) => (
+                    <span key={area} className="inline-flex h-7 items-center rounded-full bg-secondary px-3 text-[13px] font-medium text-secondary-foreground">
+                      {area}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {overview.countryCodes.length > 0 || overview.startDate || overview.endDate ? (
+              <dl className="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                {overview.countryCodes.length > 0 ? (
+                  <div>
+                    <dt className="text-[11px] font-medium uppercase tracking-[0.12em] text-foreground/45">{t("whereLabel")}</dt>
+                    <dd className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5 text-[14px] text-foreground">
+                      {overview.countryCodes.map((code) => (
+                        <span key={code}>{formatCountry(code)}</span>
+                      ))}
+                    </dd>
+                  </div>
+                ) : null}
+                {overview.startDate || overview.endDate ? (
+                  <div>
+                    <dt className="text-[11px] font-medium uppercase tracking-[0.12em] text-foreground/45">{t("activePeriodLabel")}</dt>
+                    <dd className="mt-1.5 text-[14px] text-foreground">{formatActivePeriod(overview.startDate, overview.endDate)}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            ) : null}
+          </section>
+        ) : null}
+
         <section className="mt-10 border-t border-border-soft pt-8">
           <h2 className="mb-1 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
             {t("certsTitle")}
@@ -183,6 +254,72 @@ export default async function ProjectDetailPage({ params }: { params: ProjectPag
         </section>
       </div>
     </main>
+  );
+}
+
+type ProjectOverview = {
+  contributorTotal: number;
+  placeCount: number;
+  focusAreas: string[];
+  countryCodes: string[];
+  startDate: string | null;
+  endDate: string | null;
+};
+
+function buildProjectOverview(
+  certs: BumicertRecord[],
+  workScopeLabels: WorkScopeLabels,
+  locationUris: string[],
+  countryMap: Map<string, string>,
+): ProjectOverview {
+  let contributorTotal = 0;
+  const focusSeen = new Set<string>();
+  const focusAreas: string[] = [];
+  const starts: string[] = [];
+  const ends: string[] = [];
+
+  for (const cert of certs) {
+    contributorTotal += cert.contributorCount;
+    for (const tag of cert.scopeTags) {
+      const label = formatWorkScopeTag(tag, workScopeLabels).trim();
+      const key = label.toLowerCase();
+      if (label && !focusSeen.has(key)) {
+        focusSeen.add(key);
+        focusAreas.push(label);
+      }
+    }
+    if (cert.startDate) starts.push(cert.startDate);
+    if (cert.endDate) ends.push(cert.endDate);
+  }
+
+  const countryCodes = [
+    ...new Set([...countryMap.values()].map((code) => code.trim().toUpperCase()).filter(Boolean)),
+  ].sort();
+
+  return {
+    contributorTotal,
+    placeCount: locationUris.length,
+    focusAreas,
+    countryCodes,
+    startDate: starts.length ? starts.reduce((a, b) => (a < b ? a : b)) : null,
+    endDate: ends.length ? ends.reduce((a, b) => (a > b ? a : b)) : null,
+  };
+}
+
+function formatActivePeriod(start: string | null, end: string | null): string {
+  const startLabel = start ? formatDate(start) : null;
+  const endLabel = end ? formatDate(end) : null;
+  if (startLabel && endLabel) return startLabel === endLabel ? startLabel : `${startLabel} – ${endLabel}`;
+  return startLabel ?? endLabel ?? "";
+}
+
+function OverviewStat({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-border-soft bg-surface/60 p-4">
+      <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">{icon}</span>
+      <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+    </div>
   );
 }
 
