@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrowseGrid } from "./_components/BrowseGrid";
 import { HomeLanding } from "./_components/HomeLanding";
+import { fetchAuthSession } from "./_lib/auth-server";
 import { fetchKpis } from "./_lib/kpis";
 
 export const revalidate = 300;
@@ -23,7 +25,13 @@ const fetchHomeKpis = unstable_cache(fetchKpis, ["home-page-kpis"], {
 // level — that lets us drop the catch-all app/loading.tsx (which used to shadow
 // every section's tailored loading.tsx as the outermost Suspense boundary). The
 // kpis fetch is wrapped in its own Suspense with a home-shaped fallback instead.
-export default function HomePage() {
+export default async function HomePage() {
+  // Already signed in? Skip the marketing landing and go straight to the app.
+  const session = await fetchAuthSession();
+  if (session.isLoggedIn) {
+    redirect("/manage");
+  }
+
   return (
     <Suspense fallback={<HomeFallback />}>
       <HomeContent />

@@ -26,6 +26,8 @@ import { isPdsBlobUrl } from "../_lib/pds";
 import { formatCompact, formatCompactUsd } from "../_lib/format";
 import { StatsTileGrid, type StatsTileItem } from "./StatsTile";
 import { ThemeToggle } from "./ThemeToggle";
+import { AuthModal } from "./AuthFlow";
+import { useModal } from "@/components/ui/modal/context";
 
 type HomeLandingProps = {
   kpis?: ExplorerKpis | null;
@@ -99,6 +101,15 @@ export function HomeLanding({ kpis = null }: HomeLandingProps) {
 
 function LandingTopNavbar() {
   const t = useTranslations("landing");
+  const { pushModal, show } = useModal();
+
+  // Open the same sign-in flow used across the app. Signed-in visitors never
+  // reach this navbar — the home route forwards them straight to the app.
+  const openSignIn = () => {
+    pushModal({ id: "auth", content: <AuthModal /> }, true);
+    show();
+  };
+
   return (
     <motion.header
       initial={{ opacity: 0 }}
@@ -134,12 +145,13 @@ function LandingTopNavbar() {
             whileTap={{ scale: 0.97 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
           >
-            <Link
-              href="/certs"
+            <button
+              type="button"
+              onClick={openSignIn}
               className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/15 transition-colors hover:bg-primary/90 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
             >
-              {t("nav.launchApp")}
-            </Link>
+              {t("nav.signIn")}
+            </button>
           </motion.div>
 
         </div>

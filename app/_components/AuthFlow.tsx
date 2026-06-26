@@ -72,7 +72,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   );
 }
 
-function AuthModal() {
+export function AuthModal() {
   return (
     <ModalContent className="py-2">
       <ModalTitle className="sr-only">Sign in to GainForest</ModalTitle>
