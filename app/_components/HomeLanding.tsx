@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useMotionTemplate, useMotionValue, useSpring } from "framer-motion";
 import {
   ArrowLeftRightIcon,
   ArrowUpRightIcon,
@@ -17,9 +17,12 @@ import {
   NetworkIcon,
   Share2Icon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { ExplorerKpis } from "../_lib/kpis";
+import { fetchBumicerts, type BumicertRecord } from "../_lib/indexer";
+import { localBumicertHref } from "../_lib/urls";
+import { isPdsBlobUrl } from "../_lib/pds";
 import { formatCompact, formatCompactUsd } from "../_lib/format";
 import { StatsTileGrid, type StatsTileItem } from "./StatsTile";
 import { ThemeToggle } from "./ThemeToggle";
@@ -514,6 +517,45 @@ function WhatIsBumicert() {
   const t = useTranslations("landing.certificate");
   const [openItem, setOpenItem] = useState<FaqKey>("digitalCertificate");
 
+  // Real bumicerts for the rotating preview card (replaces the old static
+  // "Mount Halimun" mock). Pull the newest records that have an image, then
+  // cycle through them. If the indexer is unreachable we fall back to the
+  // static i18n preview so the section never looks broken.
+  const [certs, setCerts] = useState<BumicertRecord[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchBumicerts(60, null, controller.signal, undefined, { sort: "newest" })
+      .then((page) => {
+        const usable = page.records
+          // next/image only renders http(s) covers; drop ipfs:// and other
+          // schemes (rare) so the card never throws an "Invalid src" error.
+          .filter(
+            (r) =>
+              r.imageUrl != null &&
+              /^https?:\/\//.test(r.imageUrl) &&
+              r.shortDescription &&
+              r.title,
+          )
+          .slice(0, 8);
+        setCerts(usable);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (certs.length < 2) return;
+    const id = window.setInterval(
+      () => setActiveIndex((i) => (i + 1) % certs.length),
+      4200,
+    );
+    return () => window.clearInterval(id);
+  }, [certs.length]);
+
+  const active = certs.length > 0 ? certs[activeIndex % certs.length] : null;
+
   return (
     <section className="px-6 pt-10 pb-12 sm:px-12 sm:pt-12 sm:pb-14 md:px-6 md:pt-10 md:pb-14">
       <div className="mx-auto max-w-6xl">
@@ -553,20 +595,71 @@ function WhatIsBumicert() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.65, delay: 0.08, ease: [0.25, 0.1, 0.25, 1] }}
-            className="flex justify-center sm:justify-end"
+            className="flex flex-col items-center sm:items-end"
           >
-            <div className="relative w-full max-w-lg">
-              <div className="absolute inset-0 scale-90 rounded-3xl bg-primary/10 blur-3xl" />
-              <BumicertCardVisual
-                className="relative shadow-xl shadow-foreground/10 [&_h3]:text-xl [&_h3]:leading-tight [&_p]:text-sm [&_p]:leading-relaxed"
-                logoUrl="/assets/media/images/app-icon.png"
-                coverImage="/assets/media/images/landing/certificate-river.jpg"
-                title={t("previewTitle")}
-                description={t("previewDescription")}
-                organizationName="GainForest"
-                objectives={[t("objectives.primary"), t("objectives.secondary")]}
-              />
+            <div className="relative">
+              {/* soft glow behind the floating card */}
+              <div aria-hidden className="absolute -inset-8 rounded-[2.5rem] bg-primary/10 blur-3xl" />
+              <TiltCard>
+                {/* Fixed trading-card frame so the cross-fade between certs
+                    never shifts layout (cards are absolutely stacked inside). */}
+                <div className="relative h-[452px] w-[300px]">
+                  {active ? (
+                    <AnimatePresence>
+                      <motion.div
+                        key={active.id}
+                        className="absolute inset-0"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
+                      >
+                        <Link href={localBumicertHref(active.did, active.rkey)} className="block h-full w-full">
+                          <BumicertCardVisual
+                            className="h-full w-full"
+                            logoUrl="/assets/media/images/app-icon.png"
+                            coverImage={active.imageUrl ?? "/assets/media/images/landing/certificate-river.jpg"}
+                            title={active.title}
+                            description={active.shortDescription ?? undefined}
+                            organizationName={active.creatorName ?? "GainForest"}
+                            objectives={active.scopeTags.length > 0 ? active.scopeTags : [t("objectives.primary")]}
+                          />
+                        </Link>
+                      </motion.div>
+                    </AnimatePresence>
+                  ) : (
+                    <BumicertCardVisual
+                      className="absolute inset-0 h-full w-full"
+                      logoUrl="/assets/media/images/app-icon.png"
+                      coverImage="/assets/media/images/landing/certificate-river.jpg"
+                      title={t("previewTitle")}
+                      description={t("previewDescription")}
+                      organizationName="GainForest"
+                      objectives={[t("objectives.primary"), t("objectives.secondary")]}
+                    />
+                  )}
+                </div>
+              </TiltCard>
             </div>
+
+            {/* Dot rail to jump between / show progress through the live certs. */}
+            {certs.length > 1 ? (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                {certs.map((c, i) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    aria-label={`Show ${c.title}`}
+                    aria-current={i === activeIndex ? "true" : undefined}
+                    onClick={() => setActiveIndex(i)}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-300",
+                      i === activeIndex ? "w-6 bg-primary" : "w-1.5 bg-foreground/25 hover:bg-foreground/45",
+                    )}
+                  />
+                ))}
+              </div>
+            ) : null}
           </motion.div>
         </div>
       </div>
@@ -730,6 +823,59 @@ function AccordionItem({
   );
 }
 
+// 3D-tilt wrapper that makes the trading card follow the cursor with a moving
+// holographic glare — the "Pokemon card" feel. Spring-smoothed motion values
+// drive rotateX/rotateY and the glare, so pointer moves never re-render React.
+function TiltCard({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const rotateX = useSpring(0, { stiffness: 180, damping: 16 });
+  const rotateY = useSpring(0, { stiffness: 180, damping: 16 });
+  const glareX = useMotionValue(50);
+  const glareY = useMotionValue(50);
+  const glareOpacity = useSpring(0, { stiffness: 120, damping: 20 });
+  const glare = useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.55), rgba(255,255,255,0) 45%)`;
+
+  const handleMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width;
+    const py = (event.clientY - rect.top) / rect.height;
+    const max = 11;
+    rotateY.set((px - 0.5) * 2 * max);
+    rotateX.set(-(py - 0.5) * 2 * max);
+    glareX.set(px * 100);
+    glareY.set(py * 100);
+    glareOpacity.set(1);
+  };
+  const reset = () => {
+    rotateX.set(0);
+    rotateY.set(0);
+    glareOpacity.set(0);
+  };
+
+  return (
+    <div className="[perspective:1100px]" onPointerMove={handleMove} onPointerLeave={reset}>
+      <motion.div
+        ref={ref}
+        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+        whileHover={{ scale: 1.03 }}
+        transition={{ scale: { type: "spring", stiffness: 200, damping: 18 } }}
+        className="relative will-change-transform"
+      >
+        {children}
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-[1.25rem] mix-blend-overlay"
+          style={{ backgroundImage: glare, opacity: glareOpacity }}
+        />
+      </motion.div>
+    </div>
+  );
+}
+
+// A Bumicert rendered as a portrait trading card (Pokemon-card proportions):
+// an org bar, a framed art window, then a title / description / objective box.
 function BumicertCardVisual({
   coverImage,
   logoUrl,
@@ -747,66 +893,75 @@ function BumicertCardVisual({
   description?: string;
   className?: string;
 }) {
-  const objectivesToDisplay = [objectives[0], objectives.length > 1 ? `+${objectives.length - 1}` : null].filter(
-    (objective): objective is string => typeof objective === "string",
-  );
+  const pills = objectives.filter((o) => Boolean(o && o.trim())).slice(0, 3);
+  const topPill = pills[0] ?? null;
+  const infoPills = pills.slice(1);
+  // Real cover images resolve to each owner's PDS getBlob URL (allowed by
+  // next.config remotePatterns); any other absolute URL is served unoptimized
+  // so the optimizer never 404s on an unknown host.
+  const unoptimized = /^https?:\/\//.test(coverImage) && !isPdsBlobUrl(coverImage);
 
   return (
-    <motion.div
+    <div
       className={cn(
-        "group relative flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:shadow-lg",
+        "group relative flex flex-col overflow-hidden rounded-[1.25rem] border border-border/70 bg-card p-2.5 shadow-2xl shadow-foreground/20",
         className,
       )}
-      initial="initial"
-      whileHover="cardHover"
     >
-      <div className="relative z-0 aspect-4/3 overflow-hidden">
+      {/* foil frame tint */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[1.25rem] bg-gradient-to-br from-primary/15 via-transparent to-primary/10"
+      />
+
+      {/* top bar: org badge + objective "type" chip */}
+      <div className="relative z-10 mb-2 flex items-center justify-between gap-2 px-0.5">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-black/5">
+            <Image src={logoUrl} alt={organizationName} fill className="object-cover" />
+          </span>
+          <span className="truncate text-[11px] font-semibold text-foreground/70">{organizationName}</span>
+        </div>
+        {topPill ? (
+          <span className="max-w-[48%] shrink-0 truncate rounded-full bg-primary/12 px-2 py-0.5 text-[9px] font-bold tracking-[0.06em] text-primary uppercase">
+            {topPill}
+          </span>
+        ) : null}
+      </div>
+
+      {/* art window */}
+      <div className="relative z-10 min-h-0 flex-1 overflow-hidden rounded-xl ring-1 ring-foreground/10">
         <Image
           src={coverImage}
           alt={title}
           fill
-          sizes="(min-width: 640px) 500px, calc(100vw - 3rem)"
-          className="scale-110 object-cover transition-all duration-300 group-hover:scale-100"
+          sizes="320px"
+          unoptimized={unoptimized}
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.07]"
         />
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-white/10" />
       </div>
-      <div className="relative z-1 -mt-6 flex flex-1 flex-col justify-between px-4 py-3">
-        <div className="absolute -top-2 right-0 left-0 z-0 h-8 bg-linear-to-b from-transparent via-background/65 to-background" />
-        <div>
-          <h3 className="font-instrument relative z-1 line-clamp-1 text-2xl leading-snug text-foreground italic">{title}</h3>
-          {description && <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{description}</p>}
-        </div>
-        {objectivesToDisplay.length > 0 && (
-          <div className="mt-4 flex w-full flex-wrap items-center gap-2">
-            {objectivesToDisplay.map((objective) => (
+
+      {/* info box */}
+      <div className="relative z-10 mt-2.5 rounded-xl bg-muted/50 px-3 py-2.5 backdrop-blur-sm">
+        <h3 className="font-instrument line-clamp-2 text-[16px] leading-tight text-foreground italic">{title}</h3>
+        {description ? (
+          <p className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-muted-foreground">{description}</p>
+        ) : null}
+        {infoPills.length > 0 ? (
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            {infoPills.map((pill) => (
               <span
-                key={objective}
-                className={cn(
-                  "rounded-full bg-muted px-2.5 py-1 text-sm font-medium text-muted-foreground",
-                  objective.startsWith("+") && "text-foreground",
-                )}
+                key={pill}
+                className="max-w-full truncate rounded-full bg-background px-2 py-0.5 text-[9.5px] font-medium text-muted-foreground ring-1 ring-border"
               >
-                {objective}
+                {pill}
               </span>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
-
-      <div className="absolute top-2 left-2 flex min-w-0 items-center gap-1 rounded-full bg-background/70 p-1 shadow-lg backdrop-blur-lg">
-        <div className="relative h-6 w-6 shrink-0 scale-120 overflow-hidden rounded-full bg-white shadow-sm transition-all duration-300 group-hover:scale-100">
-          <Image src={logoUrl} alt={organizationName} fill className="object-cover" />
-        </div>
-        <motion.span
-          variants={{
-            initial: { opacity: 0, maxWidth: 0, marginLeft: "-0.25rem", marginRight: "0rem", x: -2, filter: "blur(4px)" },
-            cardHover: { opacity: 1, maxWidth: 200, marginLeft: "0rem", marginRight: "0.5rem", x: 0, filter: "blur(0px)" },
-          }}
-          className="overflow-hidden text-xs font-medium whitespace-nowrap text-foreground text-shadow-md"
-        >
-          {organizationName}
-        </motion.span>
-      </div>
-    </motion.div>
+    </div>
   );
 }
 
