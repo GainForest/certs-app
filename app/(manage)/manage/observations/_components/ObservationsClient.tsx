@@ -753,7 +753,7 @@ function ObservationBulkAddPanel({
   // run. Once the user clicks "Upload", the totals stay put even as uploaded
   // rows animate away, so the displayed total never appears to shrink. Cleared
   // a moment after the run settles, when the counts can safely reflect reality.
-  const [uploadSession, setUploadSession] = useState<{ total: number; uploaded: number; uploadableTotal: number } | null>(null);
+  const [uploadSession, setUploadSession] = useState<{ total: number; uploadableTotal: number } | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   // The mandatory observation location chosen before any image can be added.
@@ -903,6 +903,20 @@ function ObservationBulkAddPanel({
     });
   }
 
+  // Animate uploaded rows out: once rows reach "uploaded" they render green, then
+  // this drops them after a short linger so AnimatePresence can play their exit.
+  // Driven by committed `items` (not the upload loop) so it never races state —
+  // the timer keeps resetting while uploads are still landing, then fires once the
+  // run settles. dropItems only touches setItems, so it is safe to omit from deps.
+  useEffect(() => {
+    const uploadedIds = items.filter((item) => item.status === "uploaded").map((item) => item.id);
+    if (uploadedIds.length === 0) return;
+    const ids = new Set(uploadedIds);
+    const timer = window.setTimeout(() => dropItems(ids), UPLOADED_LINGER_MS);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
+
   function openLocationPicker(opts: { initial?: PickedLocation | null; onSelect: (location: PickedLocation) => void }) {
     modal.pushModal(
       {
@@ -957,7 +971,12 @@ function ObservationBulkAddPanel({
   // snapshot so the totals never shrink as uploaded rows animate away; otherwise
   // it tracks the live counts.
   const displayTotal = uploadSession ? uploadSession.total : items.length;
-  const displayUploaded = uploadSession ? uploadSession.uploaded : uploadedCount;
+  // Uploaded = frozen total minus everything still on screen that is not yet
+  // uploaded. Removed (uploaded-then-dropped) rows are gone from `items`, so they
+  // keep counting toward this; the number only ever climbs during a run.
+  const displayUploaded = uploadSession
+    ? uploadSession.total - items.filter((item) => item.status !== "uploaded").length
+    : uploadedCount;
   const displayUploadableTotal = uploadSession ? uploadSession.uploadableTotal : uploadableCount;
   // The set of items in the current run is frozen at upload time, so its size is
   // a stable denominator even after uploaded rows are removed from `items`.
@@ -1340,41 +1359,28 @@ function ObservationBulkAddPanel({
     setExpandedId(null);
     setUploadProgressIds(selectedIds);
     setIsBulkUploading(true);
-    setUploadSession({
-      total: items.length,
-      uploaded: items.filter((item) => item.status === "uploaded").length,
-      uploadableTotal: uploadableCount,
-    });
+    setUploadSession({ total: items.length, uploadableTotal: uploadableCount });
     try {
       const groupIds = Array.from(new Set(readySelectedItems.map((item) => item.groupId)));
       const created: OccurrenceRecord[] = [];
       for (const groupId of groupIds) {
         const record = await uploadGroup(groupId, selectedIds);
         if (record) created.push(record);
-        // The group's rows now read as "uploaded" — count them toward the frozen
-        // progress, then let them linger green before animating out.
-        const justUploaded = itemsRef.current
-          .filter((item) => item.groupId === groupId && selectedIds.has(item.id) && item.status === "uploaded")
-          .map((item) => item.id);
-        if (justUploaded.length > 0) {
-          const ids = new Set(justUploaded);
-          setUploadSession((session) => session ? { ...session, uploaded: session.uploaded + ids.size } : session);
-          scheduleTimer(() => dropItems(ids), UPLOADED_LINGER_MS);
-        }
       }
       // Surface the new observations in the list right away (the indexer lags).
+      // Uploaded rows turn green and animate out via the removal effect.
       if (created.length > 0) onUploaded([...created].reverse());
-      // Mirror the audio flow: once everything is uploaded, clear the saved draft
-      // and return to the list — but only after the green rows have animated out.
-      const remaining = itemsRef.current;
-      if (remaining.length > 0 && remaining.every((item) => item.status === "uploaded")) {
-        void clearDraft(target.did);
-        scheduleTimer(onBack, UPLOADED_LINGER_MS + ROW_EXIT_MS);
-      } else {
-        // Some rows remain (failed or unselected): thaw the counts once the
-        // uploaded rows have gone so the bar reflects what is actually left.
-        scheduleTimer(() => setUploadSession(null), UPLOADED_LINGER_MS + ROW_EXIT_MS);
-      }
+      // Once the green rows have lingered and animated away, either return to the
+      // list (everything uploaded → nothing left) or thaw the frozen counts so the
+      // bar reflects the rows that remain (failed or unselected).
+      scheduleTimer(() => {
+        if (itemsRef.current.length === 0) {
+          void clearDraft(target.did);
+          onBack();
+        } else {
+          setUploadSession(null);
+        }
+      }, UPLOADED_LINGER_MS + ROW_EXIT_MS);
     } finally {
       setIsBulkUploading(false);
     }
