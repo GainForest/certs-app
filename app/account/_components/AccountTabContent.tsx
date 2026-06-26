@@ -9,6 +9,7 @@ import { RichText } from "../../_components/RichText";
 import { RecordExplorer } from "../../_components/RecordExplorer";
 import { AccountBumicertsGrid } from "./AccountBumicertsGrid";
 import { AccountProjectsGrid } from "./AccountProjectsGrid";
+import { AccountOrganizationsGrid, type AccountOrganization } from "./AccountOrganizationsGrid";
 import { OverviewFolders, type OverviewFolderTile } from "./OverviewFolders";
 import { AccountContentColumns, AccountSidebar } from "./AccountSidebar";
 import { AccountSettingsSections } from "./AccountSettingsSections";
@@ -16,8 +17,10 @@ import { ShareProfileButton } from "./ShareProfileButton";
 import { DonationHistory } from "./DonationHistory";
 import { fetchReceipts } from "../../_lib/dashboard";
 import { fetchPublicDataCouncilMembers, type PublicDataCouncilMember } from "../../_lib/data-council";
+import { fetchAuthSession } from "../../_lib/auth-server";
+import { fetchUserCgsGroups } from "../../_lib/manage-server";
 import { monogram } from "../../_lib/did-profile";
-import { attachProjectTitlesToGalleries, fetchBumicertsByDid, fetchObservationSummaryByDid, fetchProjectImageGalleriesByDid, fetchProjectsByDid } from "../../_lib/indexer";
+import { attachProjectTitlesToGalleries, fetchBumicertsByDid, fetchIndexedCertifiedProfileCards, fetchObservationSummaryByDid, fetchProjectImageGalleriesByDid, fetchProjectsByDid } from "../../_lib/indexer";
 import type { AccountRouteData } from "../_lib/account-route";
 import { accountBumicertsPath, accountDonationsPath, accountGalleryPath, accountObservationsPath, accountPath, accountProjectsPath } from "../_lib/account-route";
 
@@ -257,6 +260,43 @@ export function AccountObservationsTabContent({ did }: { account: AccountRouteDa
 export async function AccountProjectsTabContent({ did }: { account: AccountRouteData; did: string }) {
   const projects = await fetchProjectsByDid(did, 1000).then((page) => page.records).catch(() => []);
   return <AccountProjectsGrid projects={projects} />;
+}
+
+// The organizations a person belongs to live in the group service, which only
+// lets us read the signed-in viewer's own memberships. So this tab is private:
+// it renders only when you're viewing your own profile, otherwise it 404s.
+export async function AccountOrganizationsTabContent({ account }: { account: AccountRouteData; did: string }) {
+  const session = await fetchAuthSession();
+  if (account.kind !== "user" || !session.isLoggedIn || session.did !== account.did) {
+    notFound();
+  }
+
+  const t = await getTranslations("common.accountOrganizations");
+  const groups = await fetchUserCgsGroups();
+  const dids = [...new Set(groups.map((group) => group.groupDid).filter((did): did is string => Boolean(did)))];
+  const cards = dids.length
+    ? await fetchIndexedCertifiedProfileCards(dids).catch(() => new Map())
+    : new Map();
+
+  const organizations: AccountOrganization[] = groups
+    .filter((group) => Boolean(group.groupDid))
+    .map((group) => {
+      const card = cards.get(group.groupDid);
+      const role = group.role === "owner" || group.role === "admin" ? group.role : "member";
+      return {
+        did: group.groupDid,
+        identifier: group.handle?.trim() || group.groupDid,
+        displayName: group.displayName?.trim() || card?.displayName || group.handle?.trim() || t("fallbackName"),
+        avatarUrl: group.avatarUrl ?? card?.avatarUrl ?? null,
+        role,
+      } satisfies AccountOrganization;
+    });
+
+  return (
+    <div className="py-2">
+      <AccountOrganizationsGrid organizations={organizations} />
+    </div>
+  );
 }
 
 export async function AccountGalleryTabContent({ account, did }: { account: AccountRouteData; did: string }) {

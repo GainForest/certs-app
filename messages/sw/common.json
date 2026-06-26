@@ -309,11 +309,22 @@
     "donations": "Michango",
     "bumicerts": "vyeti",
     "projects": "Miradi",
+    "organizations": "Mashirika",
     "donationHistory": "Historia ya michango",
     "observations": "Uchunguzi",
     "gallery": "Matunzio",
     "settings": "Mipangilio",
     "timeline": "Ratiba"
+  },
+  "accountOrganizations": {
+    "emptyEyebrow": "Hakuna mashirika",
+    "empty": "Bado hujajiunga na shirika lolote.",
+    "fallbackName": "Shirika",
+    "role": {
+      "owner": "Mmiliki",
+      "admin": "Msimamizi",
+      "member": "Mwanachama"
+    }
   },
   "accountProjects": {
     "emptyEyebrow": "Hakuna miradi",

@@ -309,11 +309,22 @@
     "donations": "Donations",
     "bumicerts": "Certs",
     "projects": "Projects",
+    "organizations": "Organizations",
     "donationHistory": "Donation History",
     "observations": "Observations",
     "gallery": "Gallery",
     "settings": "Settings",
     "timeline": "Timeline"
+  },
+  "accountOrganizations": {
+    "emptyEyebrow": "No organizations",
+    "empty": "You don't belong to any organizations yet.",
+    "fallbackName": "Organization",
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    }
   },
   "accountProjects": {
     "emptyEyebrow": "No projects",

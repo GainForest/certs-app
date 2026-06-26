@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { fetchAuthSession } from "@/app/_lib/auth-server";
+import type { AuthSession } from "@/app/_lib/auth";
 import { fetchUserCgsGroups } from "@/app/_lib/manage-server";
 import { canEditGroupProfile } from "@/app/(manage)/manage/_lib/cgs-permissions";
 import { accountManageBasePath, groupManageBasePath } from "@/lib/links";
@@ -26,8 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ did: stri
   };
 }
 
-async function getEditHref(account: AccountRouteData): Promise<string | null> {
-  const session = await fetchAuthSession();
+async function getEditHref(account: AccountRouteData, session: AuthSession): Promise<string | null> {
   if (!session.isLoggedIn) return null;
   if (session.did === account.did) return accountManageBasePath(account.urlIdentifier);
   if (account.kind !== "organization") return null;
@@ -51,7 +51,11 @@ export default async function AccountLayout({
 }) {
   const { did, urlIdentifier } = await readAccountRouteParams(params);
   const account = await getAccountRouteData(did, urlIdentifier);
-  const editHref = await getEditHref(account);
+  const session = await fetchAuthSession();
+  const editHref = await getEditHref(account, session);
+  // Your organizations are private to you: the group service only lets us read
+  // your own memberships, so this tab appears only on your own profile.
+  const showOrganizations = account.kind === "user" && session.isLoggedIn && session.did === account.did;
 
   return (
     <main className="w-full">
@@ -59,7 +63,7 @@ export default async function AccountLayout({
         hero={
           <>
             <AccountHero account={account} editHref={editHref} />
-            <AccountTabBar did={account.urlIdentifier} accountKind={account.kind} />
+            <AccountTabBar did={account.urlIdentifier} accountKind={account.kind} showOrganizations={showOrganizations} />
           </>
         }
       >

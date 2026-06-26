@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BadgeIcon, FolderKanbanIcon, HeartIcon, HomeIcon, ImageIcon, LeafIcon, PaperclipIcon, SettingsIcon } from "lucide-react";
+import { BadgeIcon, Building2Icon, FolderKanbanIcon, HeartIcon, HomeIcon, ImageIcon, LeafIcon, PaperclipIcon, SettingsIcon } from "lucide-react";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { cn } from "@/lib/utils";
 import type { AccountKind } from "../_lib/account-route";
@@ -12,13 +12,14 @@ import {
   accountDonationsPath,
   accountGalleryPath,
   accountObservationsPath,
+  accountOrganizationsPath,
   accountPath,
   accountProjectsPath,
   accountSettingsPath,
   accountTimelinePath,
 } from "../_lib/account-route";
 
-type TabLabelKey = "home" | "overview" | "bumicerts" | "projects" | "donationHistory" | "observations" | "timeline" | "gallery" | "settings";
+type TabLabelKey = "home" | "overview" | "bumicerts" | "projects" | "organizations" | "donationHistory" | "observations" | "timeline" | "gallery" | "settings";
 
 interface Tab {
   labelKey: TabLabelKey;
@@ -34,6 +35,7 @@ type TabPaths = {
   home: string;
   bumicerts: string;
   projects: string;
+  organizations: string;
   donations: string;
   activity: string;
   timeline: string;
@@ -47,6 +49,7 @@ function buildTabPaths(did: string, scope: AccountTabBarScope, manageBasePath = 
       home: `${manageBasePath}?tab=home`,
       bumicerts: `${manageBasePath}?tab=bumicerts`,
       projects: `${manageBasePath}/projects`,
+      organizations: `${manageBasePath}?tab=organizations`,
       donations: `${manageBasePath}?tab=donations`,
       activity: `${manageBasePath}?tab=observations`,
       timeline: `${manageBasePath}/timeline`,
@@ -59,6 +62,7 @@ function buildTabPaths(did: string, scope: AccountTabBarScope, manageBasePath = 
     home: accountPath(did),
     bumicerts: accountBumicertsPath(did),
     projects: accountProjectsPath(did),
+    organizations: accountOrganizationsPath(did),
     donations: accountDonationsPath(did),
     activity: accountObservationsPath(did),
     timeline: accountTimelinePath(did),
@@ -72,6 +76,7 @@ function buildTabs(
   accountKind: AccountTabBarKind,
   scope: AccountTabBarScope,
   includeSettings: boolean,
+  showOrganizations: boolean,
   manageBasePath?: string,
 ): Tab[] {
   const paths = buildTabPaths(did, scope, manageBasePath);
@@ -85,16 +90,20 @@ function buildTabs(
   if (accountKind === "user") {
     const certsTab: Tab = { labelKey: "bumicerts", href: paths.bumicerts, icon: BadgeIcon, exact: false };
     const projectsTab: Tab = { labelKey: "projects", href: paths.projects, icon: FolderKanbanIcon, exact: false };
+    const organizationsTab: Tab = { labelKey: "organizations", href: paths.organizations, icon: Building2Icon, exact: false };
     const observationsTab: Tab = { labelKey: "observations", href: paths.activity, icon: LeafIcon, exact: false };
     const donationsTab: Tab = { labelKey: "donationHistory", href: paths.donations, icon: HeartIcon, exact: false };
 
     // Public profile leads with a compact Overview, then Projects, Certs,
-    // Observations, Donations. The manage dashboard keeps its own order.
+    // Observations, Donations. The Organizations tab sits between Certs and
+    // Observations, but only on your own profile (we can read your own
+    // memberships, not other people's). The manage dashboard keeps its order.
     const tabs: Tab[] = scope === "account"
       ? [
           { labelKey: "overview", href: paths.home, icon: HomeIcon, exact: true },
           projectsTab,
           certsTab,
+          ...(showOrganizations ? [organizationsTab] : []),
           observationsTab,
           donationsTab,
         ]
@@ -154,6 +163,7 @@ interface OrgTabBarProps {
   accountKind?: AccountKind;
   scope?: AccountTabBarScope;
   includeSettings?: boolean;
+  showOrganizations?: boolean;
   manageBasePath?: string;
 }
 
@@ -162,12 +172,13 @@ export function AccountTabBar({
   accountKind = "organization",
   scope = "account",
   includeSettings = false,
+  showOrganizations = false,
   manageBasePath,
 }: OrgTabBarProps) {
   const t = useTranslations("common.accountTabs");
   const pathname = stripLocaleFromPathname(usePathname() ?? "/");
   const searchParams = useSearchParams();
-  const tabs = buildTabs(did, accountKind, scope, includeSettings, manageBasePath);
+  const tabs = buildTabs(did, accountKind, scope, includeSettings, showOrganizations, manageBasePath);
 
   function isActive(tab: Tab): boolean {
     if (scope === "manage") {

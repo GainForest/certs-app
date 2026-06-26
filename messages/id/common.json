@@ -309,11 +309,22 @@
     "donations": "Donasi",
     "bumicerts": "sertifikat",
     "projects": "Proyek",
+    "organizations": "Organisasi",
     "donationHistory": "Riwayat donasi",
     "observations": "Observasi",
     "gallery": "Galeri",
     "settings": "Pengaturan",
     "timeline": "Linimasa"
+  },
+  "accountOrganizations": {
+    "emptyEyebrow": "Belum ada organisasi",
+    "empty": "Kamu belum tergabung dalam organisasi mana pun.",
+    "fallbackName": "Organisasi",
+    "role": {
+      "owner": "Pemilik",
+      "admin": "Admin",
+      "member": "Anggota"
+    }
   },
   "accountProjects": {
     "emptyEyebrow": "Belum ada proyek",

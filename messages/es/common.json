@@ -309,11 +309,22 @@
     "donations": "Donaciones",
     "bumicerts": "certificados",
     "projects": "Proyectos",
+    "organizations": "Organizaciones",
     "donationHistory": "Historial de donaciones",
     "observations": "Observaciones",
     "gallery": "Galería",
     "settings": "Configuración",
     "timeline": "Cronología"
+  },
+  "accountOrganizations": {
+    "emptyEyebrow": "Sin organizaciones",
+    "empty": "Todavía no perteneces a ninguna organización.",
+    "fallbackName": "Organización",
+    "role": {
+      "owner": "Propietario",
+      "admin": "Administrador",
+      "member": "Miembro"
+    }
   },
   "accountProjects": {
     "emptyEyebrow": "Sin proyectos",
