@@ -9,6 +9,7 @@ import { RichText } from "../../_components/RichText";
 import { RecordExplorer } from "../../_components/RecordExplorer";
 import { AccountBumicertsGrid } from "./AccountBumicertsGrid";
 import { AccountProjectsGrid } from "./AccountProjectsGrid";
+import { OverviewFolders, type OverviewFolderTile } from "./OverviewFolders";
 import { AccountContentColumns, AccountSidebar } from "./AccountSidebar";
 import { AccountSettingsSections } from "./AccountSettingsSections";
 import { ShareProfileButton } from "./ShareProfileButton";
@@ -19,7 +20,7 @@ import { monogram } from "../../_lib/did-profile";
 import { formatCompact } from "../../_lib/format";
 import { attachProjectTitlesToGalleries, fetchBumicertsByDid, fetchObservationSummaryByDid, fetchProjectImageGalleriesByDid, fetchProjectsByDid } from "../../_lib/indexer";
 import type { AccountRouteData } from "../_lib/account-route";
-import { accountBumicertsPath, accountDonationsPath, accountObservationsPath, accountPath, accountProjectsPath } from "../_lib/account-route";
+import { accountBumicertsPath, accountDonationsPath, accountGalleryPath, accountObservationsPath, accountPath, accountProjectsPath } from "../_lib/account-route";
 
 type ManageAction = {
   href: string;
@@ -90,6 +91,27 @@ async function AccountDataCouncilSection({ did }: { did: string }) {
   );
 }
 
+async function AccountOverviewFolders({ account }: { account: AccountRouteData }) {
+  const [tabsT, projects, galleries] = await Promise.all([
+    getTranslations("common.accountTabs"),
+    fetchProjectsByDid(account.did, 1000).then((page) => page.records).catch(() => []),
+    fetchProjectImageGalleriesByDid(account.did).catch(() => []),
+  ]);
+
+  const tiles: OverviewFolderTile[] = [
+    { id: "projects", title: tabsT("projects"), href: accountProjectsPath(account.urlIdentifier), count: projects.length },
+    { id: "certs", title: tabsT("bumicerts"), href: accountBumicertsPath(account.urlIdentifier), count: account.summary.bumicertCount },
+    { id: "observations", title: tabsT("observations"), href: accountObservationsPath(account.urlIdentifier), count: account.summary.observationCount },
+    { id: "gallery", title: tabsT("gallery"), href: accountGalleryPath(account.urlIdentifier), count: galleries.length },
+  ];
+
+  return (
+    <section className="org-animate org-fade-in-up org-delay-1">
+      <OverviewFolders tiles={tiles} />
+    </section>
+  );
+}
+
 export async function AccountHomeTabContent({ account }: { account: AccountRouteData }) {
   const organizationAbout = account.kind === "organization" ? account.longDescription?.trim() ?? "" : "";
   const hasAbout = account.kind === "organization"
@@ -98,6 +120,7 @@ export async function AccountHomeTabContent({ account }: { account: AccountRoute
 
   return (
     <>
+      {account.kind === "organization" ? <AccountOverviewFolders account={account} /> : null}
       {hasAbout ? (
         <section className="py-1 md:py-2 org-animate org-fade-in-up org-delay-1">
           {account.kind === "organization" ? (
