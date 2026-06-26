@@ -306,11 +306,16 @@
   "accountTabs": {
     "home": "Home",
     "bumicerts": "Certs",
+    "projects": "Projects",
     "donationHistory": "Donation History",
     "observations": "Observations",
     "gallery": "Gallery",
     "settings": "Settings",
     "timeline": "Timeline"
+  },
+  "accountProjects": {
+    "emptyEyebrow": "No projects",
+    "empty": "This account has not shared any projects yet."
   },
   "projectGallery": {
     "accountTitle": "Gallery",

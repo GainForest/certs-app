@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BadgeIcon, HeartIcon, HomeIcon, ImageIcon, LeafIcon, PaperclipIcon, SettingsIcon } from "lucide-react";
+import { BadgeIcon, FolderKanbanIcon, HeartIcon, HomeIcon, ImageIcon, LeafIcon, PaperclipIcon, SettingsIcon } from "lucide-react";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { cn } from "@/lib/utils";
 import type { AccountKind } from "../_lib/account-route";
@@ -13,11 +13,12 @@ import {
   accountGalleryPath,
   accountObservationsPath,
   accountPath,
+  accountProjectsPath,
   accountSettingsPath,
   accountTimelinePath,
 } from "../_lib/account-route";
 
-type TabLabelKey = "home" | "bumicerts" | "donationHistory" | "observations" | "timeline" | "gallery" | "settings";
+type TabLabelKey = "home" | "bumicerts" | "projects" | "donationHistory" | "observations" | "timeline" | "gallery" | "settings";
 
 interface Tab {
   labelKey: TabLabelKey;
@@ -32,6 +33,7 @@ type AccountTabBarScope = "account" | "manage";
 type TabPaths = {
   home: string;
   bumicerts: string;
+  projects: string;
   donations: string;
   activity: string;
   timeline: string;
@@ -44,6 +46,7 @@ function buildTabPaths(did: string, scope: AccountTabBarScope, manageBasePath = 
     return {
       home: `${manageBasePath}?tab=home`,
       bumicerts: `${manageBasePath}?tab=bumicerts`,
+      projects: `${manageBasePath}/projects`,
       donations: `${manageBasePath}?tab=donations`,
       activity: `${manageBasePath}?tab=observations`,
       timeline: `${manageBasePath}/timeline`,
@@ -55,6 +58,7 @@ function buildTabPaths(did: string, scope: AccountTabBarScope, manageBasePath = 
   return {
     home: accountPath(did),
     bumicerts: accountBumicertsPath(did),
+    projects: accountProjectsPath(did),
     donations: accountDonationsPath(did),
     activity: accountObservationsPath(did),
     timeline: accountTimelinePath(did),
@@ -87,6 +91,18 @@ function buildTabs(
         exact: false,
       },
       {
+        labelKey: "projects",
+        href: paths.projects,
+        icon: FolderKanbanIcon,
+        exact: false,
+      },
+      {
+        labelKey: "observations",
+        href: paths.activity,
+        icon: LeafIcon,
+        exact: false,
+      },
+      {
         labelKey: "donationHistory",
         href: paths.donations,
         icon: HeartIcon,
@@ -108,6 +124,12 @@ function buildTabs(
       labelKey: "bumicerts",
       href: paths.bumicerts,
       icon: BadgeIcon,
+      exact: false,
+    },
+    {
+      labelKey: "projects",
+      href: paths.projects,
+      icon: FolderKanbanIcon,
       exact: false,
     },
     {

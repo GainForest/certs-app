@@ -306,11 +306,16 @@
   "accountTabs": {
     "home": "Beranda",
     "bumicerts": "sertifikat",
+    "projects": "Proyek",
     "donationHistory": "Riwayat donasi",
     "observations": "Observasi",
     "gallery": "Galeri",
     "settings": "Pengaturan",
     "timeline": "Linimasa"
+  },
+  "accountProjects": {
+    "emptyEyebrow": "Belum ada proyek",
+    "empty": "Akun ini belum membagikan proyek apa pun."
   },
   "projectGallery": {
     "accountTitle": "Galeri",

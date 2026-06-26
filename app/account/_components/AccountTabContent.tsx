@@ -8,6 +8,7 @@ import { ProjectGalleryViewer } from "../../_components/ProjectGalleryViewer";
 import { RichText } from "../../_components/RichText";
 import { RecordExplorer } from "../../_components/RecordExplorer";
 import { AccountBumicertsGrid } from "./AccountBumicertsGrid";
+import { AccountProjectsGrid } from "./AccountProjectsGrid";
 import { AccountContentColumns, AccountSidebar } from "./AccountSidebar";
 import { AccountSettingsSections } from "./AccountSettingsSections";
 import { DonationHistory } from "./DonationHistory";
@@ -163,16 +164,17 @@ export async function AccountDonationsTabContent({ account, did }: { account: Ac
   );
 }
 
-export function AccountObservationsTabContent({ account, did }: { account: AccountRouteData; did: string }) {
-  if (account.kind !== "organization") {
-    notFound();
-  }
-
+export function AccountObservationsTabContent({ did }: { account: AccountRouteData; did: string }) {
   return (
     <Suspense fallback={null}>
       <RecordExplorer kind="occurrence" ownerDid={did} showHero={false} />
     </Suspense>
   );
+}
+
+export async function AccountProjectsTabContent({ did }: { account: AccountRouteData; did: string }) {
+  const projects = await fetchProjectsByDid(did, 1000).then((page) => page.records).catch(() => []);
+  return <AccountProjectsGrid projects={projects} />;
 }
 
 export async function AccountGalleryTabContent({ account, did }: { account: AccountRouteData; did: string }) {
