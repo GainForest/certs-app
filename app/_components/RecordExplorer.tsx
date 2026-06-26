@@ -889,7 +889,7 @@ const OccurrenceCard = memo(function OccurrenceCard({
   const name = occurrenceDisplayName(record);
   const subtitle = occurrenceSecondaryName(record);
   const place = occurrencePlace(record);
-  const creatorLabel = record.creatorName ?? profile?.handle ?? profile?.displayName ?? null;
+  const creatorLabel = record.creatorName ?? profile?.displayName ?? profile?.handle ?? null;
   const date = record.eventDate || record.createdAt;
 
   useEffect(() => {

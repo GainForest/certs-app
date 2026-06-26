@@ -452,6 +452,7 @@ async function buildOptimisticOccurrence(input: {
   analysis: ObservationAnalysis;
   blobRef: ObservationBlobRef | null;
   isoTimestamp: string;
+  creatorName?: string | null;
 }): Promise<OccurrenceRecord> {
   const { did, uri, rkey, analysis } = input;
   const lat = Number.parseFloat(analysis.decimalLatitude);
@@ -487,7 +488,7 @@ async function buildOptimisticOccurrence(input: {
     dynamicProperties: null,
     establishmentMeans: null,
     createdAt: input.isoTimestamp,
-    creatorName: null,
+    creatorName: input.creatorName?.trim() || null,
     creatorAvatarRef: null,
     remarks: analysis.occurrenceRemarks.trim() || null,
     imageUrl,
@@ -1443,6 +1444,7 @@ function ObservationBulkAddPanel({
           analysis: data,
           blobRef: primaryBlobRef,
           isoTimestamp: new Date().toISOString(),
+          creatorName: target.displayName,
         }).catch(() => null);
       }
       return null;
