@@ -82,7 +82,7 @@ export function AccountBumicertsGrid({ bumicerts, organizationIdentifier, organi
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] items-stretch gap-5"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 items-stretch gap-5"
         >
           {bumicerts.map((b) => (
             <motion.div key={b.id} variants={cardVariants} className="h-full">
