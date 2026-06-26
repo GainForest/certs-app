@@ -802,6 +802,7 @@ export function RecordExplorer({
             <ObservationGrid
               records={renderedRecords as OccurrenceRecord[]}
               onOpen={setDrawer}
+              onFilterOwner={ownerFilterActive ? setOwnerDid : undefined}
               className={gridCls}
               leadingCard={leadingCard}
               selection={observationSelection}
