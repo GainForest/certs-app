@@ -830,8 +830,8 @@
       "loading": "Loading linked Certs"
     },
     "observation": {
-      "ownerTitle": "Your sighting",
-      "ownerDescription": "You can change the saved details or remove this sighting.",
+      "ownerTitle": "Sighting details",
+      "ownerDescription": "Change the saved details or remove this sighting if you have permission.",
       "saved": "Sighting saved.",
       "saveError": "This sighting could not be saved. Please try again.",
       "deleteError": "This sighting could not be deleted. Please try again.",
@@ -872,7 +872,12 @@
       "noMapLocation": "No map location chosen yet.",
       "useLocation": "Use location",
       "natureSoundRecording": "Nature sound recording",
-      "unidentifiedSighting": "Unidentified sighting"
+      "unidentifiedSighting": "Unidentified sighting",
+      "mediaTitle": "Media in this sighting",
+      "mediaCount": "{count, plural, one {# item} other {# items}}",
+      "primaryMedia": "Primary media",
+      "fieldSound": "Field sound",
+      "mediaThumbnail": "Observation media"
     },
     "media": {
       "image": "Photo",
@@ -1008,5 +1013,16 @@
       "impactPeriod": "Impact period",
       "created": "Created {date}"
     }
+  },
+  "observationGrid": {
+    "sectionTitle": "Observations",
+    "openDetails": "Open observation details: {name}",
+    "mediaCount": "{count, plural, one {# media item} other {# media items}}",
+    "selectObservation": "Select observation",
+    "deselectObservation": "Deselect observation",
+    "playSound": "Play sound",
+    "pauseSound": "Pause sound",
+    "natureSoundRecording": "Nature sound recording",
+    "unidentifiedSighting": "Unidentified sighting"
   }
 }

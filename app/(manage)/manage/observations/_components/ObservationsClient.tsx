@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Suspense, useEffect, useRef, useState, type ChangeEvent, type ComponentProps, type DragEvent } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ComponentProps, type DragEvent } from "react";
 import { parseAsStringEnum, useQueryState } from "nuqs";
 import {
   AlertTriangleIcon,
@@ -36,7 +36,8 @@ import QuickTooltip from "@/components/ui/quick-tooltip";
 import TelegramIcon from "@/icons/TelegramIcon";
 import { manageHref, type ManageTarget } from "@/lib/links";
 import { ManageConfirmModal } from "../../_components/ManageConfirmModal";
-import { canCreateRecord } from "../../_lib/cgs-permissions";
+import { canCreateRecord, canDeleteRecord } from "../../_lib/cgs-permissions";
+import { deleteOccurrenceCascade } from "../../_lib/mutations";
 import {
   configureObservationMutationRepo,
   createObservationOccurrence,
@@ -569,6 +570,7 @@ function occurrenceAnalysisForUpload(items: ObservationUploadItem[]): Observatio
 export function ObservationsClient({ target, initialPage }: { target: ManageTarget; initialPage: InitialPage }) {
   const t = useTranslations("upload.observations");
   const router = useRouter();
+  const modal = useModal();
   const [mode, setMode] = useQueryState(
     "mode",
     parseAsStringEnum<Mode>(["list", "add"]).withDefault("list").withOptions(QUERY_STATE_OPTIONS),
@@ -576,12 +578,83 @@ export function ObservationsClient({ target, initialPage }: { target: ManageTarg
   // Observations created in this session, kept so the list shows them on return
   // even before the indexer has caught up. Newest first; deduped by id.
   const [freshRecords, setFreshRecords] = useState<ExplorerRecord[]>([]);
+  const [selectedRecords, setSelectedRecords] = useState<Map<string, OccurrenceRecord>>(() => new Map());
+  const [visibleRecords, setVisibleRecords] = useState<OccurrenceRecord[]>([]);
+  const [deletedRecordIds, setDeletedRecordIds] = useState<Set<string>>(() => new Set());
+  const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const createPermission = canCreateRecord(target);
+  const deletePermission = canDeleteRecord(target, { ownRecord: target.kind === "personal" });
+  const deleteDisabledReason = deletePermission.allowed ? null : deletePermission.reason;
+  const selectedIds = useMemo(() => new Set(selectedRecords.keys()), [selectedRecords]);
 
   useEffect(() => {
     configureObservationMutationRepo(target.kind === "group" ? target.did : null);
     return () => configureObservationMutationRepo(null);
   }, [target]);
+
+  const handleVisibleRecordsChange = useCallback((records: OccurrenceRecord[]) => {
+    setVisibleRecords(records);
+    const visibleIds = new Set(records.map((record) => record.id));
+    setSelectedRecords((current) => {
+      const next = new Map(Array.from(current).filter(([id]) => visibleIds.has(id)));
+      return next.size === current.size ? current : next;
+    });
+  }, []);
+
+  function toggleSelectedRecord(record: OccurrenceRecord, selected: boolean) {
+    setSelectedRecords((current) => {
+      const next = new Map(current);
+      if (selected) next.set(record.id, record);
+      else next.delete(record.id);
+      return next;
+    });
+  }
+
+  function selectAllVisibleRecords() {
+    if (deleteDisabledReason) return;
+    setSelectedRecords(new Map(visibleRecords.map((record) => [record.id, record])));
+  }
+
+  function clearSelectedRecords() {
+    setSelectedRecords(new Map());
+  }
+
+  function openDeleteSelectedModal() {
+    const records = Array.from(selectedRecords.values());
+    if (records.length === 0) return;
+    if (deleteDisabledReason) return;
+    modal.pushModal(
+      {
+        id: "delete-selected-observations",
+        content: (
+          <ManageConfirmModal
+            title={t("deleteSelectedTitle")}
+            description={t("deleteSelectedDescription", { count: records.length })}
+            confirmLabel={t("deleteSelectedConfirm")}
+            cancelLabel={t("cancel")}
+            destructive
+            onConfirm={async () => {
+              setIsDeletingSelected(true);
+              try {
+                const options = target.kind === "group" ? { repo: target.did } : undefined;
+                await Promise.all(records.map((record) => deleteOccurrenceCascade(record.rkey, options)));
+                const ids = new Set(records.map((record) => record.id));
+                setDeletedRecordIds((current) => new Set([...current, ...ids]));
+                setFreshRecords((current) => current.filter((record) => !ids.has(record.id)));
+                setSelectedRecords(new Map());
+                await modal.hide();
+                modal.popModal();
+              } finally {
+                setIsDeletingSelected(false);
+              }
+            }}
+          />
+        ),
+      },
+      true,
+    );
+    void modal.show();
+  }
 
   if (mode === "add") {
     return (
@@ -651,6 +724,34 @@ export function ObservationsClient({ target, initialPage }: { target: ManageTarg
             </div>
           </div>
         </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border-soft bg-surface/70 px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            {selectedRecords.size > 0 ? t("selectedForDelete", { count: selectedRecords.size }) : t("selectToDeleteHint")}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={selectedRecords.size === visibleRecords.length && visibleRecords.length > 0 ? clearSelectedRecords : selectAllVisibleRecords}
+              disabled={visibleRecords.length === 0 || Boolean(deleteDisabledReason) || isDeletingSelected}
+              title={deleteDisabledReason ?? undefined}
+            >
+              {selectedRecords.size === visibleRecords.length && visibleRecords.length > 0 ? t("deselectAll") : t("selectAll")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openDeleteSelectedModal}
+              disabled={selectedRecords.size === 0 || Boolean(deleteDisabledReason) || isDeletingSelected}
+              title={deleteDisabledReason ?? undefined}
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              {isDeletingSelected ? <Loader2Icon className="size-4 animate-spin" /> : <Trash2Icon className="size-4" />}
+              {t("deleteSelected")}
+            </Button>
+          </div>
+        </div>
       </div>
 
       <Suspense fallback={null}>
@@ -664,6 +765,13 @@ export function ObservationsClient({ target, initialPage }: { target: ManageTarg
           leadingCard={<AddObservationTile target={target} disabledReason={createPermission.reason} />}
           emptyState={<ObservationEmptyState target={target} disabledReason={createPermission.reason} />}
           showStatsOverview={false}
+          hiddenRecordIds={deletedRecordIds}
+          observationSelection={{
+            selectedIds,
+            onToggle: toggleSelectedRecord,
+            getDisabledReason: () => deleteDisabledReason,
+          }}
+          onObservationVisibleRecordsChange={handleVisibleRecordsChange}
         />
       </Suspense>
     </div>

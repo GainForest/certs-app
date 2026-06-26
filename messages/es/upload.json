@@ -762,7 +762,13 @@
     },
     "draftRestored": "Borrador recuperado",
     "discardDraft": "Descartar borrador",
-    "unidentifiedOrganism": "Organismo no identificado"
+    "unidentifiedOrganism": "Organismo no identificado",
+    "selectToDeleteHint": "Selecciona observaciones en la cuadrícula para eliminarlas.",
+    "selectedForDelete": "{count, plural, one {# observación seleccionada} other {# observaciones seleccionadas}}",
+    "deleteSelected": "Eliminar seleccionadas",
+    "deleteSelectedTitle": "¿Eliminar las observaciones seleccionadas?",
+    "deleteSelectedDescription": "{count, plural, one {Esto elimina # observación seleccionada y sus medios vinculados. No se puede deshacer.} other {Esto elimina # observaciones seleccionadas y sus medios vinculados. No se puede deshacer.}}",
+    "deleteSelectedConfirm": "Eliminar seleccionadas"
   },
   "settings": {
     "organizationTitle": "Configuración de la organización",

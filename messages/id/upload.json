@@ -762,7 +762,13 @@
     },
     "draftRestored": "Draf dipulihkan",
     "discardDraft": "Buang draf",
-    "unidentifiedOrganism": "Organisme tidak teridentifikasi"
+    "unidentifiedOrganism": "Organisme tidak teridentifikasi",
+    "selectToDeleteHint": "Pilih observasi di kisi untuk menghapusnya.",
+    "selectedForDelete": "{count, plural, one {# observasi dipilih} other {# observasi dipilih}}",
+    "deleteSelected": "Hapus yang dipilih",
+    "deleteSelectedTitle": "Hapus observasi yang dipilih?",
+    "deleteSelectedDescription": "{count, plural, one {Ini menghapus # observasi yang dipilih beserta media tertautnya. Tindakan ini tidak dapat dibatalkan.} other {Ini menghapus # observasi yang dipilih beserta media tertautnya. Tindakan ini tidak dapat dibatalkan.}}",
+    "deleteSelectedConfirm": "Hapus yang dipilih"
   },
   "settings": {
     "organizationTitle": "Pengaturan organisasi",

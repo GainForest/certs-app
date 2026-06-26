@@ -830,8 +830,8 @@
       "loading": "Cargando certificados vinculados"
     },
     "observation": {
-      "ownerTitle": "Tu avistamiento",
-      "ownerDescription": "Puedes cambiar los detalles guardados o eliminar este avistamiento.",
+      "ownerTitle": "Detalles del avistamiento",
+      "ownerDescription": "Cambia los detalles guardados o elimina este avistamiento si tienes permiso.",
       "saved": "Avistamiento guardado.",
       "saveError": "No se pudo guardar este avistamiento. Inténtalo de nuevo.",
       "deleteError": "No se pudo eliminar este avistamiento. Inténtalo de nuevo.",
@@ -872,7 +872,12 @@
       "noMapLocation": "Aún no se eligió una ubicación en el mapa.",
       "useLocation": "Usar ubicación",
       "natureSoundRecording": "Grabación de sonido de la naturaleza",
-      "unidentifiedSighting": "Avistamiento sin identificar"
+      "unidentifiedSighting": "Avistamiento sin identificar",
+      "mediaTitle": "Medios en este avistamiento",
+      "mediaCount": "{count, plural, one {# elemento} other {# elementos}}",
+      "primaryMedia": "Medio principal",
+      "fieldSound": "Sonido de campo",
+      "mediaThumbnail": "Medio de la observación"
     },
     "media": {
       "image": "Foto",
@@ -1008,5 +1013,16 @@
       "impactPeriod": "Periodo de impacto",
       "created": "Creado {date}"
     }
+  },
+  "observationGrid": {
+    "sectionTitle": "Observaciones",
+    "openDetails": "Abrir detalles de la observación: {name}",
+    "mediaCount": "{count, plural, one {# elemento multimedia} other {# elementos multimedia}}",
+    "selectObservation": "Seleccionar observación",
+    "deselectObservation": "Deseleccionar observación",
+    "playSound": "Reproducir sonido",
+    "pauseSound": "Pausar sonido",
+    "natureSoundRecording": "Grabación de sonido de la naturaleza",
+    "unidentifiedSighting": "Avistamiento sin identificar"
   }
 }

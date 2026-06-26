@@ -37,6 +37,7 @@ import {
   type SiteSourceFilter,
 } from "../_lib/indexer";
 import { RecordDrawer } from "./RecordDrawer";
+import { ObservationGrid } from "./ObservationGrid";
 import { RecordMap } from "./RecordMap";
 import { StatsTileGrid } from "./StatsTile";
 import { isPdsBlobUrl, resolveBlobUrl } from "../_lib/pds";
@@ -206,6 +207,9 @@ export function RecordExplorer({
   leadingCard,
   emptyState,
   showStatsOverview = true,
+  hiddenRecordIds,
+  observationSelection,
+  onObservationVisibleRecordsChange,
 }: {
   kind: RecordKind;
   initialPage?: InitialExplorerPage;
@@ -218,6 +222,13 @@ export function RecordExplorer({
   leadingCard?: ReactNode;
   emptyState?: ReactNode;
   showStatsOverview?: boolean;
+  hiddenRecordIds?: ReadonlySet<string>;
+  observationSelection?: {
+    selectedIds: ReadonlySet<string>;
+    onToggle: (record: OccurrenceRecord, selected: boolean) => void;
+    getDisabledReason?: (record: OccurrenceRecord) => string | null;
+  };
+  onObservationVisibleRecordsChange?: (records: OccurrenceRecord[]) => void;
 }) {
   const meta = KIND_META[kind];
   const exploreT = useTranslations("marketplace.explore");
@@ -541,17 +552,25 @@ export function RecordExplorer({
   }, [badgeFilters, canShowTotalCount, deferredQuery, occMedia, ownerDid]);
 
   const filtered = useMemo(() => {
-    const searched = filterRecords(records, deferredQuery);
+    const visibleRecords = hiddenRecordIds?.size
+      ? records.filter((record) => !hiddenRecordIds.has(record.id))
+      : records;
+    const searched = filterRecords(visibleRecords, deferredQuery);
     const categorized = kind === "occurrence"
       ? filterOccurrenceCategory(searched as OccurrenceRecord[], occCategory)
       : searched;
     return sortRecords(categorized, sort);
-  }, [deferredQuery, kind, occCategory, records, sort]);
+  }, [deferredQuery, hiddenRecordIds, kind, occCategory, records, sort]);
   const renderedRecords = useMemo(
     () => (view === "map" ? filtered : filtered.slice(0, cardLimit)),
     [cardLimit, filtered, view],
   );
   const hasMoreCardsToShow = view !== "map" && renderedRecords.length < filtered.length;
+
+  useEffect(() => {
+    if (kind !== "occurrence" || !onObservationVisibleRecordsChange) return;
+    onObservationVisibleRecordsChange(renderedRecords as OccurrenceRecord[]);
+  }, [kind, onObservationVisibleRecordsChange, renderedRecords]);
 
   useEffect(() => {
     setCardLimit(INITIAL_CARD_LIMIT);
@@ -737,6 +756,14 @@ export function RecordExplorer({
             )
           ) : view === "list" ? (
             <RecordList records={renderedRecords} onOpen={setDrawer} />
+          ) : kind === "occurrence" ? (
+            <ObservationGrid
+              records={renderedRecords as OccurrenceRecord[]}
+              onOpen={setDrawer}
+              className={gridCls}
+              leadingCard={leadingCard}
+              selection={observationSelection}
+            />
           ) : (
             <ul role="list" className={gridCls}>
               {leadingCard ? (

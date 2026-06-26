@@ -4226,6 +4226,14 @@ export type TreeMultimediaRecord = {
   };
 };
 
+export type ObservationMediaItem = TreeMultimediaRecord;
+
+const MULTIMEDIA_NODE_FIELDS = `
+  did uri rkey cid createdAt occurrenceRef siteRef subjectPart subjectPartUri subjectOrientation
+  file { ref mimeType size }
+  format accessUri variantLiteral caption creator createDate
+`;
+
 const TREE_MULTIMEDIA_BY_DID_QUERY = `
   query TreeMultimediaByDid($did: String!, $first: Int!, $after: String) {
     appGainforestAcMultimedia(
@@ -4236,13 +4244,22 @@ const TREE_MULTIMEDIA_BY_DID_QUERY = `
       sortBy: createdAt
     ) {
       pageInfo { hasNextPage endCursor }
-      edges {
-        node {
-          did uri rkey cid createdAt occurrenceRef siteRef subjectPart subjectPartUri subjectOrientation
-          file { ref mimeType size }
-          format accessUri variantLiteral caption creator createDate
-        }
-      }
+      edges { node { ${MULTIMEDIA_NODE_FIELDS} } }
+    }
+  }
+`;
+
+const OCCURRENCE_MULTIMEDIA_QUERY = `
+  query ObservationMedia($did: String!, $occurrenceRef: String!, $first: Int!, $after: String) {
+    appGainforestAcMultimedia(
+      where: { did: { eq: $did }, occurrenceRef: { eq: $occurrenceRef } }
+      first: $first
+      after: $after
+      sortDirection: DESC
+      sortBy: createdAt
+    ) {
+      pageInfo { hasNextPage endCursor }
+      edges { node { ${MULTIMEDIA_NODE_FIELDS} } }
     }
   }
 `;
@@ -4339,6 +4356,60 @@ export async function fetchMultimediaByDid(
   }
 
   return all;
+}
+
+export async function fetchObservationMedia(
+  did: string,
+  occurrenceRef: string,
+  signal?: AbortSignal,
+): Promise<ObservationMediaItem[]> {
+  const all: ObservationMediaItem[] = [];
+  let cursor: string | null = null;
+
+  try {
+    for (let page = 0; page < 10; page += 1) {
+      type MultimediaPage = { appGainforestAcMultimedia?: Connection<RawTreeMultimediaNode> };
+      const data: MultimediaPage | null = await indexerQuery<MultimediaPage>(
+        OCCURRENCE_MULTIMEDIA_QUERY,
+        { did, occurrenceRef, first: 50, after: cursor },
+        signal,
+      );
+      const conn: Connection<RawTreeMultimediaNode> | undefined = data?.appGainforestAcMultimedia;
+      const nodes = (conn?.edges ?? [])
+        .map((edge) => edge?.node)
+        .filter((node): node is RawTreeMultimediaNode => Boolean(node?.did && node?.uri && node?.rkey));
+      all.push(...(await Promise.all(nodes.map((node) => mapTreeMultimedia(node, signal)))));
+      if (!conn?.pageInfo?.hasNextPage || !conn.pageInfo.endCursor) break;
+      cursor = conn.pageInfo.endCursor;
+    }
+  } catch (error) {
+    if (isUnsupportedMultimediaError(error)) return [];
+    throw error;
+  }
+
+  return all;
+}
+
+export async function fetchObservationMediaCounts(
+  occurrenceRefs: string[],
+  signal?: AbortSignal,
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const unique = Array.from(new Set(occurrenceRefs.filter(Boolean)));
+  try {
+    for (let start = 0; start < unique.length; start += 40) {
+      const batch = unique.slice(start, start + 40);
+      const query = `query ObservationMediaCounts {\n${batch.map((uri, index) =>
+        `c${index}: appGainforestAcMultimedia(first: 0, where: { occurrenceRef: { eq: ${JSON.stringify(uri)} } }) { totalCount }`,
+      ).join("\n")}\n}`;
+      const data = await indexerQuery<Record<string, { totalCount?: number | null } | null>>(query, {}, signal);
+      batch.forEach((uri, index) => counts.set(uri, data?.[`c${index}`]?.totalCount ?? 0));
+    }
+  } catch (error) {
+    if (isUnsupportedMultimediaError(error)) return counts;
+    throw error;
+  }
+  return counts;
 }
 
 // ── 9. Bumicert evidence timeline attachments ─────────────────────────────

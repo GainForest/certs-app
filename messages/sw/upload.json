@@ -762,7 +762,13 @@
     },
     "draftRestored": "Rasimu imerejeshwa",
     "discardDraft": "Tupa rasimu",
-    "unidentifiedOrganism": "Kiumbe kisichotambuliwa"
+    "unidentifiedOrganism": "Kiumbe kisichotambuliwa",
+    "selectToDeleteHint": "Chagua uchunguzi kwenye gridi ili ufute.",
+    "selectedForDelete": "{count, plural, one {uchunguzi # umechaguliwa} other {uchunguzi # umechaguliwa}}",
+    "deleteSelected": "Futa vilivyochaguliwa",
+    "deleteSelectedTitle": "Futa uchunguzi uliochaguliwa?",
+    "deleteSelectedDescription": "{count, plural, one {Hii itaondoa uchunguzi # uliochaguliwa na media iliyounganishwa. Haiwezi kutenduliwa.} other {Hii itaondoa uchunguzi # uliochaguliwa na media zilizounganishwa. Haiwezi kutenduliwa.}}",
+    "deleteSelectedConfirm": "Futa vilivyochaguliwa"
   },
   "settings": {
     "organizationTitle": "Mipangilio ya shirika",
