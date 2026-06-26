@@ -84,6 +84,12 @@
       "accountLoadError": "Tidak dapat memuat akun Anda saat ini.",
       "checkingAccount": "Memeriksa akun Anda..."
     },
+    "headerActions": {
+      "myProjects": "Proyek Saya",
+      "myCerts": "Sertifikat Saya",
+      "myObservations": "Observasi Saya",
+      "myOrganizations": "Organisasi Saya"
+    },
     "creationCard": {
       "createBumicert": "Buat sertifikat",
       "createProject": "Buat proyek"

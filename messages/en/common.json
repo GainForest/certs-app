@@ -84,6 +84,12 @@
       "accountLoadError": "Couldn't load your account right now.",
       "checkingAccount": "Checking your account..."
     },
+    "headerActions": {
+      "myProjects": "My Projects",
+      "myCerts": "My Certs",
+      "myObservations": "My Observations",
+      "myOrganizations": "My Organizations"
+    },
     "creationCard": {
       "createBumicert": "Create a Cert",
       "createProject": "Create a Project"

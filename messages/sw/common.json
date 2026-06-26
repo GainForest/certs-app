@@ -84,6 +84,12 @@
       "accountLoadError": "Hatukuweza kupakia akaunti yako kwa sasa.",
       "checkingAccount": "Tunakagua akaunti yako..."
     },
+    "headerActions": {
+      "myProjects": "Miradi yangu",
+      "myCerts": "Vyeti vyangu",
+      "myObservations": "Uchunguzi wangu",
+      "myOrganizations": "Mashirika yangu"
+    },
     "creationCard": {
       "createBumicert": "Unda cheti",
       "createProject": "Unda mradi"

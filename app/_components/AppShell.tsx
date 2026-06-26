@@ -1166,24 +1166,51 @@ function ProgressiveBlur({
   );
 }
 
-function getRouteHeaderActions(pathname: string, authSession: AuthSession) {
-  if (pathname === "/certs") {
-    return <CreateBumicertHeaderButton authSession={authSession} />;
-  }
+// The header action on each explore list page is a "My <records>" button
+// that scopes the page to the signed-in viewer's own records. Certs /
+// projects / observations reuse the shared ?by=<did> owner filter; the
+// organizations explore page has no owner filter, so "My Organizations"
+// routes to the manage list of the viewer's orgs instead.
+type MyRecordsRoute = {
+  href: string;
+  labelKey: "myProjects" | "myCerts" | "myObservations" | "myOrganizations";
+  Icon: React.ComponentType<{ className?: string }>;
+};
 
-  return null;
+function myRecordsRouteForPath(pathname: string, did: string): MyRecordsRoute | null {
+  const scoped = (base: string) => `${base}?by=${encodeURIComponent(did)}`;
+  switch (pathname) {
+    case "/projects":
+      return { href: scoped("/projects"), labelKey: "myProjects", Icon: FolderKanbanIcon };
+    case "/certs":
+      return { href: scoped("/certs"), labelKey: "myCerts", Icon: BumicertIcon };
+    case "/observations":
+      return { href: scoped("/observations"), labelKey: "myObservations", Icon: BinocularsIcon };
+    case "/organizations":
+      // No ?by= filter on the organizations explore page; send the viewer to
+      // their own org management list instead.
+      return { href: "/manage/organizations", labelKey: "myOrganizations", Icon: Building2Icon };
+    default:
+      return null;
+  }
 }
 
-function CreateBumicertHeaderButton({ authSession }: { authSession: AuthSession }) {
-  const t = useTranslations("common.sidebar.creationCard");
+function getRouteHeaderActions(pathname: string, authSession: AuthSession) {
+  // "My X" only has meaning for a signed-in viewer; hidden otherwise.
+  if (!authSession.isLoggedIn) return null;
+  const route = myRecordsRouteForPath(pathname, authSession.did);
+  if (!route) return null;
+  return <MyRecordsHeaderButton route={route} />;
+}
+
+function MyRecordsHeaderButton({ route }: { route: MyRecordsRoute }) {
+  const t = useTranslations("common.sidebar.headerActions");
+  const { Icon } = route;
   return (
-    <CreateProjectLink
-      sessionDid={authSession.isLoggedIn ? authSession.did : null}
-      className={cn(buttonVariants({ variant: authSession.isLoggedIn ? "default" : "outline", size: "sm" }))}
-    >
-      <PlusIcon />
-      <span className="hidden sm:inline">{t("createProject")}</span>
-    </CreateProjectLink>
+    <Link href={route.href} className={cn(buttonVariants({ variant: "default", size: "sm" }))}>
+      <Icon />
+      <span className="hidden sm:inline">{t(route.labelKey)}</span>
+    </Link>
   );
 }
 

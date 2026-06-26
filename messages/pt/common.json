@@ -84,6 +84,12 @@
       "accountLoadError": "Não foi possível carregar sua conta agora.",
       "checkingAccount": "Verificando sua conta..."
     },
+    "headerActions": {
+      "myProjects": "Meus projetos",
+      "myCerts": "Meus certificados",
+      "myObservations": "Minhas observações",
+      "myOrganizations": "Minhas organizações"
+    },
     "creationCard": {
       "createBumicert": "Criar um certificado",
       "createProject": "Criar um projeto"
