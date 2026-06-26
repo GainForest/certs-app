@@ -3,12 +3,27 @@
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Map as LeafletMap, MarkerClusterGroup, MarkerCluster, TileLayer } from "leaflet";
+import type {
+  DivIcon,
+  Map as LeafletMap,
+  Marker,
+  MarkerClusterGroup,
+  MarkerCluster,
+  TileLayer,
+} from "leaflet";
+import { useTranslations } from "next-intl";
 import { mapTileUrl, resolvePointsFor, type MapPoint } from "../_lib/coords";
 import type { ExplorerRecord, RecordKind } from "../_lib/indexer";
-import { formatNumber, formatCompact } from "../_lib/format";
+import { formatNumber, formatCompact, formatDate } from "../_lib/format";
 import { accountHref, preferredDidIdentifier } from "../_lib/urls";
 import { getCachedProfile } from "../_lib/did-profile";
+import {
+  hydrateRecordTip,
+  recordTimestamp,
+  recordTipHtml,
+  type MapTipLabels,
+} from "../_lib/map-tooltip";
+import { MapTimeline, type DragMode } from "./MapTimeline";
 
 // Map view for the record streams. Vanilla Leaflet (dynamically imported so it
 // never touches `window` during SSR) + leaflet.markercluster on CARTO Positron
@@ -17,6 +32,39 @@ import { getCachedProfile } from "../_lib/did-profile";
 // overlapping dots; click a cluster to zoom in, and fully-coincident points
 // spiderfy at max zoom. Clicking a single pin opens the loaded record's drawer,
 // or links out to the org when the pin is not part of the loaded page.
+//
+// When the loaded records carry timestamps, a date-range timeline floats over
+// the map: drag the two handles (or the band between them) to pick a window,
+// then press play to watch the records reveal in the order they happened. The
+// markers stay clustered — the cluster bubbles just recompute as the window /
+// play head changes. Hovering a marker shows a rich preview card (photo, name,
+// date, coordinates) instead of a plain label.
+
+/** A point that carries a record + the moment it represents (for the timeline). */
+type TimedPoint = { record: ExplorerRecord; point: MapPoint; t: number };
+/** A point shown regardless of the timeline window (no usable timestamp). */
+type StaticPoint = { record: ExplorerRecord | null; point: MapPoint };
+
+/** How long a full-range play-through takes, in ms. Sub-windows scale down. */
+const PLAY_MS = 14_000;
+/** Shortest a play-through can take, so tiny windows don't blink past. */
+const MIN_PLAY_MS = 2_800;
+/** Don't re-fit the map more often than this while the timeline plays. */
+const FIT_THROTTLE_MS = 850;
+/** How many bars the density histogram behind the track is split into. */
+const HISTO_BUCKETS = 64;
+/** Minimum gap between the two handles, as a fraction of the axis. */
+const MIN_GAP = 0.015;
+/** Below this many datable records the timeline is hidden (nothing to scrub). */
+const MIN_TIMELINE_POINTS = 2;
+
+const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, n));
+const perfNow = (): number => (typeof performance !== "undefined" ? performance.now() : Date.now());
+
+/** Label for the date at fraction `frac` (0..1) across the [min,max] axis. */
+function fracToLabel(min: number, max: number, frac: number): string {
+  return formatDate(new Date(min + (max - min) * frac).toISOString());
+}
 
 function clusterTier(n: number): { tier: string; size: number } {
   if (n < 10) return { tier: "sm", size: 36 };
@@ -34,10 +82,12 @@ export function RecordMap({
   kind: RecordKind;
   onOpen: (r: ExplorerRecord) => void;
 }) {
+  const t = useTranslations("marketplace.map");
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<MarkerClusterGroup | null>(null);
   const tileRef = useRef<TileLayer | null>(null);
+  const pinIconRef = useRef<DivIcon | null>(null);
   const LRef = useRef<typeof import("leaflet") | null>(null);
   const [ready, setReady] = useState(false);
   const [isDark, setIsDark] = useState(false);
@@ -48,6 +98,39 @@ export function RecordMap({
   // as user interaction. Both reset when a new data set loads.
   const userMovedRef = useRef(false);
   const fittingRef = useRef(false);
+
+  // ── Timeline state (React) drives the scrubber render ──────────────────────
+  const [playing, setPlaying] = useState(false);
+  const [winStart, setWinStart] = useState(0);
+  const [winEnd, setWinEnd] = useState(1);
+  const [histo, setHisto] = useState<number[]>([]);
+  const [bounds, setBounds] = useState<{ min: number; max: number } | null>(null);
+
+  // ── Timeline refs (drive the rAF loop without re-rendering) ────────────────
+  const timedRef = useRef<TimedPoint[]>([]);
+  const staticPointsRef = useRef<MapPoint[]>([]);
+  const timedMarkersRef = useRef<Map<number, Marker>>(new Map());
+  const shownFromRef = useRef(0);
+  const shownToRef = useRef(0);
+  const rangeRef = useRef<{ min: number; max: number }>({ min: 0, max: 1 });
+  const winRef = useRef<{ start: number; end: number }>({ start: 0, end: 1 });
+  const headRef = useRef(1);
+  const rafRef = useRef<number | null>(null);
+  const lastTsRef = useRef<number | null>(null);
+  const lastFitRef = useRef(0);
+
+  // Live DOM the rAF loop / drag updates by ref (no React churn).
+  const trackRef = useRef<HTMLDivElement>(null);
+  const playheadElRef = useRef<HTMLDivElement>(null);
+  const headDateRef = useRef<HTMLSpanElement>(null);
+  const headCountRef = useRef<HTMLSpanElement>(null);
+
+  // Latest translated tooltip labels + open handler, read inside imperative
+  // marker closures so we never rebuild markers just because they changed.
+  const labelsRef = useRef<MapTipLabels>({ unidentified: t("unidentified") });
+  labelsRef.current = { unidentified: t("unidentified") };
+  const onOpenRef = useRef(onOpen);
+  onOpenRef.current = onOpen;
 
   const recordById = useMemo(() => new Map(records.map((r) => [r.id, r])), [records]);
 
@@ -60,14 +143,21 @@ export function RecordMap({
       await import("leaflet.markercluster");
       if (cancelled || !elRef.current || mapRef.current) return;
       LRef.current = L;
+      pinIconRef.current = L.divIcon({
+        className: "gf-pin",
+        html: "",
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
       const dark = document.documentElement.classList.contains("dark");
       const map = L.map(elRef.current, {
         worldCopyJump: true,
         minZoom: 1,
         zoomControl: false,
       }).setView([12, 5], 2);
-      // Zoom control bottom-right, clear of the top-right count chip.
-      L.control.zoom({ position: "bottomright" }).addTo(map);
+      // Zoom control top-left: clear of the top-right count chip and the
+      // timeline scrubber that floats along the bottom edge.
+      L.control.zoom({ position: "topleft" }).addTo(map);
       tileRef.current = L.tileLayer(mapTileUrl(dark), {
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
@@ -103,6 +193,7 @@ export function RecordMap({
     })();
     return () => {
       cancelled = true;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       mapRef.current?.remove();
       mapRef.current = null;
       layerRef.current = null;
@@ -141,67 +232,363 @@ export function RecordMap({
     return () => controller.abort();
   }, [records, kind]);
 
-  // Draw markers (clustered) + auto-fit when points (or the map) change.
-  useEffect(() => {
+  // ── Imperative marker helpers (operate on refs, no React state) ────────────
+
+  function makeMarker(record: ExplorerRecord | null, point: MapPoint): Marker | null {
+    const L = LRef.current;
+    const icon = pinIconRef.current;
+    if (!L || !icon) return null;
+    const marker = L.marker([point.lat, point.lon], { icon });
+    if (record) {
+      const tip = { lat: point.lat, lon: point.lon };
+      marker.bindTooltip(recordTipHtml(record, tip, labelsRef.current), {
+        direction: "top",
+        offset: [0, -10],
+        opacity: 1,
+        className: "gf-occ-tip",
+      });
+      marker.on("tooltipopen", () => void hydrateRecordTip(marker, record, tip, labelsRef.current));
+    } else if (point.label) {
+      marker.bindTooltip(point.label, { direction: "top", offset: [0, -8] });
+    }
+    marker.on("click", () => {
+      if (record) {
+        onOpenRef.current(record);
+      } else if (point.did) {
+        window.open(
+          accountHref(preferredDidIdentifier(point.did, getCachedProfile(point.did)?.handle)),
+          "_blank",
+          "noopener",
+        );
+      }
+    });
+    return marker;
+  }
+
+  /** Histogram of datable points per time bucket (track backdrop). */
+  function buildHisto(pts: TimedPoint[], min: number, max: number): number[] {
+    const buckets = new Array<number>(HISTO_BUCKETS).fill(0);
+    const span = max - min || 1;
+    for (const p of pts) {
+      const idx = clamp(Math.floor(((p.t - min) / span) * HISTO_BUCKETS), 0, HISTO_BUCKETS - 1);
+      buckets[idx] += 1;
+    }
+    return buckets;
+  }
+
+  /** Count of timed points at or before `t` (binary search; sorted asc). */
+  function countAtTime(time: number): number {
+    const pts = timedRef.current;
+    let lo = 0;
+    let hi = pts.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (pts[mid]!.t <= time) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  }
+
+  /** First index whose point time is >= `t` (sorted asc). */
+  function lowerBound(time: number): number {
+    const pts = timedRef.current;
+    let lo = 0;
+    let hi = pts.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (pts[mid]!.t < time) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  }
+
+  /** Show exactly the timed-index window [from, to), diffing against what's drawn
+   *  so the cluster only adds/removes the markers that actually changed. */
+  function setTimedRange(from: number, to: number) {
+    const cluster = layerRef.current;
+    const timed = timedRef.current;
+    if (!cluster) return;
+    const lo = clamp(from, 0, timed.length);
+    const hi = clamp(to, lo, timed.length);
+    const prevFrom = shownFromRef.current;
+    const prevTo = shownToRef.current;
+    if (lo === prevFrom && hi === prevTo) return;
+    const markers = timedMarkersRef.current;
+    const toRemove: Marker[] = [];
+    const toAdd: Marker[] = [];
+    for (let i = prevFrom; i < prevTo; i++) {
+      if (i < lo || i >= hi) {
+        const m = markers.get(i);
+        if (m) {
+          toRemove.push(m);
+          markers.delete(i);
+        }
+      }
+    }
+    for (let i = lo; i < hi; i++) {
+      if (i < prevFrom || i >= prevTo) {
+        const tp = timed[i]!;
+        const m = makeMarker(tp.record, tp.point);
+        if (m) {
+          markers.set(i, m);
+          toAdd.push(m);
+        }
+      }
+    }
+    if (toRemove.length) cluster.removeLayers(toRemove);
+    if (toAdd.length) cluster.addLayers(toAdd);
+    shownFromRef.current = lo;
+    shownToRef.current = hi;
+  }
+
+  /** Frame a set of points, collapsing a near-coincident cluster to a fixed
+   *  readable zoom instead of slamming Leaflet to street level. */
+  function fitTo(pts: MapPoint[], animate: boolean) {
     const L = LRef.current;
     const map = mapRef.current;
-    const layer = layerRef.current;
-    if (!L || !map || !layer || !ready) return;
-    // Re-measure first so fitBounds uses the real container size (it may have
-    // laid out after init, or the viewport may have changed).
-    map.invalidateSize();
-    layer.clearLayers();
-
-    const pinIcon = L.divIcon({
-      className: "gf-pin",
-      html: "",
-      iconSize: [14, 14],
-      iconAnchor: [7, 7],
-    });
-    const markers = points.map((p) => {
-      const marker = L.marker([p.lat, p.lon], { icon: pinIcon });
-      if (p.label) marker.bindTooltip(p.label, { direction: "top", offset: [0, -8] });
-      marker.on("click", () => {
-        const rec = p.recordId ? recordById.get(p.recordId) : undefined;
-        if (rec) onOpen(rec);
-        else if (p.did) window.open(accountHref(preferredDidIdentifier(p.did, getCachedProfile(p.did)?.handle)), "_blank", "noopener");
-      });
-      return marker;
-    });
-    // Bulk add so markercluster builds the tree once (chunked under the hood).
-    layer.addLayers(markers);
-
-    if (points.length > 0 && !userMovedRef.current) {
-      const lats = points.map((p) => p.lat);
-      const lons = points.map((p) => p.lon);
-      const latSpan = Math.max(...lats) - Math.min(...lats);
-      const lonSpan = Math.max(...lons) - Math.min(...lons);
-      fittingRef.current = true;
-      // Frame every point. When the records all sit at one survey site the
-      // bounding box collapses to ~zero area, which would slam Leaflet to the
-      // deepest street zoom — so fall back to a fixed, readable zoom centered
-      // on the cluster. Otherwise fit the whole box with a pixel margin so
-      // edge markers aren't clipped, capping how far in a tight (but non-zero)
-      // cluster can go. Globally spread pins stay zoomed out to frame them all.
-      if (latSpan < 0.01 && lonSpan < 0.01) {
-        const lat = (Math.min(...lats) + Math.max(...lats)) / 2;
-        const lon = (Math.min(...lons) + Math.max(...lons)) / 2;
-        map.setView([lat, lon], 14, { animate: false });
-      } else {
-        const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lon] as [number, number]));
-        map.fitBounds(bounds, { padding: [56, 56], maxZoom: 14, animate: false });
-      }
-      // Let the programmatic move settle before re-enabling user detection.
-      setTimeout(() => {
-        fittingRef.current = false;
-      }, 0);
+    if (!L || !map || !pts.length) return;
+    const lats = pts.map((p) => p.lat);
+    const lons = pts.map((p) => p.lon);
+    const latSpan = Math.max(...lats) - Math.min(...lats);
+    const lonSpan = Math.max(...lons) - Math.min(...lons);
+    fittingRef.current = true;
+    if (latSpan < 0.01 && lonSpan < 0.01) {
+      const lat = (Math.min(...lats) + Math.max(...lats)) / 2;
+      const lon = (Math.min(...lons) + Math.max(...lons)) / 2;
+      map.setView([lat, lon], 14, { animate });
+    } else {
+      const b = L.latLngBounds(pts.map((p) => [p.lat, p.lon] as [number, number]));
+      map.fitBounds(b, { padding: [48, 48], maxZoom: 14, animate, duration: 0.7 });
     }
-  }, [points, recordById, onOpen, ready]);
+    setTimeout(() => {
+      fittingRef.current = false;
+    }, 0);
+  }
+
+  /** The points currently drawn (timed window + always-on static points). */
+  function shownPoints(): MapPoint[] {
+    const timed = timedRef.current;
+    const out: MapPoint[] = [];
+    for (let i = shownFromRef.current; i < shownToRef.current; i++) out.push(timed[i]!.point);
+    for (const p of staticPointsRef.current) out.push(p);
+    return out;
+  }
+
+  /** Push the play-head position into the live DOM without a React render. */
+  function syncHeadUi(h: number) {
+    const { min, max } = rangeRef.current;
+    const headT = min + (max - min) * h;
+    if (playheadElRef.current) playheadElRef.current.style.left = `${h * 100}%`;
+    if (headDateRef.current) headDateRef.current.textContent = formatDate(new Date(headT).toISOString());
+    if (headCountRef.current) {
+      const shown = shownToRef.current - shownFromRef.current + staticPointsRef.current.length;
+      headCountRef.current.textContent = t("shown", { count: formatNumber(shown) });
+    }
+  }
+
+  /** Apply the play-head fraction `h`: reveal [windowStart, h], re-fit (throttled
+   *  or forced) and update the live head line + readout. */
+  function apply(h: number, forceFit = false) {
+    const { min, max } = rangeRef.current;
+    const { start, end } = winRef.current;
+    const head = clamp(h, start, end);
+    // A window starting at 0 also sweeps in any sparse pre-axis outliers.
+    const startT = start <= 0.0001 ? -Infinity : min + (max - min) * start;
+    const headT = min + (max - min) * head;
+    const fromIdx = lowerBound(startT);
+    const toIdx = Math.max(fromIdx, countAtTime(headT));
+    setTimedRange(fromIdx, toIdx);
+    const now = perfNow();
+    if (forceFit || now - lastFitRef.current > FIT_THROTTLE_MS) {
+      fitTo(shownPoints(), !forceFit);
+      lastFitRef.current = now;
+    }
+    syncHeadUi(head);
+  }
+
+  function setWindow(start: number, end: number) {
+    winRef.current = { start, end };
+    setWinStart(start);
+    setWinEnd(end);
+  }
+
+  function stopLoop() {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+    lastTsRef.current = null;
+  }
+
+  // Rebuild markers + the timeline whenever the resolved points change.
+  useEffect(() => {
+    const cluster = layerRef.current;
+    const map = mapRef.current;
+    if (!cluster || !map || !ready) return;
+    map.invalidateSize();
+    stopLoop();
+    cluster.clearLayers();
+    timedMarkersRef.current = new Map();
+    shownFromRef.current = 0;
+    shownToRef.current = 0;
+
+    // Partition into datable (timeline) points + always-on static points.
+    const timed: TimedPoint[] = [];
+    const staticPts: StaticPoint[] = [];
+    for (const point of points) {
+      const record = point.recordId ? recordById.get(point.recordId) ?? null : null;
+      const ts = record ? recordTimestamp(record) : null;
+      if (record && ts != null) timed.push({ record, point, t: ts });
+      else staticPts.push({ record, point });
+    }
+    timed.sort((a, b) => a.t - b.t);
+
+    const min = timed.length ? timed[0]!.t : 0;
+    const max = timed.length ? timed[timed.length - 1]!.t : 0;
+    const timelineEnabled = timed.length >= MIN_TIMELINE_POINTS && max > min;
+
+    if (timelineEnabled) {
+      timedRef.current = timed;
+      rangeRef.current = { min, max };
+      setBounds({ min, max });
+      setHisto(buildHisto(timed, min, max));
+    } else {
+      // Nothing to scrub: every point is static (always visible).
+      for (const tp of timed) staticPts.push({ record: tp.record, point: tp.point });
+      timedRef.current = [];
+      rangeRef.current = { min: 0, max: 1 };
+      setBounds(null);
+      setHisto([]);
+    }
+    staticPointsRef.current = staticPts.map((s) => s.point);
+
+    // Static markers go in once and stay for the life of this data set.
+    const staticMarkers: Marker[] = [];
+    for (const s of staticPts) {
+      const m = makeMarker(s.record, s.point);
+      if (m) staticMarkers.push(m);
+    }
+    if (staticMarkers.length) cluster.addLayers(staticMarkers);
+
+    // Reset the window to "everything", play-head parked at the end.
+    winRef.current = { start: 0, end: 1 };
+    headRef.current = 1;
+    setWinStart(0);
+    setWinEnd(1);
+    setPlaying(false);
+    if (timelineEnabled) setTimedRange(0, timed.length);
+
+    // Initial framing of the whole data set (unless the visitor already panned).
+    if (points.length > 0 && !userMovedRef.current) fitTo(points, false);
+    if (timelineEnabled) syncHeadUi(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points, recordById, ready]);
+
+  // ── Play / pause ───────────────────────────────────────────────────────────
+  function play() {
+    if (!timedRef.current.length) return;
+    const { start, end } = winRef.current;
+    // Restart from the window's start if we're parked at (or near) its end.
+    if (headRef.current >= end - 0.0005) {
+      headRef.current = start;
+      apply(start, true);
+    }
+    setPlaying(true);
+    lastTsRef.current = null;
+    const width = Math.max(end - start, 0.0001);
+    const duration = Math.max(MIN_PLAY_MS, PLAY_MS * width);
+    const step = (ts: number) => {
+      if (lastTsRef.current == null) lastTsRef.current = ts;
+      const dt = ts - lastTsRef.current;
+      lastTsRef.current = ts;
+      headRef.current = Math.min(end, headRef.current + (width * dt) / duration);
+      apply(headRef.current);
+      if (headRef.current >= end) {
+        stopLoop();
+        setPlaying(false);
+        return;
+      }
+      rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+  }
+
+  function pause() {
+    stopLoop();
+    setPlaying(false);
+  }
+
+  function togglePlay() {
+    if (playing) pause();
+    else play();
+  }
+
+  // ── Dragging the handles / band ─────────────────────────────────────────────
+  function beginDrag(mode: DragMode) {
+    return (e: React.PointerEvent) => {
+      if (!bounds) return;
+      e.preventDefault();
+      const track = trackRef.current;
+      if (!track) return;
+      pause();
+      const rect = track.getBoundingClientRect();
+      const startX = e.clientX;
+      const s0 = winRef.current.start;
+      const e0 = winRef.current.end;
+      const w0 = e0 - s0;
+
+      const onMove = (ev: PointerEvent) => {
+        const frac = clamp((ev.clientX - rect.left) / rect.width, 0, 1);
+        let ns = s0;
+        let ne = e0;
+        if (mode === "start") ns = clamp(frac, 0, e0 - MIN_GAP);
+        else if (mode === "end") ne = clamp(frac, s0 + MIN_GAP, 1);
+        else {
+          const d = (ev.clientX - startX) / rect.width;
+          ns = clamp(s0 + d, 0, 1 - w0);
+          ne = ns + w0;
+        }
+        setWindow(ns, ne);
+        // Park the play-head at the window's end so the map shows the whole
+        // selected slice while you drag.
+        headRef.current = ne;
+        apply(ne);
+      };
+      const onUp = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        apply(headRef.current, true);
+      };
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    };
+  }
+
+  /** Jump the play-head by clicking the track (outside a handle / the band). */
+  function onTrackClick(e: React.MouseEvent) {
+    if (!bounds) return;
+    if ((e.target as HTMLElement).closest(".gf-tl-handle, .gf-tl-band")) return;
+    const track = trackRef.current;
+    if (!track) return;
+    const rect = track.getBoundingClientRect();
+    const frac = clamp(
+      (e.clientX - rect.left) / rect.width,
+      winRef.current.start,
+      winRef.current.end,
+    );
+    pause();
+    headRef.current = frac;
+    apply(frac, true);
+  }
 
   const mappedNote =
     resolving && points.length === 0
-      ? "Finding map locations…"
-      : `${formatNumber(points.length)} ${kind === "site" ? "sites" : "items"} with a map location`;
+      ? t("finding")
+      : kind === "site"
+        ? t("mappedSites", { count: formatNumber(points.length) })
+        : t("mappedItems", { count: formatNumber(points.length) });
+
+  const maxBucket = histo.length ? Math.max(...histo) : 1;
+  const startLabel = bounds ? fracToLabel(bounds.min, bounds.max, winStart) : "—";
+  const endLabel = bounds ? fracToLabel(bounds.min, bounds.max, winEnd) : "—";
 
   return (
     <div className="relative">
@@ -214,10 +601,41 @@ export function RecordMap({
         <span aria-hidden className="pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-brand text-brand" />
         {mappedNote}
       </div>
+      {bounds ? (
+        <MapTimeline
+          disabled={false}
+          playing={playing}
+          onTogglePlay={togglePlay}
+          histo={histo}
+          maxBucket={maxBucket}
+          winStart={winStart}
+          winEnd={winEnd}
+          startLabel={startLabel}
+          endLabel={endLabel}
+          axisStartLabel={fracToLabel(bounds.min, bounds.max, 0)}
+          axisEndLabel={fracToLabel(bounds.min, bounds.max, 1)}
+          defaultHeadCount={t("shown", { count: formatNumber(points.length) })}
+          startAria={t("startAria", { date: startLabel })}
+          endAria={t("endAria", { date: endLabel })}
+          beginDrag={beginDrag}
+          onTrackClick={onTrackClick}
+          trackRef={trackRef}
+          playheadElRef={playheadElRef}
+          headDateRef={headDateRef}
+          headCountRef={headCountRef}
+          labels={{
+            play: t("play"),
+            pause: t("pause"),
+            from: t("from"),
+            to: t("to"),
+            dragHint: t("dragHint"),
+          }}
+        />
+      ) : null}
       {kind !== "occurrence" && !resolving && points.length === 0 && (
         <div className="pointer-events-none absolute inset-x-0 bottom-4 z-[5] flex justify-center">
           <span className="rounded-full bg-background/90 px-3 py-1.5 text-[12.5px] text-foreground/60 shadow-sm backdrop-blur">
-            None of the items shown have a map location yet.
+            {t("noLocations")}
           </span>
         </div>
       )}

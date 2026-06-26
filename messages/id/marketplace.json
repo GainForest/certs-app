@@ -1,4 +1,19 @@
 {
+  "map": {
+    "play": "Putar lini masa",
+    "pause": "Jeda lini masa",
+    "from": "Dari",
+    "to": "Sampai",
+    "shown": "{count} ditampilkan",
+    "dragHint": "Seret pegangan untuk memilih rentang waktu",
+    "startAria": "Tanggal mulai — {date}",
+    "endAria": "Tanggal akhir — {date}",
+    "unidentified": "Tak teridentifikasi",
+    "finding": "Menemukan lokasi peta…",
+    "mappedItems": "{count} item dengan lokasi peta",
+    "mappedSites": "{count} situs dengan lokasi peta",
+    "noLocations": "Belum ada item yang ditampilkan dengan lokasi peta."
+  },
   "explore": {
     "metadata": {
       "title": "Jelajahi sertifikat — Proyek dampak regeneratif terverifikasi",

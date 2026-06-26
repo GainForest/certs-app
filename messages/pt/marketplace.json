@@ -1,4 +1,19 @@
 {
+  "map": {
+    "play": "Reproduzir linha do tempo",
+    "pause": "Pausar linha do tempo",
+    "from": "De",
+    "to": "Até",
+    "shown": "{count} exibidos",
+    "dragHint": "Arraste as alças para escolher um período",
+    "startAria": "Data inicial — {date}",
+    "endAria": "Data final — {date}",
+    "unidentified": "Não identificado",
+    "finding": "Localizando pontos no mapa…",
+    "mappedItems": "{count} itens com localização no mapa",
+    "mappedSites": "{count} locais com localização no mapa",
+    "noLocations": "Nenhum dos itens exibidos tem localização no mapa ainda."
+  },
   "explore": {
     "metadata": {
       "title": "Explorar certificados — Projetos de impacto regenerativo verificado",

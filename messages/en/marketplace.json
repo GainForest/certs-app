@@ -1,4 +1,19 @@
 {
+  "map": {
+    "play": "Play timeline",
+    "pause": "Pause timeline",
+    "from": "From",
+    "to": "To",
+    "shown": "{count} shown",
+    "dragHint": "Drag the handles to choose a window",
+    "startAria": "Start date — {date}",
+    "endAria": "End date — {date}",
+    "unidentified": "Unidentified",
+    "finding": "Finding map locations…",
+    "mappedItems": "{count} items with a map location",
+    "mappedSites": "{count} sites with a map location",
+    "noLocations": "None of the items shown have a map location yet."
+  },
   "explore": {
     "metadata": {
       "title": "Explore Certs — Verified Regenerative Impact Projects",
