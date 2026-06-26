@@ -988,29 +988,32 @@ function ProgressiveBlur({
 }
 
 // The header action on each explore list page is a "My <records>" button
-// that scopes the page to the signed-in viewer's own records. Certs /
-// projects / observations reuse the shared ?by=<did> owner filter; the
-// organizations explore page has no owner filter, so "My Organizations"
-// routes to the manage list of the viewer's orgs instead.
+// that takes the signed-in viewer to the dedicated management page for those
+// records (e.g. /projects -> Manage Projects). Projects / certs / observations
+// open the active account context's manage list (personal or organization,
+// mirroring the Create buttons); organizations has a single cross-org manage
+// list, so it uses a fixed href.
+type MyRecordsManageSection = "projects" | "observations" | "bumicerts";
+
 type MyRecordsRoute = {
-  href: string;
   labelKey: "myProjects" | "myCerts" | "myObservations" | "myOrganizations";
   Icon: React.ComponentType<{ className?: string }>;
+  // Open this manage section for the active account context...
+  manageSection?: MyRecordsManageSection;
+  // ...or navigate to a fixed manage route (organizations list).
+  fixedHref?: string;
 };
 
-function myRecordsRouteForPath(pathname: string, did: string): MyRecordsRoute | null {
-  const scoped = (base: string) => `${base}?by=${encodeURIComponent(did)}`;
+function myRecordsRouteForPath(pathname: string): MyRecordsRoute | null {
   switch (pathname) {
     case "/projects":
-      return { href: scoped("/projects"), labelKey: "myProjects", Icon: FolderKanbanIcon };
+      return { labelKey: "myProjects", Icon: FolderKanbanIcon, manageSection: "projects" };
     case "/certs":
-      return { href: scoped("/certs"), labelKey: "myCerts", Icon: BumicertIcon };
+      return { labelKey: "myCerts", Icon: BumicertIcon, manageSection: "bumicerts" };
     case "/observations":
-      return { href: scoped("/observations"), labelKey: "myObservations", Icon: BinocularsIcon };
+      return { labelKey: "myObservations", Icon: BinocularsIcon, manageSection: "observations" };
     case "/organizations":
-      // No ?by= filter on the organizations explore page; send the viewer to
-      // their own org management list instead.
-      return { href: "/manage/organizations", labelKey: "myOrganizations", Icon: Building2Icon };
+      return { labelKey: "myOrganizations", Icon: Building2Icon, fixedHref: "/manage/organizations" };
     default:
       return null;
   }
@@ -1019,18 +1022,39 @@ function myRecordsRouteForPath(pathname: string, did: string): MyRecordsRoute | 
 function getRouteHeaderActions(pathname: string, authSession: AuthSession) {
   // "My X" only has meaning for a signed-in viewer; hidden otherwise.
   if (!authSession.isLoggedIn) return null;
-  const route = myRecordsRouteForPath(pathname, authSession.did);
+  const route = myRecordsRouteForPath(pathname);
   if (!route) return null;
-  return <MyRecordsHeaderButton route={route} />;
+  return <MyRecordsHeaderButton route={route} sessionDid={authSession.did} />;
 }
 
-function MyRecordsHeaderButton({ route }: { route: MyRecordsRoute }) {
+function MyRecordsHeaderButton({ route, sessionDid }: { route: MyRecordsRoute; sessionDid: string }) {
   const t = useTranslations("common.sidebar.headerActions");
   const { Icon } = route;
-  return (
-    <Link href={route.href} className={cn(buttonVariants({ variant: "default", size: "sm" }))}>
+  const className = cn(buttonVariants({ variant: "default", size: "sm" }));
+  const content = (
+    <>
       <Icon />
       <span className="hidden sm:inline">{t(route.labelKey)}</span>
+    </>
+  );
+
+  if (route.manageSection) {
+    const section = route.manageSection;
+    return (
+      <ManageContextLink
+        sessionDid={sessionDid}
+        personalHref={manageHref({ basePath: "/manage" }, section)}
+        hrefForGroup={(identifier) => manageHref({ basePath: groupManageBasePath(identifier) }, section)}
+        className={className}
+      >
+        {content}
+      </ManageContextLink>
+    );
+  }
+
+  return (
+    <Link href={route.fixedHref ?? "/manage"} className={className}>
+      {content}
     </Link>
   );
 }
