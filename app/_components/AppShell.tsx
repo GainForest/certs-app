@@ -741,18 +741,14 @@ function NavLeaf({ item, isActive, index, paired = false }: { item: NavLeaf; isA
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className={cn(
               buttonVariants({ variant: isActive ? "default" : "ghost" }),
-              "relative w-full",
-              collapsed ? "justify-center px-0" : "justify-start pl-1",
+              // Lighter, denser rows: only the active row keeps the filled pill;
+              // inactive rows are a plain icon + label with no chip background.
+              "relative h-8 w-full",
+              collapsed ? "justify-center px-0" : "justify-start gap-2.5 px-2.5",
               !isActive && "text-muted-foreground group-hover:text-primary hover:text-primary",
             )}
           >
-            <span
-              className={cn(
-                "flex h-7 shrink-0 items-center justify-center rounded-full transition-colors",
-                collapsed ? "w-7" : "px-3",
-                isActive ? "bg-primary-foreground text-primary" : "bg-primary/10 text-muted-foreground group-hover:text-primary",
-              )}
-            >
+            <span className="flex size-6 shrink-0 items-center justify-center">
               <item.Icon className="h-4 w-4 shrink-0" />
             </span>
             {collapsed ? null : <span className="flex-1 text-left">{item.text}</span>}
@@ -1078,15 +1074,15 @@ function ManageSection({
 
 function ManageSectionSkeleton() {
   // Mirrors the real <ul className="flex flex-col gap-0.5"> of NavLeaf rows:
-  // each row is an h-9 button-shaped pill with a leading h-7 icon chip and a
-  // label bar. Account kind isn't known yet, so we show a representative count.
+  // each row is an h-8 row with a leading size-6 icon and a label bar.
+  // Account kind isn't known yet, so we show a representative count.
   const collapsed = useSidebarCollapsed();
   const labelWidths = ["w-24", "w-16", "w-20", "w-16"];
   return (
     <ul className="flex flex-col gap-0.5" aria-hidden="true">
       {labelWidths.map((width, index) => (
-        <li key={index} className={cn("flex h-9 items-center gap-2", collapsed ? "justify-center px-0" : "pl-1")}>
-          <Skeleton className="sidebar-skeleton h-7 w-7 shrink-0 rounded-full" />
+        <li key={index} className={cn("flex h-8 items-center gap-2.5", collapsed ? "justify-center px-0" : "px-2.5")}>
+          <Skeleton className="sidebar-skeleton size-6 shrink-0 rounded-full" />
           {collapsed ? null : <Skeleton className={`sidebar-skeleton h-3.5 rounded-full ${width}`} />}
         </li>
       ))}
