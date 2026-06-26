@@ -851,6 +851,41 @@
       "photoDescription": "Chagua picha ya mraba kwa wasifu huu.",
       "editCoverImage": "Hariri picha ya jalada",
       "coverDescription": "Chagua picha pana kwa sehemu ya juu ya wasifu wako."
+    },
+    "organizations": {
+      "fallbackName": "Akaunti ya shirika",
+      "fallbackDescription": "Hakuna maelezo bado",
+      "open": "Fungua",
+      "loading": "Inapakia mashirika…",
+      "loadError": "Haikuweza kupakia mashirika.",
+      "retry": "Jaribu tena",
+      "roles": {
+        "owner": "Mmiliki",
+        "admin": "Msimamizi",
+        "member": "Mwanachama"
+      },
+      "createCard": {
+        "title": "Unda shirika",
+        "description": "Anzisha akaunti mpya ya pamoja"
+      },
+      "empty": {
+        "funders": {
+          "label": "Kwa wafadhili",
+          "title": "Nataka kusaidia",
+          "emphasis": "mradi",
+          "description": "Vinjari vyeti vilivyothibitishwa na ufadhili wakati halisi wa urejeshaji.",
+          "cta": "Gundua Certs",
+          "alt": "Mto unaopinda ndani ya msitu wa mvua"
+        },
+        "organizations": {
+          "label": "Kwa mashirika",
+          "title": "Mimi ni mlezi",
+          "emphasis": "wa asili",
+          "description": "Onyesha kazi yako ya urejeshaji na ungana na wafadhili wanaojali.",
+          "cta": "Unda shirika",
+          "alt": "Maporomoko ya maji katika msitu wa tropiki"
+        }
+      }
     }
   },
   "dashboardModals": {

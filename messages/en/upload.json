@@ -851,6 +851,41 @@
       "photoDescription": "Choose a square photo for this profile.",
       "editCoverImage": "Edit cover image",
       "coverDescription": "Choose a wide banner image for the top of your profile."
+    },
+    "organizations": {
+      "fallbackName": "Organization account",
+      "fallbackDescription": "No description yet",
+      "open": "Open",
+      "loading": "Loading organizations…",
+      "loadError": "Could not load organizations.",
+      "retry": "Try again",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member"
+      },
+      "createCard": {
+        "title": "Create an organization",
+        "description": "Start a new shared account"
+      },
+      "empty": {
+        "funders": {
+          "label": "For Funders",
+          "title": "I want to support",
+          "emphasis": "a project",
+          "description": "Browse verified certificates and fund the exact moment of restoration.",
+          "cta": "Explore Certs",
+          "alt": "River winding through rainforest"
+        },
+        "organizations": {
+          "label": "For Organizations",
+          "title": "I am a nature",
+          "emphasis": "steward",
+          "description": "Showcase your regenerative work and connect with funders who care.",
+          "cta": "Create an organization",
+          "alt": "Waterfall in a tropical forest"
+        }
+      }
     }
   },
   "dashboardModals": {

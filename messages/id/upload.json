@@ -851,6 +851,41 @@
       "photoDescription": "Pilih foto persegi untuk profil ini.",
       "editCoverImage": "Edit gambar sampul",
       "coverDescription": "Pilih gambar lebar untuk bagian atas profil Anda."
+    },
+    "organizations": {
+      "fallbackName": "Akun organisasi",
+      "fallbackDescription": "Belum ada deskripsi",
+      "open": "Buka",
+      "loading": "Memuat organisasi…",
+      "loadError": "Tidak dapat memuat organisasi.",
+      "retry": "Coba lagi",
+      "roles": {
+        "owner": "Pemilik",
+        "admin": "Admin",
+        "member": "Anggota"
+      },
+      "createCard": {
+        "title": "Buat organisasi",
+        "description": "Mulai akun bersama baru"
+      },
+      "empty": {
+        "funders": {
+          "label": "Untuk pendana",
+          "title": "Saya ingin mendukung",
+          "emphasis": "sebuah proyek",
+          "description": "Jelajahi sertifikat terverifikasi dan danai momen restorasi yang tepat.",
+          "cta": "Jelajahi Certs",
+          "alt": "Sungai berkelok di hutan hujan"
+        },
+        "organizations": {
+          "label": "Untuk organisasi",
+          "title": "Saya penjaga",
+          "emphasis": "alam",
+          "description": "Tampilkan kerja regeneratifmu dan terhubung dengan pendana yang peduli.",
+          "cta": "Buat organisasi",
+          "alt": "Air terjun di hutan tropis"
+        }
+      }
     }
   },
   "dashboardModals": {

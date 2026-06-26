@@ -851,6 +851,41 @@
       "photoDescription": "Escolha uma foto quadrada para este perfil.",
       "editCoverImage": "Editar imagem de capa",
       "coverDescription": "Escolha uma imagem ampla para o topo do seu perfil."
+    },
+    "organizations": {
+      "fallbackName": "Conta de organização",
+      "fallbackDescription": "Sem descrição ainda",
+      "open": "Abrir",
+      "loading": "Carregando organizações…",
+      "loadError": "Não foi possível carregar as organizações.",
+      "retry": "Tentar novamente",
+      "roles": {
+        "owner": "Proprietário",
+        "admin": "Administrador",
+        "member": "Membro"
+      },
+      "createCard": {
+        "title": "Criar uma organização",
+        "description": "Comece uma nova conta compartilhada"
+      },
+      "empty": {
+        "funders": {
+          "label": "Para financiadores",
+          "title": "Quero apoiar",
+          "emphasis": "um projeto",
+          "description": "Explore certificados verificados e financie o momento exato da restauração.",
+          "cta": "Explorar Certs",
+          "alt": "Rio serpenteando pela floresta tropical"
+        },
+        "organizations": {
+          "label": "Para organizações",
+          "title": "Sou guardião",
+          "emphasis": "da natureza",
+          "description": "Mostre seu trabalho regenerativo e conecte-se com financiadores que se importam.",
+          "cta": "Criar uma organização",
+          "alt": "Cachoeira em uma floresta tropical"
+        }
+      }
     }
   },
   "dashboardModals": {
