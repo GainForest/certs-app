@@ -18,6 +18,14 @@ export function BrowseGrid({ kpis }: { kpis: ExplorerKpis }) {
     statLabel: string;
   }> = [
     {
+      href: "/projects",
+      label: t("cards.projects.label"),
+      title: t("cards.projects.title"),
+      blurb: t("cards.projects.blurb"),
+      stat: formatCompact(kpis.projects),
+      statLabel: t("cards.projects.statLabel"),
+    },
+    {
       href: "/certs",
       label: t("cards.bumicerts.label"),
       title: t("cards.bumicerts.title"),
@@ -68,7 +76,7 @@ export function BrowseGrid({ kpis }: { kpis: ExplorerKpis }) {
           </p>
         </div>
 
-        <ul role="list" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ul role="list" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => (
             <li key={card.href}>
               <Link href={card.href} className="group block h-full">

@@ -130,11 +130,17 @@
   },
   "browseGrid": {
     "title": "Njia za kuchunguza",
-    "description": "Njia nne za kuingia kwenye kazi ya GainForest, kwa wafadhili, watunzaji na timu za nyanjani.",
+    "description": "Njia za kuingia kwenye kazi ya GainForest, kwa wafadhili, watunzaji na timu za nyanjani.",
     "loadingAria": "Inapakia viungo vya kuchunguza",
     "cards": {
+      "projects": {
+        "label": "Kazi ya kurejesha",
+        "title": "Miradi",
+        "blurb": "Vinjari kile jamii zinajenga — kila mradi hukusanya Certs, maeneo, na ushahidi wa shambani.",
+        "statLabel": "miradi"
+      },
       "bumicerts": {
-        "label": "Miradi iliyothibitishwa",
+        "label": "Vyeti vya athari",
         "title": "vyeti",
         "blurb": "Vinjari hadithi za miradi zenye picha, maeneo, watu na muktadha.",
         "statLabel": "hadithi"

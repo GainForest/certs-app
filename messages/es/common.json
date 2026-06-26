@@ -130,11 +130,17 @@
   },
   "browseGrid": {
     "title": "Formas de explorar",
-    "description": "Cuatro entradas al trabajo de GainForest, pensadas para financiadores, guardianes y equipos de campo.",
+    "description": "Maneras de entrar al trabajo de GainForest, pensadas para financiadores, guardianes y equipos de campo.",
     "loadingAria": "Cargando enlaces de exploración",
     "cards": {
+      "projects": {
+        "label": "Trabajo regenerativo",
+        "title": "Proyectos",
+        "blurb": "Explora lo que construyen las comunidades: cada proyecto reúne sus Certs, lugares y evidencia de campo.",
+        "statLabel": "proyectos"
+      },
       "bumicerts": {
-        "label": "Proyectos verificados",
+        "label": "Certificados de impacto",
         "title": "certificados",
         "blurb": "Explora historias de proyectos con fotos, lugares, personas y contexto.",
         "statLabel": "historias"

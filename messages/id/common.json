@@ -130,11 +130,17 @@
   },
   "browseGrid": {
     "title": "Cara Menjelajah",
-    "description": "Empat jalan masuk ke karya GainForest, dibuat untuk pendana, penjaga alam, dan tim lapangan.",
+    "description": "Berbagai jalan masuk ke karya GainForest, dibuat untuk pendana, penjaga alam, dan tim lapangan.",
     "loadingAria": "Memuat tautan jelajah",
     "cards": {
+      "projects": {
+        "label": "Kerja regeneratif",
+        "title": "Proyek",
+        "blurb": "Jelajahi yang sedang dibangun komunitas — setiap proyek mengumpulkan Cert, lokasi, dan bukti lapangannya.",
+        "statLabel": "proyek"
+      },
       "bumicerts": {
-        "label": "Proyek terverifikasi",
+        "label": "Sertifikat dampak",
         "title": "sertifikat",
         "blurb": "Jelajahi cerita proyek dengan foto, tempat, orang, dan konteks.",
         "statLabel": "cerita"

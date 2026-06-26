@@ -17,6 +17,7 @@ const TOTAL_STATS_CACHE_MS = REVALIDATE * 1000;
 export type ExplorerKpis = {
   occurrences: number | null;
   bumicerts: number | null;
+  projects: number | null;
   sites: number | null;
   locations: number | null;
   totalRaised: number | null;
@@ -27,6 +28,7 @@ const TOTALS_QUERY = `
   query ExplorerTotals {
     occ: appGainforestDwcOccurrence(first: 0) { totalCount }
     act: orgHypercertsClaimActivity(first: 0) { totalCount }
+    proj: orgHypercertsCollection(first: 0, where: { type: { in: ["project", "Project"] } }) { totalCount }
     certOrg: appCertifiedActorOrganization(first: 0) { totalCount }
     loc: appCertifiedLocation(first: 0) { totalCount }
   }
@@ -50,7 +52,7 @@ const RECEIPTS_TOTALS_QUERY = `
 
 export type CollectionTotals = Pick<
   ExplorerKpis,
-  "occurrences" | "bumicerts" | "sites" | "locations"
+  "occurrences" | "bumicerts" | "projects" | "sites" | "locations"
 >;
 
 async function fetchTotalsUncached(): Promise<CollectionTotals> {
@@ -65,6 +67,7 @@ async function fetchTotalsUncached(): Promise<CollectionTotals> {
       data?: {
         occ?: { totalCount?: number | null };
         act?: { totalCount?: number | null };
+        proj?: { totalCount?: number | null };
         certOrg?: { totalCount?: number | null };
         loc?: { totalCount?: number | null };
       };
@@ -73,11 +76,12 @@ async function fetchTotalsUncached(): Promise<CollectionTotals> {
     return {
       occurrences: d?.occ?.totalCount ?? null,
       bumicerts: d?.act?.totalCount ?? null,
+      projects: d?.proj?.totalCount ?? null,
       sites: d?.certOrg?.totalCount ?? null,
       locations: d?.loc?.totalCount ?? null,
     };
   } catch {
-    return { occurrences: null, bumicerts: null, sites: null, locations: null };
+    return { occurrences: null, bumicerts: null, projects: null, sites: null, locations: null };
   }
 }
 

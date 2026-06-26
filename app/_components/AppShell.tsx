@@ -87,19 +87,19 @@ const NAV_ITEMS: NavSection[] = [
     items: [
       {
         kind: "leaf",
-        id: "bumicerts",
-        text: "Certs",
-        Icon: BumicertIcon,
-        href: "/certs",
-        pathCheck: { startsWith: "/certs" },
-      },
-      {
-        kind: "leaf",
         id: "projects",
         text: "Projects",
         Icon: FolderKanbanIcon,
         href: "/projects",
         pathCheck: { startsWith: "/projects" },
+      },
+      {
+        kind: "leaf",
+        id: "bumicerts",
+        text: "Certs",
+        Icon: BumicertIcon,
+        href: "/certs",
+        pathCheck: { startsWith: "/certs" },
       },
       {
         kind: "leaf",
@@ -655,6 +655,9 @@ function ExploreNav() {
           item={{ ...item, text: t(item.id) }}
           isActive={isLeafActive(item.pathCheck, pathname)}
           index={index + 1}
+          // Certs are minted from a Project, so visually hang Certs under
+          // Projects (which sits directly above it).
+          paired={item.id === "bumicerts"}
         />
       ))}
     </ul>
@@ -706,8 +709,9 @@ function SidebarHeader() {
   );
 }
 
-function NavLeaf({ item, isActive, index }: { item: NavLeaf; isActive: boolean; index: number }) {
+function NavLeaf({ item, isActive, index, paired = false }: { item: NavLeaf; isActive: boolean; index: number; paired?: boolean }) {
   const collapsed = useSidebarCollapsed();
+  const showConnector = paired && !collapsed;
   return (
     <motion.li
       initial={{ opacity: 0, x: -8 }}
@@ -717,7 +721,14 @@ function NavLeaf({ item, isActive, index }: { item: NavLeaf; isActive: boolean; 
         delay: 0.05 * index,
         ease: [0.25, 0.1, 0.25, 1],
       }}
+      className={cn("relative", showConnector && "ml-3.5")}
     >
+      {showConnector ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -left-3.5 -top-1 bottom-1/2 w-3 rounded-bl-[10px] border-b border-l border-border"
+        />
+      ) : null}
       <SidebarTooltip label={item.text}>
         <Link
           href={item.href}

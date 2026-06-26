@@ -130,11 +130,17 @@
   },
   "browseGrid": {
     "title": "Ways to Explore",
-    "description": "Four ways into GainForest work, shaped for funders, stewards, and field teams.",
+    "description": "Ways into GainForest work, shaped for funders, stewards, and field teams.",
     "loadingAria": "Explore links loading",
     "cards": {
+      "projects": {
+        "label": "Regenerative work",
+        "title": "Projects",
+        "blurb": "Browse what communities are building — each project gathers its Certs, places, and field evidence in one story.",
+        "statLabel": "projects"
+      },
       "bumicerts": {
-        "label": "Verified projects",
+        "label": "Impact certificates",
         "title": "Certs",
         "blurb": "Browse project stories with photos, places, people, and context.",
         "statLabel": "stories"
