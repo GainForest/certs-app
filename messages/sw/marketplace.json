@@ -1133,7 +1133,8 @@
     "certsTitle": "Vyeti vya mradi huu",
     "noCerts": "Hakuna vyeti vilivyoongezwa kwenye mradi huu bado.",
     "metaTitle": "{name} — Mradi",
-    "metaFallback": "Mradi ulioshirikiwa kwenye GainForest."
+    "metaFallback": "Mradi ulioshirikiwa kwenye GainForest.",
+    "timelineTitle": "Ratiba"
   },
   "observationPage": {
     "back": "Uchunguzi wote",
@@ -1175,7 +1176,9 @@
       "manageObservations": "Uchunguzi",
       "manageObservationsFor": "Uchunguzi wa {title}",
       "manageSites": "Maeneo",
-      "manageSitesFor": "Maeneo ya {title}"
+      "manageSitesFor": "Maeneo ya {title}",
+      "manageTimeline": "Ratiba",
+      "manageTimelineFor": "Ratiba ya {title}"
     }
   },
   "manageBumicerts": {

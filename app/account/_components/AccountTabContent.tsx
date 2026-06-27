@@ -4,7 +4,9 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ChevronRightIcon } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ProjectGalleryViewer } from "../../_components/ProjectGalleryViewer";
+import { AccountGalleryClient } from "./AccountGalleryClient";
+import type { GalleryProjectOption } from "./AccountGalleryUploader";
+import { canCreateRecord } from "../../(manage)/manage/_lib/cgs-permissions";
 import { RichText } from "../../_components/RichText";
 import { RecordExplorer } from "../../_components/RecordExplorer";
 import { AccountBumicertsGrid } from "./AccountBumicertsGrid";
@@ -322,13 +324,28 @@ export async function AccountOrganizationsTabContent({ account }: { account: Acc
 }
 
 export async function AccountGalleryTabContent({ account, did }: { account: AccountRouteData; did: string }) {
-  const [rawGalleries, projects] = await Promise.all([
+  const [rawGalleries, projects, access] = await Promise.all([
     fetchProjectImageGalleriesByDid(did).catch(() => []),
     fetchProjectsByDid(did, 1000).then((page) => page.records).catch(() => []),
+    resolveAccountManageAccess(account.urlIdentifier).catch(() => null),
   ]);
   const galleries = attachProjectTitlesToGalleries(rawGalleries, projects);
 
-  return <ProjectGalleryViewer galleries={galleries} variant="account" />;
+  // Only offer uploads to a manager who can actually write records here. The
+  // uploader itself is shown only when the gallery is still empty.
+  const target = access?.status === "allowed" && canCreateRecord(access.target).allowed ? access.target : null;
+  const projectOptions: GalleryProjectOption[] = projects
+    .filter((project) => Boolean(project.cid))
+    .map((project) => ({ uri: project.atUri, cid: project.cid, title: project.title }));
+
+  return (
+    <AccountGalleryClient
+      initialGalleries={galleries}
+      projects={projectOptions}
+      target={target}
+      accountName={account.displayName}
+    />
+  );
 }
 
 export function AccountSettingsTabContent({ account }: { account: AccountRouteData }) {

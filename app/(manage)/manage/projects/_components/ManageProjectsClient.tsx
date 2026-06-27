@@ -16,6 +16,7 @@ import {
   LeafIcon,
   Loader2Icon,
   MapPinIcon,
+  PaperclipIcon,
   RotateCcwIcon,
   SearchIcon,
   SparkleIcon,
@@ -239,7 +240,8 @@ export function ManageProjectsClient({ target }: { target: ManageTarget }) {
                       galleryHref={`${profileBasePath(target)}/projects/${encodeURIComponent(project.rkey)}/gallery`}
                       certsHref={`${profileBasePath(target)}/projects/${encodeURIComponent(project.rkey)}/certs`}
                       observationsHref={manageHref(target, "observations", { project: project.atUri })}
-                      sitesHref={manageHref(target, "sites")}
+                      sitesHref={`${profileBasePath(target)}/projects/${encodeURIComponent(project.rkey)}/sites`}
+                      timelineHref={`${profileBasePath(target)}/projects/${encodeURIComponent(project.rkey)}/timeline`}
                       onEdit={() => openEdit(project)}
                       disabledReason={updatePermission.reason}
                     />
@@ -278,6 +280,7 @@ function ProjectCard({
   certsHref,
   observationsHref,
   sitesHref,
+  timelineHref,
   onEdit,
   disabledReason = null,
 }: {
@@ -287,6 +290,7 @@ function ProjectCard({
   certsHref: string;
   observationsHref: string;
   sitesHref: string;
+  timelineHref: string;
   onEdit: () => void;
   disabledReason?: string | null;
 }) {
@@ -386,6 +390,12 @@ function ProjectCard({
               <Link href={sitesHref} aria-label={t("manageSitesFor", { title: project.title })}>
                 <MapPinIcon className="size-3.5" />
                 {t("manageSites")}
+              </Link>
+            </Button>
+            <Button asChild type="button" variant="outline" size="sm" className="h-8" onClick={(event) => event.stopPropagation()}>
+              <Link href={timelineHref} aria-label={t("manageTimelineFor", { title: project.title })}>
+                <PaperclipIcon className="size-3.5" />
+                {t("manageTimeline")}
               </Link>
             </Button>
           </div>

@@ -1133,7 +1133,8 @@
     "certsTitle": "Certs in this project",
     "noCerts": "No Certs have been added to this project yet.",
     "metaTitle": "{name} — Project",
-    "metaFallback": "A project shared on GainForest."
+    "metaFallback": "A project shared on GainForest.",
+    "timelineTitle": "Timeline"
   },
   "observationPage": {
     "back": "All sightings",
@@ -1175,7 +1176,9 @@
       "manageObservations": "Observations",
       "manageObservationsFor": "Observations for {title}",
       "manageSites": "Sites",
-      "manageSitesFor": "Sites for {title}"
+      "manageSitesFor": "Sites for {title}",
+      "manageTimeline": "Timeline",
+      "manageTimelineFor": "Timeline for {title}"
     }
   },
   "manageBumicerts": {

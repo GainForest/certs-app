@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import Link from "next/link";
+import { ArrowLeftIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { fetchReceipts } from "@/app/_lib/dashboard";
 import {
@@ -7,8 +9,16 @@ import {
   walkOccurrences,
   fetchLocationsByDid,
   fetchProjectsByDid,
+  fetchTimelineAttachmentsByDid,
   fetchTreeDatasetsByDid,
+  type TimelineAttachmentItem,
 } from "@/app/_lib/indexer";
+import { BumicertTimeline } from "@/app/cert/[did]/[rkey]/_components/timeline/BumicertTimeline";
+import { getEntriesForActivity } from "@/app/cert/[did]/[rkey]/_components/timeline/attachmentSubjects";
+import { resolveTimelineReferences } from "@/app/cert/[did]/[rkey]/_components/timeline/timelineReferenceResolver";
+import { canCreateRecord, canDeleteRecord } from "./_lib/cgs-permissions";
+import { profileBasePath } from "@/lib/links";
+import { ProjectSitesManagerClient } from "./projects/[rkey]/sites/_components/ProjectSitesManagerClient";
 import { droneAppHref } from "@/app/_lib/urls";
 import { resolveBlobUrl, resolvePdsHost } from "@/app/_lib/pds";
 import { RecordExplorer } from "@/app/_components/RecordExplorer";
@@ -110,6 +120,106 @@ export function ProjectCertsSection({ target, projectRkey }: { target: ManageTar
   return (
     <Suspense fallback={null}>
       <ProjectCertsManagerClient target={target} projectRkey={projectRkey} />
+    </Suspense>
+  );
+}
+
+async function fetchManagedProjectRef(
+  did: string,
+  rkey: string,
+): Promise<{ atUri: string; cid: string | null; title: string } | null> {
+  const projects = await fetchProjectsByDid(did, 500).then((page) => page.records).catch(() => []);
+  const project = projects.find((entry) => entry.rkey === rkey) ?? null;
+  if (!project) return null;
+  return { atUri: project.atUri, cid: project.cid, title: project.title };
+}
+
+function ProjectManageBackLink({ target, label }: { target: ManageTarget; label: string }) {
+  return (
+    <Button asChild variant="outline" size="sm">
+      <Link href={`${profileBasePath(target)}/projects`}>
+        <ArrowLeftIcon className="size-4" />
+        {label}
+      </Link>
+    </Button>
+  );
+}
+
+export async function ProjectTimelineSection({ target, projectRkey }: { target: ManageTarget; projectRkey: string }) {
+  const [manageT, project] = await Promise.all([
+    getTranslations("common.projectManage"),
+    fetchManagedProjectRef(target.did, projectRkey),
+  ]);
+
+  if (!project) {
+    return (
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6">
+        <ProjectManageBackLink target={target} label={manageT("backToProjects")} />
+        <p className="mt-6 text-sm text-muted-foreground">{manageT("projectNotFound")}</p>
+      </div>
+    );
+  }
+
+  const [referenceT, timelineT, timelineEntryT, allEntries] = await Promise.all([
+    getTranslations("bumicert.detail.reference"),
+    getTranslations("bumicert.detail.timeline"),
+    getTranslations("bumicert.detail.timelineEntry"),
+    fetchTimelineAttachmentsByDid(target.did).catch(() => [] as TimelineAttachmentItem[]),
+  ]);
+  const entries = getEntriesForActivity(allEntries, project.atUri);
+  const references = await resolveTimelineReferences({
+    entries,
+    copy: {
+      linkedRecord: referenceT("linkedRecord"),
+      linkedAudioRecord: referenceT("linkedAudioRecord"),
+      audioEvidence: referenceT("audioEvidence"),
+      linkedDataset: referenceT("linkedDataset"),
+      linkedTreeRecord: referenceT("linkedTreeRecord"),
+      linkedSiteRecord: referenceT("linkedSiteRecord"),
+      siteEvidence: referenceT("siteEvidence"),
+      linkedNatureData: timelineT("fallbacks.linkedNatureData"),
+      treeCount: (count: number) => timelineEntryT("treeCount", { count }),
+      speciesCount: (count: number) => timelineEntryT("speciesCount", { count }),
+      observationCount: (count: number) => timelineEntryT("observationCount", { count }),
+      individualCount: (count: number) => referenceT("individualCount", { count }),
+    },
+  }).catch(() => []);
+
+  const createPermission = canCreateRecord(target);
+  const deletePermission = canDeleteRecord(target);
+  const mutationRepo = target.kind === "group" ? target.did : undefined;
+
+  return (
+    <div className="mx-auto w-full max-w-[1440px] px-4 py-4 sm:px-6 sm:py-6">
+      <div className="mb-5">
+        <ProjectManageBackLink target={target} label={manageT("backToProjects")} />
+      </div>
+      <div className="mb-4 max-w-3xl">
+        <h1 className="font-instrument text-3xl font-light italic tracking-[-0.03em] text-foreground sm:text-4xl">{project.title}</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{manageT("timelineDescription")}</p>
+      </div>
+      <BumicertTimeline
+        organizationDid={target.did}
+        activityUri={project.atUri}
+        activityCid={project.cid ?? ""}
+        bumicertTitle={project.title}
+        canManageEvidence={createPermission.allowed || deletePermission.allowed}
+        createPermission={createPermission}
+        deletePermission={deletePermission}
+        mutationRepo={mutationRepo}
+        initialEntries={entries}
+        sources={{ audio: [], occurrences: [], occurrencesIncomplete: false, treeGroups: [], places: [] }}
+        references={references}
+        attachmentsUnavailable={false}
+      />
+    </div>
+  );
+}
+
+export function ProjectSitesSection({ target, projectRkey }: { target: ManageTarget; projectRkey: string }) {
+  return (
+    <Suspense fallback={null}>
+      <ProjectSitesManagerClient target={target} projectRkey={projectRkey} />
     </Suspense>
   );
 }

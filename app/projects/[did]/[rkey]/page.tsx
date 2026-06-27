@@ -10,11 +10,16 @@ import {
   fetchProjectImageGalleriesByDid,
   fetchProjectObservationSummary,
   fetchRecordByUri,
+  fetchTimelineAttachmentsByDid,
   type BumicertRecord,
   type OccurrenceRecord,
   type ProjectGalleryImage,
   type ProjectImageGallery,
+  type TimelineAttachmentItem,
 } from "../../../_lib/indexer";
+import { getEntriesForActivity } from "../../../cert/[did]/[rkey]/_components/timeline/attachmentSubjects";
+import { resolveTimelineReferences } from "../../../cert/[did]/[rkey]/_components/timeline/timelineReferenceResolver";
+import { ProjectTimelineReadonly } from "./_components/ProjectTimelineReadonly";
 import { isPdsBlobUrl } from "../../../_lib/pds";
 import { formatCountry, formatDate, formatNumber } from "../../../_lib/format";
 import { formatWorkScopeTag, type WorkScopeLabels } from "../../../_lib/work-scope-labels";
@@ -62,7 +67,7 @@ export default async function ProjectDetailPage({ params }: { params: ProjectPag
   const t = await getTranslations("marketplace.projectPage");
 
   const certUris = record.bumicertUris.slice(0, 100);
-  const [owner, certs, rawGalleries, observations] = await Promise.all([
+  const [owner, certs, rawGalleries, observations, timelineEntriesAll] = await Promise.all([
     getAccountRouteData(did, urlIdentifier).catch(() => null),
     certUris.length
       ? Promise.all(certUris.map((uri) => fetchRecordByUri(uri).catch(() => null))).then((records) =>
@@ -71,6 +76,7 @@ export default async function ProjectDetailPage({ params }: { params: ProjectPag
       : Promise.resolve([] as BumicertRecord[]),
     fetchProjectImageGalleriesByDid(did).catch(() => [] as ProjectImageGallery[]),
     fetchProjectObservationSummary(record.atUri, 10).catch(() => ({ count: 0, records: [] as OccurrenceRecord[] })),
+    fetchTimelineAttachmentsByDid(did).catch(() => [] as TimelineAttachmentItem[]),
   ]);
 
   // Canonicalise to the owner's handle URL when one is known (mirrors the
@@ -108,6 +114,32 @@ export default async function ProjectDetailPage({ params }: { params: ProjectPag
     .filter((image) => Boolean(image.url));
   const galleryPreview = galleryImages.slice(0, 10);
   const observationPreview = observations.records.slice(0, 10);
+
+  // The project's own evidence timeline (attachments pinned to this project as
+  // their activity). Resolved read-only for the public page.
+  const timelineEntries = getEntriesForActivity(timelineEntriesAll, record.atUri);
+  const referenceT = await getTranslations("bumicert.detail.reference");
+  const timelineT = await getTranslations("bumicert.detail.timeline");
+  const timelineEntryT = await getTranslations("bumicert.detail.timelineEntry");
+  const timelineReferences = timelineEntries.length
+    ? await resolveTimelineReferences({
+        entries: timelineEntries,
+        copy: {
+          linkedRecord: referenceT("linkedRecord"),
+          linkedAudioRecord: referenceT("linkedAudioRecord"),
+          audioEvidence: referenceT("audioEvidence"),
+          linkedDataset: referenceT("linkedDataset"),
+          linkedTreeRecord: referenceT("linkedTreeRecord"),
+          linkedSiteRecord: referenceT("linkedSiteRecord"),
+          siteEvidence: referenceT("siteEvidence"),
+          linkedNatureData: timelineT("fallbacks.linkedNatureData"),
+          treeCount: (count: number) => timelineEntryT("treeCount", { count }),
+          speciesCount: (count: number) => timelineEntryT("speciesCount", { count }),
+          observationCount: (count: number) => timelineEntryT("observationCount", { count }),
+          individualCount: (count: number) => referenceT("individualCount", { count }),
+        },
+      }).catch(() => [])
+    : [];
 
   return (
     <main className="min-h-screen bg-background pb-20">
@@ -293,6 +325,16 @@ export default async function ProjectDetailPage({ params }: { params: ProjectPag
                 />
               ))}
             </div>
+          </section>
+        ) : null}
+
+        {timelineEntries.length > 0 ? (
+          <section className="mt-10 border-t border-border-soft pt-8">
+            <h2 className="mb-4 flex items-baseline gap-2 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              {t("timelineTitle")}
+              <span className="text-foreground/40">{formatNumber(timelineEntries.length)}</span>
+            </h2>
+            <ProjectTimelineReadonly organizationDid={did} entries={timelineEntries} references={timelineReferences} />
           </section>
         ) : null}
 

@@ -37,6 +37,9 @@ export function ProjectGalleryViewer({
   const projectOptions = useMemo<ProjectOption[]>(() => {
     const map = new Map<string, ProjectOption>();
     for (const gallery of galleries) {
+      // Account-level galleries aren't tied to a project, so they don't get a
+      // filter pill — they only show in the default "All projects" view.
+      if (!gallery.projectUri) continue;
       const existing = map.get(gallery.projectUri);
       const count = gallery.images.length;
       if (existing) {

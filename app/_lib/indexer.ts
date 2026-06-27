@@ -5326,7 +5326,8 @@ export type ProjectGalleryImage = {
   size: number | null;
   cid: string | null;
   attachmentUri: string;
-  projectUri: string;
+  /** Linked project URI, or null for account-level galleries not tied to a project. */
+  projectUri: string | null;
 };
 
 export type ProjectImageGallery = {
@@ -5335,7 +5336,8 @@ export type ProjectImageGallery = {
   attachmentTitle: string | null;
   shortDescription: string | null;
   createdAt: string | null;
-  projectUri: string;
+  /** Linked project URI, or null for account-level galleries not tied to a project. */
+  projectUri: string | null;
   projectCid: string | null;
   projectTitle: string | null;
   images: ProjectGalleryImage[];
@@ -5406,8 +5408,15 @@ async function mapProjectGalleryAttachment(
 ): Promise<ProjectImageGallery | null> {
   const did = node.did ?? null;
   const attachmentUri = node.uri ?? (did && node.rkey ? `at://${did}/org.hypercerts.context.attachment/${node.rkey}` : null);
+  if (!did || !attachmentUri || node.contentType?.toLowerCase() !== "gallery") return null;
   const subject = projectSubjectFromAttachment(node.subjects);
-  if (!did || !attachmentUri || !subject || node.contentType?.toLowerCase() !== "gallery") return null;
+  // A gallery either links to a project (project gallery) or has no subjects at
+  // all (an account-level gallery uploaded straight from the profile). If it is
+  // pinned to some other subject (e.g. a Cert or location), it isn't ours.
+  const hasAnySubject = Array.isArray(node.subjects) && node.subjects.some((item) => typeof item?.uri === "string");
+  if (!subject && hasAnySubject) return null;
+  const projectUri = subject?.uri ?? null;
+  const projectCid = subject?.cid ?? null;
 
   const images = (await Promise.all((node.content ?? []).map(async (item, index): Promise<ProjectGalleryImage | null> => {
     if (!item?.__typename) return null;
@@ -5416,7 +5425,7 @@ async function mapProjectGalleryAttachment(
       if (!cid || !isGalleryImageMimeType(item.blob?.mimeType)) return null;
       try {
         const url = await resolveBlobUrl(did, cid, signal);
-        return url ? { id: `${attachmentUri}#${cid}`, url, cid, mimeType: item.blob?.mimeType ?? null, size: item.blob?.size ?? null, attachmentUri, projectUri: subject.uri } : null;
+        return url ? { id: `${attachmentUri}#${cid}`, url, cid, mimeType: item.blob?.mimeType ?? null, size: item.blob?.size ?? null, attachmentUri, projectUri } : null;
       } catch (error) {
         if ((error as Error).name === "AbortError") throw error;
         return null;
@@ -5425,7 +5434,7 @@ async function mapProjectGalleryAttachment(
     if (item.__typename === "OrgHypercertsDefsUri") {
       const url = item.uri?.trim();
       if (!url || !isLikelyGalleryImageUri(url)) return null;
-      return { id: `${attachmentUri}#uri-${index}`, url, cid: null, mimeType: null, size: null, attachmentUri, projectUri: subject.uri };
+      return { id: `${attachmentUri}#uri-${index}`, url, cid: null, mimeType: null, size: null, attachmentUri, projectUri };
     }
     return null;
   }))).filter((image): image is ProjectGalleryImage => Boolean(image));
@@ -5437,8 +5446,8 @@ async function mapProjectGalleryAttachment(
     attachmentTitle: node.title?.trim() || null,
     shortDescription: node.shortDescription?.trim() || null,
     createdAt: node.createdAt ?? null,
-    projectUri: subject.uri,
-    projectCid: subject.cid,
+    projectUri,
+    projectCid,
     projectTitle: null,
     images,
   };
@@ -5470,7 +5479,7 @@ export function attachProjectTitlesToGalleries(
   const projectTitles = new Map(projects.map((project) => [project.atUri, project.title]));
   return galleries.map((gallery) => ({
     ...gallery,
-    projectTitle: projectTitles.get(gallery.projectUri) ?? gallery.projectTitle,
+    projectTitle: (gallery.projectUri ? projectTitles.get(gallery.projectUri) : null) ?? gallery.projectTitle,
   }));
 }
 

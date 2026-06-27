@@ -1133,7 +1133,8 @@
     "certsTitle": "Certificados deste projeto",
     "noCerts": "Nenhum certificado foi adicionado a este projeto ainda.",
     "metaTitle": "{name} — Projeto",
-    "metaFallback": "Um projeto compartilhado no GainForest."
+    "metaFallback": "Um projeto compartilhado no GainForest.",
+    "timelineTitle": "Linha do tempo"
   },
   "observationPage": {
     "back": "Todos os avistamentos",
@@ -1175,7 +1176,9 @@
       "manageObservations": "Observações",
       "manageObservationsFor": "Observações de {title}",
       "manageSites": "Locais",
-      "manageSitesFor": "Locais de {title}"
+      "manageSitesFor": "Locais de {title}",
+      "manageTimeline": "Linha do tempo",
+      "manageTimelineFor": "Linha do tempo de {title}"
     }
   },
   "manageBumicerts": {

@@ -92,6 +92,14 @@ export function accountProjectCertsPath(didOrHandle: string, rkey: string): stri
   return `${accountPath(didOrHandle)}/projects/${encodeURIComponent(rkey)}/certs`;
 }
 
+export function accountProjectTimelinePath(didOrHandle: string, rkey: string): string {
+  return `${accountPath(didOrHandle)}/projects/${encodeURIComponent(rkey)}/timeline`;
+}
+
+export function accountProjectSitesPath(didOrHandle: string, rkey: string): string {
+  return `${accountPath(didOrHandle)}/projects/${encodeURIComponent(rkey)}/sites`;
+}
+
 export function accountDonationsPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/donations`;
 }
@@ -110,10 +118,6 @@ export function accountProjectsPath(didOrHandle: string): string {
 
 export function accountGalleryPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/gallery`;
-}
-
-export function accountTimelinePath(didOrHandle: string): string {
-  return `${accountPath(didOrHandle)}/timeline`;
 }
 
 export function accountSettingsPath(didOrHandle: string): string {

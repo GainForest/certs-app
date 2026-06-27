@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BinocularsIcon, Building2Icon, FolderKanbanIcon, HeartHandshakeIcon, HomeIcon, ImageIcon, MapPinIcon, PaperclipIcon, SettingsIcon, UsersIcon } from "lucide-react";
+import { BinocularsIcon, Building2Icon, FolderKanbanIcon, HeartHandshakeIcon, HomeIcon, ImageIcon, SettingsIcon, UsersIcon } from "lucide-react";
 import BumicertIcon from "@/icons/BumicertIcon";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { cn } from "@/lib/utils";
@@ -20,8 +20,6 @@ import {
   accountPath,
   accountProjectsPath,
   accountSettingsPath,
-  accountSitesPath,
-  accountTimelinePath,
   accountTreesPath,
 } from "../_lib/account-route";
 
@@ -50,7 +48,6 @@ type TabPaths = {
   organizations: string;
   donations: string;
   activity: string;
-  timeline: string;
   gallery: string;
   settings: string;
 };
@@ -64,7 +61,6 @@ function buildTabPaths(did: string, scope: AccountTabBarScope, manageBasePath = 
       organizations: `${manageBasePath}?tab=organizations`,
       donations: `${manageBasePath}?tab=donations`,
       activity: `${manageBasePath}?tab=observations`,
-      timeline: `${manageBasePath}/timeline`,
       gallery: `${manageBasePath}?tab=gallery`,
       settings: `${manageBasePath}?tab=settings`,
     };
@@ -77,7 +73,6 @@ function buildTabPaths(did: string, scope: AccountTabBarScope, manageBasePath = 
     organizations: accountOrganizationsPath(did),
     donations: accountDonationsPath(did),
     activity: accountObservationsPath(did),
-    timeline: accountTimelinePath(did),
     gallery: accountGalleryPath(did),
     settings: accountSettingsPath(did),
   };
@@ -115,16 +110,10 @@ function buildTabs(
     const donationsTab: Tab = { labelKey: "donationHistory", href: paths.donations, icon: HeartHandshakeIcon, exact: false };
 
     // Public profile leads with a compact Overview, then Projects, Certs,
-    // Observations. The Organizations tab sits between Certs and Observations,
-    // but only on your own profile (we can read your own memberships, not other
-    // people's). Personal accounts own the same field data as organizations
-    // (Sites, Trees, Audio, Drone) — those private tabs show only to the owner
-    // (showOrgData). Timeline and Gallery are public, then Donations closes the
-    // row. The only things that stay organization-only are Members + the Data
-    // Council. The manage dashboard keeps its simpler order.
-    const dataTabs: Tab[] = scope === "account" && showOrgData
-      ? [{ labelKey: "sites", href: accountSitesPath(did), icon: MapPinIcon, exact: false }]
-      : [];
+    // Observations, Gallery, and Donations. Sites and Timeline are no longer
+    // profile sections — they live on each project, where they belong. The
+    // only things that stay organization-only are Members + the Data Council.
+    // The manage dashboard keeps its simpler order.
     const tabs: Tab[] = scope === "account"
       ? [
           { labelKey: "overview", href: paths.home, icon: HomeIcon, exact: true },
@@ -132,8 +121,6 @@ function buildTabs(
           certsTab,
           ...(showOrganizations ? [organizationsTab] : []),
           observationsTab,
-          ...dataTabs,
-          { labelKey: "timeline", href: paths.timeline, icon: PaperclipIcon, exact: false },
           { labelKey: "gallery", href: paths.gallery, icon: ImageIcon, exact: false },
           donationsTab,
         ]
@@ -170,22 +157,16 @@ function buildTabs(
       matchPaths: scope === "account" ? [accountTreesPath(did), accountAudioPath(did), accountDronePath(did)] : undefined,
     },
   ];
-  // Private data + member tabs, shown only to managers on the profile. Trees,
-  // Audio and Drone are reached through the Observations sub-nav, not here.
+  // Members stay an organization-only governance surface, shown to managers on
+  // the profile. Trees, Audio and Drone are reached through the Observations
+  // sub-nav. Sites and Timeline now live on each project, not the profile.
   if (scope === "account" && showOrgData) {
     tabs.push(
-      { labelKey: "sites", href: accountSitesPath(did), icon: MapPinIcon, exact: false },
       { labelKey: "members", href: accountMembersPath(did), icon: UsersIcon, exact: false },
     );
   }
   if (scope === "account") {
     tabs.push(
-      {
-        labelKey: "timeline",
-        href: paths.timeline,
-        icon: PaperclipIcon,
-        exact: false,
-      },
       {
         labelKey: "gallery",
         href: paths.gallery,

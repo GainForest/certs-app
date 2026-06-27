@@ -12,10 +12,11 @@ import {
   accountPath,
   accountProjectCertsPath,
   accountProjectGalleryPath,
+  accountProjectSitesPath,
+  accountProjectTimelinePath,
   accountProjectsPath,
   accountSettingsPath,
   accountSitesPath,
-  accountTimelinePath,
 } from "@/app/account/_lib/account-route";
 import { ManageHomeSection } from "@/app/(manage)/manage/_sections";
 
@@ -89,6 +90,8 @@ export default async function AccountManagePage({ params, searchParams }: PagePr
   if (first === "add" && !second) redirect(accountAddDataPath(id));
   if (first === "projects" && second && third === "gallery") redirect(accountProjectGalleryPath(id, decodeURIComponent(second)));
   if (first === "projects" && second && third === "certs") redirect(accountProjectCertsPath(id, decodeURIComponent(second)));
+  if (first === "projects" && second && third === "sites") redirect(accountProjectSitesPath(id, decodeURIComponent(second)));
+  if (first === "projects" && second && third === "timeline") redirect(accountProjectTimelinePath(id, decodeURIComponent(second)));
   if (first === "certs" && second === "new") {
     const sp = await searchParams;
     const query = new URLSearchParams();
@@ -110,7 +113,9 @@ export default async function AccountManagePage({ params, searchParams }: PagePr
   if (first === "bumicerts" && !second) redirect(accountBumicertsPath(id));
   if (first === "observations" && !second) redirect(accountObservationsPath(id));
   if (first === "settings" && !second) redirect(accountSettingsPath(id));
-  if (first === "timeline" && !second) redirect(accountTimelinePath(id));
+  // Timeline now lives on each project, not the profile — send legacy links to
+  // the projects list.
+  if (first === "timeline" && !second) redirect(accountProjectsPath(id));
   if (first === "groups" && !second) redirect(accountOrganizationsPath(id));
   if (first === "organizations" && !second) {
     if (target.kind !== "personal") notFound();

@@ -1133,7 +1133,8 @@
     "certsTitle": "Sertifikat di proyek ini",
     "noCerts": "Belum ada sertifikat yang ditambahkan ke proyek ini.",
     "metaTitle": "{name} — Proyek",
-    "metaFallback": "Sebuah proyek yang dibagikan di GainForest."
+    "metaFallback": "Sebuah proyek yang dibagikan di GainForest.",
+    "timelineTitle": "Lini Masa"
   },
   "observationPage": {
     "back": "Semua pengamatan",
@@ -1175,7 +1176,9 @@
       "manageObservations": "Observasi",
       "manageObservationsFor": "Observasi untuk {title}",
       "manageSites": "Situs",
-      "manageSitesFor": "Situs untuk {title}"
+      "manageSitesFor": "Situs untuk {title}",
+      "manageTimeline": "Lini Masa",
+      "manageTimelineFor": "Lini masa untuk {title}"
     }
   },
   "manageBumicerts": {
