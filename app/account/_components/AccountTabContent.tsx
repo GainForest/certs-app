@@ -19,7 +19,7 @@ import { fetchReceipts } from "../../_lib/dashboard";
 import { fetchPublicDataCouncilMembers, type PublicDataCouncilMember } from "../../_lib/data-council";
 import { fetchAuthSession } from "../../_lib/auth-server";
 import { fetchUserCgsGroups, resolveAccountManageAccess } from "../../_lib/manage-server";
-import { ObservationsSection, ProjectsSection } from "../../(manage)/manage/_sections";
+import { BumicertsSection, ObservationsSection, ProjectsSection } from "../../(manage)/manage/_sections";
 import { monogram } from "../../_lib/did-profile";
 import { attachProjectTitlesToGalleries, fetchBumicertsByDid, fetchIndexedCertifiedProfileCards, fetchObservationSummaryByDid, fetchProjectImageGalleriesByDid, fetchProjectsByDid } from "../../_lib/indexer";
 import type { AccountRouteData } from "../_lib/account-route";
@@ -209,6 +209,13 @@ export async function AccountBumicertsTabContent({
   did: string;
   manageAction?: ManageAction | null;
 }) {
+  // Stewards edit their Certs right here on the profile tab (same surface the
+  // old /manage URL used); everyone else sees the read-only public grid.
+  const access = await resolveAccountManageAccess(account.urlIdentifier).catch(() => null);
+  if (access?.status === "allowed") {
+    return <BumicertsSection target={access.target} />;
+  }
+
   const bumicerts = await fetchBumicertsByDid(did, 1000).then((page) => page.records).catch(() => []);
   const grid = (
     <>

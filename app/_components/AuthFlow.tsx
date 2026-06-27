@@ -6,22 +6,16 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRightIcon,
-  BinocularsIcon,
   CheckIcon,
   ChevronRightIcon,
-  DroneIcon,
-  FolderKanbanIcon,
   Loader2,
   LockIcon,
   LockOpenIcon,
   LogOutIcon,
   MailIcon,
-  MapPinIcon,
-  MicIcon,
   PlusIcon,
   SettingsIcon,
   ShieldCheckIcon,
-  TreePineIcon,
   UserIcon,
   UsersIcon,
 } from "lucide-react";
@@ -33,8 +27,8 @@ import {
 } from "react";
 import { useTranslations } from "next-intl";
 import type { CgsGroupMembership } from "@/app/(manage)/manage/_lib/cgs";
-import { accountIdentifierFromManagePath, groupManageBasePath, manageHref, type ManageAccountKind } from "@/lib/links";
-import { stripLocaleFromPathname } from "@/lib/i18n/routing";
+import { accountIdentifierFromManagePath, type ManageAccountKind } from "@/lib/links";
+import { accountOrganizationsPath, accountPath, accountSettingsPath } from "@/app/account/_lib/account-route";
 import {
   findSwitcherGroupByIdentifier,
   switcherGroupIdentifier,
@@ -520,14 +514,6 @@ function isActiveContext(active: ActiveAccountContext, type: "personal" | "group
   return active.type === type && active.did === did;
 }
 
-function accountSegment(didOrHandle: string): string {
-  return encodeURIComponent(didOrHandle);
-}
-
-function groupManageHref(group: MenuGroup): string {
-  return `/manage/groups/${accountSegment(switcherGroupIdentifier(group))}`;
-}
-
 function groupName(group: MenuGroup): string {
   return group.displayName?.trim() || "Organization account";
 }
@@ -558,72 +544,7 @@ function AccountDot({
   );
 }
 
-type ManageMenuItem = { id: string; label: string; href: string; icon: React.ReactNode };
-
-// The manage destinations for the active account, mirroring the former sidebar
-// "Manage" tab. Personal accounts only own projects + observations; full
-// organizations also expose sites, audio, drone and trees.
-function buildManageMenuItems(
-  basePath: string,
-  kind: ManageAccountKind,
-  label: (itemKey: string) => string,
-): ManageMenuItem[] {
-  const projects: ManageMenuItem = {
-    id: "projects",
-    label: label("myProjects"),
-    href: manageHref({ basePath }, "projects"),
-    icon: <FolderKanbanIcon className="h-3.5 w-3.5" />,
-  };
-  const observations: ManageMenuItem = {
-    id: "observations",
-    label: label("myObservations"),
-    href: manageHref({ basePath }, "observations"),
-    icon: <BinocularsIcon className="h-3.5 w-3.5" />,
-  };
-  if (kind !== "organization") {
-    return [projects, observations];
-  }
-  return [
-    projects,
-    observations,
-    { id: "sites", label: label("mySites"), href: manageHref({ basePath }, "sites"), icon: <MapPinIcon className="h-3.5 w-3.5" /> },
-    { id: "audio", label: label("myAudio"), href: manageHref({ basePath }, "audio"), icon: <MicIcon className="h-3.5 w-3.5" /> },
-    { id: "drone", label: label("myDrone"), href: manageHref({ basePath }, "drone"), icon: <DroneIcon className="h-3.5 w-3.5" /> },
-    { id: "trees", label: label("myTrees"), href: manageHref({ basePath }, "trees"), icon: <TreePineIcon className="h-3.5 w-3.5" /> },
-  ];
-}
-
-function ManageMenuRow({
-  href,
-  label,
-  icon,
-  active,
-  onSelect,
-}: {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-  active: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onSelect}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted/60",
-        active ? "bg-muted/60 font-medium text-foreground" : "text-foreground",
-      )}
-    >
-      <span className={cn("shrink-0", active ? "text-primary" : "text-muted-foreground")}>{icon}</span>
-      <span className="truncate">{label}</span>
-    </Link>
-  );
-}
-
 function AccountMenuRow({
-  href,
   label,
   subtitle,
   avatarUrl,
@@ -631,7 +552,6 @@ function AccountMenuRow({
   icon,
   onSelect,
 }: {
-  href: string;
   label: string;
   subtitle: string;
   avatarUrl?: string | null;
@@ -640,10 +560,10 @@ function AccountMenuRow({
   onSelect: () => void;
 }) {
   return (
-    <Link
-      href={href}
+    <button
+      type="button"
       onClick={onSelect}
-      className="group flex items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-muted/60"
+      className="group flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-muted/60"
     >
       <AccountDot avatarUrl={avatarUrl} label={label} icon={icon} />
       <span className="min-w-0 flex-1">
@@ -657,7 +577,7 @@ function AccountMenuRow({
       ) : (
         <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-foreground/45 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
       )}
-    </Link>
+    </button>
   );
 }
 
@@ -665,12 +585,10 @@ function AuthenticatedMenu({
   session,
   profileName,
   isProfileNameLoading = false,
-  manageAccountKind,
 }: {
   session: Extract<AuthSession, { isLoggedIn: true }>;
   profileName?: string | null;
   isProfileNameLoading?: boolean;
-  manageAccountKind: ManageAccountKind;
 }) {
   const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
@@ -705,13 +623,13 @@ function AuthenticatedMenu({
     : personalSecondaryLabel;
   const triggerAvatarUrl = showingGroup ? currentGroup?.avatarUrl : personalCard?.avatarUrl;
   const triggerIcon = showingGroup ? <UsersIcon className="h-4 w-4" /> : <UserIcon className="h-3.5 w-3.5" />;
-  const settingsGroupIdentifier = routeGroupIdentifier
+  const activeGroupIdentifier = routeGroupIdentifier
     ?? (currentGroup ? switcherGroupIdentifier(currentGroup) : null)
     ?? (activeContext.type === "group" ? activeContext.identifier || activeContext.did : null);
-  const manageBasePath = settingsGroupIdentifier ? groupManageBasePath(settingsGroupIdentifier) : "/manage";
-  const manageMenuKind: ManageAccountKind = settingsGroupIdentifier ? "organization" : manageAccountKind;
-  const canonicalPath = stripLocaleFromPathname(pathname);
-  const manageMenuItems = buildManageMenuItems(manageBasePath, manageMenuKind, (itemKey) => sidebarT(`items.${itemKey}`));
+  // The active account's home is now its profile, where owners edit in place.
+  const activeIdentifier = activeGroupIdentifier ?? personalCard?.handle?.trim() ?? session.did;
+  const profileHref = accountPath(activeIdentifier);
+  const settingsHref = accountSettingsPath(activeIdentifier);
   const [invitations, setInvitations] = useState<MenuInvitation[]>([]);
   const [invitationsStatus, setInvitationsStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const invitationsStatusRef = useRef(invitationsStatus);
@@ -843,7 +761,6 @@ function AuthenticatedMenu({
               </div>
 
               <AccountMenuRow
-                href={manageHref({ basePath: "/manage" })}
                 label={personalDisplayLabel}
                 subtitle="Personal account"
                 avatarUrl={personalCard?.avatarUrl}
@@ -874,7 +791,6 @@ function AuthenticatedMenu({
               {groups.map((group) => (
                 <AccountMenuRow
                   key={group.groupDid}
-                  href={groupManageHref(group)}
                   label={groupName(group)}
                   subtitle={roleLabel(group.role)}
                   avatarUrl={group.avatarUrl}
@@ -938,7 +854,27 @@ function AuthenticatedMenu({
               <div className="my-2 h-px bg-border/60" />
 
               <Link
-                href="/manage/organizations"
+                href={profileHref}
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <UserIcon className="h-4 w-4" />
+                {sidebarT("profileRow.viewProfile")}
+              </Link>
+
+              <Link
+                href={settingsHref}
+                onClick={() => setOpen(false)}
+                className="mt-1 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted/60"
+              >
+                <SettingsIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                {authT("settings")}
+              </Link>
+
+              <div className="my-2 h-px bg-border/60" />
+
+              <Link
+                href={accountOrganizationsPath(personalCard?.handle?.trim() ?? session.did)}
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted/60"
               >
@@ -953,31 +889,6 @@ function AuthenticatedMenu({
               >
                 <PlusIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 {t("authCreateNewOrganization")}
-              </Link>
-
-              <div className="my-2 h-px bg-border/60" />
-
-              <div className="truncate px-2 pb-1 pt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                {sidebarT("manageGroupTitle", { account: displayLabel })}
-              </div>
-              {manageMenuItems.map((item) => (
-                <ManageMenuRow
-                  key={item.id}
-                  href={item.href}
-                  label={item.label}
-                  icon={item.icon}
-                  active={canonicalPath === item.href || canonicalPath.startsWith(`${item.href}/`)}
-                  onSelect={() => setOpen(false)}
-                />
-              ))}
-
-              <Link
-                href={settingsGroupIdentifier ? manageHref({ basePath: groupManageBasePath(settingsGroupIdentifier) }, "settings") : manageHref({ basePath: "/manage" }, "settings")}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted/60"
-              >
-                <SettingsIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                {authT("settings")}
               </Link>
 
               <div className="my-2 h-px bg-border/60" />
@@ -1018,7 +929,6 @@ export function AuthButton({
         session={session}
         profileName={profileName}
         isProfileNameLoading={isProfileNameLoading}
-        manageAccountKind={manageAccountKind}
       />
     );
   }

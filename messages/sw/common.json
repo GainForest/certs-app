@@ -345,7 +345,12 @@
     "observations": "Uchunguzi",
     "gallery": "Matunzio",
     "settings": "Mipangilio",
-    "timeline": "Ratiba"
+    "timeline": "Ratiba",
+    "sites": "Maeneo",
+    "audio": "Sauti",
+    "drone": "Ndege",
+    "trees": "Miti",
+    "members": "Wanachama"
   },
   "accountOrganizations": {
     "emptyEyebrow": "Hakuna mashirika",

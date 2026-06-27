@@ -345,7 +345,12 @@
     "observations": "Observações",
     "gallery": "Galeria",
     "settings": "Configurações",
-    "timeline": "Linha do tempo"
+    "timeline": "Linha do tempo",
+    "sites": "Locais",
+    "audio": "Áudio",
+    "drone": "Drone",
+    "trees": "Árvores",
+    "members": "Membros"
   },
   "accountOrganizations": {
     "emptyEyebrow": "Sem organizações",

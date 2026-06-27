@@ -104,6 +104,26 @@ export function accountSettingsPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/settings`;
 }
 
+export function accountSitesPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/sites`;
+}
+
+export function accountAudioPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/audio`;
+}
+
+export function accountDronePath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/drone`;
+}
+
+export function accountTreesPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/trees`;
+}
+
+export function accountMembersPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/members`;
+}
+
 export async function readOptionalAccountRouteParams(
   params: Promise<{ did: string }>,
 ): Promise<{ urlIdentifier: string; did: string } | null> {

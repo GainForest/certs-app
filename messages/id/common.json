@@ -345,7 +345,12 @@
     "observations": "Observasi",
     "gallery": "Galeri",
     "settings": "Pengaturan",
-    "timeline": "Linimasa"
+    "timeline": "Linimasa",
+    "sites": "Situs",
+    "audio": "Audio",
+    "drone": "Drone",
+    "trees": "Pohon",
+    "members": "Anggota"
   },
   "accountOrganizations": {
     "emptyEyebrow": "Belum ada organisasi",

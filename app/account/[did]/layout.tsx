@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { fetchAuthSession } from "@/app/_lib/auth-server";
-import type { AuthSession } from "@/app/_lib/auth";
-import { fetchUserCgsGroups } from "@/app/_lib/manage-server";
+import { resolveAccountManageAccess } from "@/app/_lib/manage-server";
 import { canEditGroupProfile } from "@/app/(manage)/manage/_lib/cgs-permissions";
-import { accountManageBasePath, groupManageBasePath } from "@/lib/links";
+import type { CgsRole } from "@/app/(manage)/manage/_lib/cgs";
+import { EditableAccountHeader } from "@/app/(manage)/manage/_components/EditableAccountHeader";
 import { AccountChrome } from "../_components/AccountChrome";
 import { AccountHero } from "../_components/AccountHero";
 import { AccountTabBar } from "../_components/AccountTabBar";
-import { getAccountRouteData, readAccountRouteParams, readOptionalAccountRouteParams, type AccountRouteData } from "../_lib/account-route";
+import { accountSettingsPath, getAccountRouteData, readAccountRouteParams, readOptionalAccountRouteParams } from "../_lib/account-route";
 
 export async function generateMetadata({ params }: { params: Promise<{ did: string }> }): Promise<Metadata> {
   const routeParams = await readOptionalAccountRouteParams(params);
@@ -27,21 +27,6 @@ export async function generateMetadata({ params }: { params: Promise<{ did: stri
   };
 }
 
-async function getEditHref(account: AccountRouteData, session: AuthSession): Promise<string | null> {
-  if (!session.isLoggedIn) return null;
-  if (session.did === account.did) return accountManageBasePath(account.urlIdentifier);
-  if (account.kind !== "organization") return null;
-
-  const groups = await fetchUserCgsGroups();
-  const membership = groups.find((group) => group.groupDid === account.did);
-  if (!membership) return null;
-
-  const permission = canEditGroupProfile({ kind: "group", role: membership.role });
-  if (!permission.allowed) return null;
-
-  return groupManageBasePath(account.urlIdentifier || membership.handle || account.did);
-}
-
 export default async function AccountLayout({
   children,
   params,
@@ -52,7 +37,22 @@ export default async function AccountLayout({
   const { did, urlIdentifier } = await readAccountRouteParams(params);
   const account = await getAccountRouteData(did, urlIdentifier);
   const session = await fetchAuthSession();
-  const editHref = await getEditHref(account, session);
+
+  // Owners (and org admins) edit their profile in place; everyone else — including
+  // plain org members, who can still manage records through the tabs — sees the
+  // read-only public hero.
+  const access = await resolveAccountManageAccess(account.urlIdentifier).catch(() => null);
+  const target = access?.status === "allowed" ? access.target : null;
+  const groupRole: CgsRole | undefined = target?.kind === "group"
+    ? target.role === "owner" ? "owner" : target.role === "admin" ? "admin" : "member"
+    : undefined;
+  const canEditProfile = target
+    ? target.kind === "group"
+      ? canEditGroupProfile({ kind: "group", role: groupRole }).allowed
+      : true
+    : false;
+  const canManage = Boolean(target);
+
   // Your organizations are private to you: the group service only lets us read
   // your own memberships, so this tab appears only on your own profile.
   const showOrganizations = account.kind === "user" && session.isLoggedIn && session.did === account.did;
@@ -62,8 +62,25 @@ export default async function AccountLayout({
       <AccountChrome
         hero={
           <>
-            <AccountHero account={account} editHref={editHref} />
-            <AccountTabBar did={account.urlIdentifier} accountKind={account.kind} showOrganizations={showOrganizations} />
+            {canEditProfile && target ? (
+              <EditableAccountHeader
+                account={account}
+                writeRepoDid={target.kind === "group" ? target.did : undefined}
+                groupRole={groupRole}
+                settingsHref={accountSettingsPath(account.urlIdentifier)}
+                viewPublicHref={null}
+                showAbout={false}
+              />
+            ) : (
+              <AccountHero account={account} />
+            )}
+            <AccountTabBar
+              did={account.urlIdentifier}
+              accountKind={account.kind}
+              showOrganizations={showOrganizations}
+              includeSettings={canManage}
+              showOrgData={canManage && account.kind === "organization"}
+            />
           </>
         }
       >

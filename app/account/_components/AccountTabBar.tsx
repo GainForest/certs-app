@@ -3,24 +3,29 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BinocularsIcon, Building2Icon, FolderKanbanIcon, HeartHandshakeIcon, HomeIcon, ImageIcon, PaperclipIcon, SettingsIcon } from "lucide-react";
+import { BinocularsIcon, Building2Icon, DroneIcon, FolderKanbanIcon, HeartHandshakeIcon, HomeIcon, ImageIcon, MapPinIcon, MicIcon, PaperclipIcon, SettingsIcon, TreePineIcon, UsersIcon } from "lucide-react";
 import BumicertIcon from "@/icons/BumicertIcon";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { cn } from "@/lib/utils";
 import type { AccountKind } from "../_lib/account-route";
 import {
+  accountAudioPath,
   accountBumicertsPath,
   accountDonationsPath,
+  accountDronePath,
   accountGalleryPath,
+  accountMembersPath,
   accountObservationsPath,
   accountOrganizationsPath,
   accountPath,
   accountProjectsPath,
   accountSettingsPath,
+  accountSitesPath,
   accountTimelinePath,
+  accountTreesPath,
 } from "../_lib/account-route";
 
-type TabLabelKey = "home" | "overview" | "bumicerts" | "projects" | "organizations" | "donationHistory" | "observations" | "timeline" | "gallery" | "settings";
+type TabLabelKey = "home" | "overview" | "bumicerts" | "projects" | "organizations" | "donationHistory" | "observations" | "timeline" | "gallery" | "settings" | "sites" | "audio" | "drone" | "trees" | "members";
 
 interface Tab {
   labelKey: TabLabelKey;
@@ -78,6 +83,7 @@ function buildTabs(
   scope: AccountTabBarScope,
   includeSettings: boolean,
   showOrganizations: boolean,
+  showOrgData: boolean,
   manageBasePath?: string,
 ): Tab[] {
   const paths = buildTabPaths(did, scope, manageBasePath);
@@ -139,6 +145,16 @@ function buildTabs(
       exact: false,
     },
   ];
+  // Private org data + member tabs, shown only to managers on the profile.
+  if (scope === "account" && showOrgData) {
+    tabs.push(
+      { labelKey: "sites", href: accountSitesPath(did), icon: MapPinIcon, exact: false },
+      { labelKey: "trees", href: accountTreesPath(did), icon: TreePineIcon, exact: false },
+      { labelKey: "audio", href: accountAudioPath(did), icon: MicIcon, exact: false },
+      { labelKey: "drone", href: accountDronePath(did), icon: DroneIcon, exact: false },
+      { labelKey: "members", href: accountMembersPath(did), icon: UsersIcon, exact: false },
+    );
+  }
   if (scope === "account") {
     tabs.push(
       {
@@ -165,6 +181,7 @@ interface OrgTabBarProps {
   scope?: AccountTabBarScope;
   includeSettings?: boolean;
   showOrganizations?: boolean;
+  showOrgData?: boolean;
   manageBasePath?: string;
 }
 
@@ -174,12 +191,13 @@ export function AccountTabBar({
   scope = "account",
   includeSettings = false,
   showOrganizations = false,
+  showOrgData = false,
   manageBasePath,
 }: OrgTabBarProps) {
   const t = useTranslations("common.accountTabs");
   const pathname = stripLocaleFromPathname(usePathname() ?? "/");
   const searchParams = useSearchParams();
-  const tabs = buildTabs(did, accountKind, scope, includeSettings, showOrganizations, manageBasePath);
+  const tabs = buildTabs(did, accountKind, scope, includeSettings, showOrganizations, showOrgData, manageBasePath);
 
   function isActive(tab: Tab): boolean {
     if (scope === "manage") {
