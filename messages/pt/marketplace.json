@@ -12,7 +12,8 @@
     "finding": "Localizando pontos no mapa…",
     "mappedItems": "{count} itens com localização no mapa",
     "mappedSites": "{count} locais com localização no mapa",
-    "noLocations": "Nenhum dos itens exibidos tem localização no mapa ainda."
+    "noLocations": "Nenhum dos itens exibidos tem localização no mapa ainda.",
+    "speed": "Velocidade de reprodução"
   },
   "explore": {
     "metadata": {

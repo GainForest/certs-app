@@ -19,6 +19,7 @@ import { accountHref, preferredDidIdentifier } from "../_lib/urls";
 import { getCachedProfile } from "../_lib/did-profile";
 import {
   hydrateRecordTip,
+  recordCreatedTimestamp,
   recordTimestamp,
   recordTipHtml,
   type MapTipLabels,
@@ -57,13 +58,33 @@ const HISTO_BUCKETS = 64;
 const MIN_GAP = 0.015;
 /** Below this many datable records the timeline is hidden (nothing to scrub). */
 const MIN_TIMELINE_POINTS = 2;
+/** Playback speeds offered in the speed selector (YouTube-style). */
+const PLAY_SPEEDS = [0.25, 0.5, 1, 1.5, 2, 3];
+const DAY_MS = 86_400_000;
 
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, n));
 const perfNow = (): number => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
+// Within a short total span the day-only label would make From and To identical,
+// so show the time too (e.g. "Jun 26, 09:22"); otherwise just the date.
+const dayTimeFmt = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: "UTC",
+});
+
+/** Label for the moment `t`, time-aware when the whole axis spans < ~2 days. */
+function spanLabel(min: number, max: number, t: number): string {
+  if (max - min < 2 * DAY_MS) return dayTimeFmt.format(new Date(t));
+  return formatDate(new Date(t).toISOString());
+}
+
 /** Label for the date at fraction `frac` (0..1) across the [min,max] axis. */
 function fracToLabel(min: number, max: number, frac: number): string {
-  return formatDate(new Date(min + (max - min) * frac).toISOString());
+  return spanLabel(min, max, min + (max - min) * frac);
 }
 
 function clusterTier(n: number): { tier: string; size: number } {
@@ -101,10 +122,15 @@ export function RecordMap({
 
   // ── Timeline state (React) drives the scrubber render ──────────────────────
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
   const [winStart, setWinStart] = useState(0);
   const [winEnd, setWinEnd] = useState(1);
   const [histo, setHisto] = useState<number[]>([]);
   const [bounds, setBounds] = useState<{ min: number; max: number } | null>(null);
+  // Mirror the speed into a ref so the rAF loop picks up changes mid-playback
+  // without restarting.
+  const speedRef = useRef(1);
+  speedRef.current = speed;
 
   // ── Timeline refs (drive the rAF loop without re-rendering) ────────────────
   const timedRef = useRef<TimedPoint[]>([]);
@@ -379,7 +405,7 @@ export function RecordMap({
     const { min, max } = rangeRef.current;
     const headT = min + (max - min) * h;
     if (playheadElRef.current) playheadElRef.current.style.left = `${h * 100}%`;
-    if (headDateRef.current) headDateRef.current.textContent = formatDate(new Date(headT).toISOString());
+    if (headDateRef.current) headDateRef.current.textContent = spanLabel(min, max, headT);
     if (headCountRef.current) {
       const shown = shownToRef.current - shownFromRef.current + staticPointsRef.current.length;
       headCountRef.current.textContent = t("shown", { count: formatNumber(shown) });
@@ -430,15 +456,36 @@ export function RecordMap({
     shownFromRef.current = 0;
     shownToRef.current = 0;
 
-    // Partition into datable (timeline) points + always-on static points.
-    const timed: TimedPoint[] = [];
+    // Partition into datable (timeline) points + always-on static points,
+    // tracking both the observed date and the upload time per point.
+    const raw: Array<{ record: ExplorerRecord; point: MapPoint; tEvent: number; tCreated: number }> = [];
     const staticPts: StaticPoint[] = [];
     for (const point of points) {
       const record = point.recordId ? recordById.get(point.recordId) ?? null : null;
-      const ts = record ? recordTimestamp(record) : null;
-      if (record && ts != null) timed.push({ record, point, t: ts });
-      else staticPts.push({ record, point });
+      if (!record) {
+        staticPts.push({ record: null, point });
+        continue;
+      }
+      const tEvent = recordTimestamp(record);
+      const tCreated = recordCreatedTimestamp(record);
+      if (tEvent == null && tCreated == null) {
+        staticPts.push({ record, point });
+        continue;
+      }
+      raw.push({ record, point, tEvent: tEvent ?? tCreated!, tCreated: tCreated ?? tEvent! });
     }
+
+    // Prefer the observed date, but if every point shares one eventDate (common
+    // for a single bulk upload) fall back to the upload time so there is still a
+    // spread to scrub through.
+    const evMin = raw.length ? Math.min(...raw.map((r) => r.tEvent)) : 0;
+    const evMax = raw.length ? Math.max(...raw.map((r) => r.tEvent)) : 0;
+    const useCreated = evMax === evMin;
+    const timed: TimedPoint[] = raw.map((r) => ({
+      record: r.record,
+      point: r.point,
+      t: useCreated ? r.tCreated : r.tEvent,
+    }));
     timed.sort((a, b) => a.t - b.t);
 
     const min = timed.length ? timed[0]!.t : 0;
@@ -494,12 +541,14 @@ export function RecordMap({
     setPlaying(true);
     lastTsRef.current = null;
     const width = Math.max(end - start, 0.0001);
-    const duration = Math.max(MIN_PLAY_MS, PLAY_MS * width);
+    // Base duration at 1×; the live speed ref scales each frame's advance so the
+    // selector can speed up / slow down playback on the fly.
+    const baseDuration = Math.max(MIN_PLAY_MS, PLAY_MS * width);
     const step = (ts: number) => {
       if (lastTsRef.current == null) lastTsRef.current = ts;
       const dt = ts - lastTsRef.current;
       lastTsRef.current = ts;
-      headRef.current = Math.min(end, headRef.current + (width * dt) / duration);
+      headRef.current = Math.min(end, headRef.current + (width * dt * speedRef.current) / baseDuration);
       apply(headRef.current);
       if (headRef.current >= end) {
         stopLoop();
@@ -617,6 +666,9 @@ export function RecordMap({
           defaultHeadCount={t("shown", { count: formatNumber(points.length) })}
           startAria={t("startAria", { date: startLabel })}
           endAria={t("endAria", { date: endLabel })}
+          speed={speed}
+          speedOptions={PLAY_SPEEDS}
+          onSpeedChange={setSpeed}
           beginDrag={beginDrag}
           onTrackClick={onTrackClick}
           trackRef={trackRef}
@@ -629,6 +681,7 @@ export function RecordMap({
             from: t("from"),
             to: t("to"),
             dragHint: t("dragHint"),
+            speed: t("speed"),
           }}
         />
       ) : null}

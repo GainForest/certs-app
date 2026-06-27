@@ -12,7 +12,8 @@
     "finding": "Inatafuta maeneo kwenye ramani…",
     "mappedItems": "Vipengele {count} vyenye eneo kwenye ramani",
     "mappedSites": "Tovuti {count} zenye eneo kwenye ramani",
-    "noLocations": "Hakuna kipengele kilichoonyeshwa chenye eneo kwenye ramani bado."
+    "noLocations": "Hakuna kipengele kilichoonyeshwa chenye eneo kwenye ramani bado.",
+    "speed": "Kasi ya kucheza"
   },
   "explore": {
     "metadata": {

@@ -12,7 +12,8 @@
     "finding": "Finding map locations…",
     "mappedItems": "{count} items with a map location",
     "mappedSites": "{count} sites with a map location",
-    "noLocations": "None of the items shown have a map location yet."
+    "noLocations": "None of the items shown have a map location yet.",
+    "speed": "Playback speed"
   },
   "explore": {
     "metadata": {

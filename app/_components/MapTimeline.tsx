@@ -1,6 +1,15 @@
 "use client";
 
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, RefObject } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const formatSpeed = (n: number) => `${n}\u00d7`;
 
 // Presentational dual-handle range scrubber that floats over the stream map.
 // All the timing/animation logic lives in RecordMap; this component only draws
@@ -14,6 +23,7 @@ export type MapTimelineLabels = {
   from: string;
   to: string;
   dragHint: string;
+  speed: string;
 };
 
 export type DragMode = "start" | "end" | "band";
@@ -33,6 +43,9 @@ export function MapTimeline({
   defaultHeadCount,
   startAria,
   endAria,
+  speed,
+  speedOptions,
+  onSpeedChange,
   beginDrag,
   onTrackClick,
   trackRef,
@@ -55,6 +68,9 @@ export function MapTimeline({
   defaultHeadCount: string;
   startAria: string;
   endAria: string;
+  speed: number;
+  speedOptions: number[];
+  onSpeedChange: (speed: number) => void;
   beginDrag: (mode: DragMode) => (e: ReactPointerEvent) => void;
   onTrackClick: (e: ReactMouseEvent) => void;
   trackRef: RefObject<HTMLDivElement | null>;
@@ -98,6 +114,31 @@ export function MapTimeline({
               <span className="font-medium tabular-nums text-foreground/80">{endLabel}</span>
             </span>
           </div>
+
+          {/* Playback-speed selector (YouTube-style) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={labels.speed}
+                className="inline-flex h-8 shrink-0 items-center justify-center rounded-full border border-border-soft bg-surface px-2.5 text-[11.5px] font-medium tabular-nums text-foreground/75 transition-colors hover:border-primary/40 hover:text-foreground"
+              >
+                {formatSpeed(speed)}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="z-[1000] min-w-[6rem]">
+              <DropdownMenuRadioGroup
+                value={String(speed)}
+                onValueChange={(value) => onSpeedChange(Number(value))}
+              >
+                {speedOptions.map((option) => (
+                  <DropdownMenuRadioItem key={option} value={String(option)} className="tabular-nums">
+                    {formatSpeed(option)}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* The dual-handle range track with density histogram behind it */}

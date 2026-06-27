@@ -88,6 +88,15 @@ export function recordTimestamp(record: ExplorerRecord): number | null {
   return Number.isNaN(t) ? null : t;
 }
 
+/** Epoch ms of the upload time (createdAt). Used as the timeline axis when every
+ *  record shares one eventDate (bulk uploads) so there is still a range to scrub. */
+export function recordCreatedTimestamp(record: ExplorerRecord): number | null {
+  const raw = record.createdAt;
+  if (!raw) return null;
+  const t = Date.parse(raw);
+  return Number.isNaN(t) ? null : t;
+}
+
 function recordBadges(record: ExplorerRecord): string {
   if (record.kind === "occurrence") {
     return [

@@ -12,7 +12,8 @@
     "finding": "Menemukan lokasi peta…",
     "mappedItems": "{count} item dengan lokasi peta",
     "mappedSites": "{count} situs dengan lokasi peta",
-    "noLocations": "Belum ada item yang ditampilkan dengan lokasi peta."
+    "noLocations": "Belum ada item yang ditampilkan dengan lokasi peta.",
+    "speed": "Kecepatan pemutaran"
   },
   "explore": {
     "metadata": {
