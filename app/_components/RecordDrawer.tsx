@@ -413,6 +413,9 @@ export function RecordDrawer({
 
           {/* Open the dedicated, iNaturalist-style observation page. */}
           {observationHref && <DetailLinkRow href={observationHref} label={t("actions.viewObservation")} />}
+          {/* Open the dedicated project page — kept at the top to match the
+              observation and cert actions. */}
+          {projectHref && <DetailLinkRow href={projectHref} label={t("actions.viewProject")} />}
           {shortLead && (
             <p className="mt-2.5 text-[14.5px] leading-[1.55] text-foreground/72">
               {shortLead}
@@ -467,14 +470,11 @@ export function RecordDrawer({
           </div>
 
           {record.kind === "project" && (
-            <>
-              {projectHref && <DetailLinkRow href={projectHref} label={t("actions.viewProject")} />}
-              <ProjectBumicertList
-                records={projectBumicerts}
-                totalCount={record.bumicertCount}
-                requestedCount={record.bumicertUris.length}
-              />
-            </>
+            <ProjectBumicertList
+              records={projectBumicerts}
+              totalCount={record.bumicertCount}
+              requestedCount={record.bumicertUris.length}
+            />
           )}
 
           {record.kind === "occurrence" && (
