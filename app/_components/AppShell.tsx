@@ -977,7 +977,7 @@ function SocialFooter() {
       {/* Language + theme controls live together in the sidebar footer; the
           language picker sits directly to the left of the dark/light toggle. */}
       <div className={cn("flex items-center", collapsed ? "flex-col gap-1" : "gap-0.5")}>
-        <LanguageSelector />
+        <LanguageSelector compact={collapsed} />
         <ThemeToggle />
       </div>
     </div>

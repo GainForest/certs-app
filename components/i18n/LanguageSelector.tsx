@@ -1,6 +1,5 @@
 "use client";
 
-import { Globe2Icon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,7 @@ function persistLocale(locale: SupportedLanguageCode) {
   document.documentElement.lang = locale;
 }
 
-export function LanguageSelector() {
+export function LanguageSelector({ compact = false }: { compact?: boolean } = {}) {
   const locale = resolveSupportedLanguage(useLocale());
   const pathname = usePathname();
   const t = useTranslations("common.language");
@@ -42,10 +41,9 @@ export function LanguageSelector() {
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size={compact ? "icon" : "sm"}
           aria-label={`${t("changeAria")}. ${t("currentLanguage")}: ${getLanguageLabel(locale)}`}
         >
-          <Globe2Icon aria-hidden="true" />
           <span className="text-xs font-semibold uppercase">{locale}</span>
         </Button>
       </DropdownMenuTrigger>
