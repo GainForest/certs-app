@@ -48,7 +48,6 @@ import {
 import type { AuthSession } from "../_lib/auth";
 import { buildLoginUrl, redirectToLogout } from "../_lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { AccountMenuLanguageOptions } from "@/components/i18n/AccountMenuLanguageOptions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ModalContent, ModalDescription, ModalTitle } from "@/components/ui/modal/modal";
 import { useModal } from "@/components/ui/modal/context";
@@ -971,10 +970,6 @@ function AuthenticatedMenu({
                   onSelect={() => setOpen(false)}
                 />
               ))}
-
-              <div className="my-2 h-px bg-border/60" />
-
-              <AccountMenuLanguageOptions onSelect={() => setOpen(false)} />
 
               <Link
                 href={settingsGroupIdentifier ? manageHref({ basePath: groupManageBasePath(settingsGroupIdentifier) }, "settings") : manageHref({ basePath: "/manage" }, "settings")}

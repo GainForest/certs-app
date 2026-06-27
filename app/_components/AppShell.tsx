@@ -972,9 +972,14 @@ function AddDataCard({ sessionDid }: { sessionDid: string }) {
 function SocialFooter() {
   const collapsed = useSidebarCollapsed();
   return (
-    <div className={cn("flex items-center px-1", collapsed ? "justify-center" : "justify-between")}>
+    <div className={cn("flex px-1", collapsed ? "flex-col items-center gap-1" : "items-center justify-between")}>
       {collapsed ? null : <span className="text-xs font-medium text-muted-foreground">GainForest v{APP_VERSION}</span>}
-      <ThemeToggle />
+      {/* Language + theme controls live together in the sidebar footer; the
+          language picker sits directly to the left of the dark/light toggle. */}
+      <div className={cn("flex items-center", collapsed ? "flex-col gap-1" : "gap-0.5")}>
+        <LanguageSelector />
+        <ThemeToggle />
+      </div>
     </div>
   );
 }
@@ -1192,9 +1197,6 @@ function Header({
               ) : null}
             </AnimatePresence>
             <GlobalSearch />
-            {/* Signed-in users get the language picker inside their account
-                menu (above Settings); signed-out users keep it in the bar. */}
-            {authSession?.isLoggedIn === false ? <LanguageSelector /> : null}
             <AuthButton
               session={authSession}
               profileName={profileName}
