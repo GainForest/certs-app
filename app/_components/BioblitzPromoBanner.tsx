@@ -14,6 +14,8 @@ const SESSION_KEY = "bioblitz-banner-dismissed";
  */
 export function BioblitzPromoBanner() {
   const t = useTranslations("marketplace.bioblitz");
+  const hasBannerCopy =
+    t.has("banner.message") && t.has("banner.cta") && t.has("banner.dismiss");
   const [dismissed, setDismissed] = useState(false);
 
   // Restore the session dismissal (state alone survives client navigation; this
@@ -35,7 +37,7 @@ export function BioblitzPromoBanner() {
     }
   }, []);
 
-  if (dismissed) return null;
+  if (dismissed || !hasBannerCopy) return null;
 
   return (
     <div className="relative shrink-0">
