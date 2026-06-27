@@ -350,6 +350,7 @@
     "audio": "Audio",
     "drone": "Drone",
     "trees": "Trees",
+    "measurements": "Measurements",
     "members": "Members"
   },
   "accountOrganizations": {

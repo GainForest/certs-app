@@ -16,7 +16,6 @@ import {
   accountSettingsPath,
   accountSitesPath,
   accountTimelinePath,
-  accountTreesPath,
 } from "@/app/account/_lib/account-route";
 import { ManageHomeSection } from "@/app/(manage)/manage/_sections";
 
@@ -104,7 +103,7 @@ export default async function AccountManagePage({ params, searchParams }: PagePr
   // Top-level sections → their profile tab.
   if (first === "projects" && !second) redirect(accountProjectsPath(id));
   if (first === "sites" && !second) redirect(accountSitesPath(id));
-  if (first === "trees" && !second) redirect(accountTreesPath(id));
+  if (first === "trees" && !second) redirect(`${accountObservationsPath(id)}?layer=measurements`);
   if (first === "audio" && !second) redirect(accountAudioPath(id));
   if (first === "drone" && !second) redirect(accountDronePath(id));
   if (first === "certs" && !second) redirect(accountBumicertsPath(id));

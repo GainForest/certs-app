@@ -46,7 +46,8 @@ function routeForKind(target: ManageTarget, kind: UploadKind): string {
     case "observation":
       return manageHref(target, "observations", { mode: "add" });
     case "tree":
-      return manageHref(target, "trees", { mode: "upload" });
+      // Tree import is the Measurements layer of Observations, in upload mode.
+      return manageHref(target, "observations", { layer: "measurements", mode: "upload" });
     case "audio":
       return manageHref(target, "audio", { section: "recordings", mode: "new" });
     case "site":
