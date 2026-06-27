@@ -10,7 +10,6 @@
  * cached per record so re-opening the tooltip is instant.
  */
 
-import type { Marker } from "leaflet";
 import type { ExplorerRecord } from "./indexer";
 import { resolveBlobUrl } from "./pds";
 import { formatDate } from "./format";
@@ -142,7 +141,8 @@ export function recordTipHtml(
  * tooltip. No-op when the record already has an image or carries no blob ref.
  */
 export async function hydrateRecordTip(
-  marker: Marker,
+  // A marker or any Leaflet layer (e.g. a GeoJSON polygon) carrying the tooltip.
+  target: { setTooltipContent(content: string): unknown },
   record: ExplorerRecord,
   point: MapTipPoint,
   labels: MapTipLabels,
@@ -154,7 +154,7 @@ export async function hydrateRecordTip(
   if (!url) return;
   blobUrlCache.set(record.id, url);
   try {
-    marker.setTooltipContent(recordTipHtml(record, point, labels));
+    target.setTooltipContent(recordTipHtml(record, point, labels));
   } catch {
     /* tooltip may have been torn down before the blob resolved */
   }

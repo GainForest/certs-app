@@ -28,7 +28,14 @@ export type MapPoint = {
   /** Set when a loaded record backs this point (so a click opens its drawer).
    *  Unset for site pins that are not in the current loaded page. */
   recordId?: string;
+  /** The full GeoJSON geometry behind this location, when the location is a
+   *  polygon/feature rather than a bare "lat,lon". Lets the single-record map
+   *  draw the real boundary instead of only a centroid pin. */
+  geojson?: GeoJSON.GeoJSON | null;
 };
+
+/** Centroid + (optionally) the raw GeoJSON a location resolved from. */
+export type ResolvedLocation = { lat: number; lon: number; geojson?: GeoJSON.GeoJSON | null };
 
 export function mapTileUrl(dark: boolean): string {
   return `https://{s}.basemaps.cartocdn.com/${dark ? "dark_all" : "light_all"}/{z}/{x}/{y}{r}.png`;
@@ -69,19 +76,22 @@ function centroidFromGeoJson(g: unknown): { lat: number; lon: number } | null {
   return n ? { lon: sx / n, lat: sy / n } : null;
 }
 
-function parseInlineLocationString(str: string): { lat: number; lon: number } | null {
+function parseInlineLocationString(str: string): ResolvedLocation | null {
   const trimmed = str.trim();
   const m = trimmed.match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
   if (m) {
     const lat = Number(m[1]);
     const lon = Number(m[2]);
-    if (Number.isFinite(lat) && Number.isFinite(lon)) return { lat, lon };
+    if (Number.isFinite(lat) && Number.isFinite(lon)) return { lat, lon, geojson: null };
   }
   try {
-    return centroidFromGeoJson(JSON.parse(trimmed));
+    const parsed = JSON.parse(trimmed);
+    const centroid = centroidFromGeoJson(parsed);
+    if (centroid) return { ...centroid, geojson: parsed as GeoJSON.GeoJSON };
   } catch {
     return null;
   }
+  return null;
 }
 
 // ── Certified-location → coordinates ───────────────────────────────────────
@@ -100,14 +110,14 @@ const CERT_LOC_QUERY = `
   }
 `;
 
-const locCache = new Map<string, { lat: number; lon: number } | null>();
+const locCache = new Map<string, ResolvedLocation | null>();
 
 export async function resolveCertifiedLocationCoords(
   uri: string,
   signal?: AbortSignal,
-): Promise<{ lat: number; lon: number } | null> {
+): Promise<ResolvedLocation | null> {
   if (locCache.has(uri)) return locCache.get(uri) ?? null;
-  let result: { lat: number; lon: number } | null = null;
+  let result: ResolvedLocation | null = null;
   try {
     const res = await fetch(INDEXER_URL, {
       method: "POST",

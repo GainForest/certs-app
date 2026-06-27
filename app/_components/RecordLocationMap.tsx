@@ -2,18 +2,50 @@
 
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
-import type { Map as LeafletMap, Marker, TileLayer } from "leaflet";
+import type { GeoJSON as LeafletGeoJSON, Map as LeafletMap, Marker, TileLayer } from "leaflet";
 import { MapPinIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { mapTileUrl, resolvePointForRecord, type MapPoint } from "../_lib/coords";
 import type { ExplorerRecord } from "../_lib/indexer";
 import { hydrateRecordTip, recordTipHtml, type MapTipLabels } from "../_lib/map-tooltip";
 
+// True when the GeoJSON carries a geometry with real extent (a line/polygon),
+// i.e. something worth drawing as a shape rather than collapsing to one pin.
+function hasDrawableArea(geo: unknown): boolean {
+  if (!geo || typeof geo !== "object") return false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GeoJSON is deeply variadic
+  const g = geo as any;
+  switch (g.type) {
+    case "FeatureCollection":
+      return Array.isArray(g.features) && g.features.some((f: unknown) => hasDrawableArea((f as any)?.geometry));
+    case "Feature":
+      return hasDrawableArea(g.geometry);
+    case "Polygon":
+    case "MultiPolygon":
+    case "LineString":
+    case "MultiLineString":
+      return Array.isArray(g.coordinates) && g.coordinates.length > 0;
+    case "GeometryCollection":
+      return Array.isArray(g.geometries) && g.geometries.some((geom: unknown) => hasDrawableArea(geom));
+    default:
+      return false;
+  }
+}
+
+// The themed accent colour for the boundary, read from the live CSS variable so
+// it follows light/dark. Falls back to the brand green if unavailable (SSR).
+function readPrimaryColor(): string {
+  if (typeof window === "undefined") return "#2f6b3a";
+  const value = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
+  return value || "#2f6b3a";
+}
+
 export function RecordLocationMap({ record }: { record: ExplorerRecord }) {
   const t = useTranslations("marketplace.map");
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
+  const geoLayerRef = useRef<LeafletGeoJSON | null>(null);
   const tileRef = useRef<TileLayer | null>(null);
   const LRef = useRef<typeof import("leaflet") | null>(null);
   const [point, setPoint] = useState<MapPoint | null>(null);
@@ -53,6 +85,7 @@ export function RecordLocationMap({ record }: { record: ExplorerRecord }) {
     mapRef.current.remove();
     mapRef.current = null;
     markerRef.current = null;
+    geoLayerRef.current = null;
     tileRef.current = null;
   }, [point]);
 
@@ -91,18 +124,46 @@ export function RecordLocationMap({ record }: { record: ExplorerRecord }) {
 
       const map = mapRef.current;
       markerRef.current?.remove();
+      markerRef.current = null;
+      geoLayerRef.current?.remove();
+      geoLayerRef.current = null;
       const tip = { lat: point.lat, lon: point.lon };
-      const marker = L.marker([point.lat, point.lon], { icon: pinIcon })
-        .bindTooltip(recordTipHtml(record, tip, labelsRef.current), {
-          direction: "top",
-          offset: [0, -10],
-          opacity: 1,
-          className: "gf-occ-tip",
+
+      // When the location resolved to a real polygon/feature, draw the actual
+      // boundary and frame it to its bounds; otherwise fall back to a single
+      // centroid pin.
+      if (point.geojson && hasDrawableArea(point.geojson)) {
+        const accent = readPrimaryColor();
+        const layer = L.geoJSON(point.geojson, {
+          style: { color: accent, weight: 2, fillColor: accent, fillOpacity: 0.18 },
+          pointToLayer: (_feature, latlng) => L.marker(latlng, { icon: pinIcon }),
         })
-        .addTo(map);
-      marker.on("tooltipopen", () => void hydrateRecordTip(marker, record, tip, labelsRef.current));
-      markerRef.current = marker;
-      map.setView([point.lat, point.lon], 12, { animate: false });
+          .bindTooltip(recordTipHtml(record, tip, labelsRef.current), {
+            direction: "top",
+            offset: [0, -10],
+            opacity: 1,
+            sticky: true,
+            className: "gf-occ-tip",
+          })
+          .addTo(map);
+        layer.on("tooltipopen", () => void hydrateRecordTip(layer, record, tip, labelsRef.current));
+        geoLayerRef.current = layer;
+        const bounds = layer.getBounds();
+        if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 15, animate: false });
+        else map.setView([point.lat, point.lon], 12, { animate: false });
+      } else {
+        const marker = L.marker([point.lat, point.lon], { icon: pinIcon })
+          .bindTooltip(recordTipHtml(record, tip, labelsRef.current), {
+            direction: "top",
+            offset: [0, -10],
+            opacity: 1,
+            className: "gf-occ-tip",
+          })
+          .addTo(map);
+        marker.on("tooltipopen", () => void hydrateRecordTip(marker, record, tip, labelsRef.current));
+        markerRef.current = marker;
+        map.setView([point.lat, point.lon], 12, { animate: false });
+      }
       setTimeout(() => map.invalidateSize(), 60);
     })();
     return () => {
@@ -115,6 +176,7 @@ export function RecordLocationMap({ record }: { record: ExplorerRecord }) {
       mapRef.current?.remove();
       mapRef.current = null;
       markerRef.current = null;
+      geoLayerRef.current = null;
       tileRef.current = null;
     };
   }, []);
