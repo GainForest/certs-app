@@ -1,4 +1,5 @@
-import { expect, type Locator, type Page, type TestInfo } from "@playwright/test";
+import { resolve } from "node:path";
+import { expect, type Locator, type Page, type Response as PlaywrightResponse, type TestInfo } from "@playwright/test";
 import { screenshotStep } from "./artifacts";
 import {
   createDisposableInbox,
@@ -49,8 +50,52 @@ type RegisterCgsResponse = {
   message?: unknown;
 };
 
+const onboardingAvatarPath = resolve(process.cwd(), "e2e/fixtures/profile-avatar.png");
+const onboardingBannerPath = resolve(process.cwd(), "e2e/fixtures/profile-banner.png");
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isRegisterGroupResponse(response: PlaywrightResponse): boolean {
+  if (!response.url().includes("/api/cgs/mutation")) return false;
+  if (response.request().method() !== "POST" || !response.ok()) return false;
+  try {
+    const body = response.request().postDataJSON() as { operation?: unknown };
+    return body.operation === "registerGroup";
+  } catch {
+    return false;
+  }
+}
+
+async function uploadImageThroughEditor(page: Page, trigger: Locator, imagePath: string): Promise<void> {
+  await expect(trigger).toBeVisible({ timeout: 15_000 });
+  const dialog = page.locator('[role="dialog"]:visible, [data-slot="dialog-content"]:visible, [data-slot="drawer-content"]:visible').last();
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await trigger.click({ force: attempt > 0 });
+    if (await dialog.isVisible({ timeout: 5_000 }).catch(() => false)) break;
+  }
+
+  await expect(dialog).toBeVisible({ timeout: 15_000 });
+  await dialog.locator('input[type="file"]').setInputFiles(imagePath);
+  const doneButton = dialog.getByRole("button", { name: /^done$/i });
+  await expect(doneButton).toBeEnabled({ timeout: 30_000 });
+  await doneButton.click();
+  await expect(dialog).not.toBeVisible({ timeout: 15_000 });
+}
+
+async function addOnboardingAvatarAndBanner(page: Page, kind: "user" | "organization"): Promise<void> {
+  await uploadImageThroughEditor(
+    page,
+    page.getByRole("button", { name: /add banner|change banner|banner/i }).first(),
+    onboardingBannerPath,
+  );
+  await uploadImageThroughEditor(
+    page,
+    page.getByRole("button", { name: kind === "organization" ? /upload logo/i : /upload avatar/i }).first(),
+    onboardingAvatarPath,
+  );
 }
 
 async function waitForProfileOnManage(page: Page, name: RegExp, timeoutMs = 180_000): Promise<void> {
@@ -89,6 +134,7 @@ export async function completeUserOnboarding(
   const description = options.description ?? "Disposable browser test profile for full end-to-end checks.";
   await form.getByPlaceholder(/your name/i).fill(displayName);
   await form.getByPlaceholder(/short introduction/i).fill(description);
+  await addOnboardingAvatarAndBanner(page, "user");
   await screenshotStep(page, testInfo, "user-onboarding-ready");
 
   await clickAndWaitForPlainManage(page, form.getByRole("button", { name: /^continue/i }));
@@ -105,24 +151,30 @@ export async function completeOrganizationOnboarding(page: Page, testInfo: TestI
   const recoveryInbox = await createDisposableInbox();
   const displayName = `E2E Org ${Date.now().toString(36)}`;
   const description = "Disposable organization for CGS-backed browser end-to-end checks.";
-  const handle = `e2e-${Math.random().toString(36).slice(2, 8)}`;
 
-  await page.goto("/manage/organizations", { waitUntil: "domcontentloaded" });
+  await page.goto("/manage?mode=onboard-org", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: /^organization$/i })).toBeVisible({ timeout: 60_000 });
   await screenshotStep(page, testInfo, "organization-onboarding-open");
 
-  const response = await page.request.post("/api/cgs/mutation", {
-    data: {
-      operation: "registerGroup",
-      handle,
-      ownerDid: owner.did,
-      email: recoveryInbox.email,
-      displayName,
-      description,
-    },
-    timeout: 120_000,
-  });
+  const form = await visibleForm(page);
+  await form.getByPlaceholder(/organization name/i).fill(displayName);
+  await form.getByPlaceholder(/short introduction/i).fill(description);
+  await addOnboardingAvatarAndBanner(page, "organization");
+  await form.getByRole("checkbox", { name: /code of conduct/i }).click();
+  await screenshotStep(page, testInfo, "organization-onboarding-basics-ready");
+
+  await form.getByRole("button", { name: /^continue$/i }).click();
+  await expect(page.getByRole("button", { name: /back/i }).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByPlaceholder(/tell the story behind your organization/i)).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: /advanced/i }).click();
+  await page.getByPlaceholder(/recovery@example.com/i).fill(recoveryInbox.email);
+  await screenshotStep(page, testInfo, "organization-onboarding-details-ready");
+
+  const registrationResponsePromise = page.waitForResponse(isRegisterGroupResponse, { timeout: 120_000 });
+  await page.getByRole("button", { name: /^continue$/i }).click();
+  const response = await registrationResponsePromise;
   const payload = await response.json().catch(() => null) as RegisterCgsResponse | null;
-  if (!response.ok() || typeof payload?.groupDid !== "string") {
+  if (typeof payload?.groupDid !== "string") {
     throw new Error(`Organization registration failed (${response.status()}): ${JSON.stringify(payload)}`);
   }
 
@@ -140,37 +192,7 @@ export async function completeOrganizationOnboarding(page: Page, testInfo: TestI
   };
   await writeCgsOrgMetadata(metadata);
 
-  const createdAt = new Date().toISOString();
-  for (const mutation of [
-    {
-      operation: "putRecord",
-      repo: payload.groupDid,
-      collection: "app.bsky.actor.profile",
-      rkey: "self",
-      record: { $type: "app.bsky.actor.profile", displayName, description },
-    },
-    {
-      operation: "putRecord",
-      repo: payload.groupDid,
-      collection: "app.certified.actor.profile",
-      rkey: "self",
-      record: { $type: "app.certified.actor.profile", displayName, description, createdAt },
-    },
-    {
-      operation: "putRecord",
-      repo: payload.groupDid,
-      collection: "app.certified.actor.organization",
-      rkey: "self",
-      record: { $type: "app.certified.actor.organization", visibility: "public", createdAt },
-    },
-  ]) {
-    const write = await page.request.post("/api/cgs/mutation", { data: mutation, timeout: 120_000 });
-    if (!write.ok()) {
-      throw new Error(`Initial organization record write failed (${write.status()}): ${await write.text().catch(() => "")}`);
-    }
-  }
-
-  await page.goto(`/manage/groups/${encodeURIComponent(metadata.handle ?? metadata.groupDid)}`, { waitUntil: "domcontentloaded" });
+  await page.waitForURL((url) => url.pathname.includes("/manage") && !url.searchParams.has("mode"), { timeout: 120_000 });
   await expect(page.getByText(displayName).first()).toBeVisible({ timeout: 90_000 });
   await screenshotStep(page, testInfo, "organization-onboarding-complete");
   return metadata;

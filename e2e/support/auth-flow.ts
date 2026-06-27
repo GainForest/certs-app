@@ -139,9 +139,9 @@ async function openAppLogin(
   await page.waitForLoadState("networkidle", { timeout: 20_000 }).catch(() => undefined);
   await screenshotStep(page, testInfo, `${labelPrefix}-app-sign-in-prompt`);
 
-  const getStarted = page.getByRole("button", { name: /get started/i }).first();
-  await expect(getStarted).toBeVisible({ timeout: 60_000 });
-  await getStarted.click();
+  const signInTrigger = page.getByRole("button", { name: /get started|sign in/i }).first();
+  await expect(signInTrigger).toBeVisible({ timeout: 60_000 });
+  await signInTrigger.click();
 
   const dialog = page.getByRole("dialog").last();
   await expect(dialog).toBeVisible({ timeout: 15_000 });

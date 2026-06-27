@@ -44,7 +44,7 @@ export function groupIdentifier(metadata: CgsOrgMetadata): string {
 }
 
 export function groupManageBasePath(metadata: CgsOrgMetadata): string {
-  return `/manage/groups/${encodeURIComponent(groupIdentifier(metadata))}`;
+  return `/account/${encodeURIComponent(groupIdentifier(metadata))}/manage`;
 }
 
 export async function writeCgsOrgMetadata(metadata: CgsOrgMetadata): Promise<void> {

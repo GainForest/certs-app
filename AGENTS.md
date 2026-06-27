@@ -8,3 +8,6 @@ Always add or update translations for new or changed user-facing UI copy. Keep s
 
 ## Mutation permissions
 When adding any feature that creates, updates, deletes, or changes membership/roles, gate the available actions by the user’s current role before they can trigger them. Disable or hide unavailable options up front and use plain-language explanations.
+
+## E2E test runs
+When a user asks to run the full E2E suite, run it. The suite intentionally creates disposable accounts and organizations, and teardown is responsible for deleting them. Do not avoid a requested full E2E run because it uses disposable accounts; instead, watch cleanup output and report any teardown failure clearly.
