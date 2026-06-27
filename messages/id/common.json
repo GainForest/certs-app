@@ -17,6 +17,36 @@
     "openMenu": "Buka menu",
     "greenGlobeExternal": "Green Globe"
   },
+  "search": {
+    "trigger": "Cari",
+    "open": "Buka pencarian",
+    "title": "Cari GainForest",
+    "placeholder": "Cari Cert, proyek, organisasi, observasi…",
+    "clear": "Hapus pencarian",
+    "escKey": "esc",
+    "kinds": {
+      "cert": "Cert",
+      "project": "Proyek",
+      "organization": "Organisasi",
+      "observation": "Observasi"
+    },
+    "idle": {
+      "headline": "Ketik untuk mencari",
+      "body": "Temukan Cert, proyek, organisasi, dan observasi."
+    },
+    "noResults": {
+      "headline": "Tidak ada hasil untuk “{query}”",
+      "body": "Coba kata lain atau periksa ejaan."
+    },
+    "error": {
+      "headline": "Terjadi kesalahan",
+      "body": "Pencarian sedang bermasalah. Silakan coba lagi sebentar."
+    },
+    "hints": {
+      "navigate": "Navigasi",
+      "open": "Buka"
+    }
+  },
   "theme": {
     "toggle": "Ganti tema",
     "switchLight": "Beralih ke mode terang",

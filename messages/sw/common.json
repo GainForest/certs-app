@@ -17,6 +17,36 @@
     "openMenu": "Fungua menyu",
     "greenGlobeExternal": "Green Globe"
   },
+  "search": {
+    "trigger": "Tafuta",
+    "open": "Fungua utafutaji",
+    "title": "Tafuta GainForest",
+    "placeholder": "Tafuta Certs, miradi, mashirika, uchunguzi…",
+    "clear": "Futa utafutaji",
+    "escKey": "esc",
+    "kinds": {
+      "cert": "Certs",
+      "project": "Miradi",
+      "organization": "Mashirika",
+      "observation": "Uchunguzi"
+    },
+    "idle": {
+      "headline": "Andika ili kutafuta",
+      "body": "Pata Certs, miradi, mashirika na uchunguzi."
+    },
+    "noResults": {
+      "headline": "Hakuna matokeo ya “{query}”",
+      "body": "Jaribu neno lingine au angalia tahajia."
+    },
+    "error": {
+      "headline": "Hitilafu imetokea",
+      "body": "Utafutaji una tatizo. Tafadhali jaribu tena baada ya muda mfupi."
+    },
+    "hints": {
+      "navigate": "Sogea",
+      "open": "Fungua"
+    }
+  },
   "theme": {
     "toggle": "Badilisha mandhari",
     "switchLight": "Badilisha kwenda hali angavu",

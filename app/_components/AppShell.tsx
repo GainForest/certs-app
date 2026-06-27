@@ -46,6 +46,7 @@ import {
   useActiveAccountContext,
 } from "../_lib/account-switcher";
 import { HeaderSlotsProvider, useHeaderSlots } from "./HeaderSlots";
+import { GlobalSearch } from "./GlobalSearch";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { ModalContent, ModalDescription, ModalFooter, ModalTitle } from "@/components/ui/modal/modal";
 import { useModal } from "@/components/ui/modal/context";
@@ -1190,6 +1191,7 @@ function Header({
                 </motion.div>
               ) : null}
             </AnimatePresence>
+            <GlobalSearch />
             <LanguageSelector />
             <AuthButton
               session={authSession}

@@ -17,6 +17,36 @@
     "openMenu": "Open menu",
     "greenGlobeExternal": "Green Globe"
   },
+  "search": {
+    "trigger": "Search",
+    "open": "Open search",
+    "title": "Search GainForest",
+    "placeholder": "Search Certs, projects, organizations, observations…",
+    "clear": "Clear search",
+    "escKey": "esc",
+    "kinds": {
+      "cert": "Certs",
+      "project": "Projects",
+      "organization": "Organizations",
+      "observation": "Observations"
+    },
+    "idle": {
+      "headline": "Type to search",
+      "body": "Find Certs, projects, organizations, and observations."
+    },
+    "noResults": {
+      "headline": "No results for “{query}”",
+      "body": "Try a different word or check the spelling."
+    },
+    "error": {
+      "headline": "Something went wrong",
+      "body": "Search is having a moment. Please try again shortly."
+    },
+    "hints": {
+      "navigate": "Navigate",
+      "open": "Open"
+    }
+  },
   "theme": {
     "toggle": "Toggle theme",
     "switchLight": "Switch to light mode",

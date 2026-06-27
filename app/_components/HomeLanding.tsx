@@ -27,6 +27,7 @@ import { formatCompact, formatCompactUsd } from "../_lib/format";
 import { StatsTileGrid, type StatsTileItem } from "./StatsTile";
 import { ThemeToggle } from "./ThemeToggle";
 import { AuthModal } from "./AuthFlow";
+import { GlobalSearch } from "./GlobalSearch";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { useModal } from "@/components/ui/modal/context";
 
@@ -140,6 +141,7 @@ function LandingTopNavbar() {
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <GlobalSearch />
           <LanguageSelector />
           <ThemeToggle className="hidden sm:inline-flex" />
           <motion.div
