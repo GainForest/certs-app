@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getProxyBlockResult } from "@/lib/proxy-guards";
 import {
   LANGUAGE_COOKIE_NAME,
   resolvePreferredLanguageFromHeader,
@@ -51,6 +52,20 @@ export function proxy(request: NextRequest) {
     redirectUrl.hostname = "127.0.0.1";
     redirectUrl.port = hostname.split(":")[1] || "3040";
     return NextResponse.redirect(redirectUrl, { status: 307 });
+  }
+
+  const blockResult = getProxyBlockResult({
+    method: request.method,
+    pathname: request.nextUrl.pathname,
+    userAgent: request.headers.get("user-agent"),
+  });
+
+  if (blockResult) {
+    if (blockResult.status === 403) {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+
+    return new NextResponse(null, { status: 404 });
   }
 
   const pathnameLocale = getPathLocale(request.nextUrl.pathname);
