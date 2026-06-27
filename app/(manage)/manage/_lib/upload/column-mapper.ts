@@ -1,4 +1,18 @@
 import type { ColumnMapping, MappedRow } from "./types";
+import { TARGET_FIELDS } from "./types";
+
+/** Darwin Core fields a tree upload cannot proceed without. */
+const REQUIRED_TARGET_FIELDS = TARGET_FIELDS.filter((field) => field.required).map((field) => field.field);
+
+/**
+ * True when a set of mappings already covers every required field. Used to skip
+ * the manual "Match headings" step when auto-detection is confident enough that
+ * the upload can go straight to preview.
+ */
+export function mappingsCoverRequiredFields(mappings: ColumnMapping[]): boolean {
+  const mapped = new Set(mappings.filter((mapping) => mapping.targetField).map((mapping) => mapping.targetField));
+  return REQUIRED_TARGET_FIELDS.every((field) => mapped.has(field));
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Subject part detection from column names

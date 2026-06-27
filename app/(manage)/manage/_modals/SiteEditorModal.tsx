@@ -52,6 +52,8 @@ type SiteEditorModalProps = {
   } | null;
   onSaved?: (site: SavedSiteRef) => void;
   requireBoundary?: boolean;
+  /** Pre-selected boundary file (e.g. a GeoJSON handed off from "Add data"). */
+  initialFile?: File | null;
 };
 
 type LinkedSiteTree = {
@@ -173,7 +175,7 @@ function loadCurrentSiteRecord(initialData: NonNullable<SiteEditorModalProps["in
   return { cid: initialData.cid, record: initialData.recordValue };
 }
 
-export function SiteEditorModal({ did, target, initialData, onSaved, requireBoundary = false }: SiteEditorModalProps) {
+export function SiteEditorModal({ did, target, initialData, onSaved, requireBoundary = false, initialFile = null }: SiteEditorModalProps) {
   const isEditMode = Boolean(initialData?.rkey);
   const previewUrl =
     isEditMode && initialData?.hasShapeLocation
@@ -183,7 +185,9 @@ export function SiteEditorModal({ did, target, initialData, onSaved, requireBoun
       : undefined;
 
   const [name, setName] = useState(initialData?.name ?? "");
-  const [siteFile, setSiteFile] = useState<File | null>(null);
+  // In create mode a handed-off boundary file (from the unified "Add data" drop
+  // zone) seeds the picker so the steward only has to name the site.
+  const [siteFile, setSiteFile] = useState<File | null>(initialData ? null : initialFile);
   const [showEditor, setShowEditor] = useState(!isEditMode || !previewUrl);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isPending, setIsPending] = useState(false);

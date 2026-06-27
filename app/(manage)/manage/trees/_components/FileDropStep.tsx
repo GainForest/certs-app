@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { manageApiHref, type ManageTarget } from "@/lib/links";
+import { takeAddDataHandoff } from "../../_lib/upload/add-data-handoff";
 import { useCsvParser } from "../../_lib/upload/use-csv-parser";
 import { PARTNER_ESTABLISHMENT_MEANS_OPTIONS } from "../../_lib/upload/establishment-means";
 import { detectKoboFormat } from "../../_lib/upload/kobo-mapper";
@@ -358,6 +359,16 @@ export default function FileDropStep({
     setSelectedFile(file);
     parseFile(file);
   }, [parseFile, reset, uploadId]);
+
+  // Ingest a spreadsheet handed off from the unified "Add data" drop zone, once,
+  // so dropping a CSV there lands here already parsing instead of on a blank step.
+  const handoffConsumedRef = useRef(false);
+  useEffect(() => {
+    if (handoffConsumedRef.current) return;
+    handoffConsumedRef.current = true;
+    const [file] = takeAddDataHandoff("tree");
+    if (file) handleFile(file);
+  }, [handleFile]);
 
   const handleMediaZipFile = useCallback(async (file: File) => {
     const requestId = ++mediaZipParseRequestRef.current;

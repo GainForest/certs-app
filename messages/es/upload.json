@@ -1,4 +1,40 @@
 {
+  "addData": {
+    "title": "Agregar datos",
+    "description": "Suelta tus archivos abajo y los enviaremos al lugar correcto: fotos, listas de árboles, audio o mapas de sitios.",
+    "dropTitle": "Suelta archivos para agregar datos",
+    "dropHint": "Fotos · listas de árboles · audio · mapas de sitios",
+    "browse": "Buscar archivos",
+    "chooseTitle": "¿Qué te gustaría agregar?",
+    "suggested": "Mejor coincidencia",
+    "mixedNote": "Tus archivos parecen de varios tipos. Elige abajo qué agregar.",
+    "unknownNote": "No pudimos identificar estos archivos. Elige abajo qué agregar.",
+    "orgOnlyNote": "Este tipo de datos solo se puede agregar en una cuenta de organización.",
+    "orgOnlyHint": "Las listas de árboles, el audio y los mapas de sitios se pueden agregar en cuentas de organización.",
+    "options": {
+      "observation": {
+        "title": "Fotos de especies",
+        "description": "Fotos de plantas y animales, identificadas automáticamente."
+      },
+      "tree": {
+        "title": "Lista de árboles",
+        "description": "Una hoja de cálculo de árboles (CSV o exportación de formulario)."
+      },
+      "audio": {
+        "title": "Grabaciones de audio",
+        "description": "Grabaciones de sonido de un dispositivo de campo."
+      },
+      "site": {
+        "title": "Sitio de campo",
+        "description": "Un archivo de mapa que marca un área o límite del proyecto."
+      }
+    },
+    "taina": {
+      "title": "¿Prefieres conversar?",
+      "body": "Envía fotos o grabaciones a nuestro asistente en Telegram y las agrega por ti.",
+      "cta": "Abrir el asistente"
+    }
+  },
   "navigation": {
     "organization": "Organización",
     "sites": "Sitios",
@@ -752,6 +788,7 @@
       "geoTimeout": "Encontrar tu ubicación tardó demasiado. Elige un pin en el mapa.",
       "geoInsecure": "Compartir la ubicación solo funciona en un sitio seguro. Abre esta página con HTTPS o elige un pin en el mapa.",
       "setLocation": "Establecer ubicación",
+      "setLocationOptional": "Establecer ubicación (opcional)",
       "changeLocation": "Cambiar ubicación",
       "stepTitle": "Primero establece la ubicación",
       "stepBody": "Elige dónde se tomaron estas fotos antes de subir. Cada foto sin GPS propio usará esta ubicación, y puedes cambiar cada foto individualmente.",

@@ -30,8 +30,10 @@ interface AudioClientProps {
 export function AudioClient({ did, target }: AudioClientProps) {
   const t = useTranslations("upload.audio");
   const [section, setSection] = useQueryState(
+    // Recordings are what most stewards come to add, so the workspace leads with
+    // them; events and deployments remain a tab away for advanced grouping.
     "section",
-    parseAsStringEnum<Section>([...SECTIONS]).withDefault("events").withOptions(QUERY_STATE_OPTIONS),
+    parseAsStringEnum<Section>([...SECTIONS]).withDefault("recordings").withOptions(QUERY_STATE_OPTIONS),
   );
   const [mode, setMode] = useQueryState(
     "mode",

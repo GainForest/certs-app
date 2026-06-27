@@ -5,6 +5,7 @@ import { resolveAccountManageAccess } from "@/app/_lib/manage-server";
 import { accountTimelinePath } from "@/app/account/_lib/account-route";
 import { ManageGroupsClient } from "@/app/(manage)/manage/groups/_components/ManageGroupsClient";
 import {
+  AddDataSection,
   AudioSection,
   BumicertsSection,
   DroneSection,
@@ -60,6 +61,7 @@ export default async function AccountManagePage({ params, searchParams }: PagePr
   if (rest.length > 0) notFound();
 
   if (!first) return <ManageHomeSection target={target} wrapDashboard={false} />;
+  if (first === "add" && !second) return <AddDataSection target={target} />;
   if (first === "projects" && !second) return <ProjectsSection target={target} />;
   if (first === "projects" && second && third === "gallery") return <ProjectGallerySection target={target} projectRkey={decodeURIComponent(second)} />;
   if (first === "projects" && second && third === "certs") return <ProjectCertsSection target={target} projectRkey={decodeURIComponent(second)} />;

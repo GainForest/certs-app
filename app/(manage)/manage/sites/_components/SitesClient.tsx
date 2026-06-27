@@ -23,6 +23,7 @@ import {
   SiteEditorModal,
   SiteEditorModalId,
 } from "../../_modals/SiteEditorModal";
+import { takeAddDataHandoff } from "../../_lib/upload/add-data-handoff";
 
 const PREVIEW_APP_BASE_URL = "https://polygons-gainforest.vercel.app";
 const DEFAULT_SITE_COLLECTION = "app.gainforest.organization.defaultSite";
@@ -184,7 +185,7 @@ export function SitesClient({ did, target }: { did: string; target: ManageTarget
   const currentSiteIndex = previewingRkey ? allSiteRkeys.indexOf(previewingRkey) : -1;
   const canShowPreview = currentSiteIndex >= 0 && Boolean(iframeUrl);
 
-  const handleOpenAdd = () => {
+  const handleOpenAdd = useCallback((initialFile: File | null = null) => {
     if (!createPermission.allowed) {
       setFetchError(createPermission.reason ?? "You cannot add sites for this organization.");
       return;
@@ -198,6 +199,7 @@ export function SitesClient({ did, target }: { did: string; target: ManageTarget
             did={did}
             target={target}
             initialData={null}
+            initialFile={initialFile}
             onSaved={() => void loadSites()}
           />
         ),
@@ -205,7 +207,21 @@ export function SitesClient({ did, target }: { did: string; target: ManageTarget
       true,
     );
     void modal.show();
-  };
+  }, [createPermission.allowed, createPermission.reason, did, loadSites, modal, target]);
+
+  // Open the site editor when arriving from the unified "Add data" drop zone
+  // (?add=1), preloading any handed-off GeoJSON boundary file. Runs once.
+  const addHandledRef = useRef(false);
+  useEffect(() => {
+    if (addHandledRef.current) return;
+    if (searchParams.get("add") !== "1") return;
+    addHandledRef.current = true;
+    const [file] = takeAddDataHandoff("site");
+    handleOpenAdd(file ?? null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("add");
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [handleOpenAdd, router, searchParams]);
 
   const handleOpenEdit = (site: ManagedLocation) => {
     if (!updatePermission.allowed) {
@@ -317,7 +333,7 @@ export function SitesClient({ did, target }: { did: string; target: ManageTarget
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {sites.length > 0 ? <ViewToggle view={view} setView={setView} /> : null}
-          <Button size="sm" className="rounded-full" onClick={handleOpenAdd} disabled={!createPermission.allowed} title={createPermission.reason ?? undefined}>
+          <Button size="sm" className="rounded-full" onClick={() => handleOpenAdd()} disabled={!createPermission.allowed} title={createPermission.reason ?? undefined}>
             <CirclePlusIcon />
             Add site
           </Button>
@@ -390,7 +406,7 @@ export function SitesClient({ did, target }: { did: string; target: ManageTarget
           <p className="max-w-sm text-sm text-muted-foreground">
             Add your first field location to get started.
           </p>
-          <Button variant="outline" size="sm" onClick={handleOpenAdd} disabled={!createPermission.allowed} title={createPermission.reason ?? undefined}>
+          <Button variant="outline" size="sm" onClick={() => handleOpenAdd()} disabled={!createPermission.allowed} title={createPermission.reason ?? undefined}>
             <CirclePlusIcon />
             Add a site
           </Button>

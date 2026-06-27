@@ -13,7 +13,6 @@ import {
   FolderKanbanIcon,
   HeartHandshakeIcon,
   HeartIcon,
-  ImagePlusIcon,
   LeafIcon,
   MenuIcon,
   MoonIcon,
@@ -21,6 +20,7 @@ import {
   Share2Icon,
   SparkleIcon,
   SunIcon,
+  UploadCloudIcon,
   UserIcon,
 } from "lucide-react";
 import { createContext, Suspense, useContext, useEffect, useState, type MouseEvent, type SVGProps } from "react";
@@ -498,7 +498,7 @@ function UnifiedSidebar({
           {authSession?.isLoggedIn ? (
             <>
               <BumicertCreationCard sessionDid={authSession.did} />
-              <ObservationCreationCard sessionDid={authSession.did} />
+              <AddDataCard sessionDid={authSession.did} />
             </>
           ) : (
             <SignInPrompt collapsed={collapsed} />
@@ -701,14 +701,14 @@ function NavLeaf({ item, isActive, index, paired = false }: { item: NavLeaf; isA
 }
 
 const PERSONAL_PROJECT_NEW_HREF = manageHref({ basePath: "/manage" }, "projects", { mode: "new" });
-const PERSONAL_OBSERVATION_ADD_HREF = manageHref({ basePath: "/manage" }, "observations", { mode: "add" });
+const PERSONAL_ADD_DATA_HREF = manageHref({ basePath: "/manage" }, "add");
 
 function createProjectHrefForGroup(identifier: string): string {
   return manageHref({ basePath: groupManageBasePath(identifier) }, "projects", { mode: "new" });
 }
 
-function addObservationHrefForGroup(identifier: string): string {
-  return manageHref({ basePath: groupManageBasePath(identifier) }, "observations", { mode: "add" });
+function addDataHrefForGroup(identifier: string): string {
+  return manageHref({ basePath: groupManageBasePath(identifier) }, "add");
 }
 
 type ContextLinkProps = {
@@ -730,12 +730,12 @@ function CreateProjectLink({ sessionDid, className, children }: ContextLinkProps
   );
 }
 
-function AddObservationLink({ sessionDid, className, children }: ContextLinkProps) {
+function AddDataLink({ sessionDid, className, children }: ContextLinkProps) {
   return (
     <ManageContextLink
       sessionDid={sessionDid}
-      personalHref={PERSONAL_OBSERVATION_ADD_HREF}
-      hrefForGroup={addObservationHrefForGroup}
+      personalHref={PERSONAL_ADD_DATA_HREF}
+      hrefForGroup={addDataHrefForGroup}
       className={className}
     >
       {children}
@@ -894,24 +894,24 @@ function BumicertCreationCard({ sessionDid }: { sessionDid: string }) {
   );
 }
 
-function ObservationCreationCard({ sessionDid }: { sessionDid: string }) {
+function AddDataCard({ sessionDid }: { sessionDid: string }) {
   const t = useTranslations("common.sidebar.creationCard");
   const collapsed = useSidebarCollapsed();
 
   if (collapsed) {
     return (
-      <SidebarTooltip label={t("addObservations")}>
+      <SidebarTooltip label={t("addData")}>
         <span className="mx-auto flex w-fit">
-          <AddObservationLink
+          <AddDataLink
             sessionDid={sessionDid}
             className={cn(
               buttonVariants({ variant: "outline", size: "icon" }),
               "bg-background hover:bg-primary hover:text-primary-foreground",
             )}
           >
-            <ImagePlusIcon />
-            <span className="sr-only">{t("addObservations")}</span>
-          </AddObservationLink>
+            <UploadCloudIcon />
+            <span className="sr-only">{t("addData")}</span>
+          </AddDataLink>
         </span>
       </SidebarTooltip>
     );
@@ -944,10 +944,10 @@ function ObservationCreationCard({ sessionDid }: { sessionDid: string }) {
           fill="currentcolor"
           strokeWidth={0}
         />
-        {/*Hover Transitioning Observation Card*/}
+        {/*Hover Transitioning Data Card*/}
         <div className="absolute z-1 -bottom-4 left-1/2 -translate-x-1/2 scale-100 group-hover:scale-120 -rotate-12 group-hover:-rotate-30 transition-transform bg-background/50 backdrop-blur-lg border border-border shadow-xl rounded-xl h-20 w-16 p-1 flex flex-col gap-1">
           <div className="w-full h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-            <BinocularsIcon className="text-primary size-6 opacity-80" />
+            <UploadCloudIcon className="text-primary size-6 opacity-80" />
           </div>
           <div className="bg-muted h-2 rounded-lg w-8"></div>
           <div className="bg-muted h-2 rounded-lg w-full"></div>
@@ -955,15 +955,15 @@ function ObservationCreationCard({ sessionDid }: { sessionDid: string }) {
       </div>
 
       {/*CTA*/}
-      <AddObservationLink
+      <AddDataLink
         sessionDid={sessionDid}
         className={cn(
           buttonVariants({ variant: "outline", size: "sm" }),
           "relative z-2 w-full bg-background hover:bg-primary hover:text-primary-foreground",
         )}
       >
-        <ImagePlusIcon /> {t("addObservations")}
-      </AddObservationLink>
+        <UploadCloudIcon /> {t("addData")}
+      </AddDataLink>
     </div>
   );
 }

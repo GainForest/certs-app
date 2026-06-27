@@ -11,6 +11,7 @@ import type { AudioEventItem } from "@/app/_lib/indexer";
 import { AudioSpectrogram } from "./AudioSpectrogram";
 import { cleanFilename, datetimeLocal, extractAudioMetadata, formatBytes, getAudioBlobFile, getAudioMeta, optional, optionalNumber, splitTags, textFromDescription } from "./audio-utils";
 import { AUDIO_MIME_TYPES, MAX_AUDIO_BYTES, type AudioMetadataDraft, type OperationStep } from "./types";
+import { takeAddDataHandoff } from "../../_lib/upload/add-data-handoff";
 import { Field, FormShell, ProgressState, SelectField, TextField } from "./FormFields";
 
 type AsyncMutation<Input, Result> = {
@@ -439,6 +440,18 @@ export function AudioForm(
     if (!name.trim()) setName(cleanFilename(nextFile.name));
     setMetadata(await extractAudioMetadata(nextFile));
   };
+
+  // Ingest an audio file handed off from the unified "Add data" drop zone, once,
+  // so dropping a recording there lands here with the file already selected.
+  const handoffConsumedRef = useRef(false);
+  useEffect(() => {
+    if (props.mode !== "create" || handoffConsumedRef.current) return;
+    handoffConsumedRef.current = true;
+    const [file] = takeAddDataHandoff("audio");
+    if (file) void handleFile(file);
+    // Runs once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const save = async () => {
     setError(null);

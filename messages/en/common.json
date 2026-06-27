@@ -94,7 +94,8 @@
     "creationCard": {
       "createBumicert": "Create a Cert",
       "createProject": "Create a Project",
-      "addObservations": "Add Observations"
+      "addObservations": "Add Observations",
+      "addData": "Add data"
     },
     "tabs": {
       "explore": "Explore",

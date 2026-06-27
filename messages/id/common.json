@@ -94,7 +94,8 @@
     "creationCard": {
       "createBumicert": "Buat sertifikat",
       "createProject": "Buat proyek",
-      "addObservations": "Tambah observasi"
+      "addObservations": "Tambah observasi",
+      "addData": "Tambah data"
     },
     "tabs": {
       "explore": "Jelajahi",

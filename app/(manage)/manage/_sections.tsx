@@ -26,6 +26,7 @@ import { ManageProjectsClient } from "./projects/_components/ManageProjectsClien
 import { ProjectGalleryManagerClient } from "./projects/[rkey]/gallery/_components/ProjectGalleryManagerClient";
 import { ProjectCertsManagerClient } from "./projects/[rkey]/certs/_components/ProjectCertsManagerClient";
 import { SitesClient } from "./sites/_components/SitesClient";
+import { AddDataClient } from "./add/_components/AddDataClient";
 import { TreesPageClient } from "./trees/_components/TreesPageClient";
 import { AudioClient } from "./audio/_components/AudioClient";
 import { ObservationsClient } from "./observations/_components/ObservationsClient";
@@ -116,6 +117,14 @@ export function ProjectCertsSection({ target, projectRkey }: { target: ManageTar
 
 export function SitesSection({ target }: { target: ManageTarget }) {
   return <SitesClient target={target} did={target.did} />;
+}
+
+export function AddDataSection({ target }: { target: ManageTarget }) {
+  return (
+    <Suspense fallback={null}>
+      <AddDataClient target={target} />
+    </Suspense>
+  );
 }
 
 export function TreesSection({ target }: { target: ManageTarget }) {

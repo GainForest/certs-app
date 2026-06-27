@@ -94,7 +94,8 @@
     "creationCard": {
       "createBumicert": "Unda cheti",
       "createProject": "Unda mradi",
-      "addObservations": "Ongeza uchunguzi"
+      "addObservations": "Ongeza uchunguzi",
+      "addData": "Ongeza data"
     },
     "tabs": {
       "explore": "Gundua",

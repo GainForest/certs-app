@@ -50,6 +50,7 @@ import {
   type ObservationBlobRef,
 } from "./observation-mutations";
 import { LocationPickerModal, LocationPickerModalId } from "./LocationPickerModal";
+import { takeAddDataHandoff } from "../../_lib/upload/add-data-handoff";
 import {
   fetchDefaultObservationCenter,
   isValidLocation,
@@ -992,7 +993,9 @@ function ObservationBulkAddPanel({
   // fire against a torn-down component.
   const pendingTimers = useRef<Set<number>>(new Set());
   const hasLocation = isValidLocation(chosenLocation);
-  const canChooseImages = projectDecisionMade && hasLocation;
+  // Location is no longer a hard gate: photos can be added straight away and
+  // each one falls back to its own EXIF GPS (then any chosen/default location).
+  const canChooseImages = projectDecisionMade;
 
   // Load the steward's projects so observations can be collected for one of
   // them (writes projectRef + siteRef onto each occurrence). Optional: leaving
@@ -1165,6 +1168,21 @@ function ObservationBulkAddPanel({
     return () => controller.abort();
   }, [target.did]);
 
+  // Ingest photos handed off from the unified "Add data" drop zone, once. The
+  // project step is skipped (treated as no project) so the photos land straight
+  // in review; the steward can still attach a project from the in-section flow.
+  const handoffConsumedRef = useRef(false);
+  useEffect(() => {
+    if (handoffConsumedRef.current) return;
+    handoffConsumedRef.current = true;
+    const files = takeAddDataHandoff("observation");
+    if (files.length === 0) return;
+    setProjectDecisionMade(true);
+    void addFiles(files, { bypassProjectGate: true });
+    // Runs once on mount; addFiles closes over the freshest refs it needs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const timers = pendingTimers.current;
     return () => {
@@ -1315,10 +1333,6 @@ function ObservationBulkAddPanel({
       setBulkError(t("projectRequired"));
       return;
     }
-    if (!hasLocation) {
-      setBulkError(t("location.locationRequired"));
-      return;
-    }
     void addFiles(event.dataTransfer.files);
   }
 
@@ -1385,17 +1399,19 @@ function ObservationBulkAddPanel({
     if (item) void analyzeItem(item);
   }
 
-  async function addFiles(fileList: FileList | null) {
-    if (!projectDecisionMade) {
+  async function addFiles(fileList: FileList | File[] | null, options?: { bypassProjectGate?: boolean }) {
+    if (!options?.bypassProjectGate && !projectDecisionMade) {
       setBulkError(t("projectRequired"));
       return;
     }
-    // A location must be chosen first; every photo without its own GPS inherits it.
-    const location = chosenLocationRef.current;
-    if (!isValidLocation(location)) {
-      setBulkError(t("location.locationRequired"));
-      return;
-    }
+    // Location is optional. Each photo prefers its own EXIF GPS; otherwise it
+    // inherits a chosen location, then the owner's default site centre. Photos
+    // with none simply upload without coordinates and can be placed later.
+    const location = isValidLocation(chosenLocationRef.current)
+      ? chosenLocationRef.current
+      : isValidLocation(defaultCenter)
+        ? defaultCenter
+        : null;
     const imageFiles = Array.from(fileList ?? []).filter((file) => file.type.startsWith("image/"));
     if (imageFiles.length === 0) return;
 
@@ -1409,8 +1425,8 @@ function ObservationBulkAddPanel({
 
     setIsPreparing(true);
     try {
-      const fallbackLat = String(location.lat);
-      const fallbackLng = String(location.lng);
+      const fallbackLat = location ? String(location.lat) : "";
+      const fallbackLng = location ? String(location.lng) : "";
       const nextItems = await Promise.all(files.map(async (sourceFile) => {
         // Each photo starts as its own observation (groupId === id); identical
         // identifications are auto-grouped after analysis. No batch grouping.
@@ -1735,14 +1751,19 @@ function ObservationBulkAddPanel({
               ) : null}
               {hasLocation ? (
                 <LocationBar location={chosenLocation!} onChange={chooseObservationLocation} />
-              ) : null}
+              ) : (
+                <Button variant="outline" size="sm" onClick={chooseObservationLocation} className="gap-1.5 text-muted-foreground">
+                  <MapPinIcon className="size-3.5 shrink-0 text-primary" />
+                  <span className="hidden sm:inline">{t("location.setLocationOptional")}</span>
+                </Button>
+              )}
               <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFilesChanged} className="sr-only" />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isPreparing || !canChooseImages}
-                title={!projectDecisionMade ? t("projectRequired") : !hasLocation ? t("location.locationRequired") : undefined}
+                title={!projectDecisionMade ? t("projectRequired") : undefined}
               >
                 {isPreparing ? <Loader2Icon className="size-4 animate-spin" /> : <ImagePlusIcon className="size-4" />}
                 <span className="hidden sm:inline">
@@ -1768,8 +1789,6 @@ function ObservationBulkAddPanel({
             onChoose={chooseProject}
             onSkip={skipProject}
           />
-        ) : !hasLocation ? (
-          <LocationStep onChoose={chooseObservationLocation} />
         ) : items.length === 0 && !uploadSession ? (
           <button
             type="button"
@@ -1964,22 +1983,6 @@ function ProjectBar({ project, hasProject, onChange }: { project: ObservationPro
       <span className="truncate">{label}</span>
       <PencilIcon className="size-3 shrink-0 text-muted-foreground" />
     </Button>
-  );
-}
-
-function LocationStep({ onChoose }: { onChoose: () => void }) {
-  const t = useTranslations("upload.observations.location");
-  return (
-    <div className="flex min-h-[280px] flex-col items-center justify-center rounded-3xl border border-dashed border-primary/30 bg-gradient-to-b from-primary/[0.06] to-transparent p-8 text-center">
-      <span className="mb-5 grid size-16 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
-        <MapPinIcon className="size-7" />
-      </span>
-      <h2 className="font-instrument text-2xl font-medium italic tracking-[-0.02em] text-foreground">{t("stepTitle")}</h2>
-      <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{t("stepBody")}</p>
-      <Button className="mt-5" onClick={onChoose}>
-        <MapPinIcon className="size-4" /> {t("setLocation")}
-      </Button>
-    </div>
   );
 }
 

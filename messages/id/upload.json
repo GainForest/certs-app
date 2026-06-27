@@ -1,4 +1,40 @@
 {
+  "addData": {
+    "title": "Tambah data",
+    "description": "Jatuhkan berkas Anda di bawah dan kami akan mengirimkannya ke tempat yang tepat — foto, daftar pohon, audio, atau peta lokasi.",
+    "dropTitle": "Jatuhkan berkas untuk menambah data",
+    "dropHint": "Foto · daftar pohon · audio · peta lokasi",
+    "browse": "Telusuri berkas",
+    "chooseTitle": "Apa yang ingin Anda tambahkan?",
+    "suggested": "Paling cocok",
+    "mixedNote": "Berkas Anda tampak bermacam jenis. Pilih apa yang akan ditambahkan di bawah.",
+    "unknownNote": "Kami tidak dapat mengenali berkas ini. Pilih apa yang akan ditambahkan di bawah.",
+    "orgOnlyNote": "Jenis data ini hanya dapat ditambahkan di akun organisasi.",
+    "orgOnlyHint": "Daftar pohon, audio, dan peta lokasi dapat ditambahkan di akun organisasi.",
+    "options": {
+      "observation": {
+        "title": "Foto spesies",
+        "description": "Foto tumbuhan dan hewan, diidentifikasi secara otomatis."
+      },
+      "tree": {
+        "title": "Daftar pohon",
+        "description": "Lembar data pohon (CSV atau ekspor formulir lapangan)."
+      },
+      "audio": {
+        "title": "Rekaman audio",
+        "description": "Rekaman suara dari perangkat lapangan."
+      },
+      "site": {
+        "title": "Lokasi lapangan",
+        "description": "Berkas peta yang menandai area atau batas proyek."
+      }
+    },
+    "taina": {
+      "title": "Lebih suka mengobrol?",
+      "body": "Kirim foto atau rekaman ke asisten kami di Telegram dan asisten akan menambahkannya untuk Anda.",
+      "cta": "Buka asisten"
+    }
+  },
   "navigation": {
     "organization": "Organisasi",
     "sites": "Lokasi",
@@ -752,6 +788,7 @@
       "geoTimeout": "Mencari lokasi Anda terlalu lama. Pilih pin di peta saja.",
       "geoInsecure": "Berbagi lokasi hanya berfungsi di situs aman. Buka halaman ini dengan HTTPS, atau pilih pin di peta.",
       "setLocation": "Atur lokasi",
+      "setLocationOptional": "Atur lokasi (opsional)",
       "changeLocation": "Ubah lokasi",
       "stepTitle": "Atur lokasi terlebih dahulu",
       "stepBody": "Pilih tempat foto-foto ini diambil sebelum mengunggah. Setiap foto tanpa GPS sendiri akan memakai lokasi ini, dan Anda dapat mengubah setiap foto satu per satu.",

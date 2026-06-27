@@ -1,4 +1,40 @@
 {
+  "addData": {
+    "title": "Ongeza data",
+    "description": "Dondosha faili zako hapa chini nasi tutazipeleka mahali pake — picha, orodha za miti, sauti au ramani za maeneo.",
+    "dropTitle": "Dondosha faili ili kuongeza data",
+    "dropHint": "Picha · orodha za miti · sauti · ramani za maeneo",
+    "browse": "Vinjari faili",
+    "chooseTitle": "Ungependa kuongeza nini?",
+    "suggested": "Inayolingana zaidi",
+    "mixedNote": "Faili zako zinaonekana za aina mbalimbali. Chagua cha kuongeza hapa chini.",
+    "unknownNote": "Hatukuweza kutambua faili hizi. Chagua cha kuongeza hapa chini.",
+    "orgOnlyNote": "Aina hii ya data inaweza kuongezwa tu kwenye akaunti ya shirika.",
+    "orgOnlyHint": "Orodha za miti, sauti na ramani za maeneo zinaweza kuongezwa kwenye akaunti za shirika.",
+    "options": {
+      "observation": {
+        "title": "Picha za spishi",
+        "description": "Picha za mimea na wanyama, zinazotambuliwa kiotomatiki."
+      },
+      "tree": {
+        "title": "Orodha ya miti",
+        "description": "Lahajedwali ya miti (CSV au faili la fomu ya uwandani)."
+      },
+      "audio": {
+        "title": "Rekodi za sauti",
+        "description": "Rekodi za sauti kutoka kifaa cha uwandani."
+      },
+      "site": {
+        "title": "Eneo la uwandani",
+        "description": "Faili la ramani linaloonyesha eneo au mpaka wa mradi."
+      }
+    },
+    "taina": {
+      "title": "Unapendelea kupiga gumzo?",
+      "body": "Tuma picha au rekodi kwa msaidizi wetu kwenye Telegram naye atakuongezea kwa niaba yako.",
+      "cta": "Fungua msaidizi"
+    }
+  },
   "navigation": {
     "organization": "Shirika",
     "sites": "Maeneo",
@@ -752,6 +788,7 @@
       "geoTimeout": "Kutafuta eneo lako kulichukua muda mrefu sana. Chagua alama kwenye ramani badala yake.",
       "geoInsecure": "Kushiriki eneo hufanya kazi tu kwenye tovuti salama. Fungua ukurasa huu kwa HTTPS, au chagua alama kwenye ramani.",
       "setLocation": "Weka eneo",
+      "setLocationOptional": "Weka eneo (hiari)",
       "changeLocation": "Badilisha eneo",
       "stepTitle": "Weka eneo kwanza",
       "stepBody": "Chagua mahali picha hizi zilipopigwa kabla ya kupakia. Kila picha isiyo na GPS yake yenyewe itatumia eneo hili, na unaweza kubadilisha kila picha mmoja mmoja.",

@@ -23,6 +23,7 @@ export type ManageTarget = {
 
 export type ManageSectionId =
   | "home"
+  | "add"
   | "projects"
   | "sites"
   | "trees"
@@ -40,6 +41,7 @@ export const ACTIVE_MANAGE_CONTEXT_KEY = "gainforest-active-account-context";
 
 const SECTION_PATHS: Record<ManageSectionId, string> = {
   home: "",
+  add: "add",
   projects: "projects",
   sites: "sites",
   trees: "trees",

@@ -18,6 +18,7 @@ import type { UploadSiteSelection } from "../../_lib/upload/site-selection";
 import { clearPendingUpload, readPendingUpload } from "./upload-session";
 import type { ManageTarget } from "@/lib/links";
 import { canCreateRecord, canUpdateRecord } from "../../_lib/cgs-permissions";
+import { mappingsCoverRequiredFields } from "../../_lib/upload/column-mapper";
 
 type WizardState = {
   currentStep: 1 | 2 | 3 | 4;
@@ -193,7 +194,10 @@ export function TreeUploadWizard({ did, target, onDone }: { did: string; target:
       ...prev,
       file, koboMediaZipFile, koboMediaZipIndex, parsedData, headers, mappings,
       validRows: [], previewSkippedRows: [], establishmentMeans, datasetSelection, siteSelection,
-      currentStep: 2,
+      // When auto-detection already matched every required heading, skip the
+      // manual "Match headings" step and go straight to preview. The steward can
+      // still step back from preview to adjust the mapping.
+      currentStep: mappingsCoverRequiredFields(mappings) ? 3 : 2,
     }));
   };
 

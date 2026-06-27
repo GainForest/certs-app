@@ -1,4 +1,40 @@
 {
+  "addData": {
+    "title": "Add data",
+    "description": "Drop your files below and we'll send them to the right place — photos, tree lists, audio or site maps.",
+    "dropTitle": "Drop files to add data",
+    "dropHint": "Photos · tree lists · audio · site maps",
+    "browse": "Browse files",
+    "chooseTitle": "What would you like to add?",
+    "suggested": "Best match",
+    "mixedNote": "Your files look like a mix. Choose what to add below.",
+    "unknownNote": "We couldn't tell what these files are. Choose what to add below.",
+    "orgOnlyNote": "This kind of data can only be added on an organization account.",
+    "orgOnlyHint": "Tree lists, audio and site maps can be added on organization accounts.",
+    "options": {
+      "observation": {
+        "title": "Species photos",
+        "description": "Photos of plants and animals, identified for you."
+      },
+      "tree": {
+        "title": "Tree list",
+        "description": "A spreadsheet of trees (CSV or field-form export)."
+      },
+      "audio": {
+        "title": "Audio recordings",
+        "description": "Sound recordings from a field device."
+      },
+      "site": {
+        "title": "Field site",
+        "description": "A map file marking a project area or boundary."
+      }
+    },
+    "taina": {
+      "title": "Prefer to chat?",
+      "body": "Send photos or recordings to our assistant on Telegram and it adds them for you.",
+      "cta": "Open the assistant"
+    }
+  },
   "navigation": {
     "organization": "Organization",
     "sites": "Sites",
@@ -752,6 +788,7 @@
       "geoTimeout": "Finding your location took too long. Choose a pin on the map instead.",
       "geoInsecure": "Location sharing only works on a secure site. Open this page with HTTPS, or choose a pin on the map.",
       "setLocation": "Set location",
+      "setLocationOptional": "Set location (optional)",
       "changeLocation": "Change location",
       "stepTitle": "Set the location first",
       "stepBody": "Pick where these photos were taken before you upload. Each photo without its own GPS will use this location, and you can change any photo individually.",
