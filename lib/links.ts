@@ -71,8 +71,16 @@ function appendQuery(path: string, query?: URLSearchParams | Record<string, stri
   return queryString ? `${path}?${queryString}` : path;
 }
 
+// Manage now lives under the account's own profile route
+// (/account/<identifier>/manage) for both personal and organization accounts.
+// The legacy /manage and /manage/groups/<id> URLs are kept alive by a redirect
+// shim that forwards to the new location.
+export function accountManageBasePath(identifier: string): string {
+  return `/account/${encodeURIComponent(identifier)}/manage`;
+}
+
 export function groupManageBasePath(identifier: string): string {
-  return `/manage/groups/${encodeURIComponent(identifier)}`;
+  return accountManageBasePath(identifier);
 }
 
 export function personalManageTarget(options: {
@@ -87,7 +95,7 @@ export function personalManageTarget(options: {
     did: options.did,
     accountKind: options.accountKind,
     identifier: options.identifier?.trim() || options.did,
-    basePath: "/manage",
+    basePath: accountManageBasePath(options.identifier?.trim() || options.did),
     displayName: options.displayName ?? null,
     avatarUrl: options.avatarUrl ?? null,
   };
@@ -154,8 +162,14 @@ function canonicalAppPathname(pathname: string): string {
   return stripLocaleFromPathname(pathname);
 }
 
-export function groupIdentifierFromManagePath(pathname: string): string | null {
-  const match = canonicalAppPathname(pathname).match(/^\/manage\/groups\/([^/?#]+)(?:[/?#]|$)/);
+/**
+ * Extracts the account identifier from a manage path
+ * (/account/<identifier>/manage[/...]). Returns the identifier for both
+ * personal and organization manage routes; callers that need to know whether it
+ * is an organization should cross-reference the user's group memberships.
+ */
+export function accountIdentifierFromManagePath(pathname: string): string | null {
+  const match = canonicalAppPathname(pathname).match(/^\/account\/([^/?#]+)\/manage(?:[/?#]|$)/);
   if (!match?.[1]) return null;
   try {
     return decodeURIComponent(match[1]);
@@ -164,12 +178,19 @@ export function groupIdentifierFromManagePath(pathname: string): string | null {
   }
 }
 
-export function isManagePath(pathname: string): boolean {
-  return /^\/manage(?:[/?#]|$)/.test(canonicalAppPathname(pathname));
+/** @deprecated Use accountIdentifierFromManagePath. Retained for callers. */
+export function groupIdentifierFromManagePath(pathname: string): string | null {
+  return accountIdentifierFromManagePath(pathname);
 }
 
-export function isManageGroupsPath(pathname: string): boolean {
-  return /^\/manage\/groups(?:[/?#]|$)/.test(canonicalAppPathname(pathname));
+export function isManagePath(pathname: string): boolean {
+  return /^\/account\/[^/?#]+\/manage(?:[/?#]|$)/.test(canonicalAppPathname(pathname));
+}
+
+export function isManageGroupsPath(_pathname: string): boolean {
+  // Legacy /manage/groups/<id> URLs no longer exist as a destination; this is
+  // kept only so dependent helpers keep type-checking.
+  return false;
 }
 
 export function isPersonalManageContextPath(pathname: string): boolean {

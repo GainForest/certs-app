@@ -13,6 +13,7 @@ const allowedExactValues = new Set([
   "Z → A",
   "Audio",
   "Video",
+  "Drone",
   "Bumicert",
   "Bumicerts",
   "Bumicerts — Bumicerts",

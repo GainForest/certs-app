@@ -6,6 +6,7 @@
       "organizations": "Mashirika",
       "create": "Unda",
       "launchApp": "Fungua programu",
+      "signIn": "Ingia",
       "menu": "Menyu",
       "navigation": "Urambazaji",
       "close": "Funga",
@@ -13,10 +14,8 @@
     },
     "hero": {
       "imageAlt": "Bonde la msitu wa mvua lenye ukungu",
-      "headingLine1": "Athari iliyothibitishwa",
-      "headingLine2": "huanza na",
-      "headingEmphasis1": "Jamii",
-      "headingEmphasis2": "halisi",
+      "headingUnderlined": "Iliyoidhinishwa",
+      "headingRest": "athari kwa walezi wa asili",
       "description": "Fadhili miradi ya urejeshaji moja kwa moja. Kila cheti ni rekodi iliyothibitishwa ya kazi halisi ya mazingira, ikiungwa mkono na picha, maeneo na walezi wa jamii.",
       "cta": "Gundua miradi",
       "proofPoints": {
@@ -125,6 +124,7 @@
       "alt": "Aikoni ya programu ya GainForest"
     },
     "stats": {
+      "liveLabel": "Athari za moja kwa moja",
       "bumicertsShared": "vyeti zilizoshirikiwa",
       "organizationProfiles": "wasifu wa mashirika",
       "natureSightingsShared": "matukio ya asili yaliyoshirikiwa",

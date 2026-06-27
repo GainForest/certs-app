@@ -49,6 +49,7 @@
   "sidebar": {
     "sections": {
       "explore": "JELAJAHI",
+      "funding": "PENDANAAN",
       "manage": "KELOLA"
     },
     "items": {
@@ -66,15 +67,15 @@
       "observations": "Observasi",
       "donations": "Donasi",
       "organizationHome": "Beranda organisasi",
-      "myOrganization": "Organisasi saya",
-      "myOrganizations": "Organisasi saya",
-      "mySites": "Situs saya",
-      "myAudio": "Audio saya",
-      "myDrone": "Drone saya",
-      "myProjects": "Proyek saya",
-      "myObservations": "Observasi saya",
-      "myTrees": "Pohon saya",
-      "myProfile": "Profil saya"
+      "myOrganization": "Organisasi",
+      "myOrganizations": "Organisasi",
+      "mySites": "Situs",
+      "myAudio": "Audio",
+      "myDrone": "Drone",
+      "myProjects": "Proyek",
+      "myObservations": "Observasi",
+      "myTrees": "Pohon",
+      "myProfile": "Profil"
     },
     "prompts": {
       "signInDescription": "Masuk untuk mengelola akun dan konten Anda.",
@@ -84,16 +85,54 @@
       "accountLoadError": "Tidak dapat memuat akun Anda saat ini.",
       "checkingAccount": "Memeriksa akun Anda..."
     },
+    "headerActions": {
+      "myProjects": "Proyek Saya",
+      "myCerts": "Sertifikat Saya",
+      "myObservations": "Observasi Saya",
+      "myOrganizations": "Organisasi Saya"
+    },
     "creationCard": {
       "createBumicert": "Buat sertifikat",
-      "createProject": "Buat proyek"
+      "createProject": "Buat proyek",
+      "addObservations": "Tambah observasi"
     },
     "tabs": {
       "explore": "Jelajahi",
       "manage": "Kelola"
     },
+    "manageGroupTitle": "Kelola {account}",
     "collapse": "Ciutkan bilah sisi",
-    "expand": "Bentangkan bilah sisi"
+    "expand": "Bentangkan bilah sisi",
+    "profileRow": {
+      "viewProfile": "Lihat profil",
+      "fallbackName": "Profil Anda"
+    }
+  },
+  "settings": {
+    "handle": {
+      "title": "Nama pengguna",
+      "description": "Nama pengguna adalah nama publik Anda di seluruh aplikasi — ubah di sini dan akan diperbarui di mana saja.",
+      "edit": "Sunting",
+      "newLabel": "Nama pengguna baru",
+      "placeholder": "namaanda",
+      "prefixHint": "3–18 karakter. Hanya huruf, angka, dan tanda hubung.",
+      "save": "Simpan",
+      "saving": "Menyimpan…",
+      "cancel": "Batal",
+      "useOwnDomain": "Gunakan domain saya sendiri",
+      "useSubdomain": "Gunakan nama .{suffix}",
+      "customLabel": "Nama pengguna lengkap (domain Anda sendiri)",
+      "customHint": "Untuk menggunakan domain Anda sendiri, tambahkan catatan DNS TXT di _atproto yang mengarah ke ID akun Anda, lalu simpan.",
+      "customRecord": "ID akun",
+      "success": "Nama pengguna diperbarui menjadi {handle}",
+      "errors": {
+        "length": "Nama pengguna harus 3–18 karakter.",
+        "prefixChars": "Gunakan hanya huruf kecil, angka, dan tanda hubung. Tidak boleh diawali atau diakhiri tanda hubung.",
+        "full": "Masukkan nama pengguna lengkap seperti alice.example.com.",
+        "generic": "Tidak dapat memperbarui nama pengguna Anda. Silakan coba lagi.",
+        "unavailable": "Mengubah nama pengguna Anda belum tersedia. Silakan coba lagi nanti."
+      }
+    }
   },
   "bumicertCard": {
     "missingImage": "Gambar sertifikat tidak tersedia",
@@ -130,11 +169,17 @@
   },
   "browseGrid": {
     "title": "Cara Menjelajah",
-    "description": "Empat jalan masuk ke karya GainForest, dibuat untuk pendana, penjaga alam, dan tim lapangan.",
+    "description": "Berbagai jalan masuk ke karya GainForest, dibuat untuk pendana, penjaga alam, dan tim lapangan.",
     "loadingAria": "Memuat tautan jelajah",
     "cards": {
+      "projects": {
+        "label": "Kerja regeneratif",
+        "title": "Proyek",
+        "blurb": "Jelajahi yang sedang dibangun komunitas — setiap proyek mengumpulkan Cert, lokasi, dan bukti lapangannya.",
+        "statLabel": "proyek"
+      },
       "bumicerts": {
-        "label": "Proyek terverifikasi",
+        "label": "Sertifikat dampak",
         "title": "sertifikat",
         "blurb": "Jelajahi cerita proyek dengan foto, tempat, orang, dan konteks.",
         "statLabel": "cerita"
@@ -179,7 +224,7 @@
   "signInPrompt": {
     "description": "Simpan situs proyek, informasi pohon, dan sertifikat Anda di satu tempat.",
     "failed": "Kami tidak dapat menyelesaikan proses masuk Anda. Coba lagi.",
-    "getStarted": "Mulai"
+    "getStarted": "Masuk"
   },
   "status": {
     "pillTitle": "Status sistem",
@@ -260,12 +305,30 @@
   },
   "accountTabs": {
     "home": "Beranda",
+    "overview": "Ringkasan",
+    "donations": "Donasi",
     "bumicerts": "sertifikat",
+    "projects": "Proyek",
+    "organizations": "Organisasi",
     "donationHistory": "Riwayat donasi",
     "observations": "Observasi",
     "gallery": "Galeri",
     "settings": "Pengaturan",
     "timeline": "Linimasa"
+  },
+  "accountOrganizations": {
+    "emptyEyebrow": "Belum ada organisasi",
+    "empty": "Kamu belum tergabung dalam organisasi mana pun.",
+    "fallbackName": "Organisasi",
+    "role": {
+      "owner": "Pemilik",
+      "admin": "Admin",
+      "member": "Anggota"
+    }
+  },
+  "accountProjects": {
+    "emptyEyebrow": "Belum ada proyek",
+    "empty": "Akun ini belum membagikan proyek apa pun."
   },
   "projectGallery": {
     "accountTitle": "Galeri",

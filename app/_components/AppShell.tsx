@@ -10,24 +10,17 @@ import {
   Building2Icon,
   CheckIcon,
   ChevronLeftIcon,
-  CompassIcon,
-  DroneIcon,
   FolderKanbanIcon,
   HeartHandshakeIcon,
   HeartIcon,
-  LayoutDashboardIcon,
+  ImagePlusIcon,
   LeafIcon,
-  MapPinIcon,
   MenuIcon,
-  MicIcon,
   MoonIcon,
   PlusIcon,
-  SettingsIcon,
   Share2Icon,
   SparkleIcon,
   SunIcon,
-  TreePineIcon,
-  TrophyIcon,
   UserIcon,
 } from "lucide-react";
 import { createContext, Suspense, useContext, useEffect, useState, type MouseEvent, type SVGProps } from "react";
@@ -42,9 +35,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
-  ACTIVE_MANAGE_CONTEXT_KEY,
-  activeContextToManagePath,
-  groupIdentifierFromManagePath,
   groupManageBasePath,
   manageHref,
 } from "@/lib/links";
@@ -55,7 +45,6 @@ import {
   useAccountList,
   useActiveAccountContext,
 } from "../_lib/account-switcher";
-import { ManageContextSwitcher } from "./ManageContextSwitcher";
 import { HeaderSlotsProvider, useHeaderSlots } from "./HeaderSlots";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { ModalContent, ModalDescription, ModalFooter, ModalTitle } from "@/components/ui/modal/modal";
@@ -83,17 +72,9 @@ type ManageAccountKind = "organization" | "user";
 const NAV_ITEMS: NavSection[] = [
   {
     kind: "section",
-    id: "marketplace",
+    id: "explore",
     text: "EXPLORE",
     items: [
-      {
-        kind: "leaf",
-        id: "bumicerts",
-        text: "Certs",
-        Icon: BumicertIcon,
-        href: "/certs",
-        pathCheck: { startsWith: "/certs" },
-      },
       {
         kind: "leaf",
         id: "projects",
@@ -101,6 +82,14 @@ const NAV_ITEMS: NavSection[] = [
         Icon: FolderKanbanIcon,
         href: "/projects",
         pathCheck: { startsWith: "/projects" },
+      },
+      {
+        kind: "leaf",
+        id: "bumicerts",
+        text: "Certs",
+        Icon: BumicertIcon,
+        href: "/certs",
+        pathCheck: { startsWith: "/certs" },
       },
       {
         kind: "leaf",
@@ -118,14 +107,13 @@ const NAV_ITEMS: NavSection[] = [
         href: "/observations",
         pathCheck: { startsWith: "/observations" },
       },
-      {
-        kind: "leaf",
-        id: "leaderboard",
-        text: "Leaderboard",
-        Icon: TrophyIcon,
-        href: "/leaderboard",
-        pathCheck: { startsWith: "/leaderboard" },
-      },
+    ],
+  },
+  {
+    kind: "section",
+    id: "funding",
+    text: "FUNDING",
+    items: [
       {
         kind: "leaf",
         id: "bioblitz",
@@ -200,11 +188,6 @@ function markOnboardingPromptShown(key: string) {
   }
 }
 
-function readContextualManageBasePath(): string {
-  if (typeof window === "undefined") return "/manage";
-  return activeContextToManagePath(window.localStorage.getItem(ACTIVE_MANAGE_CONTEXT_KEY));
-}
-
 function canonicalPathname(pathname: string): string {
   // usePathname() returns the browser-visible locale prefix (for example
   // /en/manage), while the app routes live at /manage after proxy rewrite.
@@ -213,33 +196,6 @@ function canonicalPathname(pathname: string): string {
 
 function useCanonicalPathname(): string {
   return canonicalPathname(usePathname() ?? "/");
-}
-
-function useContextualManageBasePath(): string {
-  const pathname = useCanonicalPathname();
-  const groupIdentifier = groupIdentifierFromManagePath(pathname);
-  // Keep the server render and the first client render identical. Reading
-  // localStorage in the state initializer makes links hydrate as /manage on the
-  // server but /manage/groups/... on the client when a group context is saved.
-  const [basePath, setBasePath] = useState("/manage");
-
-  useEffect(() => {
-    if (groupIdentifier) return;
-
-    const refresh = () => setBasePath(readContextualManageBasePath());
-    refresh();
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === ACTIVE_MANAGE_CONTEXT_KEY) refresh();
-    };
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("gainforest-active-account-context", refresh);
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("gainforest-active-account-context", refresh);
-    };
-  }, [groupIdentifier]);
-
-  return groupIdentifier ? groupManageBasePath(groupIdentifier) : basePath;
 }
 
 export function AppShell({
@@ -361,21 +317,20 @@ export function AppShell({
           <div className="relative hidden md:block">
             <UnifiedSidebar
               authSession={resolvedAuthSession}
-              manageAccountKind={resolvedManageAccountKind}
-              isProfileLoading={isProfileLoading}
               collapsed={sidebarCollapsed}
             />
             <SidebarCollapseToggle collapsed={sidebarCollapsed} onToggle={toggleSidebarCollapsed} />
           </div>
           <MobileNavDrawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-            <UnifiedSidebar
-              authSession={resolvedAuthSession}
-              manageAccountKind={resolvedManageAccountKind}
-              isProfileLoading={isProfileLoading}
-            />
+            <UnifiedSidebar authSession={resolvedAuthSession} />
           </MobileNavDrawer>
           <main className="relative flex-1 overflow-y-auto">
-            <Header authSession={resolvedAuthSession} profileName={resolvedProfileName} onOpenMobileNav={() => setMobileNavOpen(true)} />
+            <Header
+              authSession={resolvedAuthSession}
+              profileName={resolvedProfileName}
+              manageAccountKind={resolvedManageAccountKind}
+              onOpenMobileNav={() => setMobileNavOpen(true)}
+            />
             <FreshAccountOnboardingPrompt
               authSession={resolvedAuthSession}
               isProfileLoading={isProfileLoading}
@@ -505,18 +460,11 @@ function SidebarCollapseToggle({ collapsed, onToggle }: { collapsed: boolean; on
 
 function UnifiedSidebar({
   authSession,
-  manageAccountKind,
-  isProfileLoading,
   collapsed = false,
 }: {
   authSession: AuthSession | null;
-  manageAccountKind: ManageAccountKind;
-  isProfileLoading: boolean;
   collapsed?: boolean;
 }) {
-  const pathname = useCanonicalPathname();
-  const activeTab: SidebarTab = pathname.startsWith("/manage") ? "manage" : "explore";
-
   return (
     <SidebarCollapsedContext.Provider value={collapsed}>
     <nav
@@ -525,60 +473,37 @@ function UnifiedSidebar({
         collapsed ? "w-[76px] overflow-visible p-3" : "w-[256px] overflow-hidden p-4",
       )}
     >
-      <AnimatePresence>
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-108 overflow-hidden"
-        >
-          {/* Ambient glow — present in both modes */}
-          <div className="absolute -bottom-24 left-1/2 h-56 w-[160%] -translate-x-1/2 rounded-[50%] bg-primary/20 blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 h-32 w-32 -translate-x-1/2 rounded-full bg-primary/[0.12] blur-2xl" />
-          {/* Mode-specific line art that bleeds off the bottom edge */}
-          {activeTab === "manage" ? <ManageArt /> : <ExploreArt />}
-        </motion.div>
-      </AnimatePresence>
-
-      <SidebarHeader />
-
-      <div className="mt-2">
-        <SidebarTabs activeTab={activeTab} />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-108 overflow-hidden"
+      >
+        {/* Ambient glow */}
+        <div className="absolute -bottom-24 left-1/2 h-56 w-[160%] -translate-x-1/2 rounded-[50%] bg-primary/20 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-32 w-32 -translate-x-1/2 rounded-full bg-primary/[0.12] blur-2xl" />
+        {/* Climbing-vine line art that bleeds off the bottom edge */}
+        <ExploreArt />
       </div>
 
-      {authSession?.isLoggedIn ? (
-        <div className="mt-3">
-          <ManageContextSwitcher sessionDid={authSession.did} collapsed={collapsed} />
-        </div>
-      ) : null}
+      <SidebarHeader />
 
       <div className="mt-3 border-t border-border" />
 
       <div className={cn("flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pt-3", collapsed ? "overflow-x-hidden" : "pr-1")}>
-        {activeTab === "explore" ? (
-          <>
-            <LayoutGroup id="unified-sidebar-nav">
-              <ExploreNav />
-            </LayoutGroup>
+        {authSession?.isLoggedIn ? <SidebarProfileRow did={authSession.did} /> : null}
+        <LayoutGroup id="unified-sidebar-nav">
+          <ExploreNav />
+        </LayoutGroup>
 
-            <div className="mt-auto flex flex-col gap-3 pt-4">
-              {authSession?.isLoggedIn ? <BumicertCreationCard sessionDid={authSession.did} /> : <SignInPrompt collapsed={collapsed} />}
-            </div>
-          </>
-        ) : (
-          <LayoutGroup id="unified-sidebar-nav-manage">
-            <Suspense fallback={<ManageSectionSkeleton />}>
-              <ManageSection
-                authSession={authSession}
-                manageAccountKind={manageAccountKind}
-                isProfileLoading={isProfileLoading}
-              />
-            </Suspense>
-          </LayoutGroup>
-        )}
+        <div className="mt-auto flex flex-col gap-3 pt-4">
+          {authSession?.isLoggedIn ? (
+            <>
+              <BumicertCreationCard sessionDid={authSession.did} />
+              <ObservationCreationCard sessionDid={authSession.did} />
+            </>
+          ) : (
+            <SignInPrompt collapsed={collapsed} />
+          )}
+        </div>
       </div>
 
       <div className="mt-3 border-t border-border pt-3">
@@ -589,79 +514,94 @@ function UnifiedSidebar({
   );
 }
 
-type SidebarTab = "explore" | "manage";
-
-const SIDEBAR_TABS: {
-  id: SidebarTab;
-  label: string;
-  href: string;
-  Icon: React.ComponentType<{ className?: string }>;
-}[] = [
-  { id: "explore", label: "Explore", href: "/certs", Icon: CompassIcon },
-  { id: "manage", label: "Manage", href: "/manage", Icon: LayoutDashboardIcon },
-];
-
-function SidebarTabs({ activeTab }: { activeTab: SidebarTab }) {
-  const manageBasePath = useContextualManageBasePath();
+function SidebarProfileRow({ did }: { did: string }) {
+  const t = useTranslations("common.sidebar.profileRow");
   const collapsed = useSidebarCollapsed();
-  const t = useTranslations("common.sidebar.tabs");
+  const { personal, groups } = useAccountList(did);
+  const [activeContext] = useActiveAccountContext(did);
+
+  // Reflect the account selected in the top-right switcher: when an
+  // organization context is active, show that org's name/avatar and link to its
+  // profile; otherwise fall back to the signed-in personal account.
+  const activeGroup = activeContext.type === "group"
+    ? groups.find((group) => group.groupDid === activeContext.did) ?? null
+    : null;
+  const isGroup = activeGroup != null;
+  const card = activeGroup ?? personal;
+
+  const name = card?.displayName?.trim() || t("fallbackName");
+  const identifier = activeGroup ? switcherGroupIdentifier(activeGroup) : card?.handle?.trim() || did;
+  const href = `/account/${encodeURIComponent(identifier)}`;
+  const avatarUrl = card?.avatarUrl ?? null;
+
   return (
-    <LayoutGroup id="sidebar-tabs">
-      <div className={cn("flex rounded-full border border-border bg-foreground/5 p-1", collapsed && "flex-col gap-1 rounded-2xl")}>
-        {SIDEBAR_TABS.map((tab) => {
-          const isActive = tab.id === activeTab;
-          return (
-            <SidebarTooltip key={tab.id} label={t(tab.id)}>
-              <Link
-                href={tab.id === "manage" ? manageBasePath : tab.href}
-                aria-current={isActive ? "page" : undefined}
-                aria-label={collapsed ? t(tab.id) : undefined}
-                className={cn(
-                  "relative rounded-full text-center text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                  collapsed ? "flex items-center justify-center py-1.5" : "flex-1 px-3 py-1.5",
-                )}
-              >
-                {isActive ? (
-                  <motion.span
-                    layoutId="sidebar-tab-active"
-                    className="absolute inset-0 rounded-full bg-background shadow-sm ring-1 ring-border"
-                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                  />
-                ) : null}
-                <span
-                  className={cn(
-                    "relative z-10 flex items-center justify-center gap-1.5 transition-colors",
-                    isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <tab.Icon className="h-4 w-4 shrink-0 opacity-50" />
-                  {collapsed ? null : t(tab.id)}
-                </span>
-              </Link>
-            </SidebarTooltip>
-          );
-        })}
-      </div>
-    </LayoutGroup>
+    <SidebarTooltip label={name}>
+      <Link
+        href={href}
+        aria-label={collapsed ? name : t("viewProfile")}
+        className={cn(
+          buttonVariants({ variant: "ghost" }),
+          "group w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          collapsed ? "h-auto justify-center px-0 py-1.5" : "h-auto justify-start gap-2.5 px-2 py-1.5",
+        )}
+      >
+        <span className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary">
+          {avatarUrl ? (
+            <Image src={avatarUrl} alt="" fill unoptimized sizes="32px" className="object-cover" />
+          ) : isGroup ? (
+            <Building2Icon className="size-4" />
+          ) : (
+            <UserIcon className="size-4" />
+          )}
+        </span>
+        {collapsed ? null : (
+          <span className="flex min-w-0 flex-1 flex-col text-left">
+            <span className="truncate text-sm font-medium text-foreground">{name}</span>
+            <span className="truncate text-xs text-muted-foreground">{t("viewProfile")}</span>
+          </span>
+        )}
+      </Link>
+    </SidebarTooltip>
   );
 }
 
 function ExploreNav() {
   const pathname = useCanonicalPathname();
   const t = useTranslations("common.sidebar.items");
-  const items = NAV_ITEMS.flatMap((section) => section.items);
+  const sectionsT = useTranslations("common.sidebar.sections");
+  const collapsed = useSidebarCollapsed();
+  let leafIndex = 0;
 
   return (
-    <ul className="flex flex-col gap-0.5">
-      {items.map((item, index) => (
-        <NavLeaf
-          key={item.id}
-          item={{ ...item, text: t(item.id) }}
-          isActive={isLeafActive(item.pathCheck, pathname)}
-          index={index + 1}
-        />
+    <div className="flex flex-col gap-3">
+      {NAV_ITEMS.map((section, sectionIndex) => (
+        <div key={section.id} className="flex flex-col gap-0.5">
+          {collapsed ? (
+            sectionIndex > 0 ? <div aria-hidden className="mx-auto my-1 h-px w-6 rounded-full bg-border" /> : null
+          ) : (
+            <p className="px-2.5 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              {sectionsT(section.id)}
+            </p>
+          )}
+          <ul className="flex flex-col gap-0.5">
+            {section.items.map((item) => {
+              leafIndex += 1;
+              return (
+                <NavLeaf
+                  key={item.id}
+                  item={{ ...item, text: t(item.id) }}
+                  isActive={isLeafActive(item.pathCheck, pathname)}
+                  index={leafIndex}
+                  // Certs are minted from a Project, so visually hang Certs
+                  // under Projects (which sits directly above it).
+                  paired={item.id === "bumicerts"}
+                />
+              );
+            })}
+          </ul>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }
 
@@ -710,8 +650,9 @@ function SidebarHeader() {
   );
 }
 
-function NavLeaf({ item, isActive, index }: { item: NavLeaf; isActive: boolean; index: number }) {
+function NavLeaf({ item, isActive, index, paired = false }: { item: NavLeaf; isActive: boolean; index: number; paired?: boolean }) {
   const collapsed = useSidebarCollapsed();
+  const showConnector = paired && !collapsed;
   return (
     <motion.li
       initial={{ opacity: 0, x: -8 }}
@@ -721,7 +662,14 @@ function NavLeaf({ item, isActive, index }: { item: NavLeaf; isActive: boolean; 
         delay: 0.05 * index,
         ease: [0.25, 0.1, 0.25, 1],
       }}
+      className={cn("relative", showConnector && "ml-3.5")}
     >
+      {showConnector ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -left-3.5 -top-1 bottom-1/2 w-3 rounded-bl-[10px] border-b border-l border-border"
+        />
+      ) : null}
       <SidebarTooltip label={item.text}>
         <Link
           href={item.href}
@@ -734,18 +682,14 @@ function NavLeaf({ item, isActive, index }: { item: NavLeaf; isActive: boolean; 
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className={cn(
               buttonVariants({ variant: isActive ? "default" : "ghost" }),
-              "relative w-full",
-              collapsed ? "justify-center px-1" : "justify-start pl-1",
+              // Lighter, denser rows: only the active row keeps the filled pill;
+              // inactive rows are a plain icon + label with no chip background.
+              "relative h-8 w-full",
+              collapsed ? "justify-center px-0" : "justify-start gap-2.5 px-2.5",
               !isActive && "text-muted-foreground group-hover:text-primary hover:text-primary",
             )}
           >
-            <span
-              className={cn(
-                "flex h-7 shrink-0 items-center justify-center rounded-full transition-colors",
-                collapsed ? "w-full" : "px-3",
-                isActive ? "bg-primary-foreground text-primary" : "bg-primary/10 text-muted-foreground group-hover:text-primary",
-              )}
-            >
+            <span className="flex size-6 shrink-0 items-center justify-center">
               <item.Icon className="h-4 w-4 shrink-0" />
             </span>
             {collapsed ? null : <span className="flex-1 text-left">{item.text}</span>}
@@ -757,41 +701,88 @@ function NavLeaf({ item, isActive, index }: { item: NavLeaf; isActive: boolean; 
 }
 
 const PERSONAL_PROJECT_NEW_HREF = manageHref({ basePath: "/manage" }, "projects", { mode: "new" });
+const PERSONAL_OBSERVATION_ADD_HREF = manageHref({ basePath: "/manage" }, "observations", { mode: "add" });
 
 function createProjectHrefForGroup(identifier: string): string {
   return manageHref({ basePath: groupManageBasePath(identifier) }, "projects", { mode: "new" });
 }
 
-function CreateProjectLink({
-  sessionDid,
-  className,
-  children,
-}: {
+function addObservationHrefForGroup(identifier: string): string {
+  return manageHref({ basePath: groupManageBasePath(identifier) }, "observations", { mode: "add" });
+}
+
+type ContextLinkProps = {
   sessionDid: string | null;
   className?: string;
   children: React.ReactNode;
+};
+
+function CreateProjectLink({ sessionDid, className, children }: ContextLinkProps) {
+  return (
+    <ManageContextLink
+      sessionDid={sessionDid}
+      personalHref={PERSONAL_PROJECT_NEW_HREF}
+      hrefForGroup={createProjectHrefForGroup}
+      className={className}
+    >
+      {children}
+    </ManageContextLink>
+  );
+}
+
+function AddObservationLink({ sessionDid, className, children }: ContextLinkProps) {
+  return (
+    <ManageContextLink
+      sessionDid={sessionDid}
+      personalHref={PERSONAL_OBSERVATION_ADD_HREF}
+      hrefForGroup={addObservationHrefForGroup}
+      className={className}
+    >
+      {children}
+    </ManageContextLink>
+  );
+}
+
+function ManageContextLink({
+  sessionDid,
+  personalHref,
+  hrefForGroup,
+  className,
+  children,
+}: ContextLinkProps & {
+  personalHref: string;
+  hrefForGroup: (identifier: string) => string;
 }) {
   if (!sessionDid) {
     return (
-      <Link href={manageHref({ basePath: "/manage" }, "projects", { mode: "new" })} className={className}>
+      <Link href={personalHref} className={className}>
         {children}
       </Link>
     );
   }
 
   return (
-    <AuthenticatedCreateProjectLink sessionDid={sessionDid} className={className}>
+    <AuthenticatedManageContextLink
+      sessionDid={sessionDid}
+      personalHref={personalHref}
+      hrefForGroup={hrefForGroup}
+      className={className}
+    >
       {children}
-    </AuthenticatedCreateProjectLink>
+    </AuthenticatedManageContextLink>
   );
 }
 
-function AuthenticatedCreateProjectLink({
+function AuthenticatedManageContextLink({
   sessionDid,
+  personalHref,
+  hrefForGroup,
   className,
   children,
 }: {
   sessionDid: string;
+  personalHref: string;
+  hrefForGroup: (identifier: string) => string;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -800,18 +791,18 @@ function AuthenticatedCreateProjectLink({
   const [activeContext, setActiveContext] = useActiveAccountContext(sessionDid);
 
   const activeGroup = activeContext.type === "group" ? groups.find((group) => group.groupDid === activeContext.did) ?? null : null;
-  // Honor the active account context: an organization context creates the
-  // project in that organization, a personal context creates it in the
-  // signed-in user's own account — no organization required.
+  // Honor the active account context: an organization context targets that
+  // organization's repo, a personal context targets the signed-in user's own
+  // account — no organization required.
   const href = activeContext.type === "group"
-    ? createProjectHrefForGroup(activeGroup ? switcherGroupIdentifier(activeGroup) : activeContext.identifier?.trim() || activeContext.did)
-    : PERSONAL_PROJECT_NEW_HREF;
+    ? hrefForGroup(activeGroup ? switcherGroupIdentifier(activeGroup) : activeContext.identifier?.trim() || activeContext.did)
+    : personalHref;
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-    // Personal context: let the Link navigate to the personal "new project"
-    // route without any organization detour.
+    // Personal context: let the Link navigate to the personal route without any
+    // organization detour.
     if (activeContext.type !== "group") return;
 
     event.preventDefault();
@@ -819,7 +810,7 @@ function AuthenticatedCreateProjectLink({
     if (activeGroup) {
       setActiveContext({ type: "group", did: activeGroup.groupDid, identifier, role: activeGroup.role });
     }
-    router.push(createProjectHrefForGroup(identifier));
+    router.push(hrefForGroup(identifier));
   };
 
   return (
@@ -903,187 +894,77 @@ function BumicertCreationCard({ sessionDid }: { sessionDid: string }) {
   );
 }
 
-function ManageSection({
-  authSession,
-  manageAccountKind,
-  isProfileLoading,
-}: {
-  authSession: AuthSession | null;
-  manageAccountKind: ManageAccountKind;
-  isProfileLoading: boolean;
-}) {
-  const pathname = useCanonicalPathname();
-  const searchParams = useSearchParams();
+function ObservationCreationCard({ sessionDid }: { sessionDid: string }) {
+  const t = useTranslations("common.sidebar.creationCard");
   const collapsed = useSidebarCollapsed();
-  const t = useTranslations("common.sidebar.items");
-  const groupIdentifier = groupIdentifierFromManagePath(pathname);
-  const isGroupManageContext = Boolean(groupIdentifier);
-  const basePath = groupIdentifier ? groupManageBasePath(groupIdentifier) : "/manage";
-  const resolvedAccountKind = isGroupManageContext ? "organization" : manageAccountKind;
 
-  const organizationItems: NavLeaf[] = [
-    {
-      kind: "leaf",
-      id: "organization",
-      text: isGroupManageContext ? t("organizationHome") : t("myOrganization"),
-      Icon: Building2Icon,
-      href: basePath,
-      pathCheck: { equals: basePath },
-    },
-    // "My Organizations" is the cross-org switcher — hidden once you're scoped
-    // into a single organization's manage section.
-    ...(isGroupManageContext
-      ? []
-      : [
-          {
-            kind: "leaf" as const,
-            id: "organizations-manage",
-            text: t("myOrganizations"),
-            Icon: Building2Icon,
-            href: "/manage/organizations",
-            pathCheck: { startsWith: "/manage/organizations" },
-          },
-        ]),
-    {
-      kind: "leaf",
-      id: "sites",
-      text: t("mySites"),
-      Icon: MapPinIcon,
-      href: manageHref({ basePath }, "sites"),
-      pathCheck: { startsWith: manageHref({ basePath }, "sites") },
-    },
-    {
-      kind: "leaf",
-      id: "audio",
-      text: t("myAudio"),
-      Icon: MicIcon,
-      href: manageHref({ basePath }, "audio"),
-      pathCheck: { startsWith: manageHref({ basePath }, "audio") },
-    },
-    {
-      kind: "leaf",
-      id: "drone",
-      text: t("myDrone"),
-      Icon: DroneIcon,
-      href: manageHref({ basePath }, "drone"),
-      pathCheck: { startsWith: manageHref({ basePath }, "drone") },
-    },
-    {
-      kind: "leaf",
-      id: "projects-manage",
-      text: t("myProjects"),
-      Icon: FolderKanbanIcon,
-      href: manageHref({ basePath }, "projects"),
-      pathCheck: { startsWith: manageHref({ basePath }, "projects") },
-    },
-    {
-      kind: "leaf",
-      id: "observations-manage",
-      text: t("myObservations"),
-      Icon: BinocularsIcon,
-      href: manageHref({ basePath }, "observations"),
-      pathCheck: { startsWith: manageHref({ basePath }, "observations") },
-    },
-    {
-      kind: "leaf",
-      id: "trees",
-      text: t("myTrees"),
-      Icon: TreePineIcon,
-      href: manageHref({ basePath }, "trees"),
-      pathCheck: { startsWith: manageHref({ basePath }, "trees") },
-    },
-    {
-      kind: "leaf",
-      id: "settings",
-      text: t("settings"),
-      Icon: SettingsIcon,
-      href: manageHref({ basePath }, "settings"),
-      pathCheck: { startsWith: manageHref({ basePath }, "settings") },
-    },
-  ];
-  const userItems: NavLeaf[] = [
-    {
-      kind: "leaf",
-      id: "profile",
-      text: t("myProfile"),
-      Icon: UserIcon,
-      href: basePath,
-      pathCheck: { equals: basePath },
-    },
-    {
-      kind: "leaf",
-      id: "projects-manage",
-      text: t("myProjects"),
-      Icon: FolderKanbanIcon,
-      href: manageHref({ basePath }, "projects"),
-      pathCheck: { startsWith: manageHref({ basePath }, "projects") },
-    },
-    {
-      kind: "leaf",
-      id: "observations-manage",
-      text: t("myObservations"),
-      Icon: BinocularsIcon,
-      href: manageHref({ basePath }, "observations"),
-      pathCheck: { startsWith: manageHref({ basePath }, "observations") },
-    },
-    {
-      kind: "leaf",
-      id: "organizations-manage",
-      text: t("myOrganizations"),
-      Icon: Building2Icon,
-      href: "/manage/organizations",
-      pathCheck: { startsWith: "/manage/organizations" },
-    },
-    {
-      kind: "leaf",
-      id: "settings",
-      text: t("settings"),
-      Icon: SettingsIcon,
-      href: manageHref({ basePath }, "settings"),
-      pathCheck: { startsWith: manageHref({ basePath }, "settings") },
-    },
-  ];
-  const items: NavLeaf[] = authSession?.isLoggedIn
-    ? resolvedAccountKind === "organization" ? organizationItems : userItems
-    : [];
+  if (collapsed) {
+    return (
+      <SidebarTooltip label={t("addObservations")}>
+        <span className="mx-auto flex w-fit">
+          <AddObservationLink
+            sessionDid={sessionDid}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "icon" }),
+              "bg-background hover:bg-primary hover:text-primary-foreground",
+            )}
+          >
+            <ImagePlusIcon />
+            <span className="sr-only">{t("addObservations")}</span>
+          </AddObservationLink>
+        </span>
+      </SidebarTooltip>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-2">
-      {authSession == null || isProfileLoading ? (
-        <ManageSectionSkeleton />
-      ) : authSession.isLoggedIn ? (
-        <ul className="flex flex-col gap-0.5">
-          {items.map((item, index) => (
-            <NavLeaf
-              key={item.id}
-              item={item}
-              isActive={isManageLeafActive(item, pathname, searchParams.get("tab"))}
-              index={index + 1}
-            />
-          ))}
-        </ul>
-      ) : (
-        <SignInPrompt collapsed={collapsed} />
-      )}
+    <div className="group flex flex-col w-full h-20 border border-border bg-background rounded-2xl p-1">
+      <div className="flex-1 relative">
+        {/*Left Big Sparkle*/}
+        <SparkleIcon
+          className="absolute bottom-2 left-4 size-6 rotate-30 opacity-50 group-hover:opacity-30 group-hover:scale-130 text-primary transition-all duration-300 animate-spin-slow"
+          fill="currentcolor"
+          strokeWidth={0}
+        />
+        {/*Left Small Sparkle*/}
+        <SparkleIcon
+          className="absolute bottom-1 left-12 size-3 rotate-60 opacity-30 group-hover:opacity-50 group-hover:scale-130 text-primary transition-all duration-300 animate-spin-slow"
+          fill="currentcolor"
+          strokeWidth={0}
+        />
+        {/*Right Big Sparkle*/}
+        <SparkleIcon
+          className="absolute bottom-2 right-2 size-6 rotate-60 opacity-50 group-hover:opacity-30 group-hover:scale-130 text-primary transition-all duration-300 animate-spin-slow"
+          fill="currentcolor"
+          strokeWidth={0}
+        />
+        {/*Right Small Sparkle*/}
+        <SparkleIcon
+          className="absolute bottom-1 right-10 size-3 rotate-30 opacity-30 group-hover:opacity-50 group-hover:scale-130 text-primary transition-all duration-300 animate-spin-slow"
+          fill="currentcolor"
+          strokeWidth={0}
+        />
+        {/*Hover Transitioning Observation Card*/}
+        <div className="absolute z-1 -bottom-4 left-1/2 -translate-x-1/2 scale-100 group-hover:scale-120 -rotate-12 group-hover:-rotate-30 transition-transform bg-background/50 backdrop-blur-lg border border-border shadow-xl rounded-xl h-20 w-16 p-1 flex flex-col gap-1">
+          <div className="w-full h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+            <BinocularsIcon className="text-primary size-6 opacity-80" />
+          </div>
+          <div className="bg-muted h-2 rounded-lg w-8"></div>
+          <div className="bg-muted h-2 rounded-lg w-full"></div>
+        </div>
+      </div>
+
+      {/*CTA*/}
+      <AddObservationLink
+        sessionDid={sessionDid}
+        className={cn(
+          buttonVariants({ variant: "outline", size: "sm" }),
+          "relative z-2 w-full bg-background hover:bg-primary hover:text-primary-foreground",
+        )}
+      >
+        <ImagePlusIcon /> {t("addObservations")}
+      </AddObservationLink>
     </div>
-  );
-}
-
-function ManageSectionSkeleton() {
-  // Mirrors the real <ul className="flex flex-col gap-0.5"> of NavLeaf rows:
-  // each row is an h-9 button-shaped pill with a leading h-7 icon chip and a
-  // label bar. Account kind isn't known yet, so we show a representative count.
-  const collapsed = useSidebarCollapsed();
-  const labelWidths = ["w-24", "w-16", "w-20", "w-16"];
-  return (
-    <ul className="flex flex-col gap-0.5" aria-hidden="true">
-      {labelWidths.map((width, index) => (
-        <li key={index} className={cn("flex h-9 items-center gap-2", collapsed ? "justify-center px-1" : "pl-1")}>
-          <Skeleton className={cn("sidebar-skeleton h-7 shrink-0 rounded-full", collapsed ? "w-full" : "w-7")} />
-          {collapsed ? null : <Skeleton className={`sidebar-skeleton h-3.5 rounded-full ${width}`} />}
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -1159,34 +1040,87 @@ function ProgressiveBlur({
   );
 }
 
-function getRouteHeaderActions(pathname: string, authSession: AuthSession) {
-  if (pathname === "/certs") {
-    return <CreateBumicertHeaderButton authSession={authSession} />;
-  }
+// The header action on each explore list page is a "My <records>" button
+// that takes the signed-in viewer to the dedicated management page for those
+// records (e.g. /projects -> Manage Projects). Projects / certs / observations
+// open the active account context's manage list (personal or organization,
+// mirroring the Create buttons); organizations has a single cross-org manage
+// list, so it uses a fixed href.
+type MyRecordsManageSection = "projects" | "observations" | "bumicerts";
 
-  return null;
+type MyRecordsRoute = {
+  labelKey: "myProjects" | "myCerts" | "myObservations" | "myOrganizations";
+  Icon: React.ComponentType<{ className?: string }>;
+  // Open this manage section for the active account context...
+  manageSection?: MyRecordsManageSection;
+  // ...or navigate to a fixed manage route (organizations list).
+  fixedHref?: string;
+};
+
+function myRecordsRouteForPath(pathname: string): MyRecordsRoute | null {
+  switch (pathname) {
+    case "/projects":
+      return { labelKey: "myProjects", Icon: FolderKanbanIcon, manageSection: "projects" };
+    case "/certs":
+      return { labelKey: "myCerts", Icon: BumicertIcon, manageSection: "bumicerts" };
+    case "/observations":
+      return { labelKey: "myObservations", Icon: BinocularsIcon, manageSection: "observations" };
+    case "/organizations":
+      return { labelKey: "myOrganizations", Icon: Building2Icon, fixedHref: "/manage/organizations" };
+    default:
+      return null;
+  }
 }
 
-function CreateBumicertHeaderButton({ authSession }: { authSession: AuthSession }) {
-  const t = useTranslations("common.sidebar.creationCard");
+function getRouteHeaderActions(pathname: string, authSession: AuthSession) {
+  // "My X" only has meaning for a signed-in viewer; hidden otherwise.
+  if (!authSession.isLoggedIn) return null;
+  const route = myRecordsRouteForPath(pathname);
+  if (!route) return null;
+  return <MyRecordsHeaderButton route={route} sessionDid={authSession.did} />;
+}
+
+function MyRecordsHeaderButton({ route, sessionDid }: { route: MyRecordsRoute; sessionDid: string }) {
+  const t = useTranslations("common.sidebar.headerActions");
+  const { Icon } = route;
+  const className = cn(buttonVariants({ variant: "default", size: "sm" }));
+  const content = (
+    <>
+      <Icon />
+      <span className="hidden sm:inline">{t(route.labelKey)}</span>
+    </>
+  );
+
+  if (route.manageSection) {
+    const section = route.manageSection;
+    return (
+      <ManageContextLink
+        sessionDid={sessionDid}
+        personalHref={manageHref({ basePath: "/manage" }, section)}
+        hrefForGroup={(identifier) => manageHref({ basePath: groupManageBasePath(identifier) }, section)}
+        className={className}
+      >
+        {content}
+      </ManageContextLink>
+    );
+  }
+
   return (
-    <CreateProjectLink
-      sessionDid={authSession.isLoggedIn ? authSession.did : null}
-      className={cn(buttonVariants({ variant: authSession.isLoggedIn ? "default" : "outline", size: "sm" }))}
-    >
-      <PlusIcon />
-      <span className="hidden sm:inline">{t("createProject")}</span>
-    </CreateProjectLink>
+    <Link href={route.fixedHref ?? "/manage"} className={className}>
+      {content}
+    </Link>
   );
 }
 
 function Header({
   authSession,
   profileName,
+  manageAccountKind,
   onOpenMobileNav,
 }: {
   authSession: AuthSession | null;
   profileName?: string | null;
+  manageAccountKind: ManageAccountKind;
   onOpenMobileNav: () => void;
 }) {
   const rawPathname = usePathname() ?? "/";
@@ -1257,7 +1191,12 @@ function Header({
               ) : null}
             </AnimatePresence>
             <LanguageSelector />
-            <AuthButton session={authSession} profileName={profileName} isProfileNameLoading={profileName === undefined} />
+            <AuthButton
+              session={authSession}
+              profileName={profileName}
+              isProfileNameLoading={profileName === undefined}
+              manageAccountKind={manageAccountKind}
+            />
           </div>
         </div>
 
@@ -1626,45 +1565,10 @@ function Vine({ side, className }: { side: "left" | "right"; className?: string 
   );
 }
 
-function ManageArt() {
-  // A wild forest horizon: rolling hills with scattered pines.
-  return (
-    <svg
-      className="absolute inset-x-0 bottom-0 w-full text-primary"
-      viewBox="0 0 240 120"
-      fill="none"
-      preserveAspectRatio="xMidYMax meet"
-    >
-      {/* Far hill */}
-      <path
-        d="M0 78 C 44 58 84 74 120 66 C 168 56 204 66 240 76 L240 120 L0 120 Z"
-        className="fill-primary/[0.06]"
-      />
-      {/* Near hill */}
-      <path
-        d="M0 100 C 52 84 92 98 140 92 C 188 86 216 96 240 100 L240 120 L0 120 Z"
-        className="fill-primary/[0.11]"
-      />
-      {/* Scattered pines along the ridge */}
-      <g className="fill-primary/20">
-        <path d="M40 80 L33 96 L47 96 Z M40 70 L31 86 L49 86 Z" />
-        <path d="M70 86 L65 98 L75 98 Z M70 78 L63 90 L77 90 Z" />
-        <path d="M176 84 L170 98 L182 98 Z M176 75 L168 89 L184 89 Z" />
-        <path d="M208 90 L203 100 L213 100 Z M208 83 L201 94 L215 94 Z" />
-      </g>
-    </svg>
-  );
-}
-
 function isLeafActive(pathCheck: { equals?: string; startsWith?: string }, pathname: string): boolean {
   if (pathCheck.equals) return pathname === pathCheck.equals;
   if (pathCheck.startsWith) return pathname.startsWith(pathCheck.startsWith);
   return false;
-}
-
-function isManageLeafActive(item: NavLeaf, pathname: string, activeTab: string | null): boolean {
-  if (item.tabCheck) return pathname === item.pathCheck.equals && activeTab === item.tabCheck;
-  return isLeafActive(item.pathCheck, pathname) && !(pathname === "/manage" && activeTab === "settings");
 }
 
 function getEventOrigin(event: MouseEvent<HTMLButtonElement>) {

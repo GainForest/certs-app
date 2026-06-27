@@ -4,10 +4,13 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap, Marker, TileLayer } from "leaflet";
 import { MapPinIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { mapTileUrl, resolvePointForRecord, type MapPoint } from "../_lib/coords";
 import type { ExplorerRecord } from "../_lib/indexer";
+import { hydrateRecordTip, recordTipHtml, type MapTipLabels } from "../_lib/map-tooltip";
 
 export function RecordLocationMap({ record }: { record: ExplorerRecord }) {
+  const t = useTranslations("marketplace.map");
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
@@ -15,6 +18,9 @@ export function RecordLocationMap({ record }: { record: ExplorerRecord }) {
   const LRef = useRef<typeof import("leaflet") | null>(null);
   const [point, setPoint] = useState<MapPoint | null>(null);
   const [isDark, setIsDark] = useState(false);
+  // Latest translated tooltip labels, read inside the marker closure.
+  const labelsRef = useRef<MapTipLabels>({ unidentified: t("unidentified") });
+  labelsRef.current = { unidentified: t("unidentified") };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -85,16 +91,24 @@ export function RecordLocationMap({ record }: { record: ExplorerRecord }) {
 
       const map = mapRef.current;
       markerRef.current?.remove();
-      markerRef.current = L.marker([point.lat, point.lon], { icon: pinIcon })
-        .bindTooltip(point.label, { direction: "top", offset: [0, -8] })
+      const tip = { lat: point.lat, lon: point.lon };
+      const marker = L.marker([point.lat, point.lon], { icon: pinIcon })
+        .bindTooltip(recordTipHtml(record, tip, labelsRef.current), {
+          direction: "top",
+          offset: [0, -10],
+          opacity: 1,
+          className: "gf-occ-tip",
+        })
         .addTo(map);
+      marker.on("tooltipopen", () => void hydrateRecordTip(marker, record, tip, labelsRef.current));
+      markerRef.current = marker;
       map.setView([point.lat, point.lon], 12, { animate: false });
       setTimeout(() => map.invalidateSize(), 60);
     })();
     return () => {
       cancelled = true;
     };
-  }, [point]);
+  }, [point, record]);
 
   useEffect(() => {
     return () => {

@@ -17,6 +17,7 @@
 
 import { INDEXER_URL } from "./urls";
 import { normaliseRef } from "./pds";
+import { walkOccurrences, type OccurrenceRecord } from "./indexer";
 
 /** Cash prizes awarded each round, in USD. */
 export const BIOBLITZ_PRIZES = {
@@ -174,21 +175,32 @@ const ROUND_COLLECTORS_QUERY = `
 const MAX_PAGES = 6;
 const PAGE_SIZE = 1000;
 
+/** Which window the board tallies: just the active round, or every observation
+ *  contributed to the challenge so far. */
+export type BoardScope = "round" | "all";
+
 /**
- * Tally the collectors who uploaded photo observations inside a round window.
- * The query filters to image-bearing occurrences created on/after the round
- * start; the round end is applied client-side. A round is one week, so this is
- * almost always a single page, but we walk a few pages defensively.
+ * Tally the collectors who uploaded photo observations.
+ *
+ * Scope "round" counts image-bearing occurrences inside the round window
+ * (created on/after the round start, filtered to the round end client-side).
+ * Scope "all" counts every image observation in the program, newest-first, so
+ * the board can show the most active collectors overall. A round is one week,
+ * so a single page usually covers it; we walk a few pages defensively.
  */
 export async function fetchRoundCollectors(
   round: BioblitzRound,
+  scope: BoardScope = "round",
   signal?: AbortSignal,
 ): Promise<RoundBoard> {
-  const startMs = Date.parse(round.start);
-  const endMs = Date.parse(round.end);
+  const startMs = scope === "all" ? Number.NEGATIVE_INFINITY : Date.parse(round.start);
+  const endMs = scope === "all" ? Number.POSITIVE_INFINITY : Date.parse(round.end);
   // The whole `where` is passed as a typed variable (matching indexer.ts) so the
   // `createdAt` DateTime bound coerces correctly from its JSON string value.
-  const where = { imageEvidence: { isNull: false }, createdAt: { gte: round.start } };
+  const where =
+    scope === "all"
+      ? { imageEvidence: { isNull: false } }
+      : { imageEvidence: { isNull: false }, createdAt: { gte: round.start } };
 
   const tally = new Map<string, RoundCollector>();
   let total = 0;
@@ -257,10 +269,124 @@ export async function fetchRoundCollectors(
   };
 }
 
+// ── Round observations (for the map) ─────────────────────────────────────────
+
+/** How many newest photo sightings to scan when collecting a round's window.
+ *  A round is one week, so the newest page comfortably covers it. */
+const ROUND_MAP_TARGET = 1000;
+
+/**
+ * Fetch the photo sightings uploaded inside a round's window, as full records
+ * the map can plot. Walks the newest image occurrences (the round is the most
+ * recent week, so they sit at the top) and keeps those created on/after the
+ * round start and on/before its end. The map filters these to the ones that
+ * carry coordinates.
+ */
+export async function fetchRoundObservations(
+  round: BioblitzRound,
+  signal?: AbortSignal,
+): Promise<OccurrenceRecord[]> {
+  const startMs = Date.parse(round.start);
+  const endMs = Date.parse(round.end);
+  const { records } = await walkOccurrences({
+    media: "image",
+    target: ROUND_MAP_TARGET,
+    after: null,
+    resolveMedia: false,
+    featuredBadgesOnly: false,
+    signal,
+  });
+  return records.filter((r) => {
+    const t = Date.parse(r.createdAt);
+    return Number.isFinite(t) && t >= startMs && t <= endMs;
+  });
+}
+
 function profileName(n: RawNode): string | null {
   return n.certifiedProfileData?.displayName?.trim() || null;
 }
 
 function profileAvatarRef(n: RawNode): string | null {
   return normaliseRef(n.certifiedProfileData?.avatar?.image?.ref);
+}
+
+// ── Organisation membership ──────────────────────────────────────────────────────────────────
+//
+// In this stack, observations are written to an organisation's shared account,
+// so a top collector is usually an organisation. For each collector we resolve
+// whether the account is a certified organisation, its type (nonprofit /
+// business / …), and how many people are on its member roster — enough to label
+// the leaderboard card with its organisational membership without ever showing
+// a technical identifier.
+
+export type CollectorOrg = {
+  /** True when the account is a certified organisation (or has a roster). */
+  isOrganization: boolean;
+  /** Lowercased organisation-type token (e.g. "nonprofit"), when known. */
+  orgType: string | null;
+  /** Number of people on the organisation's member roster. */
+  memberCount: number;
+};
+
+const COLLECTOR_ORG_QUERY = `
+  query BioblitzCollectorOrg($did: String!) {
+    org: appCertifiedActorOrganization(where: { did: { eq: $did } }) {
+      totalCount
+      edges { node { organizationType } }
+    }
+    members: appGainforestOrganizationMember(first: 0, where: { did: { eq: $did } }) {
+      totalCount
+    }
+  }
+`;
+
+/**
+ * Resolve organisation membership for a set of collector accounts (the rendered
+ * top of the board). One small aliased query per account, run with bounded
+ * concurrency; failures degrade to "no label" rather than breaking the board.
+ */
+export async function fetchCollectorOrgs(
+  dids: string[],
+  signal?: AbortSignal,
+): Promise<Map<string, CollectorOrg>> {
+  const out = new Map<string, CollectorOrg>();
+  const CONCURRENCY = 6;
+  let cursor = 0;
+  async function worker() {
+    while (cursor < dids.length) {
+      const did = dids[cursor++]!;
+      try {
+        const res = await fetch(INDEXER_URL, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ query: COLLECTOR_ORG_QUERY, variables: { did } }),
+          signal,
+        });
+        const json = (await res.json()) as {
+          data?: {
+            org?: { totalCount?: number; edges?: Array<{ node?: { organizationType?: unknown } | null } | null> | null } | null;
+            members?: { totalCount?: number } | null;
+          } | null;
+        };
+        const org = json.data?.org;
+        const members = json.data?.members;
+        out.set(did, {
+          isOrganization: (org?.totalCount ?? 0) > 0 || (members?.totalCount ?? 0) > 0,
+          orgType: normalizeOrgType(org?.edges?.[0]?.node?.organizationType),
+          memberCount: members?.totalCount ?? 0,
+        });
+      } catch (err) {
+        if ((err as Error).name === "AbortError") throw err;
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, dids.length) }, worker));
+  return out;
+}
+
+function normalizeOrgType(value: unknown): string | null {
+  const token = Array.isArray(value) ? value[0] : value;
+  if (typeof token !== "string") return null;
+  const trimmed = token.trim().toLowerCase();
+  return trimmed || null;
 }

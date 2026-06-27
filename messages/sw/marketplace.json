@@ -1,4 +1,20 @@
 {
+  "map": {
+    "play": "Cheza ratiba ya muda",
+    "pause": "Simamisha ratiba ya muda",
+    "from": "Kuanzia",
+    "to": "Hadi",
+    "shown": "{count} zimeonyeshwa",
+    "dragHint": "Buruta vishikizo kuchagua kipindi",
+    "startAria": "Tarehe ya kuanza — {date}",
+    "endAria": "Tarehe ya mwisho — {date}",
+    "unidentified": "Haijatambuliwa",
+    "finding": "Inatafuta maeneo kwenye ramani…",
+    "mappedItems": "Vipengele {count} vyenye eneo kwenye ramani",
+    "mappedSites": "Tovuti {count} zenye eneo kwenye ramani",
+    "noLocations": "Hakuna kipengele kilichoonyeshwa chenye eneo kwenye ramani bado.",
+    "speed": "Kasi ya kucheza"
+  },
   "explore": {
     "metadata": {
       "title": "Gundua vyeti — Miradi Iliyothibitishwa ya Athari ya Urejeshaji",
@@ -241,6 +257,12 @@
       "title": "Changamoto ya BioBlitz ya Wiki — GainForest",
       "description": "Toka nje, piga picha viumbe hai, na ongeza uoni wako. Kila wiki, mkusanyaji bora na picha bora hushinda zawadi."
     },
+    "banner": {
+      "message": "Changamoto ya BioBlitz ya Wiki inaendelea. Piga picha asili na ushinde zawadi.",
+      "cta": "Jifunze zaidi",
+      "dismiss": "Ondoa tangazo hili",
+      "close": "Funga"
+    },
     "hero": {
       "eyebrow": "Changamoto ya BioBlitz ya Wiki",
       "titlePrefix": "Changamoto ya",
@@ -305,12 +327,30 @@
       "subtitleLive": "Nani anaongoza zawadi ya uoni mwingi zaidi sasa hivi.",
       "subtitleEnded": "Matokeo ya mwisho ya raundi hii.",
       "subtitleUpcoming": "Kuwa wa kwanza kwenye ubao raundi itakapoanza.",
+      "subtitleAll": "Wakusanyaji hai zaidi katika changamoto nzima.",
+      "scope": {
+        "round": "Raundi hii",
+        "all": "Wakati wote"
+      },
       "leader": "Anaongoza",
       "observations": "{count, plural, one {# uoni} other {# uoni}}",
       "openCollector": "Fungua wasifu wa mkusanyaji katika kichupo kipya",
       "rankAriaLabel": "Nafasi ya {rank}",
+      "org": {
+        "label": "Shirika",
+        "members": "{count, plural, one {mwanachama #} other {wanachama #}}",
+        "types": {
+          "nonprofit": "Isiyo ya faida",
+          "business": "Biashara",
+          "company": "Kampuni",
+          "community": "Kikundi cha jamii",
+          "government": "Serikali",
+          "academic": "Kitaaluma"
+        }
+      },
       "stats": {
         "observations": "Uoni katika raundi hii",
+        "observationsAll": "Uoni (wakati wote)",
         "collectors": "Wakusanyaji",
         "timeLeft": "Muda uliosalia"
       },
@@ -330,6 +370,14 @@
       "mostObservations": "Uoni mwingi zaidi",
       "bestPicture": "Picha bora",
       "pending": "Itatangazwa"
+    },
+    "map": {
+      "title": "Uchunguzi wa wiki",
+      "heading": "Mahali picha za raundi hii zilipopigwa",
+      "subtitle": "Kila uchunguzi wa picha wenye eneo uliopakiwa katika raundi hii. Buruta ratiba ya muda na ubonyeze cheza kuwaona wakitokea kadiri ya wiki.",
+      "loading": "Inaweka uchunguzi wa wiki hii kwenye ramani…",
+      "empty": "Bado hakuna uchunguzi wa picha wenye eneo katika raundi hii.",
+      "error": "Imeshindwa kupakia ramani ya uchunguzi."
     }
   },
   "dashboard": {
@@ -424,6 +472,13 @@
       "action": "Fungua muhtasari wa michango"
     }
   },
+  "donationsHub": {
+    "tabs": {
+      "overview": "Muhtasari",
+      "leaderboard": "Bao la wanaoongoza",
+      "ariaLabel": "Mwonekano wa michango"
+    }
+  },
   "account": {
     "metadata": {
       "accountTitle": "Akaunti — vyeti",
@@ -516,6 +571,12 @@
       "inviteCollaboratorsDescription": "Walete waungaji mkono na washirika kwenye kazi yako ya vyeti na kukuza athari endelevu pamoja.",
       "inviteFriends": "Alika marafiki",
       "inviteFriendsDescription": "Waalike marafiki zako kujiunga na vyeti na kuunda athari chanya pamoja.",
+      "shareProfileTitle": "Shiriki wasifu wako",
+      "shareProfileTitleOrganization": "Shiriki wasifu huu",
+      "shareProfileBody": "Nakili kiungo cha wasifu wako na ukishiriki na mtu yeyote.",
+      "shareProfileBodyOrganization": "Nakili kiungo cha wasifu huu na ukishiriki na washirika na wafadhili.",
+      "copyProfileLink": "Nakili kiungo cha wasifu",
+      "profileLinkCopied": "Imenakiliwa",
       "shareOrganization": "Chunguza wasifu wa vyeti wa {displayName}: {pageUrl}",
       "shareUser": "Jiunge nami kwenye vyeti na uunge mkono athari endelevu: {pageUrl}",
       "totalBumicerts": "Jumla ya vyeti",
@@ -768,6 +829,19 @@
       "clearAll": "Futa yote"
     }
   },
+  "ownerFilter": {
+    "button": "Mmiliki",
+    "ariaLabel": "Chuja kwa aliyechapisha",
+    "searchPlaceholder": "Tafuta watu na mashirika",
+    "hint": "Andika jina ili kuchuja kwa aliyechapisha",
+    "searching": "Inatafuta…",
+    "noResults": "Hakuna watu au mashirika yanayolingana",
+    "showAll": "Onyesha wote",
+    "showing": "Inaonyesha {name}",
+    "clear": "Ondoa kichujio cha mmiliki",
+    "selectedFallback": "Akaunti iliyochaguliwa",
+    "filterByThis": "Onyesha mmiliki huyu pekee"
+  },
   "browseGrid": {
     "heading": "Njia za kugundua",
     "description": "Njia nne za kuingia kwenye kazi ya GainForest, zilizoundwa kwa wafadhili, watunzaji na timu za nyanjani.",
@@ -904,7 +978,10 @@
       "close": "Funga",
       "edit": "Hariri",
       "cancel": "Ghairi",
-      "saveChanges": "Hifadhi mabadiliko"
+      "saveChanges": "Hifadhi mabadiliko",
+      "viewObservation": "Tazama ukurasa wa uchunguzi",
+      "viewProject": "Tazama ukurasa wa mradi",
+      "openFullPage": "Fungua ukurasa kamili"
     },
     "kind": {
       "occurrence": "Uonekano wa asili",
@@ -1034,6 +1111,52 @@
       "sightingId": "ID ya muono"
     }
   },
+  "projectPage": {
+    "back": "Miradi yote",
+    "kind": "Mradi",
+    "ledBy": "Mradi wa",
+    "viewProfile": "Tazama wasifu",
+    "created": "Imeundwa",
+    "certs": "Vyeti",
+    "overviewTitle": "Muhtasari",
+    "overviewLead": "Muhtasari kutoka {certs, plural, one {cheti #} other {vyeti #}} katika mradi huu.",
+    "contributors": "Wachangiaji",
+    "places": "Maeneo",
+    "focusAreasLabel": "Maeneo ya kazi",
+    "whereLabel": "Nchi",
+    "activePeriodLabel": "Kipindi cha kazi",
+    "observations": "Uchunguzi",
+    "photos": "Picha",
+    "galleryTitle": "Matunzio",
+    "observationsTitle": "Uchunguzi",
+    "certsTitle": "Vyeti vya mradi huu",
+    "noCerts": "Hakuna vyeti vilivyoongezwa kwenye mradi huu bado.",
+    "metaTitle": "{name} — Mradi",
+    "metaFallback": "Mradi ulioshirikiwa kwenye GainForest."
+  },
+  "observationPage": {
+    "back": "Uchunguzi wote",
+    "kind": "Uchunguzi wa asili",
+    "sharedBy": "Imeshirikiwa na",
+    "viewProfile": "Tazama wasifu",
+    "observed": "Imeonekana",
+    "shared": "Imeshirikiwa",
+    "place": "Mahali",
+    "notRecorded": "Haijarekodiwa",
+    "detailsTitle": "Maelezo",
+    "notesTitle": "Madokezo",
+    "fieldSound": "Sauti ya shambani",
+    "previous": "Picha iliyotangulia",
+    "next": "Picha inayofuata",
+    "showPhoto": "Onyesha picha {number}",
+    "zoom": "Kuza picha",
+    "close": "Funga",
+    "audioUnsupported": "Kivinjari chako hakitumii uchezaji wa sauti.",
+    "metaTitle": "{name} — Uchunguzi wa asili",
+    "metaFallback": "Uchunguzi wa asili ulioshirikiwa kwenye GainForest.",
+    "natureSound": "Rekodi ya sauti ya asili",
+    "unidentified": "Uchunguzi usiotambulika"
+  },
   "manageProjects": {
     "hero": {
       "title": "Miradi Yangu",
@@ -1050,6 +1173,19 @@
       "manageGalleryFor": "Dhibiti matunzio ya {title}",
       "manageObservations": "Uchunguzi",
       "manageObservationsFor": "Uchunguzi wa {title}"
+    }
+  },
+  "manageBumicerts": {
+    "actions": {
+      "delete": "Futa Cert",
+      "deleteAria": "Futa {title}"
+    },
+    "deleteModal": {
+      "title": "Futa Cert?",
+      "description": "Hii itaondoa “{title}” kabisa kwenye akaunti yako. Kitendo hiki hakiwezi kutenduliwa.",
+      "cancel": "Ghairi",
+      "confirm": "Futa Cert",
+      "error": "Cert hii haikuweza kufutwa. Tafadhali jaribu tena."
     }
   },
   "observations": {

@@ -75,7 +75,7 @@ function accountSegment(didOrHandle: string): string {
 
 function groupManageHref(group: GroupOption): string {
   const identifier = group.handle?.trim() || normalizeDid(group.groupDid);
-  return `/manage/groups/${accountSegment(identifier)}`;
+  return `/account/${accountSegment(identifier)}/manage`;
 }
 
 function bestGroupName(group: GroupOption, organizationAccountLabel: string): string {

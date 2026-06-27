@@ -23,12 +23,14 @@ type ObservationSelection = {
 export function ObservationGrid({
   records,
   onOpen,
+  onFilterOwner,
   className,
   leadingCard,
   selection,
 }: {
   records: OccurrenceRecord[];
   onOpen: (record: ExplorerRecord) => void;
+  onFilterOwner?: (did: string) => void;
   className: string;
   leadingCard?: ReactNode;
   selection?: ObservationSelection;
@@ -48,6 +50,7 @@ export function ObservationGrid({
             record={record}
             mediaCount={Math.max(counts.get(record.atUri) ?? 0, record.media.length)}
             onOpen={onOpen}
+            onFilterOwner={onFilterOwner}
             selection={selection}
           />
         </li>
@@ -85,14 +88,17 @@ const ObservationCard = memo(function ObservationCard({
   record,
   mediaCount,
   onOpen,
+  onFilterOwner,
   selection,
 }: {
   record: OccurrenceRecord;
   mediaCount: number;
   onOpen: (record: ExplorerRecord) => void;
+  onFilterOwner?: (did: string) => void;
   selection?: ObservationSelection;
 }) {
   const t = useTranslations("marketplace.observationGrid");
+  const ownerFilterT = useTranslations("marketplace.ownerFilter");
   const [imgError, setImgError] = useState(false);
   const [resolvedImageUrl, setResolvedImageUrl] = useState(record.imageUrl);
   const [profile, setProfile] = useState(() => getCachedProfile(record.did) ?? null);
@@ -278,9 +284,24 @@ const ObservationCard = memo(function ObservationCard({
 
       <div className="absolute inset-x-0 bottom-0 z-10 p-2.5">
         {creatorLabel ? (
-          <p className="truncate text-[10.5px] font-medium uppercase tracking-[0.06em] text-white/85">
-            {creatorLabel}
-          </p>
+          onFilterOwner && record.did ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onFilterOwner(record.did);
+              }}
+              aria-label={ownerFilterT("filterByThis")}
+              title={ownerFilterT("filterByThis")}
+              className="block max-w-full cursor-pointer truncate text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-white/85 underline-offset-2 transition-colors hover:text-white hover:underline focus-visible:underline focus-visible:outline-none"
+            >
+              {creatorLabel}
+            </button>
+          ) : (
+            <p className="truncate text-[10.5px] font-medium uppercase tracking-[0.06em] text-white/85">
+              {creatorLabel}
+            </p>
+          )
         ) : null}
         <h3
           className="font-instrument text-[16px] italic leading-tight text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]"

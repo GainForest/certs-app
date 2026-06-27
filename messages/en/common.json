@@ -49,6 +49,7 @@
   "sidebar": {
     "sections": {
       "explore": "EXPLORE",
+      "funding": "FUNDING",
       "manage": "MANAGE"
     },
     "items": {
@@ -66,15 +67,15 @@
       "observations": "Observations",
       "donations": "Donations",
       "organizationHome": "Organization Home",
-      "myOrganization": "My Organization",
-      "myOrganizations": "My Organizations",
-      "mySites": "My Sites",
-      "myAudio": "My Audio",
-      "myDrone": "My Drone",
-      "myProjects": "My Projects",
-      "myObservations": "My Observations",
-      "myTrees": "My Trees",
-      "myProfile": "My Profile"
+      "myOrganization": "Organization",
+      "myOrganizations": "Organizations",
+      "mySites": "Sites",
+      "myAudio": "Audio",
+      "myDrone": "Drone",
+      "myProjects": "Projects",
+      "myObservations": "Observations",
+      "myTrees": "Trees",
+      "myProfile": "Profile"
     },
     "prompts": {
       "signInDescription": "Sign in to manage your account and content.",
@@ -84,16 +85,54 @@
       "accountLoadError": "Couldn't load your account right now.",
       "checkingAccount": "Checking your account..."
     },
+    "headerActions": {
+      "myProjects": "My Projects",
+      "myCerts": "My Certs",
+      "myObservations": "My Observations",
+      "myOrganizations": "My Organizations"
+    },
     "creationCard": {
       "createBumicert": "Create a Cert",
-      "createProject": "Create a Project"
+      "createProject": "Create a Project",
+      "addObservations": "Add Observations"
     },
     "tabs": {
       "explore": "Explore",
       "manage": "Manage"
     },
+    "manageGroupTitle": "Manage {account}",
     "collapse": "Collapse sidebar",
-    "expand": "Expand sidebar"
+    "expand": "Expand sidebar",
+    "profileRow": {
+      "viewProfile": "View profile",
+      "fallbackName": "Your profile"
+    }
+  },
+  "settings": {
+    "handle": {
+      "title": "Username",
+      "description": "Your username is your public name across the app — change it here and it updates everywhere.",
+      "edit": "Edit",
+      "newLabel": "New username",
+      "placeholder": "yourname",
+      "prefixHint": "3–18 characters. Letters, numbers, and hyphens only.",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "useOwnDomain": "Use my own domain",
+      "useSubdomain": "Use a .{suffix} username",
+      "customLabel": "Full username (your own domain)",
+      "customHint": "To use your own domain, add a DNS TXT record at _atproto pointing to your account ID, then save.",
+      "customRecord": "Account ID",
+      "success": "Username updated to {handle}",
+      "errors": {
+        "length": "Username must be 3–18 characters.",
+        "prefixChars": "Use only lowercase letters, numbers, and hyphens. It can’t start or end with a hyphen.",
+        "full": "Enter a full username like alice.example.com.",
+        "generic": "Could not update your username. Please try again.",
+        "unavailable": "Changing your username isn’t available yet. Please try again later."
+      }
+    }
   },
   "bumicertCard": {
     "missingImage": "Cert image unavailable",
@@ -130,11 +169,17 @@
   },
   "browseGrid": {
     "title": "Ways to Explore",
-    "description": "Four ways into GainForest work, shaped for funders, stewards, and field teams.",
+    "description": "Ways into GainForest work, shaped for funders, stewards, and field teams.",
     "loadingAria": "Explore links loading",
     "cards": {
+      "projects": {
+        "label": "Regenerative work",
+        "title": "Projects",
+        "blurb": "Browse what communities are building — each project gathers its Certs, places, and field evidence in one story.",
+        "statLabel": "projects"
+      },
       "bumicerts": {
-        "label": "Verified projects",
+        "label": "Impact certificates",
         "title": "Certs",
         "blurb": "Browse project stories with photos, places, people, and context.",
         "statLabel": "stories"
@@ -179,7 +224,7 @@
   "signInPrompt": {
     "description": "Save your project sites, tree information, and Certs in one place.",
     "failed": "We couldn’t finish signing you in. Please try again.",
-    "getStarted": "Get started"
+    "getStarted": "Sign in"
   },
   "status": {
     "pillTitle": "System status",
@@ -260,12 +305,30 @@
   },
   "accountTabs": {
     "home": "Home",
+    "overview": "Overview",
+    "donations": "Donations",
     "bumicerts": "Certs",
+    "projects": "Projects",
+    "organizations": "Organizations",
     "donationHistory": "Donation History",
     "observations": "Observations",
     "gallery": "Gallery",
     "settings": "Settings",
     "timeline": "Timeline"
+  },
+  "accountOrganizations": {
+    "emptyEyebrow": "No organizations",
+    "empty": "You don't belong to any organizations yet.",
+    "fallbackName": "Organization",
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    }
+  },
+  "accountProjects": {
+    "emptyEyebrow": "No projects",
+    "empty": "This account has not shared any projects yet."
   },
   "projectGallery": {
     "accountTitle": "Gallery",

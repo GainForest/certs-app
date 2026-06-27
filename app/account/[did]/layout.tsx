@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import Container from "@/components/ui/container";
 import { fetchAuthSession } from "@/app/_lib/auth-server";
+import type { AuthSession } from "@/app/_lib/auth";
 import { fetchUserCgsGroups } from "@/app/_lib/manage-server";
 import { canEditGroupProfile } from "@/app/(manage)/manage/_lib/cgs-permissions";
-import { groupManageBasePath } from "@/lib/links";
+import { accountManageBasePath, groupManageBasePath } from "@/lib/links";
+import { AccountChrome } from "../_components/AccountChrome";
 import { AccountHero } from "../_components/AccountHero";
 import { AccountTabBar } from "../_components/AccountTabBar";
 import { getAccountRouteData, readAccountRouteParams, readOptionalAccountRouteParams, type AccountRouteData } from "../_lib/account-route";
@@ -26,10 +27,9 @@ export async function generateMetadata({ params }: { params: Promise<{ did: stri
   };
 }
 
-async function getEditHref(account: AccountRouteData): Promise<string | null> {
-  const session = await fetchAuthSession();
+async function getEditHref(account: AccountRouteData, session: AuthSession): Promise<string | null> {
   if (!session.isLoggedIn) return null;
-  if (session.did === account.did) return "/manage";
+  if (session.did === account.did) return accountManageBasePath(account.urlIdentifier);
   if (account.kind !== "organization") return null;
 
   const groups = await fetchUserCgsGroups();
@@ -51,15 +51,24 @@ export default async function AccountLayout({
 }) {
   const { did, urlIdentifier } = await readAccountRouteParams(params);
   const account = await getAccountRouteData(did, urlIdentifier);
-  const editHref = await getEditHref(account);
+  const session = await fetchAuthSession();
+  const editHref = await getEditHref(account, session);
+  // Your organizations are private to you: the group service only lets us read
+  // your own memberships, so this tab appears only on your own profile.
+  const showOrganizations = account.kind === "user" && session.isLoggedIn && session.did === account.did;
 
   return (
     <main className="w-full">
-      <Container className="pt-4 pb-8">
-        <AccountHero account={account} editHref={editHref} />
-        <AccountTabBar did={account.urlIdentifier} accountKind={account.kind} />
+      <AccountChrome
+        hero={
+          <>
+            <AccountHero account={account} editHref={editHref} />
+            <AccountTabBar did={account.urlIdentifier} accountKind={account.kind} showOrganizations={showOrganizations} />
+          </>
+        }
+      >
         {children}
-      </Container>
+      </AccountChrome>
     </main>
   );
 }

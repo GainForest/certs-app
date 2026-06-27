@@ -1,4 +1,20 @@
 {
+  "map": {
+    "play": "Reproduzir linha do tempo",
+    "pause": "Pausar linha do tempo",
+    "from": "De",
+    "to": "Até",
+    "shown": "{count} exibidos",
+    "dragHint": "Arraste as alças para escolher um período",
+    "startAria": "Data inicial — {date}",
+    "endAria": "Data final — {date}",
+    "unidentified": "Não identificado",
+    "finding": "Localizando pontos no mapa…",
+    "mappedItems": "{count} itens com localização no mapa",
+    "mappedSites": "{count} locais com localização no mapa",
+    "noLocations": "Nenhum dos itens exibidos tem localização no mapa ainda.",
+    "speed": "Velocidade de reprodução"
+  },
   "explore": {
     "metadata": {
       "title": "Explorar certificados — Projetos de impacto regenerativo verificado",
@@ -241,6 +257,12 @@
       "title": "Desafio BioBlitz Semanal — GainForest",
       "description": "Saia, fotografe seres vivos e adicione seus registros. A cada semana, quem mais registrar e a melhor foto ganham um prêmio."
     },
+    "banner": {
+      "message": "O Desafio BioBlitz Semanal está no ar. Fotografe a natureza e ganhe prêmios.",
+      "cta": "Saiba mais",
+      "dismiss": "Dispensar este aviso",
+      "close": "Fechar"
+    },
     "hero": {
       "eyebrow": "Desafio BioBlitz Semanal",
       "titlePrefix": "Desafio",
@@ -305,12 +327,30 @@
       "subtitleLive": "Quem está liderando o prêmio de mais observações agora.",
       "subtitleEnded": "Classificação final desta rodada.",
       "subtitleUpcoming": "Seja o primeiro no ranking quando a rodada abrir.",
+      "subtitleAll": "Quem mais registra em todo o desafio.",
+      "scope": {
+        "round": "Esta rodada",
+        "all": "Histórico"
+      },
       "leader": "Na liderança",
       "observations": "{count, plural, one {# observação} other {# observações}}",
       "openCollector": "Abrir o perfil em uma nova aba",
       "rankAriaLabel": "Posição {rank}",
+      "org": {
+        "label": "Organização",
+        "members": "{count, plural, one {# integrante} other {# integrantes}}",
+        "types": {
+          "nonprofit": "Sem fins lucrativos",
+          "business": "Empresa",
+          "company": "Companhia",
+          "community": "Grupo comunitário",
+          "government": "Governo",
+          "academic": "Acadêmica"
+        }
+      },
       "stats": {
         "observations": "Observações nesta rodada",
+        "observationsAll": "Observações (histórico)",
         "collectors": "Participantes",
         "timeLeft": "Tempo restante"
       },
@@ -330,6 +370,14 @@
       "mostObservations": "Mais observações",
       "bestPicture": "Melhor foto",
       "pending": "A anunciar"
+    },
+    "map": {
+      "title": "Observações da semana",
+      "heading": "Onde as fotos desta rodada foram tiradas",
+      "subtitle": "Cada registro com foto e localização enviado durante esta rodada. Arraste a linha do tempo e toque em reproduzir para vê-los surgir ao longo da semana.",
+      "loading": "Mapeando os registros da semana…",
+      "empty": "Ainda não há registros com foto e localização nesta rodada.",
+      "error": "Não foi possível carregar o mapa de observações."
     }
   },
   "dashboard": {
@@ -424,6 +472,13 @@
       "action": "Abrir visão geral de doações"
     }
   },
+  "donationsHub": {
+    "tabs": {
+      "overview": "Visão geral",
+      "leaderboard": "Classificação",
+      "ariaLabel": "Visualizações de doações"
+    }
+  },
   "account": {
     "metadata": {
       "accountTitle": "Conta — certificados",
@@ -516,6 +571,12 @@
       "inviteCollaboratorsDescription": "Traga apoiadores e colaboradores para seu trabalho no certificados e aumentem juntos seu impacto regenerativo.",
       "inviteFriends": "Convidar amigos",
       "inviteFriendsDescription": "Convide seus amigos para entrar no certificados e criar impacto positivo juntos.",
+      "shareProfileTitle": "Compartilhe seu perfil",
+      "shareProfileTitleOrganization": "Compartilhe este perfil",
+      "shareProfileBody": "Copie o link do seu perfil e compartilhe com qualquer pessoa.",
+      "shareProfileBodyOrganization": "Copie o link deste perfil e compartilhe com colaboradores e financiadores.",
+      "copyProfileLink": "Copiar link do perfil",
+      "profileLinkCopied": "Copiado",
       "shareOrganization": "Explore o perfil certificados de {displayName}: {pageUrl}",
       "shareUser": "Junte-se a mim no certificados e apoie o impacto regenerativo: {pageUrl}",
       "totalBumicerts": "Total de certificados",
@@ -768,6 +829,19 @@
       "clearAll": "Limpar tudo"
     }
   },
+  "ownerFilter": {
+    "button": "Autor",
+    "ariaLabel": "Filtrar por quem publicou",
+    "searchPlaceholder": "Buscar pessoas e organizações",
+    "hint": "Digite um nome para filtrar por quem publicou",
+    "searching": "Buscando…",
+    "noResults": "Nenhuma pessoa ou organização correspondente",
+    "showAll": "Mostrar todos",
+    "showing": "Mostrando {name}",
+    "clear": "Remover filtro de autor",
+    "selectedFallback": "Conta selecionada",
+    "filterByThis": "Mostrar apenas este autor"
+  },
   "browseGrid": {
     "heading": "Formas de explorar",
     "description": "Quatro caminhos para o trabalho da GainForest, pensados para financiadores, guardiões e equipes de campo.",
@@ -904,7 +978,10 @@
       "close": "Fechar",
       "edit": "Editar",
       "cancel": "Cancelar",
-      "saveChanges": "Salvar alterações"
+      "saveChanges": "Salvar alterações",
+      "viewObservation": "Ver página da observação",
+      "viewProject": "Ver página do projeto",
+      "openFullPage": "Abrir página completa"
     },
     "kind": {
       "occurrence": "Avistamento da natureza",
@@ -1034,6 +1111,52 @@
       "sightingId": "ID da observação"
     }
   },
+  "projectPage": {
+    "back": "Todos os projetos",
+    "kind": "Projeto",
+    "ledBy": "Projeto de",
+    "viewProfile": "Ver perfil",
+    "created": "Criado",
+    "certs": "Certificados",
+    "overviewTitle": "Visão geral",
+    "overviewLead": "Uma visão geral a partir de {certs, plural, one {# certificado} other {# certificados}} deste projeto.",
+    "contributors": "Colaboradores",
+    "places": "Lugares",
+    "focusAreasLabel": "Áreas de foco",
+    "whereLabel": "Onde",
+    "activePeriodLabel": "Período de atividade",
+    "observations": "Observações",
+    "photos": "Fotos",
+    "galleryTitle": "Galeria",
+    "observationsTitle": "Observações",
+    "certsTitle": "Certificados deste projeto",
+    "noCerts": "Nenhum certificado foi adicionado a este projeto ainda.",
+    "metaTitle": "{name} — Projeto",
+    "metaFallback": "Um projeto compartilhado no GainForest."
+  },
+  "observationPage": {
+    "back": "Todos os avistamentos",
+    "kind": "Avistamento de natureza",
+    "sharedBy": "Compartilhado por",
+    "viewProfile": "Ver perfil",
+    "observed": "Observado",
+    "shared": "Compartilhado",
+    "place": "Local",
+    "notRecorded": "Não registrado",
+    "detailsTitle": "Detalhes",
+    "notesTitle": "Notas",
+    "fieldSound": "Som de campo",
+    "previous": "Foto anterior",
+    "next": "Próxima foto",
+    "showPhoto": "Mostrar foto {number}",
+    "zoom": "Ampliar foto",
+    "close": "Fechar",
+    "audioUnsupported": "Seu navegador não suporta a reprodução de áudio.",
+    "metaTitle": "{name} — Avistamento de natureza",
+    "metaFallback": "Um avistamento de natureza compartilhado no GainForest.",
+    "natureSound": "Gravação de som da natureza",
+    "unidentified": "Avistamento não identificado"
+  },
   "manageProjects": {
     "hero": {
       "title": "Meus projetos",
@@ -1050,6 +1173,19 @@
       "manageGalleryFor": "Gerenciar galeria de {title}",
       "manageObservations": "Observações",
       "manageObservationsFor": "Observações de {title}"
+    }
+  },
+  "manageBumicerts": {
+    "actions": {
+      "delete": "Excluir Cert",
+      "deleteAria": "Excluir {title}"
+    },
+    "deleteModal": {
+      "title": "Excluir Cert?",
+      "description": "Isto removerá permanentemente “{title}” da sua conta. Esta ação não pode ser desfeita.",
+      "cancel": "Cancelar",
+      "confirm": "Excluir Cert",
+      "error": "Não foi possível excluir este Cert. Tente novamente."
     }
   },
   "observations": {

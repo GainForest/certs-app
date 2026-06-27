@@ -12,10 +12,14 @@ export function ChromeGate({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // BioBlitz is a single-screen dashboard meant to fit without scrolling, so it
+  // omits the page footer (same treatment as the promo banner there).
+  const showFooter = pathname !== "/bioblitz";
+
   return (
     <AppShell authSession={null} manageAccountKind="user">
       {children}
-      <Footer />
+      {showFooter ? <Footer /> : null}
     </AppShell>
   );
 }

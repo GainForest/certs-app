@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import {
   BadgeCheckIcon,
   BinocularsIcon,
+  Building2Icon,
   CalendarCheckIcon,
   CalendarClockIcon,
   CameraIcon,
@@ -22,19 +23,21 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BioblitzObservationsMap } from "./BioblitzObservationsMap";
 import { AuthorInline } from "../_components/AuthorChip";
 import { PreferredAccountLink } from "../_components/PreferredLinks";
-import { StatsTileGrid, type StatsTileItem } from "../_components/StatsTile";
 import { formatNumber } from "../_lib/format";
 import {
   BIOBLITZ_LINKS,
   BIOBLITZ_PRIZES,
   countdownTo,
-  endedRounds,
   featuredRound,
+  fetchCollectorOrgs,
   fetchRoundCollectors,
   roundStatus,
   type BioblitzRound,
+  type BoardScope,
+  type CollectorOrg,
   type RoundBoard,
   type RoundStatus,
 } from "../_lib/bioblitz";
@@ -42,6 +45,22 @@ import {
 // Shared easing for entrance motion — a soft, confident ease-out.
 const EASE = [0.22, 1, 0.36, 1] as const;
 const IMG_SIZES = "(min-width: 768px) calc(100vw - 15rem), 100vw";
+
+/** How many collectors to fetch org labels for / render on the compact board. */
+const BOARD_LIMIT = 12;
+/** How many rows the single-screen board shows before it clips. */
+const DISPLAY_LIMIT = 8;
+
+/** Org-type tokens we have a friendly translated label for; anything else
+ *  falls back to the generic "Organization" label. */
+const KNOWN_ORG_TYPES = new Set([
+  "nonprofit",
+  "business",
+  "company",
+  "community",
+  "government",
+  "academic",
+]);
 
 export function BioblitzClient() {
   // Resolve "now"-dependent state after mount so the server-rendered shell
@@ -63,16 +82,38 @@ export function BioblitzClient() {
   }, [now]);
 
   const status = now != null ? roundStatus(round, now) : "live";
-  const past = useMemo(() => endedRounds(now ?? Date.now()), [now]);
 
   const [board, setBoard] = useState<RoundBoard | null>(null);
   const [error, setError] = useState(false);
+  // Which window the board tallies: the active round, or all-time.
+  const [scope, setScope] = useState<BoardScope>("round");
+  // Organisation membership per collector account, resolved after the board
+  // loads and merged in progressively so the standings never wait on it.
+  const [orgs, setOrgs] = useState<Map<string, CollectorOrg>>(new Map());
 
-  // Reset to the loading state whenever the active round changes.
+  // Reset to the loading state whenever the active round or scope changes.
   useEffect(() => {
     setBoard(null);
     setError(false);
-  }, [round.id]);
+    setOrgs(new Map());
+  }, [round.id, scope]);
+
+  // Resolve organisation labels for the collectors currently on the board.
+  useEffect(() => {
+    if (!board || board.collectors.length === 0) return;
+    const dids = board.collectors.slice(0, BOARD_LIMIT).map((c) => c.did);
+    const ctrl = new AbortController();
+    let cancelled = false;
+    fetchCollectorOrgs(dids, ctrl.signal)
+      .then((map) => {
+        if (!cancelled) setOrgs(map);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      ctrl.abort();
+    };
+  }, [board]);
 
   // Load on round change, then refresh silently every two minutes so the live
   // standings stay current without flashing the skeleton.
@@ -80,7 +121,7 @@ export function BioblitzClient() {
     const controller = new AbortController();
     let cancelled = false;
     const load = () => {
-      fetchRoundCollectors(round, controller.signal)
+      fetchRoundCollectors(round, scope, controller.signal)
         .then((result) => {
           if (!cancelled) {
             setBoard(result);
@@ -99,40 +140,54 @@ export function BioblitzClient() {
       controller.abort();
       clearInterval(id);
     };
-  }, [round]);
+  }, [round, scope]);
 
   return (
-    <section className="relative -mt-14 overflow-hidden pb-32">
-      <HeroBackdrop />
+    <>
+    <section className="relative flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden lg:h-[calc(100dvh-3.5rem)]">
+      <BackgroundWash />
 
-      <div className="relative z-10 mx-auto max-w-5xl px-6">
-        <Hero round={round} status={status} now={now} />
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col gap-3 px-4 pb-4 pt-3 sm:px-6 lg:min-h-0">
+        <HeroBand round={round} status={status} now={now} />
 
-        <Prizes />
+        <div className="grid flex-1 gap-3 lg:min-h-0 lg:grid-cols-12">
+          <div className="flex flex-col gap-3 lg:col-span-5 lg:min-h-0">
+            <Prizes />
+            <HowItWorks />
+            <CtaBlock />
+          </div>
 
-        <HowItWorks />
-
-        <Board round={round} status={status} board={board} error={error} now={now} />
-
-        {past.length > 0 ? <Winners rounds={past} /> : null}
-
-        <ClosingInvite />
+          <div className="lg:col-span-7 lg:min-h-0">
+            <Board
+              round={round}
+              status={status}
+              board={board}
+              orgs={orgs}
+              error={error}
+              now={now}
+              scope={scope}
+              onScope={setScope}
+            />
+          </div>
+        </div>
       </div>
     </section>
+
+      <BioblitzObservationsMap round={round} />
+    </>
   );
 }
 
-/** A full nature banner behind the hero, fading into the page. Real imagery
- *  carries the atmosphere so the type can stay sparse. */
-function HeroBackdrop() {
+/** A faint nature wash at the top of the page — atmosphere without height. */
+function BackgroundWash() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] overflow-hidden">
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-64 overflow-hidden opacity-60">
       <Image
         src="/assets/media/images/observations/observations-hero-light@2x.webp"
         alt=""
         fill
         priority
-        quality={95}
+        quality={90}
         sizes={IMG_SIZES}
         className="object-cover object-center dark:hidden"
       />
@@ -141,29 +196,17 @@ function HeroBackdrop() {
         alt=""
         fill
         priority
-        quality={95}
+        quality={90}
         sizes={IMG_SIZES}
         className="hidden object-cover object-center dark:block"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/70 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/85 to-background" />
     </div>
   );
 }
 
-/** Centered section title with a brand accent mark above it. No kicker text. */
-function SectionHeading({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col items-center gap-4 text-center">
-      <span aria-hidden className="h-1 w-12 rounded-full bg-primary/40" />
-      <h2 className="font-instrument text-3xl font-light italic leading-none tracking-[-0.02em] text-foreground sm:text-4xl">
-        {title}
-      </h2>
-    </div>
-  );
-}
-
-/** Scroll-triggered reveal for below-the-fold sections. */
-function Reveal({
+/** Lightweight entrance fade — no scroll triggers, everything is on screen. */
+function FadeIn({
   children,
   delay = 0,
   className,
@@ -173,21 +216,51 @@ function Reveal({
   className?: string;
 }) {
   return (
-    <motion.section
+    <motion.div
       className={className}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.6, delay, ease: EASE }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay, ease: EASE }}
     >
       {children}
-    </motion.section>
+    </motion.div>
   );
 }
 
-// ── Hero ─────────────────────────────────────────────────────────────────────
+function Card({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={`rounded-3xl border border-border/60 bg-background/50 p-3.5 backdrop-blur ${className ?? ""}`}
+    >
+      {children}
+    </div>
+  );
+}
 
-function Hero({
+function SectionLabel({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex size-5 items-center justify-center text-primary [&_svg]:size-4">{icon}</span>
+      <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{title}</h2>
+    </div>
+  );
+}
+
+function LiveDot({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+      <span aria-hidden className="relative flex size-2">
+        <span className="absolute inline-flex size-2 animate-ping rounded-full bg-current opacity-60" />
+        <span className="relative inline-flex size-2 rounded-full bg-current" />
+      </span>
+      {label}
+    </span>
+  );
+}
+
+// ── Hero band ─────────────────────────────────────────────────────────────────
+
+function HeroBand({
   round,
   status,
   now,
@@ -201,70 +274,37 @@ function Hero({
   const dates = formatDateRange(round.start, round.end, locale);
 
   return (
-    <motion.header
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: EASE }}
-      className="flex flex-col items-center pb-4 pt-32 text-center"
-    >
-      <h1 className="font-instrument max-w-3xl text-6xl font-light italic leading-[0.92] tracking-[-0.035em] text-foreground sm:text-7xl md:text-[5.5rem]">
-        {t("hero.titlePrefix")} <span className="text-primary">{t("hero.titleEmphasis")}</span>
-      </h1>
-      <p className="mt-6 max-w-md text-base leading-7 text-muted-foreground">{t("hero.description")}</p>
-
-      {/* Live status + round identity, centered. */}
-      <div className="mt-9 flex flex-col items-center gap-3">
-        <StatusChip status={status} />
-        <p className="font-instrument text-2xl italic leading-tight text-foreground sm:text-3xl">{round.label}</p>
-        <p className="text-sm tabular-nums text-muted-foreground">{dates}</p>
+    <FadeIn className="flex flex-col gap-3 rounded-3xl border border-border/60 bg-background/50 px-5 py-3.5 backdrop-blur md:flex-row md:items-center md:justify-between md:gap-6">
+      <div className="min-w-0">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+          {t("hero.eyebrow")}
+        </span>
+        <h1 className="font-instrument mt-0.5 text-3xl font-light italic leading-[0.95] tracking-[-0.02em] text-foreground sm:text-4xl">
+          {t("hero.titlePrefix")} <span className="text-primary">{t("hero.titleEmphasis")}</span>
+        </h1>
+        <p className="mt-1.5 max-w-md text-sm leading-snug text-muted-foreground">{t("hero.description")}</p>
       </div>
 
-      <Countdown round={round} status={status} now={now} />
-
-      {round.rsvpUrl && status !== "ended" ? (
-        <motion.a
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3, ease: EASE }}
-          href={round.rsvpUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group mt-10 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-dark"
-        >
-          <CalendarCheckIcon className="size-4" aria-hidden />
-          {t("rsvp.button")}
-        </motion.a>
-      ) : null}
-
-      <HelpLinks />
-      <p className="mt-12 text-xs text-muted-foreground/70">{t("hero.program")}</p>
-    </motion.header>
-  );
-}
-
-function HelpLinks() {
-  const t = useTranslations("marketplace.bioblitz.help");
-  return (
-    <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-      <a
-        href={BIOBLITZ_LINKS.officeHours}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
-      >
-        <CalendarClockIcon className="size-4" aria-hidden />
-        {t("officeHours")}
-      </a>
-      <a
-        href={BIOBLITZ_LINKS.community}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
-      >
-        <MessagesSquareIcon className="size-4" aria-hidden />
-        {t("community")}
-      </a>
-    </div>
+      <div className="flex shrink-0 flex-col items-start gap-2 md:items-end">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusChip status={status} />
+          <span className="font-instrument text-lg italic leading-none text-foreground">{round.label}</span>
+        </div>
+        <CompactCountdown round={round} status={status} now={now} />
+        <span className="text-[11px] tabular-nums text-muted-foreground">{dates}</span>
+        {round.rsvpUrl && status !== "ended" ? (
+          <a
+            href={round.rsvpUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-dark"
+          >
+            <CalendarCheckIcon className="size-4" aria-hidden />
+            {t("rsvp.button")}
+          </a>
+        ) : null}
+      </div>
+    </FadeIn>
   );
 }
 
@@ -276,9 +316,7 @@ function StatusChip({ status }: { status: RoundStatus }) {
     ended: "bg-foreground/10 text-muted-foreground",
   };
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold ${styles[status]}`}
-    >
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${styles[status]}`}>
       {status === "live" ? (
         <span aria-hidden className="relative flex size-2">
           <span className="absolute inline-flex size-2 animate-ping rounded-full bg-current opacity-60" />
@@ -290,9 +328,8 @@ function StatusChip({ status }: { status: RoundStatus }) {
   );
 }
 
-/** Large segmented countdown — the two most-significant units as centered
- *  tiles. Shows placeholders until "now" resolves on the client. */
-function Countdown({
+/** Single-line countdown — "Ends in 2d 4h". Hidden until "now" resolves. */
+function CompactCountdown({
   round,
   status,
   now,
@@ -302,42 +339,22 @@ function Countdown({
   now: number | null;
 }) {
   const t = useTranslations("marketplace.bioblitz.round");
-
   if (status === "ended") {
-    return (
-      <p className="font-instrument mt-8 text-2xl italic text-muted-foreground sm:text-3xl">{t("ended")}</p>
-    );
+    return <span className="text-sm font-medium text-muted-foreground">{t("ended")}</span>;
   }
-
-  // Hold the countdown back until the client resolves "now", so it animates in
-  // cleanly rather than flashing placeholder values.
   if (now == null) return null;
 
   const label = status === "upcoming" ? t("startsIn") : t("endsIn");
   const target = status === "upcoming" ? round.start : round.end;
   const { days, hours, minutes } = countdownTo(target, now);
-  const parts =
-    days > 0
-      ? [t("days", { count: days }), t("hours", { count: hours })]
-      : [t("hours", { count: hours }), t("minutes", { count: minutes })];
+  const value = days > 0 ? `${days}d ${hours}h` : `${hours}h ${minutes}m`;
 
   return (
-    <div className="mt-8 flex flex-col items-center gap-3">
-      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-        <ClockIcon className="size-4 text-primary" aria-hidden />
-        {label}
-      </span>
-      <div className="flex items-stretch justify-center gap-3">
-        {parts.map((part, index) => (
-          <span
-            key={index}
-            className="rounded-2xl bg-foreground/[0.06] px-5 py-3 text-2xl font-semibold tabular-nums tracking-tight text-foreground backdrop-blur sm:text-3xl"
-          >
-            {part}
-          </span>
-        ))}
-      </div>
-    </div>
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.06] px-3 py-1 text-sm text-foreground">
+      <ClockIcon className="size-4 text-primary" aria-hidden />
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-semibold tabular-nums">{value}</span>
+    </span>
   );
 }
 
@@ -347,30 +364,32 @@ function Prizes() {
   const t = useTranslations("marketplace.bioblitz.prizes");
   const locale = useLocale();
   return (
-    <Reveal className="mt-32">
-      <SectionHeading title={t("title")} />
-      <div className="mx-auto mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
-        <PrizeCard
-          featured
-          amount={formatPrize(BIOBLITZ_PRIZES.mostObservations, locale)}
-          icon={<TrophyIcon />}
-          title={t("mostObservations.title")}
-        />
-        <PrizeCard
-          amount={formatPrize(BIOBLITZ_PRIZES.bestPicture, locale)}
-          icon={<CameraIcon />}
-          title={t("bestPicture.title")}
-        />
-      </div>
-      <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-muted-foreground">
-        <BadgeCheckIcon className="size-4 shrink-0 text-primary" aria-hidden />
-        {t("badgeNote")}
-      </p>
-    </Reveal>
+    <FadeIn delay={0.05}>
+      <Card>
+        <SectionLabel icon={<TrophyIcon />} title={t("title")} />
+        <div className="mt-2.5 grid grid-cols-2 gap-3">
+          <PrizeTile
+            featured
+            amount={formatPrize(BIOBLITZ_PRIZES.mostObservations, locale)}
+            icon={<TrophyIcon />}
+            title={t("mostObservations.title")}
+          />
+          <PrizeTile
+            amount={formatPrize(BIOBLITZ_PRIZES.bestPicture, locale)}
+            icon={<CameraIcon />}
+            title={t("bestPicture.title")}
+          />
+        </div>
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <BadgeCheckIcon className="size-3.5 shrink-0 text-primary" aria-hidden />
+          {t("badgeNote")}
+        </p>
+      </Card>
+    </FadeIn>
   );
 }
 
-function PrizeCard({
+function PrizeTile({
   amount,
   icon,
   title,
@@ -383,49 +402,19 @@ function PrizeCard({
 }) {
   return (
     <div
-      className={`relative flex flex-col items-center gap-5 overflow-hidden rounded-[28px] px-6 py-10 text-center backdrop-blur transition-colors ${
-        featured
-          ? "bg-gradient-to-b from-primary/[0.18] via-primary/[0.06] to-transparent hover:from-primary/[0.24]"
-          : "bg-foreground/5 hover:bg-foreground/[0.08]"
+      className={`flex flex-col items-center gap-1 rounded-2xl px-3 py-3 text-center ${
+        featured ? "bg-gradient-to-b from-primary/[0.16] via-primary/[0.05] to-transparent" : "bg-foreground/5"
       }`}
     >
-      {featured ? (
-        <Image
-          src="/assets/media/images/create-bumicert/plant-light.png"
-          alt=""
-          width={160}
-          height={200}
-          aria-hidden
-          className="pointer-events-none absolute -bottom-6 -right-6 w-28 opacity-20 dark:hidden"
-        />
-      ) : null}
-      {featured ? (
-        <Image
-          src="/assets/media/images/create-bumicert/plant-dark.png"
-          alt=""
-          width={160}
-          height={200}
-          aria-hidden
-          className="pointer-events-none absolute -bottom-6 -right-6 hidden w-28 opacity-25 dark:block"
-        />
-      ) : null}
       <span
-        className={`relative flex size-12 items-center justify-center rounded-2xl text-primary [&_svg]:size-5 ${
+        className={`flex size-8 items-center justify-center rounded-xl text-primary [&_svg]:size-4 ${
           featured ? "bg-primary/15" : "bg-primary/10"
         }`}
       >
         {icon}
       </span>
-      <div className="relative">
-        <div
-          className={`font-instrument italic leading-none tracking-tight text-primary ${
-            featured ? "text-7xl" : "text-6xl"
-          }`}
-        >
-          {amount}
-        </div>
-        <h3 className="mt-4 text-base font-semibold text-foreground">{title}</h3>
-      </div>
+      <span className="font-instrument text-3xl italic leading-none text-primary">{amount}</span>
+      <span className="text-xs font-semibold text-foreground">{title}</span>
     </div>
   );
 }
@@ -440,53 +429,128 @@ function HowItWorks() {
     { key: "review", icon: <ScanSearchIcon /> },
   ] as const;
   return (
-    <Reveal className="mt-32">
-      <SectionHeading title={t("title")} />
-      <ol className="mx-auto mt-10 grid max-w-3xl gap-5 sm:grid-cols-3">
-        {steps.map((step, index) => (
-          <li
-            key={step.key}
-            className="relative flex flex-col items-center gap-4 overflow-hidden rounded-[28px] bg-foreground/5 px-6 py-9 text-center backdrop-blur transition-colors hover:bg-foreground/[0.08]"
-          >
-            <span
-              aria-hidden
-              className="font-instrument pointer-events-none absolute -top-4 right-3 select-none text-8xl italic leading-none text-primary/[0.07]"
-            >
-              {index + 1}
-            </span>
-            <span className="relative flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary [&_svg]:size-6">
-              {step.icon}
-            </span>
-            <h3 className="relative text-base font-semibold text-foreground">{t(`steps.${step.key}.title`)}</h3>
-          </li>
-        ))}
-      </ol>
-    </Reveal>
+    <FadeIn delay={0.1}>
+      <Card>
+        <SectionLabel icon={<BinocularsIcon />} title={t("title")} />
+        <ol className="mt-2.5 space-y-1.5">
+          {steps.map((step, index) => (
+            <li key={step.key} className="flex items-center gap-3">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary [&_svg]:size-3.5">
+                {step.icon}
+              </span>
+              <span className="text-sm font-medium text-foreground">
+                <span className="text-muted-foreground">{index + 1}.</span> {t(`steps.${step.key}.title`)}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </Card>
+    </FadeIn>
+  );
+}
+
+// ── Left-column call to action ────────────────────────────────────────────────
+
+function CtaBlock() {
+  const t = useTranslations("marketplace.bioblitz");
+  const tHelp = useTranslations("marketplace.bioblitz.help");
+  return (
+    <FadeIn delay={0.15} className="mt-auto flex flex-col gap-2">
+      <Link
+        href="/manage/observations"
+        className="group inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-dark"
+      >
+        {t("board.cta")}
+        <ChevronRightIcon className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
+      </Link>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <a
+          href={BIOBLITZ_LINKS.officeHours}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
+        >
+          <CalendarClockIcon className="size-3.5" aria-hidden />
+          {tHelp("officeHours")}
+        </a>
+        <a
+          href={BIOBLITZ_LINKS.community}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
+        >
+          <MessagesSquareIcon className="size-3.5" aria-hidden />
+          {tHelp("community")}
+        </a>
+      </div>
+      <p className="text-[11px] leading-snug text-muted-foreground/70">{t("hero.program")}</p>
+    </FadeIn>
   );
 }
 
 // ── Leaderboard ──────────────────────────────────────────────────────────────
 
+function ScopeToggle({
+  scope,
+  onScope,
+}: {
+  scope: BoardScope;
+  onScope: (scope: BoardScope) => void;
+}) {
+  const t = useTranslations("marketplace.bioblitz.board.scope");
+  const options: BoardScope[] = ["round", "all"];
+  return (
+    <div className="inline-flex rounded-full bg-muted/60 p-0.5 ring-1 ring-foreground/5">
+      {options.map((option) => {
+        const selected = scope === option;
+        return (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onScope(option)}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              selected
+                ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t(option)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function Board({
   round,
   status,
   board,
+  orgs,
   error,
   now,
+  scope,
+  onScope,
 }: {
   round: BioblitzRound;
   status: RoundStatus;
   board: RoundBoard | null;
+  orgs: Map<string, CollectorOrg>;
   error: boolean;
   now: number | null;
+  scope: BoardScope;
+  onScope: (scope: BoardScope) => void;
 }) {
   const t = useTranslations("marketplace.bioblitz.board");
   const subtitle =
-    status === "ended"
-      ? t("subtitleEnded")
-      : status === "upcoming"
-        ? t("subtitleUpcoming")
-        : t("subtitleLive");
+    scope === "all"
+      ? t("subtitleAll")
+      : status === "ended"
+        ? t("subtitleEnded")
+        : status === "upcoming"
+          ? t("subtitleUpcoming")
+          : t("subtitleLive");
 
   const timeLeft = useMemo(() => {
     if (now == null || status === "ended") return "—";
@@ -494,9 +558,9 @@ function Board({
     return days > 0 ? `${days}d ${hours}h` : `${hours}h`;
   }, [now, status, round]);
 
-  const stats: StatsTileItem[] = [
+  const stats: { label: string; value: string; icon: ReactNode; accent?: boolean }[] = [
     {
-      label: t("stats.observations"),
+      label: scope === "all" ? t("stats.observationsAll") : t("stats.observations"),
       value: board ? formatNumber(board.totalObservations) : "—",
       icon: <BinocularsIcon />,
       accent: true,
@@ -513,91 +577,61 @@ function Board({
     },
   ];
 
-  const collectors = board?.collectors.slice(0, 20) ?? [];
-  const [leader, ...rest] = collectors;
+  const collectors = board?.collectors.slice(0, DISPLAY_LIMIT) ?? [];
 
   return (
-    <Reveal className="mt-32">
-      <SectionHeading title={t("title")} />
-      <p className="mx-auto mt-4 max-w-md text-center text-sm text-muted-foreground">{subtitle}</p>
+    <FadeIn delay={0.1} className="h-full">
+      <Card className="flex h-full min-h-0 flex-col">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h2 className="font-instrument text-xl italic leading-none text-foreground">{t("title")}</h2>
+            {scope === "round" && status === "live" ? <LiveDot label={t("live")} /> : null}
+          </div>
+          <ScopeToggle scope={scope} onScope={onScope} />
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
 
-      <div className="mx-auto mt-10 max-w-3xl">
-        <StatsTileGrid items={stats} columns={3} />
-      </div>
-
-      <div className="mx-auto mt-6 max-w-3xl">
-        {board ? (
-          collectors.length === 0 ? (
-            <BoardMessage icon={<BinocularsIcon />} title={t("empty.title")} description={t("empty.description")} />
-          ) : (
-            <div className="space-y-4">
-              {leader ? (
-                <LeaderCard
-                  did={leader.did}
-                  name={leader.displayName}
-                  avatarRef={leader.avatarRef}
-                  count={leader.count}
-                />
-              ) : null}
-              {rest.length > 0 ? (
-                <div className="space-y-1.5">
-                  {rest.map((collector, index) => (
-                    <CollectorRow
-                      key={collector.did}
-                      rank={index + 2}
-                      did={collector.did}
-                      name={collector.displayName}
-                      avatarRef={collector.avatarRef}
-                      count={collector.count}
-                    />
-                  ))}
-                </div>
-              ) : null}
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className={`rounded-2xl px-3 py-2.5 text-center ${stat.accent ? "bg-primary/[0.08]" : "bg-foreground/5"}`}
+            >
+              <span className="flex items-center justify-center text-primary [&_svg]:size-3.5">{stat.icon}</span>
+              <div className="mt-0.5 text-lg font-bold tabular-nums text-foreground">{stat.value}</div>
+              <div className="text-[10px] leading-tight text-muted-foreground">{stat.label}</div>
             </div>
-          )
-        ) : error ? (
-          <BoardMessage icon={<TrophyIcon />} title={t("error.title")} description={t("error.description")} />
-        ) : (
-          <BoardSkeleton />
-        )}
-      </div>
-    </Reveal>
-  );
-}
+          ))}
+        </div>
 
-/** The round leader, given a centered champion card so the board reads as a
- *  contest with a clear front-runner. */
-function LeaderCard({
-  did,
-  name,
-  avatarRef,
-  count,
-}: {
-  did: string;
-  name: string | null;
-  avatarRef: string | null;
-  count: number;
-}) {
-  const t = useTranslations("marketplace.bioblitz.board");
-  return (
-    <PreferredAccountLink
-      did={did}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={t("openCollector")}
-      className="group relative flex flex-col items-center gap-3 overflow-hidden rounded-[28px] bg-gradient-to-b from-primary/[0.18] via-primary/[0.06] to-transparent px-6 py-9 text-center backdrop-blur transition-colors hover:from-primary/[0.24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-    >
-      <span className="flex size-14 items-center justify-center rounded-full bg-primary/15 text-primary [&_svg]:size-7">
-        <CrownIcon aria-label={t("rankAriaLabel", { rank: 1 })} />
-      </span>
-      <div className="flex min-w-0 items-center gap-1.5 text-lg font-semibold text-foreground">
-        <AuthorInline did={did} nameOverride={name} avatarRefOverride={avatarRef} />
-      </div>
-      <div className="font-instrument text-6xl italic leading-none tabular-nums text-primary">
-        {formatNumber(count)}
-      </div>
-      <div className="text-sm text-muted-foreground">{t("observations", { count })}</div>
-    </PreferredAccountLink>
+        <div className="mt-3 min-h-0 flex-1 overflow-hidden">
+          {board ? (
+            collectors.length === 0 ? (
+              <BoardMessage icon={<BinocularsIcon />} title={t("empty.title")} description={t("empty.description")} />
+            ) : (
+              <ul className="flex h-full flex-col gap-1.5 overflow-hidden">
+                {collectors.map((collector, index) => (
+                  <CollectorRow
+                    key={collector.did}
+                    rank={index + 1}
+                    leader={index === 0}
+                    did={collector.did}
+                    name={collector.displayName}
+                    avatarRef={collector.avatarRef}
+                    count={collector.count}
+                    org={orgs.get(collector.did)}
+                  />
+                ))}
+              </ul>
+            )
+          ) : error ? (
+            <BoardMessage icon={<TrophyIcon />} title={t("error.title")} description={t("error.description")} />
+          ) : (
+            <BoardSkeleton />
+          )}
+        </div>
+      </Card>
+    </FadeIn>
   );
 }
 
@@ -608,73 +642,93 @@ const RANK_TIERS: Record<number, string> = {
 
 function CollectorRow({
   rank,
+  leader,
   did,
   name,
   avatarRef,
   count,
+  org,
 }: {
   rank: number;
+  leader: boolean;
   did: string;
   name: string | null;
   avatarRef: string | null;
   count: number;
+  org?: CollectorOrg;
 }) {
   const t = useTranslations("marketplace.bioblitz.board");
   return (
-    <PreferredAccountLink
-      did={did}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={t("openCollector")}
-      className="group flex items-center gap-3.5 rounded-2xl bg-foreground/5 px-4 py-3.5 transition-colors duration-200 hover:bg-foreground/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:gap-4 sm:px-5"
-    >
-      <span
-        aria-label={t("rankAriaLabel", { rank })}
-        className={`flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular-nums ${
-          RANK_TIERS[rank] ?? "bg-foreground/10 text-muted-foreground"
+    <li>
+      <PreferredAccountLink
+        did={did}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={t("openCollector")}
+        className={`group flex items-center gap-3 rounded-2xl px-3 py-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
+          leader
+            ? "bg-gradient-to-r from-primary/[0.16] via-primary/[0.05] to-transparent ring-1 ring-primary/20"
+            : "bg-foreground/5 hover:bg-foreground/[0.08]"
         }`}
       >
-        {rank}
-      </span>
+        <span
+          aria-label={t("rankAriaLabel", { rank })}
+          className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums ${
+            leader ? "bg-primary/15 text-primary" : RANK_TIERS[rank] ?? "bg-foreground/10 text-muted-foreground"
+          }`}
+        >
+          {leader ? <CrownIcon className="size-3.5" aria-hidden /> : rank}
+        </span>
 
-      <div className="flex min-w-0 flex-1 items-center gap-1.5 text-[15px] font-semibold text-foreground">
-        <AuthorInline did={did} nameOverride={name} avatarRefOverride={avatarRef} />
-      </div>
+        <div className="min-w-0 flex-1">
+          <span className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-foreground">
+            <AuthorInline did={did} nameOverride={name} avatarRefOverride={avatarRef} />
+          </span>
+          <OrgLabel org={org} />
+        </div>
 
-      <span className="shrink-0 whitespace-nowrap text-right">
-        <span className="block text-[17px] font-bold tabular-nums text-primary">{formatNumber(count)}</span>
-        <span className="text-xs text-muted-foreground">{t("observations", { count })}</span>
-      </span>
+        <span className="shrink-0 text-right">
+          <span className="block text-sm font-bold tabular-nums text-primary">{formatNumber(count)}</span>
+        </span>
 
-      <ChevronRightIcon
-        aria-hidden
-        className="size-5 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary"
-      />
-    </PreferredAccountLink>
+        <ChevronRightIcon
+          aria-hidden
+          className="size-4 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary"
+        />
+      </PreferredAccountLink>
+    </li>
+  );
+}
+
+/** Subtle organisation-membership chip shown under a collector's name. */
+function OrgLabel({ org }: { org?: CollectorOrg }) {
+  const t = useTranslations("marketplace.bioblitz.board.org");
+  if (!org || !org.isOrganization) return null;
+  const typeLabel =
+    org.orgType && KNOWN_ORG_TYPES.has(org.orgType) ? t(`types.${org.orgType}`) : t("label");
+  const parts = [typeLabel];
+  if (org.memberCount > 0) parts.push(t("members", { count: org.memberCount }));
+  return (
+    <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium leading-none text-muted-foreground">
+      <Building2Icon className="size-3 shrink-0" aria-hidden />
+      {parts.join(" · ")}
+    </span>
   );
 }
 
 function BoardSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col items-center gap-3 rounded-[28px] bg-foreground/5 px-6 py-9">
-        <Skeleton className="size-14 rounded-full" />
-        <Skeleton className="h-5 w-44 max-w-full" />
-        <Skeleton className="h-12 w-20" />
-        <Skeleton className="h-4 w-28" />
-      </div>
-      <div className="space-y-1.5">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div key={index} className="flex items-center gap-3.5 rounded-2xl bg-foreground/5 px-4 py-3.5 sm:gap-4 sm:px-5">
-            <Skeleton className="size-9 shrink-0 rounded-full" />
-            <div className="min-w-0 flex-1">
-              <Skeleton className="h-[18px] w-40 max-w-full" />
-            </div>
-            <Skeleton className="h-6 w-12 shrink-0" />
+    <ul className="flex flex-col gap-1.5">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <li key={index} className="flex items-center gap-3 rounded-2xl bg-foreground/5 px-3 py-2.5">
+          <Skeleton className="size-7 shrink-0 rounded-full" />
+          <div className="min-w-0 flex-1">
+            <Skeleton className="h-4 w-36 max-w-full" />
           </div>
-        ))}
-      </div>
-    </div>
+          <Skeleton className="h-4 w-10 shrink-0" />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -688,110 +742,13 @@ function BoardMessage({
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-[28px] bg-foreground/5 py-16 text-center text-muted-foreground backdrop-blur">
-      <div className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary [&_svg]:size-8 [&_svg]:opacity-60">
+    <div className="flex h-full flex-col items-center justify-center gap-2 rounded-2xl bg-foreground/5 px-6 py-8 text-center">
+      <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary [&_svg]:size-6 [&_svg]:opacity-60">
         {icon}
       </div>
-      <p className="font-instrument text-3xl font-light italic text-foreground">{title}</p>
-      <p className="max-w-sm text-base text-muted-foreground">{description}</p>
+      <p className="font-instrument text-2xl font-light italic text-foreground">{title}</p>
+      <p className="max-w-xs text-sm text-muted-foreground">{description}</p>
     </div>
-  );
-}
-
-// ── Past winners ─────────────────────────────────────────────────────────────
-
-function Winners({ rounds }: { rounds: BioblitzRound[] }) {
-  const t = useTranslations("marketplace.bioblitz.winners");
-  const locale = useLocale();
-  return (
-    <Reveal className="mt-32">
-      <SectionHeading title={t("title")} />
-
-      <div className="mx-auto mt-10 max-w-3xl space-y-4">
-        {rounds.map((round) => (
-          <div key={round.id} className="rounded-[28px] bg-foreground/5 p-7 backdrop-blur">
-            <div className="flex flex-col items-center gap-1 text-center">
-              <h3 className="font-instrument text-xl italic text-foreground">{round.label}</h3>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {formatDateRange(round.start, round.end, locale)}
-              </span>
-            </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <WinnerSlot
-                icon={<TrophyIcon />}
-                label={t("mostObservations")}
-                winner={round.mostObservations}
-                pending={t("pending")}
-              />
-              <WinnerSlot
-                icon={<CameraIcon />}
-                label={t("bestPicture")}
-                winner={round.bestPicture}
-                pending={t("pending")}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </Reveal>
-  );
-}
-
-function WinnerSlot({
-  icon,
-  label,
-  winner,
-  pending,
-}: {
-  icon: ReactNode;
-  label: string;
-  winner: BioblitzRound["mostObservations"];
-  pending: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl bg-background/40 px-4 py-3.5">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary [&_svg]:size-4">
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
-        <div className="mt-0.5 text-sm font-semibold text-foreground">
-          {winner?.did ? (
-            <AuthorInline did={winner.did} />
-          ) : (
-            <span className="text-muted-foreground">{pending}</span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Closing invite ─────────────────────────────────────────────────────────────
-
-/** An immersive rainforest band that closes the page on the primary action. */
-function ClosingInvite() {
-  const t = useTranslations("marketplace.bioblitz.board");
-  return (
-    <Reveal className="relative mt-32 flex min-h-[18rem] items-center justify-center overflow-hidden rounded-[40px] px-6 py-16 text-center">
-      <Image
-        src="/assets/media/images/landing/hero-rainforest@2x.webp"
-        alt=""
-        fill
-        quality={95}
-        sizes={IMG_SIZES}
-        aria-hidden
-        className="object-cover object-center"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/45 to-black/35" />
-      <Link
-        href="/manage/observations"
-        className="group relative inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-dark"
-      >
-        {t("cta")}
-        <ChevronRightIcon className="size-5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
-      </Link>
-    </Reveal>
   );
 }
 

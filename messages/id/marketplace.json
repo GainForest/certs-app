@@ -1,4 +1,20 @@
 {
+  "map": {
+    "play": "Putar lini masa",
+    "pause": "Jeda lini masa",
+    "from": "Dari",
+    "to": "Sampai",
+    "shown": "{count} ditampilkan",
+    "dragHint": "Seret pegangan untuk memilih rentang waktu",
+    "startAria": "Tanggal mulai — {date}",
+    "endAria": "Tanggal akhir — {date}",
+    "unidentified": "Tak teridentifikasi",
+    "finding": "Menemukan lokasi peta…",
+    "mappedItems": "{count} item dengan lokasi peta",
+    "mappedSites": "{count} situs dengan lokasi peta",
+    "noLocations": "Belum ada item yang ditampilkan dengan lokasi peta.",
+    "speed": "Kecepatan pemutaran"
+  },
   "explore": {
     "metadata": {
       "title": "Jelajahi sertifikat — Proyek dampak regeneratif terverifikasi",
@@ -241,6 +257,12 @@
       "title": "Tantangan BioBlitz Mingguan — GainForest",
       "description": "Keluar rumah, foto makhluk hidup, dan tambahkan pengamatanmu. Setiap minggu, pengumpul terbanyak dan foto terbaik memenangkan hadiah."
     },
+    "banner": {
+      "message": "Tantangan BioBlitz Mingguan sedang berlangsung. Foto alam dan menangkan hadiah.",
+      "cta": "Pelajari selengkapnya",
+      "dismiss": "Tutup spanduk ini",
+      "close": "Tutup"
+    },
     "hero": {
       "eyebrow": "Tantangan BioBlitz Mingguan",
       "titlePrefix": "Tantangan",
@@ -305,12 +327,30 @@
       "subtitleLive": "Siapa yang memimpin hadiah pengamatan terbanyak saat ini.",
       "subtitleEnded": "Klasemen akhir ronde ini.",
       "subtitleUpcoming": "Jadilah yang pertama di papan saat ronde dibuka.",
+      "subtitleAll": "Pengumpul paling aktif sepanjang tantangan.",
+      "scope": {
+        "round": "Ronde ini",
+        "all": "Sepanjang waktu"
+      },
       "leader": "Memimpin",
       "observations": "{count, plural, one {# pengamatan} other {# pengamatan}}",
       "openCollector": "Buka profil pengumpul di tab baru",
       "rankAriaLabel": "Peringkat {rank}",
+      "org": {
+        "label": "Organisasi",
+        "members": "{count, plural, one {# anggota} other {# anggota}}",
+        "types": {
+          "nonprofit": "Nirlaba",
+          "business": "Bisnis",
+          "company": "Perusahaan",
+          "community": "Kelompok komunitas",
+          "government": "Pemerintah",
+          "academic": "Akademik"
+        }
+      },
       "stats": {
         "observations": "Pengamatan ronde ini",
+        "observationsAll": "Pengamatan (sepanjang waktu)",
         "collectors": "Pengumpul",
         "timeLeft": "Sisa waktu"
       },
@@ -330,6 +370,14 @@
       "mostObservations": "Pengamatan terbanyak",
       "bestPicture": "Foto terbaik",
       "pending": "Akan diumumkan"
+    },
+    "map": {
+      "title": "Observasi minggu ini",
+      "heading": "Tempat foto ronde ini diambil",
+      "subtitle": "Setiap temuan berfoto dengan lokasi yang diunggah selama ronde ini. Seret lini masa dan tekan putar untuk melihatnya muncul sepanjang minggu.",
+      "loading": "Memetakan temuan minggu ini…",
+      "empty": "Belum ada temuan berfoto dengan lokasi pada ronde ini.",
+      "error": "Tidak dapat memuat peta observasi."
     }
   },
   "dashboard": {
@@ -424,6 +472,13 @@
       "action": "Buka ikhtisar donasi"
     }
   },
+  "donationsHub": {
+    "tabs": {
+      "overview": "Ikhtisar",
+      "leaderboard": "Papan peringkat",
+      "ariaLabel": "Tampilan donasi"
+    }
+  },
   "account": {
     "metadata": {
       "accountTitle": "Akun — sertifikat",
@@ -516,6 +571,12 @@
       "inviteCollaboratorsDescription": "Ajak pendukung dan kolaborator ke karya sertifikat Anda dan tumbuhkan dampak regeneratif bersama.",
       "inviteFriends": "Undang teman",
       "inviteFriendsDescription": "Undang teman Anda bergabung dengan sertifikat dan menciptakan dampak positif bersama.",
+      "shareProfileTitle": "Bagikan profil Anda",
+      "shareProfileTitleOrganization": "Bagikan profil ini",
+      "shareProfileBody": "Salin tautan profil Anda dan bagikan kepada siapa saja.",
+      "shareProfileBodyOrganization": "Salin tautan profil ini dan bagikan kepada kolaborator dan pendana.",
+      "copyProfileLink": "Salin tautan profil",
+      "profileLinkCopied": "Tersalin",
       "shareOrganization": "Jelajahi profil sertifikat {displayName}: {pageUrl}",
       "shareUser": "Bergabunglah dengan saya di sertifikat dan dukung dampak regeneratif: {pageUrl}",
       "totalBumicerts": "Jumlah sertifikat",
@@ -768,6 +829,19 @@
       "clearAll": "Hapus semua"
     }
   },
+  "ownerFilter": {
+    "button": "Pemilik",
+    "ariaLabel": "Saring berdasarkan penerbit",
+    "searchPlaceholder": "Cari orang & organisasi",
+    "hint": "Ketik nama untuk menyaring berdasarkan penerbit",
+    "searching": "Mencari…",
+    "noResults": "Tidak ada orang atau organisasi yang cocok",
+    "showAll": "Tampilkan semua",
+    "showing": "Menampilkan {name}",
+    "clear": "Hapus saringan pemilik",
+    "selectedFallback": "Akun terpilih",
+    "filterByThis": "Tampilkan hanya pemilik ini"
+  },
   "browseGrid": {
     "heading": "Cara menjelajah",
     "description": "Empat jalan masuk ke karya GainForest, dibuat untuk pendana, penjaga alam, dan tim lapangan.",
@@ -904,7 +978,10 @@
       "close": "Tutup",
       "edit": "Ubah",
       "cancel": "Batal",
-      "saveChanges": "Simpan perubahan"
+      "saveChanges": "Simpan perubahan",
+      "viewObservation": "Lihat halaman pengamatan",
+      "viewProject": "Lihat halaman proyek",
+      "openFullPage": "Buka halaman penuh"
     },
     "kind": {
       "occurrence": "Temuan alam",
@@ -1034,6 +1111,52 @@
       "sightingId": "ID pengamatan"
     }
   },
+  "projectPage": {
+    "back": "Semua proyek",
+    "kind": "Proyek",
+    "ledBy": "Proyek oleh",
+    "viewProfile": "Lihat profil",
+    "created": "Dibuat",
+    "certs": "Sertifikat",
+    "overviewTitle": "Ringkasan",
+    "overviewLead": "Ringkasan dari {certs, plural, other {# sertifikat}} dalam proyek ini.",
+    "contributors": "Kontributor",
+    "places": "Lokasi",
+    "focusAreasLabel": "Area fokus",
+    "whereLabel": "Di mana",
+    "activePeriodLabel": "Periode aktif",
+    "observations": "Observasi",
+    "photos": "Foto",
+    "galleryTitle": "Galeri",
+    "observationsTitle": "Observasi",
+    "certsTitle": "Sertifikat di proyek ini",
+    "noCerts": "Belum ada sertifikat yang ditambahkan ke proyek ini.",
+    "metaTitle": "{name} — Proyek",
+    "metaFallback": "Sebuah proyek yang dibagikan di GainForest."
+  },
+  "observationPage": {
+    "back": "Semua pengamatan",
+    "kind": "Pengamatan alam",
+    "sharedBy": "Dibagikan oleh",
+    "viewProfile": "Lihat profil",
+    "observed": "Diamati",
+    "shared": "Dibagikan",
+    "place": "Tempat",
+    "notRecorded": "Tidak tercatat",
+    "detailsTitle": "Detail",
+    "notesTitle": "Catatan",
+    "fieldSound": "Suara lapangan",
+    "previous": "Foto sebelumnya",
+    "next": "Foto berikutnya",
+    "showPhoto": "Tampilkan foto {number}",
+    "zoom": "Perbesar foto",
+    "close": "Tutup",
+    "audioUnsupported": "Browser Anda tidak mendukung pemutaran audio.",
+    "metaTitle": "{name} — Pengamatan alam",
+    "metaFallback": "Pengamatan alam yang dibagikan di GainForest.",
+    "natureSound": "Rekaman suara alam",
+    "unidentified": "Pengamatan tidak teridentifikasi"
+  },
   "manageProjects": {
     "hero": {
       "title": "Proyek Saya",
@@ -1050,6 +1173,19 @@
       "manageGalleryFor": "Kelola galeri untuk {title}",
       "manageObservations": "Observasi",
       "manageObservationsFor": "Observasi untuk {title}"
+    }
+  },
+  "manageBumicerts": {
+    "actions": {
+      "delete": "Hapus Cert",
+      "deleteAria": "Hapus {title}"
+    },
+    "deleteModal": {
+      "title": "Hapus Cert?",
+      "description": "Ini akan menghapus “{title}” secara permanen dari akun Anda. Tindakan ini tidak dapat dibatalkan.",
+      "cancel": "Batal",
+      "confirm": "Hapus Cert",
+      "error": "Cert ini tidak dapat dihapus. Silakan coba lagi."
     }
   },
   "observations": {

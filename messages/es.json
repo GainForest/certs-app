@@ -6,6 +6,7 @@
       "organizations": "Organizaciones",
       "create": "Crear",
       "launchApp": "Abrir app",
+      "signIn": "Iniciar sesión",
       "menu": "Menú",
       "navigation": "Navegación",
       "close": "Cerrar",
@@ -13,10 +14,8 @@
     },
     "hero": {
       "imageAlt": "Valle de selva tropical con neblina",
-      "headingLine1": "Impacto verificado",
-      "headingLine2": "empieza con",
-      "headingEmphasis1": "Comunidades",
-      "headingEmphasis2": "reales",
+      "headingUnderlined": "Certificado",
+      "headingRest": "impacto para guardianes de la naturaleza",
       "description": "Financia proyectos regenerativos directamente. Cada certificado es un registro verificado de trabajo ambiental real, respaldado por fotos, ubicaciones y comunidades guardianas.",
       "cta": "Explorar proyectos",
       "proofPoints": {
@@ -125,6 +124,7 @@
       "alt": "Ícono de la app GainForest"
     },
     "stats": {
+      "liveLabel": "Impacto en vivo",
       "bumicertsShared": "certificados compartidos",
       "organizationProfiles": "perfiles de organizaciones",
       "natureSightingsShared": "avistamientos de naturaleza compartidos",

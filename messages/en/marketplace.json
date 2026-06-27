@@ -1,4 +1,20 @@
 {
+  "map": {
+    "play": "Play timeline",
+    "pause": "Pause timeline",
+    "from": "From",
+    "to": "To",
+    "shown": "{count} shown",
+    "dragHint": "Drag the handles to choose a window",
+    "startAria": "Start date — {date}",
+    "endAria": "End date — {date}",
+    "unidentified": "Unidentified",
+    "finding": "Finding map locations…",
+    "mappedItems": "{count} items with a map location",
+    "mappedSites": "{count} sites with a map location",
+    "noLocations": "None of the items shown have a map location yet.",
+    "speed": "Playback speed"
+  },
   "explore": {
     "metadata": {
       "title": "Explore Certs — Verified Regenerative Impact Projects",
@@ -311,12 +327,30 @@
       "subtitleLive": "Who is leading the most observations prize right now.",
       "subtitleEnded": "Final standings for this round.",
       "subtitleUpcoming": "Be the first to get on the board when the round opens.",
+      "subtitleAll": "The most active data collectors across the challenge.",
+      "scope": {
+        "round": "This round",
+        "all": "All time"
+      },
       "leader": "In the lead",
       "observations": "{count, plural, one {# observation} other {# observations}}",
       "openCollector": "Open collector profile in a new tab",
       "rankAriaLabel": "Rank {rank}",
+      "org": {
+        "label": "Organization",
+        "members": "{count, plural, one {# member} other {# members}}",
+        "types": {
+          "nonprofit": "Nonprofit",
+          "business": "Business",
+          "company": "Company",
+          "community": "Community group",
+          "government": "Government",
+          "academic": "Academic"
+        }
+      },
       "stats": {
         "observations": "Observations this round",
+        "observationsAll": "Observations (all time)",
         "collectors": "Collectors",
         "timeLeft": "Time left"
       },
@@ -336,6 +370,14 @@
       "mostObservations": "Most observations",
       "bestPicture": "Best picture",
       "pending": "To be announced"
+    },
+    "map": {
+      "title": "Observations of the week",
+      "heading": "Where this round’s photos were taken",
+      "subtitle": "Every geolocated photo sighting uploaded during this round. Drag the timeline and press play to watch them appear over the week.",
+      "loading": "Mapping this week’s sightings…",
+      "empty": "No geolocated photo sightings in this round yet.",
+      "error": "Could not load the observations map."
     }
   },
   "dashboard": {
@@ -430,6 +472,13 @@
       "action": "Open donations overview"
     }
   },
+  "donationsHub": {
+    "tabs": {
+      "overview": "Overview",
+      "leaderboard": "Leaderboard",
+      "ariaLabel": "Donation views"
+    }
+  },
   "account": {
     "metadata": {
       "accountTitle": "Account — Certs",
@@ -522,6 +571,12 @@
       "inviteCollaboratorsDescription": "Bring supporters and collaborators into your Certs work and grow your regenerative impact together.",
       "inviteFriends": "Invite friends",
       "inviteFriendsDescription": "Invite your friends to join Certs and create a positive impact together.",
+      "shareProfileTitle": "Share your profile",
+      "shareProfileTitleOrganization": "Share this profile",
+      "shareProfileBody": "Copy your profile link and share it with anyone.",
+      "shareProfileBodyOrganization": "Copy this profile link and share it with collaborators and funders.",
+      "copyProfileLink": "Copy profile link",
+      "profileLinkCopied": "Copied",
       "shareOrganization": "Explore {displayName}’s Certs profile: {pageUrl}",
       "shareUser": "Join me on Certs and support regenerative impact: {pageUrl}",
       "totalBumicerts": "Total Certs",
@@ -774,6 +829,19 @@
       "clearAll": "Clear all"
     }
   },
+  "ownerFilter": {
+    "button": "Owner",
+    "ariaLabel": "Filter by who published it",
+    "searchPlaceholder": "Search people & organizations",
+    "hint": "Type a name to filter by who published it",
+    "searching": "Searching…",
+    "noResults": "No matching people or organizations",
+    "showAll": "Show everyone",
+    "showing": "Showing {name}",
+    "clear": "Clear owner filter",
+    "selectedFallback": "Selected account",
+    "filterByThis": "Show only this owner"
+  },
   "browseGrid": {
     "heading": "Ways to Explore",
     "description": "Four ways into GainForest work, shaped for funders, stewards, and field teams.",
@@ -910,7 +978,10 @@
       "close": "Close",
       "edit": "Edit",
       "cancel": "Cancel",
-      "saveChanges": "Save changes"
+      "saveChanges": "Save changes",
+      "viewObservation": "View observation page",
+      "viewProject": "View project page",
+      "openFullPage": "Open full page"
     },
     "kind": {
       "occurrence": "Nature sighting",
@@ -1040,6 +1111,52 @@
       "sightingId": "Sighting ID"
     }
   },
+  "projectPage": {
+    "back": "All projects",
+    "kind": "Project",
+    "ledBy": "Project by",
+    "viewProfile": "View profile",
+    "created": "Created",
+    "certs": "Certs",
+    "overviewTitle": "Overview",
+    "overviewLead": "An overview drawn from {certs, plural, one {# Cert} other {# Certs}} in this project.",
+    "contributors": "Contributors",
+    "places": "Places",
+    "focusAreasLabel": "Focus areas",
+    "whereLabel": "Where",
+    "activePeriodLabel": "Active period",
+    "observations": "Observations",
+    "photos": "Photos",
+    "galleryTitle": "Gallery",
+    "observationsTitle": "Observations",
+    "certsTitle": "Certs in this project",
+    "noCerts": "No Certs have been added to this project yet.",
+    "metaTitle": "{name} — Project",
+    "metaFallback": "A project shared on GainForest."
+  },
+  "observationPage": {
+    "back": "All sightings",
+    "kind": "Nature sighting",
+    "sharedBy": "Shared by",
+    "viewProfile": "View profile",
+    "observed": "Observed",
+    "shared": "Shared",
+    "place": "Place",
+    "notRecorded": "Not recorded",
+    "detailsTitle": "Details",
+    "notesTitle": "Notes",
+    "fieldSound": "Field sound",
+    "previous": "Previous photo",
+    "next": "Next photo",
+    "showPhoto": "Show photo {number}",
+    "zoom": "Zoom photo",
+    "close": "Close",
+    "audioUnsupported": "Your browser does not support audio playback.",
+    "metaTitle": "{name} — Nature sighting",
+    "metaFallback": "A nature sighting shared on GainForest.",
+    "natureSound": "Nature sound recording",
+    "unidentified": "Unidentified sighting"
+  },
   "manageProjects": {
     "hero": {
       "title": "My Projects",
@@ -1056,6 +1173,19 @@
       "manageGalleryFor": "Manage gallery for {title}",
       "manageObservations": "Observations",
       "manageObservationsFor": "Observations for {title}"
+    }
+  },
+  "manageBumicerts": {
+    "actions": {
+      "delete": "Delete Cert",
+      "deleteAria": "Delete {title}"
+    },
+    "deleteModal": {
+      "title": "Delete Cert?",
+      "description": "This will permanently remove “{title}” from your account. This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete Cert",
+      "error": "This Cert could not be deleted. Please try again."
     }
   },
   "observations": {

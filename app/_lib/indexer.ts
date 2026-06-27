@@ -951,6 +951,53 @@ export async function fetchObservationSummaryByDid(
   };
 }
 
+export type ProjectObservationSummary = {
+  /** Total observations linked to the project via `projectRef`. */
+  count: number;
+  /** Up to `target` image-bearing observations, ready to preview. */
+  records: OccurrenceRecord[];
+};
+
+/** Count + a few image previews for the observations attached to one project
+ *  (matched on the occurrence `projectRef`). Powers the project detail page's
+ *  observations summary. */
+export async function fetchProjectObservationSummary(
+  projectUri: string,
+  target = 12,
+  signal?: AbortSignal,
+): Promise<ProjectObservationSummary> {
+  if (!projectUri) return { count: 0, records: [] };
+
+  const countData = await indexerQuery<{ appGainforestDwcOccurrence?: { totalCount?: number | null } | null }>(
+    `query ProjectObservationCount($uri: String!) {
+      appGainforestDwcOccurrence(first: 1, where: { projectRef: { eq: $uri } }) { totalCount }
+    }`,
+    { uri: projectUri },
+    signal,
+  ).catch(() => null);
+  const count = countData?.appGainforestDwcOccurrence?.totalCount ?? 0;
+
+  const where = { projectRef: { eq: projectUri }, imageEvidence: { isNull: false } };
+  const page = await fetchOccurrencePage(Math.min(INDEXER_MAX_PAGE, Math.max(target, 24)), null, signal, where).catch(
+    () => ({ nodes: [] as RawOccurrence[], cursor: null, hasNextPage: false }),
+  );
+  const matches = page.nodes.filter((node) => Boolean(node.imageEvidence?.file?.ref));
+  let mapped = matches.map(mapOccurrence);
+  mapped = await resolveImages(
+    mapped,
+    (record) => {
+      if (record.imageUrl) return null;
+      const raw = matches.find((node) => node.rkey === record.rkey && node.did === record.did);
+      const ref = raw?.imageEvidence?.file?.ref ?? null;
+      return ref ? { did: record.did, ref } : null;
+    },
+    (record, url) => ({ ...record, imageUrl: url }),
+    signal,
+  );
+  const records = mapped.filter((record) => Boolean(record.imageUrl)).slice(0, target);
+  return { count, records };
+}
+
 /** Load recent image observations owned by a single DID. Used by Bumicert detail
  * pages to show a compact evidence gallery connected to the publishing
  * organization. */
@@ -1124,7 +1171,7 @@ const FUNDING_CONFIG_QUERY = `
   }
 `;
 
-export type BumicertBadgeFilter = "gainforest" | "maearth" | "maearth-round-1" | "maearth-round-2";
+export type BumicertBadgeFilter = "gainforest" | "maearth" | "maearth-round-1" | "maearth-round-2" | "maearth-round-3";
 export type TrustedOrganizationBadge = "gainforest" | "maearth";
 
 const FEATURED_BADGE_REPO_DID = "did:plc:yjck2sybksyigp3zvbq7bfki";
@@ -1133,6 +1180,10 @@ const FEATURED_BADGES: Array<{ key: BumicertBadgeFilter; title: string }> = [
   { key: "maearth", title: "Ma Earth" },
   { key: "maearth-round-1", title: "Ma Earth Round 1" },
   { key: "maearth-round-2", title: "Ma Earth Round 2" },
+  // Round 3 is open for applications; no badge definition/awards exist yet, so
+  // filtering to it returns nothing until Ma Earth verifies the round. Listed
+  // here so it lights up automatically once that badge lands in the repo.
+  { key: "maearth-round-3", title: "Ma Earth Round 3" },
 ];
 const FEATURED_BADGE_KEYS = new Set(FEATURED_BADGES.map((badge) => badge.key));
 const FEATURED_BADGE_KEY_BY_TITLE = new Map(
@@ -1392,7 +1443,7 @@ async function fetchFeaturedBadgeIndexUncached(signal?: AbortSignal): Promise<Fe
 function fetchFeaturedBadgeIndex(signal?: AbortSignal): Promise<FeaturedBadgeIndex> {
   return publicExploreCache(
     "featured-badge-index",
-    { version: "gainforest-maearth:v2", ttl: FEATURED_BADGE_INDEX_CACHE_MS },
+    { version: "gainforest-maearth:v3", ttl: FEATURED_BADGE_INDEX_CACHE_MS },
     // The featured-badge index is shared by count and list requests across the
     // public Explore pages. Keep the cached loader independent from any one
     // component effect's abort signal; otherwise an aborted count refresh can
@@ -1432,6 +1483,62 @@ export function isLikelyTestRecordName(name: string | null | undefined): boolean
   if (/disposable/i.test(trimmed) && /\be2e\b/i.test(trimmed)) return true;
   if (/^e2e org\b/i.test(trimmed)) return true;
   return /^e2e bumicert \d/i.test(trimmed);
+}
+
+/** A user or organization account, matched by display name, for the owner
+ *  filter's type-ahead picker on the explore pages. */
+export type AccountSearchResult = {
+  did: string;
+  displayName: string;
+  avatarRef: string | null;
+};
+
+const ACCOUNT_SEARCH_QUERY = `
+  query OwnerAccountSearch($first: Int!, $where: AppCertifiedActorProfileWhereInput) {
+    appCertifiedActorProfile(first: $first, where: $where, sortBy: displayName, sortDirection: ASC) {
+      edges {
+        node {
+          did
+          displayName
+          avatar { __typename ... on OrgHypercertsDefsSmallImage { image { ref } } }
+        }
+      }
+    }
+  }
+`;
+
+type RawAccountSearchNode = {
+  did?: string | null;
+  displayName?: string | null;
+  avatar?: { image?: { ref?: string | null } | null } | null;
+};
+
+/** Search accounts (people + organizations) by display name. Powers the owner
+ *  filter picker; returns at most `limit` distinct, non-test accounts. */
+export async function searchAccountsByName(
+  query: string,
+  limit = 8,
+  signal?: AbortSignal,
+): Promise<AccountSearchResult[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const data = await indexerQuery<{ appCertifiedActorProfile?: Connection<RawAccountSearchNode> }>(
+    ACCOUNT_SEARCH_QUERY,
+    { first: Math.max(1, Math.min(limit * 3, 40)), where: { displayName: { contains: q } } },
+    signal,
+  );
+  const seen = new Set<string>();
+  const results: AccountSearchResult[] = [];
+  for (const edge of data?.appCertifiedActorProfile?.edges ?? []) {
+    const node = edge?.node;
+    const did = node?.did?.trim();
+    const displayName = node?.displayName?.trim();
+    if (!did || !displayName || seen.has(did) || isLikelyTestRecordName(displayName)) continue;
+    seen.add(did);
+    results.push({ did, displayName, avatarRef: normaliseRef(node?.avatar?.image?.ref) });
+    if (results.length >= limit) break;
+  }
+  return results;
 }
 
 function mapActivity(n: RawActivity): BumicertRecord {
@@ -1500,7 +1607,15 @@ type ActivityQueryOptions = {
   sort?: ExplorerSortMode;
   featuredBadgesOnly?: boolean;
   badgeFilters?: BumicertBadgeFilter[];
+  /** Scope results to a single owner account (DID). Callers should also set
+   *  featuredBadgesOnly:false so the account's full catalog is returned. */
+  creatorDid?: string | null;
 };
+
+function creatorWhere(creatorDid: string | null | undefined): ActivityWhere | undefined {
+  const did = creatorDid?.trim();
+  return did ? { did: { in: [did] } } : undefined;
+}
 
 type ActivityWhere = Record<string, unknown>;
 
@@ -1589,7 +1704,7 @@ function featuredBadgeWhereVariants(index?: FeaturedBadgeIndex, filters?: Bumice
 function activityWhereVariants(options?: ActivityQueryOptions, badgeIndex?: FeaturedBadgeIndex): ActivityWhere[] {
   const badgeWheres = featuredBadgeWhereVariants(badgeIndex, options?.badgeFilters);
   if (badgeWheres.length === 0) return [];
-  const base = activityFilterWhere(options?.filters);
+  const base = mergeWhere(activityFilterWhere(options?.filters), creatorWhere(options?.creatorDid));
   const variants: ActivityWhere[] = [];
   for (const badgeWhere of badgeWheres) {
     for (const searchWhere of activitySearchWhere(options?.query)) {
@@ -2186,6 +2301,9 @@ type ProjectQueryOptions = {
   sort?: ExplorerSortMode;
   featuredBadgesOnly?: boolean;
   badgeFilters?: BumicertBadgeFilter[];
+  /** Scope results to a single owner account (DID). Callers should also set
+   *  featuredBadgesOnly:false so the account's full catalog is returned. */
+  creatorDid?: string | null;
 };
 
 type ProjectWhere = Record<string, unknown>;
@@ -2309,7 +2427,10 @@ function projectSearchWhere(query: string | undefined): ProjectWhere[] {
 function projectWhereVariants(options?: ProjectQueryOptions, badgeIndex?: FeaturedBadgeIndex): ProjectWhere[] {
   const badgeWheres = featuredBadgeRecordWhereVariants<ProjectWhere>(badgeIndex, "org.hypercerts.collection", options?.badgeFilters);
   if (badgeWheres.length === 0) return [];
-  const base = mergeProjectWhere(PROJECT_TYPE_WHERE, projectFilterWhere(options?.filters));
+  const projectCreatorWhere: ProjectWhere | undefined = options?.creatorDid?.trim()
+    ? { did: { in: [options.creatorDid.trim()] } }
+    : undefined;
+  const base = mergeProjectWhere(PROJECT_TYPE_WHERE, projectFilterWhere(options?.filters), projectCreatorWhere);
   const variants: ProjectWhere[] = [];
   for (const badgeWhere of badgeWheres) {
     for (const searchWhere of projectSearchWhere(options?.query)) {

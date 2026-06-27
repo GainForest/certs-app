@@ -6,17 +6,23 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRightIcon,
+  BinocularsIcon,
   CheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  DroneIcon,
+  FolderKanbanIcon,
   Loader2,
   LockIcon,
   LockOpenIcon,
   LogOutIcon,
   MailIcon,
+  MapPinIcon,
+  MicIcon,
   PlusIcon,
   SettingsIcon,
   ShieldCheckIcon,
+  TreePineIcon,
   UserIcon,
   UsersIcon,
 } from "lucide-react";
@@ -28,7 +34,8 @@ import {
 } from "react";
 import { useTranslations } from "next-intl";
 import type { CgsGroupMembership } from "@/app/(manage)/manage/_lib/cgs";
-import { groupIdentifierFromManagePath, groupManageBasePath, manageHref } from "@/lib/links";
+import { accountIdentifierFromManagePath, groupManageBasePath, manageHref, type ManageAccountKind } from "@/lib/links";
+import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import {
   findSwitcherGroupByIdentifier,
   switcherGroupIdentifier,
@@ -72,7 +79,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   );
 }
 
-function AuthModal() {
+export function AuthModal() {
   return (
     <ModalContent className="py-2">
       <ModalTitle className="sr-only">Sign in to GainForest</ModalTitle>
@@ -555,6 +562,70 @@ function AccountDot({
   );
 }
 
+type ManageMenuItem = { id: string; label: string; href: string; icon: React.ReactNode };
+
+// The manage destinations for the active account, mirroring the former sidebar
+// "Manage" tab. Personal accounts only own projects + observations; full
+// organizations also expose sites, audio, drone and trees.
+function buildManageMenuItems(
+  basePath: string,
+  kind: ManageAccountKind,
+  label: (itemKey: string) => string,
+): ManageMenuItem[] {
+  const projects: ManageMenuItem = {
+    id: "projects",
+    label: label("myProjects"),
+    href: manageHref({ basePath }, "projects"),
+    icon: <FolderKanbanIcon className="h-3.5 w-3.5" />,
+  };
+  const observations: ManageMenuItem = {
+    id: "observations",
+    label: label("myObservations"),
+    href: manageHref({ basePath }, "observations"),
+    icon: <BinocularsIcon className="h-3.5 w-3.5" />,
+  };
+  if (kind !== "organization") {
+    return [projects, observations];
+  }
+  return [
+    projects,
+    observations,
+    { id: "sites", label: label("mySites"), href: manageHref({ basePath }, "sites"), icon: <MapPinIcon className="h-3.5 w-3.5" /> },
+    { id: "audio", label: label("myAudio"), href: manageHref({ basePath }, "audio"), icon: <MicIcon className="h-3.5 w-3.5" /> },
+    { id: "drone", label: label("myDrone"), href: manageHref({ basePath }, "drone"), icon: <DroneIcon className="h-3.5 w-3.5" /> },
+    { id: "trees", label: label("myTrees"), href: manageHref({ basePath }, "trees"), icon: <TreePineIcon className="h-3.5 w-3.5" /> },
+  ];
+}
+
+function ManageMenuRow({
+  href,
+  label,
+  icon,
+  active,
+  onSelect,
+}: {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onSelect}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted/60",
+        active ? "bg-muted/60 font-medium text-foreground" : "text-foreground",
+      )}
+    >
+      <span className={cn("shrink-0", active ? "text-primary" : "text-muted-foreground")}>{icon}</span>
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
+
 function AccountMenuRow({
   href,
   label,
@@ -598,10 +669,12 @@ function AuthenticatedMenu({
   session,
   profileName,
   isProfileNameLoading = false,
+  manageAccountKind,
 }: {
   session: Extract<AuthSession, { isLoggedIn: true }>;
   profileName?: string | null;
   isProfileNameLoading?: boolean;
+  manageAccountKind: ManageAccountKind;
 }) {
   const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
@@ -610,12 +683,17 @@ function AuthenticatedMenu({
   const [activeContext, setActiveContext] = useActiveAccountContext(session.did);
   const t = useTranslations("legacy");
   const invitationT = useTranslations("common.groupInvitations.menu");
+  const sidebarT = useTranslations("common.sidebar");
   const cleanProfileName = profileName?.trim() || personalCard?.displayName?.trim() || null;
   const profileNameLoading = isProfileNameLoading && profileName === undefined;
   const personalDisplayLabel = cleanProfileName ?? (profileNameLoading ? "Account" : "Personal account");
   const personalSecondaryLabel = cleanProfileName ? "Signed in" : profileNameLoading ? "Loading profile" : "Personal account";
-  const routeGroupIdentifier = groupIdentifierFromManagePath(pathname);
-  const routeGroup = routeGroupIdentifier ? findSwitcherGroupByIdentifier(groups, routeGroupIdentifier) : null;
+  // Manage now lives at /account/<id>/manage for both personal and group
+  // accounts, so the identifier alone can't say which it is — cross-reference
+  // memberships, and only treat it as a group route when it matches one.
+  const routeAccountIdentifier = accountIdentifierFromManagePath(pathname);
+  const routeGroup = routeAccountIdentifier ? findSwitcherGroupByIdentifier(groups, routeAccountIdentifier) : null;
+  const routeGroupIdentifier = routeGroup ? routeAccountIdentifier : null;
   const activeGroup = activeContext.type === "group" ? groups.find((group) => group.groupDid === activeContext.did) ?? null : null;
   const currentGroup = routeGroup ?? (activeContext.type === "group" ? activeGroup : null);
   const showingGroup = Boolean(routeGroup) || activeContext.type === "group";
@@ -633,6 +711,10 @@ function AuthenticatedMenu({
   const settingsGroupIdentifier = routeGroupIdentifier
     ?? (currentGroup ? switcherGroupIdentifier(currentGroup) : null)
     ?? (activeContext.type === "group" ? activeContext.identifier || activeContext.did : null);
+  const manageBasePath = settingsGroupIdentifier ? groupManageBasePath(settingsGroupIdentifier) : "/manage";
+  const manageMenuKind: ManageAccountKind = settingsGroupIdentifier ? "organization" : manageAccountKind;
+  const canonicalPath = stripLocaleFromPathname(pathname);
+  const manageMenuItems = buildManageMenuItems(manageBasePath, manageMenuKind, (itemKey) => sidebarT(`items.${itemKey}`));
   const [invitations, setInvitations] = useState<MenuInvitation[]>([]);
   const [invitationsStatus, setInvitationsStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const invitationsStatusRef = useRef(invitationsStatus);
@@ -881,6 +963,22 @@ function AuthenticatedMenu({
                 {t("authCreateNewOrganization")}
               </Link>
 
+              <div className="my-2 h-px bg-border/60" />
+
+              <div className="truncate px-2 pb-1 pt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                {sidebarT("manageGroupTitle", { account: displayLabel })}
+              </div>
+              {manageMenuItems.map((item) => (
+                <ManageMenuRow
+                  key={item.id}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  active={canonicalPath === item.href || canonicalPath.startsWith(`${item.href}/`)}
+                  onSelect={() => setOpen(false)}
+                />
+              ))}
+
               <Link
                 href={settingsGroupIdentifier ? manageHref({ basePath: groupManageBasePath(settingsGroupIdentifier) }, "settings") : manageHref({ basePath: "/manage" }, "settings")}
                 onClick={() => setOpen(false)}
@@ -911,17 +1009,26 @@ export function AuthButton({
   session,
   profileName,
   isProfileNameLoading,
+  manageAccountKind = "user",
 }: {
   session: AuthSession | null;
   profileName?: string | null;
   isProfileNameLoading?: boolean;
+  manageAccountKind?: ManageAccountKind;
 }) {
   if (!session) {
     return <AuthSkeleton />;
   }
 
   if (session.isLoggedIn) {
-    return <AuthenticatedMenu session={session} profileName={profileName} isProfileNameLoading={isProfileNameLoading} />;
+    return (
+      <AuthenticatedMenu
+        session={session}
+        profileName={profileName}
+        isProfileNameLoading={isProfileNameLoading}
+        manageAccountKind={manageAccountKind}
+      />
+    );
   }
 
   return <UnauthenticatedButtons />;

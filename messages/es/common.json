@@ -49,6 +49,7 @@
   "sidebar": {
     "sections": {
       "explore": "EXPLORAR",
+      "funding": "FINANCIACIÓN",
       "manage": "GESTIONAR"
     },
     "items": {
@@ -66,15 +67,15 @@
       "observations": "Observaciones",
       "donations": "Donaciones",
       "organizationHome": "Inicio de la organización",
-      "myOrganization": "Mi organización",
-      "myOrganizations": "Mis organizaciones",
-      "mySites": "Mis sitios",
-      "myAudio": "Mi audio",
-      "myDrone": "Mi dron",
-      "myProjects": "Mis proyectos",
-      "myObservations": "Mis observaciones",
-      "myTrees": "Mis árboles",
-      "myProfile": "Mi perfil"
+      "myOrganization": "Organización",
+      "myOrganizations": "Organizaciones",
+      "mySites": "Sitios",
+      "myAudio": "Audio",
+      "myDrone": "Dron",
+      "myProjects": "Proyectos",
+      "myObservations": "Observaciones",
+      "myTrees": "Árboles",
+      "myProfile": "Perfil"
     },
     "prompts": {
       "signInDescription": "Inicia sesión para gestionar tu cuenta y contenido.",
@@ -84,16 +85,54 @@
       "accountLoadError": "No pudimos cargar tu cuenta en este momento.",
       "checkingAccount": "Comprobando tu cuenta..."
     },
+    "headerActions": {
+      "myProjects": "Mis proyectos",
+      "myCerts": "Mis certificados",
+      "myObservations": "Mis observaciones",
+      "myOrganizations": "Mis organizaciones"
+    },
     "creationCard": {
       "createBumicert": "Crear un certificado",
-      "createProject": "Crear un proyecto"
+      "createProject": "Crear un proyecto",
+      "addObservations": "Agregar observaciones"
     },
     "tabs": {
       "explore": "Explorar",
       "manage": "Gestionar"
     },
+    "manageGroupTitle": "Gestionar {account}",
     "collapse": "Contraer barra lateral",
-    "expand": "Expandir barra lateral"
+    "expand": "Expandir barra lateral",
+    "profileRow": {
+      "viewProfile": "Ver perfil",
+      "fallbackName": "Tu perfil"
+    }
+  },
+  "settings": {
+    "handle": {
+      "title": "Nombre de usuario",
+      "description": "Tu nombre de usuario es tu nombre público en toda la app: cámbialo aquí y se actualiza en todas partes.",
+      "edit": "Editar",
+      "newLabel": "Nuevo nombre de usuario",
+      "placeholder": "tunombre",
+      "prefixHint": "De 3 a 18 caracteres. Solo letras, números y guiones.",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "cancel": "Cancelar",
+      "useOwnDomain": "Usar mi propio dominio",
+      "useSubdomain": "Usar un nombre .{suffix}",
+      "customLabel": "Nombre de usuario completo (tu propio dominio)",
+      "customHint": "Para usar tu propio dominio, añade un registro DNS TXT en _atproto que apunte a tu ID de cuenta y luego guarda.",
+      "customRecord": "ID de cuenta",
+      "success": "Nombre de usuario actualizado a {handle}",
+      "errors": {
+        "length": "El nombre de usuario debe tener entre 3 y 18 caracteres.",
+        "prefixChars": "Usa solo letras minúsculas, números y guiones. No puede empezar ni terminar con un guion.",
+        "full": "Introduce un nombre de usuario completo como alice.example.com.",
+        "generic": "No se pudo actualizar tu nombre de usuario. Inténtalo de nuevo.",
+        "unavailable": "Cambiar tu nombre de usuario aún no está disponible. Inténtalo más tarde."
+      }
+    }
   },
   "bumicertCard": {
     "missingImage": "Imagen del certificado no disponible",
@@ -130,11 +169,17 @@
   },
   "browseGrid": {
     "title": "Formas de explorar",
-    "description": "Cuatro entradas al trabajo de GainForest, pensadas para financiadores, guardianes y equipos de campo.",
+    "description": "Maneras de entrar al trabajo de GainForest, pensadas para financiadores, guardianes y equipos de campo.",
     "loadingAria": "Cargando enlaces de exploración",
     "cards": {
+      "projects": {
+        "label": "Trabajo regenerativo",
+        "title": "Proyectos",
+        "blurb": "Explora lo que construyen las comunidades: cada proyecto reúne sus Certs, lugares y evidencia de campo.",
+        "statLabel": "proyectos"
+      },
       "bumicerts": {
-        "label": "Proyectos verificados",
+        "label": "Certificados de impacto",
         "title": "certificados",
         "blurb": "Explora historias de proyectos con fotos, lugares, personas y contexto.",
         "statLabel": "historias"
@@ -179,7 +224,7 @@
   "signInPrompt": {
     "description": "Guarda tus sitios de proyecto, información de árboles y certificados en un solo lugar.",
     "failed": "No pudimos completar tu inicio de sesión. Inténtalo de nuevo.",
-    "getStarted": "Empezar"
+    "getStarted": "Iniciar sesión"
   },
   "status": {
     "pillTitle": "Estado del sistema",
@@ -260,12 +305,30 @@
   },
   "accountTabs": {
     "home": "Inicio",
+    "overview": "Resumen",
+    "donations": "Donaciones",
     "bumicerts": "certificados",
+    "projects": "Proyectos",
+    "organizations": "Organizaciones",
     "donationHistory": "Historial de donaciones",
     "observations": "Observaciones",
     "gallery": "Galería",
     "settings": "Configuración",
     "timeline": "Cronología"
+  },
+  "accountOrganizations": {
+    "emptyEyebrow": "Sin organizaciones",
+    "empty": "Todavía no perteneces a ninguna organización.",
+    "fallbackName": "Organización",
+    "role": {
+      "owner": "Propietario",
+      "admin": "Administrador",
+      "member": "Miembro"
+    }
+  },
+  "accountProjects": {
+    "emptyEyebrow": "Sin proyectos",
+    "empty": "Esta cuenta aún no ha compartido proyectos."
   },
   "projectGallery": {
     "accountTitle": "Galería",

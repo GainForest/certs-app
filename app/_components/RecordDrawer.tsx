@@ -5,7 +5,7 @@ import type { Map as LeafletMap, Marker, TileLayer } from "leaflet";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowUpRightIcon, AudioLinesIcon, CalendarRangeIcon, CheckIcon, HeartIcon, ImageOffIcon, Layers3Icon, Loader2Icon, MapPinIcon, PencilIcon, Share2Icon, Trash2Icon, UsersIcon, XIcon } from "lucide-react";
+import { ArrowUpRightIcon, AudioLinesIcon, CalendarRangeIcon, CheckIcon, HeartIcon, ImageOffIcon, Layers3Icon, Loader2Icon, Maximize2Icon, MapPinIcon, PencilIcon, Share2Icon, Trash2Icon, UsersIcon, XIcon } from "lucide-react";
 import {
   fetchObservationMedia,
   fetchRecordByUri,
@@ -29,6 +29,7 @@ import { RecordDrawerStatsTile } from "./StatsTile";
 import { isPdsBlobUrl, resolveBlobUrl } from "../_lib/pds";
 import { pauseOtherAudio } from "../_lib/audio-coordinator";
 import { formatWorkScopeTag, type WorkScopeLabels } from "../_lib/work-scope-labels";
+import { cn } from "@/lib/utils";
 import type { AuthSession } from "../_lib/auth";
 import { fetchCgsGroups, type CgsGroupMembership } from "@/app/(manage)/manage/_lib/cgs";
 import { deleteOccurrenceCascade, updateOccurrence } from "@/app/(manage)/manage/_lib/mutations";
@@ -36,6 +37,8 @@ import {
   INDEXER_URL,
   accountHref,
   localBumicertHref,
+  localObservationHref,
+  localProjectHref,
 } from "../_lib/urls";
 
 type RecordDrawerT = ReturnType<typeof useTranslations<"marketplace.recordDrawer">>;
@@ -266,6 +269,11 @@ export function RecordDrawer({
       : [];
   const badges = record.kind === "bumicert" ? [] : [...(detail?.badges ?? []), ...mediaBadges];
   const detailHref = record.kind === "bumicert" ? localBumicertHref(preferredOwnerIdentifier, record.rkey) : null;
+  const observationHref =
+    record.kind === "occurrence" && record.atUri.includes("/app.gainforest.dwc.occurrence/")
+      ? localObservationHref(preferredOwnerIdentifier, record.rkey)
+      : null;
+  const projectHref = record.kind === "project" ? localProjectHref(preferredOwnerIdentifier, record.rkey) : null;
   const ownerHref = accountHref(preferredOwnerIdentifier);
   const managingGroupRole = isEditableObservationRecord(record)
     ? groupMemberships.find((group) => group.groupDid === record.did)?.role ?? null
@@ -366,7 +374,8 @@ export function RecordDrawer({
               <div className="pointer-events-auto">
                 <KindBadge record={record} floating />
               </div>
-              <div className="pointer-events-auto">
+              <div className="pointer-events-auto flex items-center gap-2">
+                {(observationHref ?? projectHref) ? <MaximizeButton href={(observationHref ?? projectHref)!} /> : null}
                 <CloseButton onClose={onClose} floating />
               </div>
             </div>
@@ -374,7 +383,10 @@ export function RecordDrawer({
         ) : (
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border-soft bg-background/90 px-5 py-4 backdrop-blur-xl">
             <KindBadge record={record} />
-            <CloseButton onClose={onClose} />
+            <div className="flex items-center gap-2">
+              {(observationHref ?? projectHref) ? <MaximizeButton href={(observationHref ?? projectHref)!} /> : null}
+              <CloseButton onClose={onClose} />
+            </div>
           </div>
         )}
 
@@ -398,6 +410,12 @@ export function RecordDrawer({
           {record.kind === "occurrence" && occurrenceSecondaryName(record, t) && (
             <p className="mt-1.5 text-[14px] italic text-foreground/65">{occurrenceSecondaryName(record, t)}</p>
           )}
+
+          {/* Open the dedicated, iNaturalist-style observation page. */}
+          {observationHref && <DetailLinkRow href={observationHref} label={t("actions.viewObservation")} />}
+          {/* Open the dedicated project page — kept at the top to match the
+              observation and cert actions. */}
+          {projectHref && <DetailLinkRow href={projectHref} label={t("actions.viewProject")} />}
           {shortLead && (
             <p className="mt-2.5 text-[14.5px] leading-[1.55] text-foreground/72">
               {shortLead}
@@ -417,13 +435,7 @@ export function RecordDrawer({
                   {t("actions.donate")}
                 </Link>
               )}
-              <Link
-                href={detailHref}
-                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border-soft bg-background px-4 text-[14px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
-              >
-                <ArrowUpRightIcon className="h-4 w-4" />
-                {t("actions.view")}
-              </Link>
+              <DetailLink href={detailHref} label={t("actions.view")} className="flex-1" />
               <ShareIconButton path={detailHref} />
             </div>
           )}
@@ -437,13 +449,7 @@ export function RecordDrawer({
               avatarRefOverride={ownerAvatarRefOverride}
               nameOverride={ownerNameOverride}
             />
-            <Link
-              href={ownerHref}
-              className="mt-3 flex h-9 items-center justify-center gap-1.5 rounded-full border border-border-soft bg-background text-[13px] font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
-            >
-              {t("actions.viewProfile")}
-              <ArrowUpRightIcon className="h-3.5 w-3.5" />
-            </Link>
+            <DetailLink href={ownerHref} label={t("actions.viewProfile")} className="mt-3 w-full" />
             {detail?.socials && detail.socials.length > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {detail.socials.map((s) => (
@@ -1268,6 +1274,20 @@ function AudioHero({ src, title }: { src: string | null; title: string }) {
   );
 }
 
+function MaximizeButton({ href }: { href: string }) {
+  const t = useTranslations("marketplace.recordDrawer");
+  return (
+    <Link
+      href={href}
+      aria-label={t("actions.openFullPage")}
+      title={t("actions.openFullPage")}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-foreground/70 shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+    >
+      <Maximize2Icon className="h-[15px] w-[15px]" aria-hidden />
+    </Link>
+  );
+}
+
 function CloseButton({ onClose, floating = false }: { onClose: () => void; floating?: boolean }) {
   const t = useTranslations("marketplace.recordDrawer");
 
@@ -1284,6 +1304,34 @@ function CloseButton({ onClose, floating = false }: { onClose: () => void; float
     >
       <XIcon className="h-[15px] w-[15px]" aria-hidden />
     </button>
+  );
+}
+
+// A single, consistent "open the dedicated detail page" link shared by the
+// project, observation, cert, and owner-profile actions so they all look the
+// same. Pass `flex-1` (inside a share row) or `w-full` (standalone) via
+// className to control width.
+function DetailLink({ href, label, className }: { href: string; label: string; className?: string }) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "inline-flex h-11 items-center justify-center gap-2 rounded-full border border-border-soft bg-background px-4 text-[14px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary",
+        className,
+      )}
+    >
+      <ArrowUpRightIcon className="h-4 w-4" aria-hidden />
+      {label}
+    </Link>
+  );
+}
+
+function DetailLinkRow({ href, label }: { href: string; label: string }) {
+  return (
+    <div className="mt-5 flex items-center gap-2.5">
+      <DetailLink href={href} label={label} className="flex-1" />
+      <ShareIconButton path={href} />
+    </div>
   );
 }
 

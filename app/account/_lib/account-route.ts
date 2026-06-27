@@ -84,6 +84,14 @@ export function accountObservationsPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/observations`;
 }
 
+export function accountOrganizationsPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/organizations`;
+}
+
+export function accountProjectsPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/projects`;
+}
+
 export function accountGalleryPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/gallery`;
 }

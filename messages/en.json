@@ -6,6 +6,7 @@
       "organizations": "Organizations",
       "create": "Create",
       "launchApp": "Launch App",
+      "signIn": "Sign in",
       "menu": "Menu",
       "navigation": "Navigation",
       "close": "Close",
@@ -13,10 +14,8 @@
     },
     "hero": {
       "imageAlt": "Misty rainforest valley",
-      "headingLine1": "Verified Impact",
-      "headingLine2": "starts with",
-      "headingEmphasis1": "Real",
-      "headingEmphasis2": "Communities",
+      "headingUnderlined": "Certified",
+      "headingRest": "impact for nature stewards",
       "description": "Fund regenerative projects directly. Every Cert is a verified record of real environmental work — backed by photos, locations, and community stewards.",
       "cta": "Explore Projects",
       "proofPoints": {
@@ -125,6 +124,7 @@
       "alt": "GainForest app icon"
     },
     "stats": {
+      "liveLabel": "Live impact",
       "bumicertsShared": "Certs shared",
       "organizationProfiles": "organization profiles",
       "natureSightingsShared": "nature sightings shared",
