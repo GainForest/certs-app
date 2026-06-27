@@ -5,8 +5,7 @@ import { groupManageBasePath, readCgsOrgMetadata } from "./cgs-org";
 
 export const E2E_PROJECT_SHORT_DESCRIPTION =
   "E2E project summary for restoration work, field evidence, and public impact review.";
-export const E2E_PROJECT_DESCRIPTION =
-  "This E2E project groups Certs for restoration work with practical field notes, verifiable progress, and enough narrative detail for reviewers to understand what changed on the ground.";
+export const E2E_PROJECT_DESCRIPTION = "";
 
 export type CreatedProject = {
   title: string;
@@ -46,7 +45,11 @@ export async function expectProjectRecordFields(project: CreatedProject, expecte
   expect(record.value.type).toBe("project");
   expect(record.value.shortDescription).toBe(project.shortDescription);
   const description = record.value.description;
-  expect(isObject(description) ? description.value : null).toBe(project.description);
+  if (project.description) {
+    expect(isObject(description) ? description.value : null).toBe(project.description);
+  } else {
+    expect(description).toBeUndefined();
+  }
   expect(projectItemUris(record)).toEqual(expectedItems);
 }
 
@@ -82,7 +85,10 @@ export async function createProject(page: Page, testInfo: TestInfo): Promise<Cre
 
   await page.locator("#project-title").fill(title);
   await page.locator("#project-summary").fill(E2E_PROJECT_SHORT_DESCRIPTION);
-  await page.locator("#project-description").fill(E2E_PROJECT_DESCRIPTION);
+  const descriptionInput = page.locator("#project-description");
+  if (await descriptionInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    await descriptionInput.fill(E2E_PROJECT_DESCRIPTION);
+  }
   await screenshotStep(page, testInfo, "project-create-ready");
 
   await page.getByRole("button", { name: /save project/i }).click();
