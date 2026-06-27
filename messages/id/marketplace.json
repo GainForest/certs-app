@@ -370,6 +370,14 @@
       "mostObservations": "Pengamatan terbanyak",
       "bestPicture": "Foto terbaik",
       "pending": "Akan diumumkan"
+    },
+    "map": {
+      "title": "Observasi minggu ini",
+      "heading": "Tempat foto ronde ini diambil",
+      "subtitle": "Setiap temuan berfoto dengan lokasi yang diunggah selama ronde ini. Seret lini masa dan tekan putar untuk melihatnya muncul sepanjang minggu.",
+      "loading": "Memetakan temuan minggu ini…",
+      "empty": "Belum ada temuan berfoto dengan lokasi pada ronde ini.",
+      "error": "Tidak dapat memuat peta observasi."
     }
   },
   "dashboard": {

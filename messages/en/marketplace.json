@@ -370,6 +370,14 @@
       "mostObservations": "Most observations",
       "bestPicture": "Best picture",
       "pending": "To be announced"
+    },
+    "map": {
+      "title": "Observations of the week",
+      "heading": "Where this round’s photos were taken",
+      "subtitle": "Every geolocated photo sighting uploaded during this round. Drag the timeline and press play to watch them appear over the week.",
+      "loading": "Mapping this week’s sightings…",
+      "empty": "No geolocated photo sightings in this round yet.",
+      "error": "Could not load the observations map."
     }
   },
   "dashboard": {

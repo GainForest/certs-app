@@ -17,6 +17,7 @@
 
 import { INDEXER_URL } from "./urls";
 import { normaliseRef } from "./pds";
+import { walkOccurrences, type OccurrenceRecord } from "./indexer";
 
 /** Cash prizes awarded each round, in USD. */
 export const BIOBLITZ_PRIZES = {
@@ -266,6 +267,39 @@ export async function fetchRoundCollectors(
     totalObservations: total,
     collectorCount: collectors.length,
   };
+}
+
+// ── Round observations (for the map) ─────────────────────────────────────────
+
+/** How many newest photo sightings to scan when collecting a round's window.
+ *  A round is one week, so the newest page comfortably covers it. */
+const ROUND_MAP_TARGET = 1000;
+
+/**
+ * Fetch the photo sightings uploaded inside a round's window, as full records
+ * the map can plot. Walks the newest image occurrences (the round is the most
+ * recent week, so they sit at the top) and keeps those created on/after the
+ * round start and on/before its end. The map filters these to the ones that
+ * carry coordinates.
+ */
+export async function fetchRoundObservations(
+  round: BioblitzRound,
+  signal?: AbortSignal,
+): Promise<OccurrenceRecord[]> {
+  const startMs = Date.parse(round.start);
+  const endMs = Date.parse(round.end);
+  const { records } = await walkOccurrences({
+    media: "image",
+    target: ROUND_MAP_TARGET,
+    after: null,
+    resolveMedia: false,
+    featuredBadgesOnly: false,
+    signal,
+  });
+  return records.filter((r) => {
+    const t = Date.parse(r.createdAt);
+    return Number.isFinite(t) && t >= startMs && t <= endMs;
+  });
 }
 
 function profileName(n: RawNode): string | null {

@@ -370,6 +370,14 @@
       "mostObservations": "Uoni mwingi zaidi",
       "bestPicture": "Picha bora",
       "pending": "Itatangazwa"
+    },
+    "map": {
+      "title": "Uchunguzi wa wiki",
+      "heading": "Mahali picha za raundi hii zilipopigwa",
+      "subtitle": "Kila uchunguzi wa picha wenye eneo uliopakiwa katika raundi hii. Buruta ratiba ya muda na ubonyeze cheza kuwaona wakitokea kadiri ya wiki.",
+      "loading": "Inaweka uchunguzi wa wiki hii kwenye ramani…",
+      "empty": "Bado hakuna uchunguzi wa picha wenye eneo katika raundi hii.",
+      "error": "Imeshindwa kupakia ramani ya uchunguzi."
     }
   },
   "dashboard": {

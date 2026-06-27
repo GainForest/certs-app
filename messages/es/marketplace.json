@@ -370,6 +370,14 @@
       "mostObservations": "Más observaciones",
       "bestPicture": "Mejor foto",
       "pending": "Por anunciar"
+    },
+    "map": {
+      "title": "Observaciones de la semana",
+      "heading": "Dónde se tomaron las fotos de esta ronda",
+      "subtitle": "Cada avistamiento con foto y ubicación subido durante esta ronda. Arrastra la línea de tiempo y pulsa reproducir para verlos aparecer a lo largo de la semana.",
+      "loading": "Cargando los avistamientos de la semana…",
+      "empty": "Aún no hay avistamientos con foto y ubicación en esta ronda.",
+      "error": "No se pudo cargar el mapa de observaciones."
     }
   },
   "dashboard": {

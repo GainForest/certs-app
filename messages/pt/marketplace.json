@@ -370,6 +370,14 @@
       "mostObservations": "Mais observações",
       "bestPicture": "Melhor foto",
       "pending": "A anunciar"
+    },
+    "map": {
+      "title": "Observações da semana",
+      "heading": "Onde as fotos desta rodada foram tiradas",
+      "subtitle": "Cada registro com foto e localização enviado durante esta rodada. Arraste a linha do tempo e toque em reproduzir para vê-los surgir ao longo da semana.",
+      "loading": "Mapeando os registros da semana…",
+      "empty": "Ainda não há registros com foto e localização nesta rodada.",
+      "error": "Não foi possível carregar o mapa de observações."
     }
   },
   "dashboard": {

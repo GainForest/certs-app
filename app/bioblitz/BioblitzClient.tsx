@@ -23,6 +23,7 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BioblitzObservationsMap } from "./BioblitzObservationsMap";
 import { AuthorInline } from "../_components/AuthorChip";
 import { PreferredAccountLink } from "../_components/PreferredLinks";
 import { formatNumber } from "../_lib/format";
@@ -142,6 +143,7 @@ export function BioblitzClient() {
   }, [round, scope]);
 
   return (
+    <>
     <section className="relative flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden lg:h-[calc(100dvh-3.5rem)]">
       <BackgroundWash />
 
@@ -170,6 +172,9 @@ export function BioblitzClient() {
         </div>
       </div>
     </section>
+
+      <BioblitzObservationsMap round={round} />
+    </>
   );
 }
 
