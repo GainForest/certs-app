@@ -509,7 +509,7 @@ function ProjectCreateHero() {
   );
 }
 
-function CreateProjectModal({
+export function CreateProjectModal({
   target,
   onClose,
   onSaved,

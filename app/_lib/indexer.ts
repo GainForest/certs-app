@@ -2216,6 +2216,9 @@ export type ProjectRecord = {
   locationUri: string | null;
   /** ISO country code resolved from the project's location record, if any. */
   country: string | null;
+  /** Work-scope / focus tags inherited from the project's single Cert. Only
+   *  populated when the project was fetched with `withScopeTags`. */
+  scopeTags: string[];
 };
 
 type RawCollectionImage =
@@ -2348,7 +2351,64 @@ function mapProjectCollection(n: RawProjectCollection): ProjectRecord {
     bumicertCount: bumicertUris.length,
     locationUri: n.location?.uri ?? null,
     country: null,
+    scopeTags: [],
   };
+}
+
+const ACTIVITY_SCOPE_BATCH_SIZE = 50;
+
+/**
+ * Batch-resolve the work-scope tags for a set of Cert (claim.activity) URIs.
+ * Used to label project cards with their single Cert's focus areas instead of a
+ * redundant "1 Cert" count. Returns Cert URI → normalized scope tags.
+ */
+export async function fetchActivityScopeTagsByUris(
+  uris: string[],
+  signal?: AbortSignal,
+): Promise<Map<string, string[]>> {
+  const uniqueUris = Array.from(new Set(uris.filter(Boolean))).sort();
+  return publicExploreCache(
+    "activity-scope-tags",
+    { uris: uniqueUris },
+    () => fetchActivityScopeTagsByUrisUncached(uniqueUris),
+    signal,
+  );
+}
+
+type RawActivityScopeNode = {
+  workScope?: { __typename?: string; scope?: string | null; expression?: string | null } | null;
+} | null;
+
+async function fetchActivityScopeTagsByUrisUncached(uris: string[]): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>();
+  if (uris.length === 0) return out;
+
+  const fields = `{
+    workScope {
+      __typename
+      ... on OrgHypercertsClaimActivityWorkScopeString { scope }
+      ... on OrgHypercertsWorkscopeCel { expression }
+    }
+  }`;
+
+  const batches = Array.from(
+    { length: Math.ceil(uris.length / ACTIVITY_SCOPE_BATCH_SIZE) },
+    (_, index) => uris.slice(index * ACTIVITY_SCOPE_BATCH_SIZE, (index + 1) * ACTIVITY_SCOPE_BATCH_SIZE),
+  );
+
+  await Promise.all(batches.map(async (batch) => {
+    const query = `query ActivityScopeTags {\n${batch
+      .map((uri, index) => `a${index}: orgHypercertsClaimActivityByUri(uri: ${JSON.stringify(uri)}) ${fields}`)
+      .join("\n")}\n}`;
+
+    const data = await indexerQuery<Record<string, RawActivityScopeNode>>(query, {});
+    batch.forEach((uri, index) => {
+      const tags = extractWorkScopeTags(data?.[`a${index}`]?.workScope);
+      if (tags.length > 0) out.set(uri, tags);
+    });
+  }));
+
+  return out;
 }
 
 type RawProjectCount = Pick<RawProjectCollection, "did" | "rkey" | "uri" | "title">;
@@ -2377,6 +2437,7 @@ const PROJECT_COLLECTION_COUNT_QUERY = `
 async function mapProjectConnection(
   conn: Connection<RawProjectCollection> | null | undefined,
   signal?: AbortSignal,
+  options?: { withScopeTags?: boolean },
 ): Promise<Page<ProjectRecord>> {
   const nodes = (conn?.edges ?? [])
     .map((edge) => edge?.node)
@@ -2400,6 +2461,21 @@ async function mapProjectConnection(
         ? { ...record, country: countryByLocation.get(record.locationUri) ?? null }
         : record,
     );
+  }
+  if (options?.withScopeTags) {
+    const certUris = records
+      .map((record) => record.bumicertUris[0])
+      .filter((uri): uri is string => Boolean(uri));
+    if (certUris.length > 0) {
+      const scopeByCert = await fetchActivityScopeTagsByUris(certUris, signal).catch(
+        () => new Map<string, string[]>(),
+      );
+      records = records.map((record) => {
+        const firstCert = record.bumicertUris[0];
+        const tags = firstCert ? scopeByCert.get(firstCert) : undefined;
+        return tags && tags.length > 0 ? { ...record, scopeTags: tags } : record;
+      });
+    }
   }
   return {
     records,
@@ -2482,12 +2558,13 @@ async function fetchProjectPage(
   signal?: AbortSignal,
   where?: ProjectWhere,
   sort: ExplorerSortMode = "newest",
+  withScopeTags?: boolean,
 ): Promise<Page<ProjectRecord>> {
   const { sortBy, sortDirection } = projectSort(sort);
   const data = await indexerQuery<{
     orgHypercertsCollection?: Connection<RawProjectCollection>;
   }>(PROJECT_COLLECTION_QUERY, { first, after, where: where ?? null, sortBy, sortDirection }, signal);
-  return mapProjectConnection(data?.orgHypercertsCollection, signal);
+  return mapProjectConnection(data?.orgHypercertsCollection, signal, { withScopeTags });
 }
 
 async function fetchProjectCountPage(
@@ -2518,11 +2595,12 @@ async function fetchProjectByDidPage(
   first: number,
   after: string | null,
   signal?: AbortSignal,
+  withScopeTags?: boolean,
 ): Promise<Page<ProjectRecord>> {
   const data = await indexerQuery<{
     orgHypercertsCollection?: Connection<RawProjectCollection>;
   }>(PROJECT_COLLECTION_BY_DID_QUERY, { did, first, after }, signal);
-  return mapProjectConnection(data?.orgHypercertsCollection, signal);
+  return mapProjectConnection(data?.orgHypercertsCollection, signal, { withScopeTags });
 }
 
 async function fetchProjectsFromCollections(
@@ -2537,7 +2615,7 @@ async function fetchProjectsFromCollections(
   if (variants.length === 0) return { records: [], cursor: null, hasMore: false };
   if (variants.length === 1) {
     return collectPaged(
-      (first, cursor, nextSignal) => fetchProjectPage(first, cursor, nextSignal, variants[0], options?.sort),
+      (first, cursor, nextSignal) => fetchProjectPage(first, cursor, nextSignal, variants[0], options?.sort, options?.withScopeTags),
       target,
       after,
       signal,
@@ -2550,7 +2628,7 @@ async function fetchProjectsFromCollections(
     variants.map((where, index) => {
       if (!previous.more[index]) return Promise.resolve({ records: [], cursor: null, hasMore: false } satisfies Page<ProjectRecord>);
       return collectPaged(
-        (first, cursor, nextSignal) => fetchProjectPage(first, cursor, nextSignal, where, options?.sort),
+        (first, cursor, nextSignal) => fetchProjectPage(first, cursor, nextSignal, where, options?.sort, options?.withScopeTags),
         target,
         previous.cursors[index] ?? null,
         signal,
@@ -2615,8 +2693,15 @@ export async function fetchProjectsByDid(
   after: string | null = null,
   signal?: AbortSignal,
   onProgress?: (records: ProjectRecord[]) => void,
+  options?: { withScopeTags?: boolean },
 ): Promise<Page<ProjectRecord>> {
-  return collectPaged((first, cursor, nextSignal) => fetchProjectByDidPage(did, first, cursor, nextSignal), target, after, signal, onProgress);
+  return collectPaged(
+    (first, cursor, nextSignal) => fetchProjectByDidPage(did, first, cursor, nextSignal, options?.withScopeTags),
+    target,
+    after,
+    signal,
+    onProgress,
+  );
 }
 
 export type ProjectStats = {

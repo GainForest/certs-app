@@ -14,6 +14,7 @@ import {
   HeartHandshakeIcon,
   HeartIcon,
   LeafIcon,
+  Loader2Icon,
   MenuIcon,
   MoonIcon,
   PlusIcon,
@@ -36,8 +37,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import {
   groupManageBasePath,
+  groupManageTarget,
   manageHref,
+  personalManageTarget,
+  type ManageTarget,
 } from "@/lib/links";
+import dynamic from "next/dynamic";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { AuthButton, SignInPrompt } from "./AuthFlow";
 import {
@@ -699,20 +704,12 @@ function NavLeaf({ item, isActive, index, paired = false }: { item: NavLeaf; isA
 const PERSONAL_PROJECT_NEW_HREF = manageHref({ basePath: "/manage" }, "projects", { mode: "new" });
 const PERSONAL_ADD_DATA_HREF = manageHref({ basePath: "/manage" }, "add");
 
-function createProjectHrefForGroup(identifier: string): string {
-  return manageHref({ basePath: groupManageBasePath(identifier) }, "projects", { mode: "new" });
-}
-
 function addDataHrefForGroup(identifier: string): string {
   return manageHref({ basePath: groupManageBasePath(identifier) }, "add");
 }
 
 // Personal context targets the signed-in user's own profile route directly
 // (manageHref maps /account/<id>/manage → /account/<id>), never /manage.
-function createProjectHrefForPersonal(did: string): string {
-  return manageHref({ basePath: groupManageBasePath(did) }, "projects", { mode: "new" });
-}
-
 function addDataHrefForPersonal(did: string): string {
   return manageHref({ basePath: groupManageBasePath(did) }, "add");
 }
@@ -723,17 +720,107 @@ type ContextLinkProps = {
   children: React.ReactNode;
 };
 
-function CreateProjectLink({ sessionDid, className, children }: ContextLinkProps) {
+// The create-project wizard is heavy (framer-motion, the site editor, etc.), so
+// it's code-split and only fetched when the popup is actually opened.
+const CreateProjectModalLazy = dynamic(
+  () =>
+    import("@/app/(manage)/manage/projects/_components/ManageProjectsClient").then((mod) => ({
+      default: mod.CreateProjectModal,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <ModalContent dismissible={false} className="w-full">
+        <div className="flex h-48 items-center justify-center">
+          <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+        </div>
+      </ModalContent>
+    ),
+  },
+);
+
+// The sidebar "Create a project" button opens the wizard as a popup over the
+// current page instead of routing to /projects first. Signed-out users still
+// follow the link (which routes them through sign-in).
+function CreateProjectButton({ sessionDid, className, children }: ContextLinkProps) {
+  if (!sessionDid) {
+    return (
+      <Link href={PERSONAL_PROJECT_NEW_HREF} className={className}>
+        {children}
+      </Link>
+    );
+  }
   return (
-    <ManageContextLink
-      sessionDid={sessionDid}
-      personalHref={PERSONAL_PROJECT_NEW_HREF}
-      personalHrefForDid={createProjectHrefForPersonal}
-      hrefForGroup={createProjectHrefForGroup}
-      className={className}
-    >
+    <AuthenticatedCreateProjectButton sessionDid={sessionDid} className={className}>
       {children}
-    </ManageContextLink>
+    </AuthenticatedCreateProjectButton>
+  );
+}
+
+function AuthenticatedCreateProjectButton({
+  sessionDid,
+  className,
+  children,
+}: {
+  sessionDid: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const modal = useModal();
+  const { groups } = useAccountList(sessionDid);
+  const [activeContext, setActiveContext] = useActiveAccountContext(sessionDid);
+
+  const open = () => {
+    let target: ManageTarget;
+    if (activeContext.type === "group") {
+      const activeGroup = groups.find((group) => group.groupDid === activeContext.did) ?? null;
+      const identifier = activeGroup
+        ? switcherGroupIdentifier(activeGroup)
+        : activeContext.identifier?.trim() || activeContext.did;
+      if (activeGroup) {
+        setActiveContext({ type: "group", did: activeGroup.groupDid, identifier, role: activeGroup.role });
+      }
+      target = groupManageTarget({
+        did: activeContext.did,
+        accountKind: "organization",
+        identifier,
+        role: activeGroup?.role ?? null,
+        currentUserDid: sessionDid,
+      });
+    } else {
+      target = personalManageTarget({ did: sessionDid, accountKind: "user", identifier: sessionDid });
+    }
+
+    const projectsHref = manageHref({ basePath: groupManageBasePath(target.identifier) }, "projects");
+    const closeModal = () => {
+      void modal.hide().then(() => modal.clear());
+    };
+    modal.pushModal(
+      {
+        id: "create-project",
+        dialogWidth: "max-w-3xl w-[calc(100%-2rem)]",
+        forceDialog: true,
+        content: (
+          <CreateProjectModalLazy
+            target={target}
+            onClose={closeModal}
+            onSaved={() => {
+              closeModal();
+              router.push(projectsHref);
+            }}
+          />
+        ),
+      },
+      true,
+    );
+    void modal.show();
+  };
+
+  return (
+    <button type="button" onClick={open} className={className}>
+      {children}
+    </button>
   );
 }
 
@@ -838,7 +925,7 @@ function BumicertCreationCard({ sessionDid }: { sessionDid: string }) {
     return (
       <SidebarTooltip label={t("createProject")}>
         <span className="mx-auto flex w-fit">
-          <CreateProjectLink
+          <CreateProjectButton
             sessionDid={sessionDid}
             className={cn(
               buttonVariants({ variant: "outline", size: "icon" }),
@@ -847,7 +934,7 @@ function BumicertCreationCard({ sessionDid }: { sessionDid: string }) {
           >
             <PlusIcon />
             <span className="sr-only">{t("createProject")}</span>
-          </CreateProjectLink>
+          </CreateProjectButton>
         </span>
       </SidebarTooltip>
     );
@@ -891,7 +978,7 @@ function BumicertCreationCard({ sessionDid }: { sessionDid: string }) {
       </div>
 
       {/*CTA*/}
-      <CreateProjectLink
+      <CreateProjectButton
         sessionDid={sessionDid}
         className={cn(
           buttonVariants({ variant: "outline", size: "sm" }),
@@ -899,7 +986,7 @@ function BumicertCreationCard({ sessionDid }: { sessionDid: string }) {
         )}
       >
         <PlusIcon /> {t("createProject")}
-      </CreateProjectLink>
+      </CreateProjectButton>
     </div>
   );
 }
