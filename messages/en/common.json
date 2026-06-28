@@ -709,6 +709,23 @@
       "alreadyAcceptedDescription": "This invitation has already been accepted."
     }
   },
+  "notifications": {
+    "title": "Notifications",
+    "ariaLabel": "Notifications",
+    "unreadAria": "Notifications — {count} unread",
+    "empty": "No notifications yet",
+    "emptyHint": "Likes and comments on your records show up here.",
+    "someone": "Someone",
+    "likedYour": "liked your {subject}",
+    "commentedYour": "commented on your {subject}",
+    "subject": {
+      "observation": "observation",
+      "project": "project",
+      "post": "post",
+      "recording": "recording",
+      "record": "record"
+    }
+  },
   "feed": {
     "meta": {
       "title": "Activity Feed",

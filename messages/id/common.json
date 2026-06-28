@@ -709,6 +709,23 @@
       "alreadyAcceptedDescription": "Undangan ini sudah diterima."
     }
   },
+  "notifications": {
+    "title": "Notifikasi",
+    "ariaLabel": "Notifikasi",
+    "unreadAria": "Notifikasi — {count} belum dibaca",
+    "empty": "Belum ada notifikasi",
+    "emptyHint": "Suka dan komentar pada catatan Anda akan muncul di sini.",
+    "someone": "Seseorang",
+    "likedYour": "menyukai {subject} Anda",
+    "commentedYour": "mengomentari {subject} Anda",
+    "subject": {
+      "observation": "observasi",
+      "project": "proyek",
+      "post": "postingan",
+      "recording": "rekaman",
+      "record": "catatan"
+    }
+  },
   "feed": {
     "meta": {
       "title": "Aktivitas terkini",

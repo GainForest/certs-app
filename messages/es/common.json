@@ -709,6 +709,23 @@
       "alreadyAcceptedDescription": "Esta invitación ya fue aceptada."
     }
   },
+  "notifications": {
+    "title": "Notificaciones",
+    "ariaLabel": "Notificaciones",
+    "unreadAria": "Notificaciones — {count} sin leer",
+    "empty": "Aún no hay notificaciones",
+    "emptyHint": "Los me gusta y comentarios en tus registros aparecerán aquí.",
+    "someone": "Alguien",
+    "likedYour": "le dio me gusta a tu {subject}",
+    "commentedYour": "comentó en tu {subject}",
+    "subject": {
+      "observation": "observación",
+      "project": "proyecto",
+      "post": "publicación",
+      "recording": "grabación",
+      "record": "registro"
+    }
+  },
   "feed": {
     "meta": {
       "title": "Actividad reciente",

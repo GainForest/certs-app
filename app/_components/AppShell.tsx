@@ -55,6 +55,7 @@ import {
 } from "../_lib/account-switcher";
 import { HeaderSlotsProvider, useHeaderSlots } from "./HeaderSlots";
 import { GlobalSearch } from "./GlobalSearch";
+import { NotificationBell } from "./NotificationBell";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { ModalContent, ModalDescription, ModalFooter, ModalTitle } from "@/components/ui/modal/modal";
 import { useModal } from "@/components/ui/modal/context";
@@ -1358,6 +1359,7 @@ function Header({
               ) : null}
             </AnimatePresence>
             <GlobalSearch />
+            <NotificationBell session={authSession} />
             <AuthButton
               session={authSession}
               profileName={profileName}

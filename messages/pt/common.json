@@ -709,6 +709,23 @@
       "alreadyAcceptedDescription": "Este convite já foi aceito."
     }
   },
+  "notifications": {
+    "title": "Notificações",
+    "ariaLabel": "Notificações",
+    "unreadAria": "Notificações — {count} não lidas",
+    "empty": "Ainda não há notificações",
+    "emptyHint": "Curtidas e comentários nos seus registros aparecem aqui.",
+    "someone": "Alguém",
+    "likedYour": "curtiu sua {subject}",
+    "commentedYour": "comentou na sua {subject}",
+    "subject": {
+      "observation": "observação",
+      "project": "projeto",
+      "post": "publicação",
+      "recording": "gravação",
+      "record": "registro"
+    }
+  },
   "feed": {
     "meta": {
       "title": "Atividade recente",
