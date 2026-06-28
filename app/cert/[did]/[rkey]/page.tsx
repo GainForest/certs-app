@@ -69,7 +69,7 @@ import { BumicertTimeline } from "./_components/timeline/BumicertTimeline";
 import { getEntriesForActivities } from "./_components/timeline/attachmentSubjects";
 import { resolveTimelineReferences } from "./_components/timeline/timelineReferenceResolver";
 import type { TimelineReference } from "./_components/timeline/timelineReferences";
-import { canCreateRecord, canDeleteRecord } from "@/app/(manage)/manage/_lib/cgs-permissions";
+import { canCreateRecord, canDeleteRecord, canUpdateRecord } from "@/app/(manage)/manage/_lib/cgs-permissions";
 
 export const revalidate = 60;
 
@@ -168,25 +168,28 @@ async function resolveTimelineAccess(recordDid: string, ownerKind: AccountKind, 
 
 type CertManageAccess = {
   canDelete: boolean;
+  canManageDonations: boolean;
   /** Org DID for group-owned writes; undefined for personal repos. */
   mutationRepo?: string;
 };
 
 /**
- * Whether the signed-in viewer is allowed to delete this Cert: the personal
- * owner always can; for organization-owned Certs we check CGS membership/role.
+ * Whether the signed-in viewer may manage this Cert. Personal owners always can;
+ * for organization-owned Certs we check CGS membership/role.
  */
 async function resolveCertManageAccess(recordDid: string, ownerKind: AccountKind, authSession: AuthSession): Promise<CertManageAccess> {
-  if (!authSession.isLoggedIn) return { canDelete: false };
-  if (authSession.did === recordDid) return { canDelete: true };
+  if (!authSession.isLoggedIn) return { canDelete: false, canManageDonations: false };
+  if (authSession.did === recordDid) return { canDelete: true, canManageDonations: true };
   if (ownerKind === "organization") {
     const groups = await fetchUserCgsGroups();
     const membership = groups.find((group) => group.groupDid === recordDid);
-    if (!membership) return { canDelete: false };
-    const remove = canDeleteRecord({ kind: "group", role: membership.role });
-    return { canDelete: remove.allowed, mutationRepo: recordDid };
+    if (!membership) return { canDelete: false, canManageDonations: false };
+    const target = { kind: "group" as const, role: membership.role };
+    const remove = canDeleteRecord(target);
+    const updateFunding = canUpdateRecord(target);
+    return { canDelete: remove.allowed, canManageDonations: updateFunding.allowed, mutationRepo: recordDid };
   }
-  return { canDelete: false };
+  return { canDelete: false, canManageDonations: false };
 }
 
 const BADGE_TONE: Record<DetailBadge["tone"], string> = {
@@ -442,6 +445,7 @@ export async function BumicertDetailBody({
                   fundingConfig={fundingConfig}
                   authSession={authSession}
                   canDelete={certManageAccess.canDelete}
+                  canManageDonations={certManageAccess.canManageDonations}
                   mutationRepo={certManageAccess.mutationRepo}
                   deleteRedirectHref={ownerProfileHref}
                 />
@@ -478,6 +482,8 @@ export async function BumicertDetailBody({
                 authSession={authSession}
                 receipts={donationReceipts}
                 unavailable={donationsUnavailable}
+                canManageDonations={certManageAccess.canManageDonations}
+                mutationRepo={certManageAccess.mutationRepo}
               />
             )}
             {activeTab === "timeline" && (
@@ -605,13 +611,13 @@ export async function ProjectDetailView({
     : [];
   const emptyTimelineSources = { audio: [], occurrences: [], occurrencesIncomplete: false, treeGroups: [], places: [] };
 
-  const isOwner = authSession.isLoggedIn && authSession.did === record.did;
+  const canManageDonations = certManageAccess.canManageDonations;
   const hasObservations = observations.length > 0;
   const hasPlaces = record.locationUris.length > 0;
   // Stewards always see Updates so they can add evidence; visitors only when
   // there is something to show.
   const showUpdates = timelineEntries.length > 0 || timelineAccess.canManageEvidence;
-  const showSupport = Boolean(fundingConfig?.receivingWallet?.uri) || donationReceipts.length > 0 || isOwner;
+  const showSupport = Boolean(fundingConfig?.receivingWallet?.uri) || donationReceipts.length > 0 || canManageDonations;
   const donationsHref = showSupport ? `${detailHref}#support` : detailHref;
   const reviewCount = (reviewCounts?.evaluations ?? 0) + (reviewCounts?.comments ?? 0);
   const period = record.startDate || record.endDate
@@ -800,6 +806,8 @@ export async function ProjectDetailView({
                   authSession={authSession}
                   receipts={donationReceipts}
                   unavailable={donationsUnavailable}
+                  canManageDonations={canManageDonations}
+                  mutationRepo={certManageAccess.mutationRepo}
                 />
               </ProjectDetailSection>
             ) : null}
@@ -816,6 +824,7 @@ export async function ProjectDetailView({
                 fundingConfig={fundingConfig}
                 authSession={authSession}
                 canDelete={certManageAccess.canDelete}
+                canManageDonations={certManageAccess.canManageDonations}
                 mutationRepo={certManageAccess.mutationRepo}
                 deleteRedirectHref={ownerProfileHref}
                 hideOwner
@@ -1159,6 +1168,7 @@ function OverviewSidebar({
   fundingConfig,
   authSession,
   canDelete,
+  canManageDonations,
   mutationRepo,
   deleteRedirectHref,
   extra,
@@ -1173,6 +1183,7 @@ function OverviewSidebar({
   fundingConfig: BumicertFundingConfig;
   authSession: RouteData["authSession"];
   canDelete: boolean;
+  canManageDonations: boolean;
   mutationRepo?: string;
   deleteRedirectHref: string;
   /** Extra rich content rendered under the cover image (project sidebar). */
@@ -1249,6 +1260,8 @@ function OverviewSidebar({
         unavailable={donationsUnavailable}
         fundingConfig={fundingConfig}
         authSession={authSession}
+        canManageDonations={canManageDonations}
+        mutationRepo={mutationRepo}
       />
 
       {canDelete ? (
@@ -1335,6 +1348,8 @@ function SidebarDonations({
   unavailable,
   fundingConfig,
   authSession,
+  canManageDonations,
+  mutationRepo,
 }: {
   record: BumicertRecord;
   owner: RouteData["owner"];
@@ -1342,17 +1357,18 @@ function SidebarDonations({
   unavailable: boolean;
   fundingConfig: BumicertFundingConfig;
   authSession: RouteData["authSession"];
+  canManageDonations: boolean;
+  mutationRepo?: string;
 }) {
   const usdReceipts = receipts.filter((receipt) => ["USD", "USDC"].includes(receipt.currency.toUpperCase()));
   const totalUsd = usdReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
   const hasReceipts = receipts.length > 0;
   const donationStatus = getDonationStatus(fundingConfig, unavailable);
-  const isOwner = authSession.isLoggedIn && authSession.did === record.did;
   const goalUsd = parseGoalUsd(fundingConfig);
 
-  // No funding config, no history, and not the owner: skip the dead commerce
-  // UI ($0 stats + disabled button) — a short note is more honest.
-  if (!isOwner && donationStatus.kind === "not-applicable" && !hasReceipts) {
+  // No funding config, no history, and no permission to configure donations:
+  // skip the dead commerce UI ($0 stats + disabled button) — a short note is more honest.
+  if (!canManageDonations && donationStatus.kind === "not-applicable" && !hasReceipts) {
     return (
       <div className="space-y-2">
         <h3 className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
@@ -1370,7 +1386,7 @@ function SidebarDonations({
       <h3 className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
         Donations
       </h3>
-      {!isOwner ? (
+      {!canManageDonations ? (
         <div className="flex items-center gap-2 text-sm">
           {donationStatus.kind === "open" ? (
             <CircleDotIcon className="h-3.5 w-3.5 text-primary" />
@@ -1395,8 +1411,8 @@ function SidebarDonations({
       {goalUsd !== null && donationStatus.kind === "open" ? (
         <FundingProgress raisedUsd={totalUsd} goalUsd={goalUsd} />
       ) : null}
-      {isOwner ? (
-        <FundingStatus ownerDid={record.did} bumicertRkey={record.rkey} fundingConfig={fundingConfig} />
+      {canManageDonations ? (
+        <FundingStatus ownerDid={record.did} bumicertRkey={record.rkey} fundingConfig={fundingConfig} mutationRepo={mutationRepo} />
       ) : donationStatus.kind === "open" ? (
         <DonateButton
           bumicert={{
@@ -1934,6 +1950,8 @@ function DonationsPanel({
   authSession,
   receipts,
   unavailable,
+  canManageDonations,
+  mutationRepo,
 }: {
   record: BumicertRecord;
   owner: RouteData["owner"];
@@ -1941,15 +1959,16 @@ function DonationsPanel({
   authSession: RouteData["authSession"];
   receipts: FundingReceipt[];
   unavailable: boolean;
+  canManageDonations: boolean;
+  mutationRepo?: string;
 }) {
   const usdReceipts = receipts.filter((receipt) => ["USD", "USDC"].includes(receipt.currency.toUpperCase()));
   const totalUsd = usdReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
   const donationEntries = buildDonationLeaderboard(usdReceipts);
   const donorCount = donationEntries.length;
   const donationStatus = getDonationStatus(fundingConfig, unavailable);
-  const isOwner = authSession.isLoggedIn && authSession.did === record.did;
   const goalUsd = parseGoalUsd(fundingConfig);
-  const showSupportCard = !unavailable && (isOwner || donationStatus.kind !== "not-applicable");
+  const showSupportCard = !unavailable && (canManageDonations || donationStatus.kind !== "not-applicable");
   const stats: StatsTileItem[] = [
     {
       label: "raised",
@@ -1989,8 +2008,8 @@ function DonationsPanel({
               ) : null}
             </div>
             <div className="w-full sm:w-44 sm:shrink-0">
-              {isOwner ? (
-                <FundingStatus ownerDid={record.did} bumicertRkey={record.rkey} fundingConfig={fundingConfig} />
+              {canManageDonations ? (
+                <FundingStatus ownerDid={record.did} bumicertRkey={record.rkey} fundingConfig={fundingConfig} mutationRepo={mutationRepo} />
               ) : (
                 <>
                   <DonateButton
@@ -2025,9 +2044,9 @@ function DonationsPanel({
       ) : receipts.length === 0 ? (
         <EmptyState
           icon={<HeartIcon className="h-8 w-8" />}
-          title={donationStatus.kind === "not-applicable" && !isOwner ? "Not accepting donations yet" : "No donations yet"}
+          title={donationStatus.kind === "not-applicable" && !canManageDonations ? "Not accepting donations yet" : "No donations yet"}
           body={
-            donationStatus.kind === "not-applicable" && !isOwner
+            donationStatus.kind === "not-applicable" && !canManageDonations
               ? `${owner.displayName} has not enabled donations for this project. Check the story and evidence tabs in the meantime.`
               : "Be the first to support this project story."
           }

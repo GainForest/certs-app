@@ -224,6 +224,8 @@ export type UpsertFundingConfigInput = {
   minDonationInUSD?: string;
   maxDonationInUSD?: string;
   allowOversell: boolean;
+  /** Organization repo for group-owned Certs. Personal writes leave this empty. */
+  repo?: string;
   /** Preserve the original createdAt on update; defaults to now for create. */
   createdAt?: string | null;
 };
@@ -232,8 +234,9 @@ export type UpsertFundingConfigInput = {
  * Upsert an app.gainforest.funding.config record at the bumicert's rkey.
  * A full replace via putRecord, preserving createdAt when known.
  */
-export async function upsertFundingConfig(input: UpsertFundingConfigInput): Promise<void> {
+export async function upsertFundingConfig(input: UpsertFundingConfigInput): Promise<FundingConfigData> {
   const now = new Date().toISOString();
+  const createdAt = input.createdAt ?? now;
   const record: Record<string, unknown> = {
     $type: FUNDING_CONFIG_COLLECTION,
     receivingWallet: {
@@ -242,12 +245,23 @@ export async function upsertFundingConfig(input: UpsertFundingConfigInput): Prom
     },
     status: input.status,
     allowOversell: input.allowOversell,
-    createdAt: input.createdAt ?? now,
+    createdAt,
     updatedAt: now,
     ...(input.goalInUSD?.trim() ? { goalInUSD: input.goalInUSD.trim() } : {}),
     ...(input.minDonationInUSD?.trim() ? { minDonationInUSD: input.minDonationInUSD.trim() } : {}),
     ...(input.maxDonationInUSD?.trim() ? { maxDonationInUSD: input.maxDonationInUSD.trim() } : {}),
   };
 
-  await putRecord(FUNDING_CONFIG_COLLECTION, input.rkey, record);
+  await putRecord(FUNDING_CONFIG_COLLECTION, input.rkey, record, input.repo ? { repo: input.repo } : undefined);
+
+  return {
+    receivingWallet: { uri: input.receivingWalletUri },
+    status: input.status,
+    goalInUSD: input.goalInUSD?.trim() || null,
+    minDonationInUSD: input.minDonationInUSD?.trim() || null,
+    maxDonationInUSD: input.maxDonationInUSD?.trim() || null,
+    allowOversell: input.allowOversell,
+    createdAt,
+    updatedAt: now,
+  };
 }

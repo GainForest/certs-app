@@ -24,6 +24,7 @@ interface DeleteWalletModalProps {
   rkey: string;
   address: string;
   name: string | null | undefined;
+  repo?: string;
   onBack: () => void | Promise<void>;
   onDeleted: () => void | Promise<void>;
 }
@@ -36,6 +37,7 @@ export function DeleteWalletModal({
   rkey,
   address,
   name,
+  repo,
   onBack,
   onDeleted,
 }: DeleteWalletModalProps) {
@@ -56,7 +58,7 @@ export function DeleteWalletModal({
     setError(null);
     setIsDeleting(true);
     try {
-      await deleteRecord("app.gainforest.link.evm", rkey);
+      await deleteRecord("app.gainforest.link.evm", rkey, repo ? { repo } : undefined);
       onDeleted();
     } catch (e) {
       console.error("[DeleteWalletModal] Failed to remove wallet:", e);

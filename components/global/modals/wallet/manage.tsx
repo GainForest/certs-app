@@ -115,6 +115,7 @@ function WalletRow({
 interface ManageWalletsModalProps {
   ownerDid: string;
   evmLinks: EvmLink[];
+  repo?: string;
   onBack: () => void | Promise<void>;
   onChanged: () => void;
 }
@@ -122,6 +123,7 @@ interface ManageWalletsModalProps {
 export function ManageWalletsModal({
   ownerDid,
   evmLinks: initialLinks,
+  repo,
   onBack,
   onChanged,
 }: ManageWalletsModalProps) {
@@ -148,6 +150,7 @@ export function ManageWalletsModal({
       content: (
         <AddWalletModal
           did={ownerDid}
+          repo={repo}
           existingRkey={link.metadata?.rkey ?? undefined}
           existingName={link.record?.name ?? undefined}
           onBack={() => popModal()}
@@ -168,6 +171,7 @@ export function ManageWalletsModal({
           rkey={link.metadata?.rkey ?? ""}
           address={link.record?.address ?? ""}
           name={link.record?.name}
+          repo={repo}
           onBack={() => popModal()}
           onDeleted={() => {
             setLinks((prev) =>

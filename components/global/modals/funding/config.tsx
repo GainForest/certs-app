@@ -116,7 +116,8 @@ interface FundingConfigModalProps {
   ownerDid: string;
   bumicertRkey: string;
   existingConfig: FundingConfigData | null;
-  onSaved: () => void;
+  mutationRepo?: string;
+  onSaved: (config: FundingConfigData) => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -125,6 +126,7 @@ export function FundingConfigModal({
   ownerDid,
   bumicertRkey,
   existingConfig,
+  mutationRepo,
   onSaved,
 }: FundingConfigModalProps) {
   const t = useTranslations("modals.fundingConfig");
@@ -178,6 +180,7 @@ export function FundingConfigModal({
       content: (
         <AddWalletModal
           did={ownerDid}
+          repo={mutationRepo}
           onBack={() => popModal()}
           onSuccess={() => {
             invalidateLinks();
@@ -197,6 +200,7 @@ export function FundingConfigModal({
         <ManageWalletsModal
           ownerDid={ownerDid}
           evmLinks={evmLinks}
+          repo={mutationRepo}
           onBack={() => popModal()}
           onChanged={invalidateLinks}
         />
@@ -213,18 +217,19 @@ export function FundingConfigModal({
     setIsSaving(true);
 
     try {
-      await upsertFundingConfig({
+      const savedConfig = await upsertFundingConfig({
         rkey: bumicertRkey,
         receivingWalletUri: effectiveSelectedWalletUri,
         status,
         allowOversell,
+        repo: mutationRepo,
         createdAt: existingConfig?.createdAt ?? null,
         ...(goalInUSD.trim() ? { goalInUSD: goalInUSD.trim() } : {}),
         ...(minDonationInUSD.trim() ? { minDonationInUSD: minDonationInUSD.trim() } : {}),
         ...(maxDonationInUSD.trim() ? { maxDonationInUSD: maxDonationInUSD.trim() } : {}),
       });
 
-      onSaved();
+      onSaved(savedConfig);
       handleClose();
     } catch (e) {
       console.error("[FundingConfigModal] Failed to save funding config:", e);
@@ -291,7 +296,7 @@ export function FundingConfigModal({
                 onClick={handleManageWallets}
                 className="text-xs text-primary hover:underline"
               >
-                Manage
+                {t("manage")}
               </button>
             )}
           </div>

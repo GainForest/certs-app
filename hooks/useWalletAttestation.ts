@@ -42,7 +42,7 @@ type UseWalletAttestationResult = {
  * Adapted from the bumicerts monorepo (which reads the DID from an atproto
  * store); here the authenticated DID is passed in by the caller.
  */
-export function useWalletAttestation(donorDid: string): UseWalletAttestationResult {
+export function useWalletAttestation(donorDid: string, options?: { repo?: string }): UseWalletAttestationResult {
   const { address } = useAccount();
   const [status, setStatus] = useState<LinkStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +106,7 @@ export function useWalletAttestation(donorDid: string): UseWalletAttestationResu
           signature,
           message,
           ...(name ? { name } : {}),
+          ...(options?.repo ? { repo: options.repo } : {}),
         }),
       });
 

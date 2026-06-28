@@ -4,7 +4,8 @@
  * AddWalletModal — connect and verify an EVM wallet to link it to the account.
  *
  * Props:
- *   did           — the authenticated owner's DID the wallet links to
+ *   did           — the account DID the wallet links to
+ *   repo          — organization repo for group-owned wallet links
  *   existingName  — pre-fills the wallet label field (e.g. when editing an existing wallet)
  *   existingRkey  — informational only; re-link always creates a fresh record
  *   onBack / onSuccess — navigation callbacks (push/pop handled by the caller)
@@ -38,8 +39,10 @@ import {
 } from "lucide-react";
 
 export interface AddWalletModalProps {
-  /** The authenticated owner's DID the wallet links to. */
+  /** The account DID the wallet links to. */
   did: string;
+  /** Organization repo for group-owned wallet links. */
+  repo?: string;
   /** Pre-fill the label field (e.g. when re-linking an existing wallet slot). */
   existingName?: string;
   /** Passed for context only — re-link still creates a fresh record. */
@@ -50,6 +53,7 @@ export interface AddWalletModalProps {
 
 export function AddWalletModal({
   did,
+  repo,
   existingName,
   onBack,
   onSuccess,
@@ -59,7 +63,7 @@ export function AddWalletModal({
   const { switchChain, isPending: isSwitching } = useSwitchChain();
   const { disconnect } = useDisconnect();
   const { openConnectModal } = useConnectModal();
-  const { status, error, linkWallet, reset } = useWalletAttestation(did);
+  const { status, error, linkWallet, reset } = useWalletAttestation(did, repo ? { repo } : undefined);
 
   const isCorrectNetwork = chainId === base.id;
   const isSuccess = status === "success";
