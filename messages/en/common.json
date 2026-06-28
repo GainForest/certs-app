@@ -388,6 +388,17 @@
     "nextImage": "Next image",
     "accountMetadataTitle": "{name} — Gallery",
     "accountMetadataDescription": "Project gallery images shared by {name}.",
+    "cleanup": {
+      "title": "Photos from deleted projects",
+      "body": "These photos stayed behind after their project was deleted. Remove the ones you no longer need.",
+      "groupLabel": "{count, plural, one {# photo} other {# photos}} from a deleted project",
+      "remove": "Remove",
+      "removeAll": "Remove all",
+      "confirmRemove": "Confirm",
+      "cancel": "Cancel",
+      "imageAlt": "Photo from a deleted project {index, number}",
+      "error": "We couldn't remove these photos. Please try again."
+    },
     "upload": {
       "title": "Add gallery images",
       "body": "Share photos on your profile. Drag and drop several at once, or choose files from your device.",

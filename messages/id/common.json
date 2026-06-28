@@ -388,6 +388,17 @@
     "nextImage": "Gambar berikutnya",
     "accountMetadataTitle": "{name} — Galeri",
     "accountMetadataDescription": "Gambar galeri proyek yang dibagikan oleh {name}.",
+    "cleanup": {
+      "title": "Foto dari proyek yang dihapus",
+      "body": "Foto-foto ini tertinggal setelah proyeknya dihapus. Hapus yang tidak lagi Anda perlukan.",
+      "groupLabel": "{count, plural, other {# foto}} dari proyek yang dihapus",
+      "remove": "Hapus",
+      "removeAll": "Hapus semua",
+      "confirmRemove": "Konfirmasi",
+      "cancel": "Batal",
+      "imageAlt": "Foto dari proyek yang dihapus {index, number}",
+      "error": "Kami tidak dapat menghapus foto ini. Silakan coba lagi."
+    },
     "upload": {
       "title": "Tambahkan gambar galeri",
       "body": "Bagikan foto di profil Anda. Seret dan lepas beberapa sekaligus, atau pilih berkas dari perangkat Anda.",

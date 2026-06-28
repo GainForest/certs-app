@@ -16,11 +16,11 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import BumicertIcon from "@/icons/BumicertIcon";
 import { BumicertOwnerAvatar } from "@/components/bumicert/BumicertOwnerAvatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AutoLoadMoreButton } from "../_components/AutoLoadMoreButton";
+import { ProjectScopeTags } from "../_components/ProjectScopeTags";
 import { OwnerFilterBanner, OwnerFilterButton, useOwnerFilter } from "../_components/OwnerFilter";
 import { RecordDrawer } from "../_components/RecordDrawer";
 import { RecordMap } from "../_components/RecordMap";
@@ -133,7 +133,7 @@ export function ProjectsExploreClient({ records: initialRecords = [] }: { record
     if (initialRecords.length > 0) return;
     const controller = new AbortController();
     const requestSeq = ++requestSeqRef.current;
-    const options = { query: deferredQuery, filters, sort, featuredBadgesOnly: !ownerDid, badgeFilters, creatorDid: ownerDid };
+    const options = { query: deferredQuery, filters, sort, featuredBadgesOnly: !ownerDid, badgeFilters, creatorDid: ownerDid, withScopeTags: true };
     const isCurrent = () => requestSeqRef.current === requestSeq && !controller.signal.aborted;
     setLoading(true);
     setLoadingMore(false);
@@ -253,7 +253,7 @@ export function ProjectsExploreClient({ records: initialRecords = [] }: { record
     const base = records;
     const isCurrent = () => requestSeqRef.current === requestSeq && !controller.signal.aborted;
     setLoadingMore(true);
-    fetchProjects(PROJECTS_PAGE_SIZE, cursor, controller.signal, undefined, { query: deferredQuery, filters, sort, featuredBadgesOnly: !ownerDid, badgeFilters, creatorDid: ownerDid })
+    fetchProjects(PROJECTS_PAGE_SIZE, cursor, controller.signal, undefined, { query: deferredQuery, filters, sort, featuredBadgesOnly: !ownerDid, badgeFilters, creatorDid: ownerDid, withScopeTags: true })
       .then((page) => {
         if (!isCurrent()) return;
         setRecords(mergeProjectRecords(base, page.records));
@@ -659,7 +659,7 @@ function ProjectListItem({ record, priority, onOpen }: { record: ProjectRecord; 
         </span>
         <span className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2">
           <span className="flex min-w-0 flex-wrap gap-2 text-xs text-muted-foreground">
-            <span>{t("bumicertCount", { count: record.bumicertCount })}</span>
+            <ProjectScopeTags tags={record.scopeTags ?? []} variant="text" />
             {place ? <span>{place}</span> : null}
           </span>
           <span className="shrink-0 text-xs font-medium text-foreground transition-colors group-hover:text-primary">{t("showDetails")}</span>
@@ -772,18 +772,17 @@ function ProjectCard({
           ) : null}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-border/70 pt-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-secondary-foreground">
-            <BumicertIcon className="h-3.5 w-3.5" />
-            {t("bumicertCount", { count: record.bumicertCount })}
-          </span>
-          {place ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-secondary-foreground">
-              <MapPinIcon className="h-3.5 w-3.5" />
-              {place}
-            </span>
-          ) : null}
-        </div>
+        {(record.scopeTags?.length ?? 0) > 0 || place ? (
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/70 pt-3 text-xs text-muted-foreground">
+            <ProjectScopeTags tags={record.scopeTags ?? []} />
+            {place ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-secondary-foreground">
+                <MapPinIcon className="h-3.5 w-3.5" />
+                {place}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
 
       </div>
     </button>

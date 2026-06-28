@@ -40,3 +40,19 @@ export function formatWorkScopeTag(tag: string, labels: WorkScopeLabels): string
   const knownKey = normalizeKnownWorkScopeKey(tag);
   return knownKey ? labels[knownKey] : formatUnknownWorkScopeTag(tag);
 }
+
+/**
+ * Build the translated work-scope label map from a `common.workScopes`
+ * translator. Mirrors the inline maps used on the Cert and project detail
+ * pages so card components can format scope tags consistently.
+ */
+export function buildWorkScopeLabels(t: (key: string) => string): WorkScopeLabels {
+  return {
+    reforestation: t(WORK_SCOPE_MESSAGE_KEYS.reforestation),
+    forest_protection: t(WORK_SCOPE_MESSAGE_KEYS.forest_protection),
+    biodiversity_monitoring: t(WORK_SCOPE_MESSAGE_KEYS.biodiversity_monitoring),
+    community_stewardship: t(WORK_SCOPE_MESSAGE_KEYS.community_stewardship),
+    carbon_removal: t(WORK_SCOPE_MESSAGE_KEYS.carbon_removal),
+    restoration_maintenance: t(WORK_SCOPE_MESSAGE_KEYS.restoration_maintenance),
+  };
+}

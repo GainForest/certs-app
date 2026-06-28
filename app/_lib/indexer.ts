@@ -2218,7 +2218,7 @@ export type ProjectRecord = {
   country: string | null;
   /** Work-scope / focus tags inherited from the project's single Cert. Only
    *  populated when the project was fetched with `withScopeTags`. */
-  scopeTags: string[];
+  scopeTags?: string[];
 };
 
 type RawCollectionImage =
@@ -2309,6 +2309,9 @@ type ProjectQueryOptions = {
   /** Scope results to a single owner account (DID). Callers should also set
    *  featuredBadgesOnly:false so the account's full catalog is returned. */
   creatorDid?: string | null;
+  /** Resolve each project's single Cert focus tags for card display. Adds one
+   *  batched query per page, so only set it where the tags are shown. */
+  withScopeTags?: boolean;
 };
 
 type ProjectWhere = Record<string, unknown>;

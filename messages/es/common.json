@@ -388,6 +388,17 @@
     "nextImage": "Imagen siguiente",
     "accountMetadataTitle": "{name} — Galería",
     "accountMetadataDescription": "Imágenes de galerías de proyectos compartidas por {name}.",
+    "cleanup": {
+      "title": "Fotos de proyectos eliminados",
+      "body": "Estas fotos quedaron después de eliminar su proyecto. Elimina las que ya no necesites.",
+      "groupLabel": "{count, plural, one {# foto} other {# fotos}} de un proyecto eliminado",
+      "remove": "Eliminar",
+      "removeAll": "Eliminar todo",
+      "confirmRemove": "Confirmar",
+      "cancel": "Cancelar",
+      "imageAlt": "Foto de un proyecto eliminado {index, number}",
+      "error": "No pudimos eliminar estas fotos. Inténtalo de nuevo."
+    },
     "upload": {
       "title": "Añadir imágenes a la galería",
       "body": "Comparte fotos en tu perfil. Arrastra y suelta varias a la vez o elige archivos desde tu dispositivo.",

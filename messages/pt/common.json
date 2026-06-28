@@ -388,6 +388,17 @@
     "nextImage": "Próxima imagem",
     "accountMetadataTitle": "{name} — Galeria",
     "accountMetadataDescription": "Imagens de galerias de projetos compartilhadas por {name}.",
+    "cleanup": {
+      "title": "Fotos de projetos excluídos",
+      "body": "Estas fotos ficaram depois que o projeto delas foi excluído. Remova as que você não precisa mais.",
+      "groupLabel": "{count, plural, one {# foto} other {# fotos}} de um projeto excluído",
+      "remove": "Remover",
+      "removeAll": "Remover tudo",
+      "confirmRemove": "Confirmar",
+      "cancel": "Cancelar",
+      "imageAlt": "Foto de um projeto excluído {index, number}",
+      "error": "Não foi possível remover estas fotos. Tente novamente."
+    },
     "upload": {
       "title": "Adicionar imagens à galeria",
       "body": "Compartilhe fotos no seu perfil. Arraste e solte várias de uma vez ou escolha arquivos do seu dispositivo.",

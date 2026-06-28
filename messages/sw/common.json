@@ -388,6 +388,17 @@
     "nextImage": "Picha inayofuata",
     "accountMetadataTitle": "{name} — Matunzio",
     "accountMetadataDescription": "Picha za matunzio ya miradi zilizoshirikiwa na {name}.",
+    "cleanup": {
+      "title": "Picha kutoka miradi iliyofutwa",
+      "body": "Picha hizi zilibaki baada ya mradi wake kufutwa. Ondoa zile usizohitaji tena.",
+      "groupLabel": "{count, plural, one {picha #} other {picha #}} kutoka mradi uliofutwa",
+      "remove": "Ondoa",
+      "removeAll": "Ondoa zote",
+      "confirmRemove": "Thibitisha",
+      "cancel": "Ghairi",
+      "imageAlt": "Picha kutoka mradi uliofutwa {index, number}",
+      "error": "Hatukuweza kuondoa picha hizi. Tafadhali jaribu tena."
+    },
     "upload": {
       "title": "Ongeza picha za matunzio",
       "body": "Shiriki picha kwenye wasifu wako. Buruta na uangushe kadhaa kwa pamoja, au chagua faili kutoka kifaa chako.",

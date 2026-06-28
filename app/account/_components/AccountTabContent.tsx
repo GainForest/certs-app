@@ -6,7 +6,6 @@ import { ChevronRightIcon } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AccountGalleryClient } from "./AccountGalleryClient";
 import type { GalleryProjectOption } from "./AccountGalleryUploader";
-import { canCreateRecord } from "../../(manage)/manage/_lib/cgs-permissions";
 import { RichText } from "../../_components/RichText";
 import { RecordExplorer } from "../../_components/RecordExplorer";
 import { AccountBumicertsGrid } from "./AccountBumicertsGrid";
@@ -279,7 +278,9 @@ export async function AccountProjectsTabContent({ account, did }: { account: Acc
     return <ProjectsSection target={access.target} />;
   }
 
-  const projects = await fetchProjectsByDid(did, 1000).then((page) => page.records).catch(() => []);
+  const projects = await fetchProjectsByDid(did, 1000, null, undefined, undefined, { withScopeTags: true })
+    .then((page) => page.records)
+    .catch(() => []);
   return <AccountProjectsGrid projects={projects} />;
 }
 
@@ -321,23 +322,38 @@ export async function AccountOrganizationsTabContent({ account }: { account: Acc
 }
 
 export async function AccountGalleryTabContent({ account, did }: { account: AccountRouteData; did: string }) {
-  const [rawGalleries, projects, access] = await Promise.all([
+  const [rawGalleries, projectsResult, access] = await Promise.all([
     fetchProjectImageGalleriesByDid(did).catch(() => []),
-    fetchProjectsByDid(did, 1000).then((page) => page.records).catch(() => []),
+    fetchProjectsByDid(did, 1000)
+      .then((page) => ({ loaded: true, records: page.records }))
+      .catch(() => ({ loaded: false, records: [] as Awaited<ReturnType<typeof fetchProjectsByDid>>["records"] })),
     resolveAccountManageAccess(account.urlIdentifier).catch(() => null),
   ]);
+  const projects = projectsResult.records;
   const galleries = attachProjectTitlesToGalleries(rawGalleries, projects);
 
-  // Only offer uploads to a manager who can actually write records here. The
-  // uploader itself is shown only when the gallery is still empty.
-  const target = access?.status === "allowed" && canCreateRecord(access.target).allowed ? access.target : null;
+  // A manager target lets the client offer uploads (create) and orphan cleanup
+  // (delete); it checks each permission before showing the matching controls.
+  const target = access?.status === "allowed" ? access.target : null;
+
+  // Galleries still pinned to a project that no longer exists are orphaned: the
+  // project was deleted but its photos stayed behind. We only flag them once the
+  // project list has actually loaded, so a failed fetch never hides live ones.
+  const projectUris = new Set(projects.map((project) => project.atUri));
+  const orphanedGalleries = projectsResult.loaded
+    ? galleries.filter((gallery) => gallery.projectUri !== null && !projectUris.has(gallery.projectUri))
+    : [];
+  const orphanedIds = new Set(orphanedGalleries.map((gallery) => gallery.id));
+  const liveGalleries = galleries.filter((gallery) => !orphanedIds.has(gallery.id));
+
   const projectOptions: GalleryProjectOption[] = projects
     .filter((project) => Boolean(project.cid))
     .map((project) => ({ uri: project.atUri, cid: project.cid, title: project.title }));
 
   return (
     <AccountGalleryClient
-      initialGalleries={galleries}
+      initialGalleries={liveGalleries}
+      orphanedGalleries={orphanedGalleries}
       projects={projectOptions}
       target={target}
       accountName={account.displayName}

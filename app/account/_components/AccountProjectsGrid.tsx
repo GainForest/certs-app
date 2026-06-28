@@ -3,9 +3,10 @@
 import Image from "next/image";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FolderKanbanIcon, Layers3Icon, MapPinIcon } from "lucide-react";
+import { FolderKanbanIcon, MapPinIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { RecordDrawer } from "../../_components/RecordDrawer";
+import { ProjectScopeTags } from "../../_components/ProjectScopeTags";
 import { isPdsBlobUrl } from "../../_lib/pds";
 import type { ProjectRecord } from "../../_lib/indexer";
 
@@ -102,18 +103,17 @@ function ProjectCard({ project, onOpen }: { project: ProjectRecord; onOpen: () =
           ) : null}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-border/70 pt-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-secondary-foreground">
-            <Layers3Icon className="h-3.5 w-3.5" />
-            {t("bumicertCount", { count: project.bumicertCount })}
-          </span>
-          {project.locationUri ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-secondary-foreground">
-              <MapPinIcon className="h-3.5 w-3.5" />
-              {t("projectPlace")}
-            </span>
-          ) : null}
-        </div>
+        {(project.scopeTags?.length ?? 0) > 0 || project.locationUri ? (
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/70 pt-3 text-xs text-muted-foreground">
+            <ProjectScopeTags tags={project.scopeTags ?? []} />
+            {project.locationUri ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-secondary-foreground">
+                <MapPinIcon className="h-3.5 w-3.5" />
+                {t("projectPlace")}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </button>
   );
