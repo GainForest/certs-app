@@ -281,17 +281,24 @@ export function rememberActiveContext(context: ActiveAccountContext): void {
 
 // useSyncExternalStore requires a stable snapshot reference when nothing
 // changed. readActiveContext() builds a fresh object each call, so we memoize
-// by serialized value and only hand out a new reference when it actually
-// changes — otherwise React would re-render (or loop) every tick.
-let activeSnapshot: { did: string | null; raw: string; value: ActiveAccountContext } | null = null;
+// and only hand out a new reference when the value actually changes.
+//
+// The cache is keyed PER sessionDid (not a single shared slot): several
+// consumers can read with different sessionDids in the same commit — e.g. the
+// nav reads with the signed-in DID while an engagement bar in an open record
+// drawer reads with "" until its session resolves. A single slot would thrash
+// between those keys, returning a fresh reference every render and driving
+// useSyncExternalStore into an infinite update loop (React error #185).
+const activeSnapshots = new Map<string, { raw: string; value: ActiveAccountContext }>();
 
 function getActiveSnapshot(sessionDid: string): ActiveAccountContext {
   const value = readActiveContext(sessionDid);
   const raw = JSON.stringify(value);
-  if (activeSnapshot && activeSnapshot.did === sessionDid && activeSnapshot.raw === raw) {
-    return activeSnapshot.value;
+  const cached = activeSnapshots.get(sessionDid);
+  if (cached && cached.raw === raw) {
+    return cached.value;
   }
-  activeSnapshot = { did: sessionDid, raw, value };
+  activeSnapshots.set(sessionDid, { raw, value });
   return value;
 }
 
