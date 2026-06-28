@@ -27,6 +27,7 @@ import {
 } from "./FeedActions";
 import { formatCompact, formatCompactUsd, formatRelative } from "../_lib/format";
 import { ResolvedAvatar } from "./ResolvedAvatar";
+import { HeaderContent } from "../_components/HeaderSlots";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -218,6 +219,21 @@ export function FeedClient({
 
   return (
     <section className="-mt-14 pb-24 md:pb-32">
+      {/* Filter tabs live in the top navbar (left slot) so they sit at the same
+          level as search/profile and fill the otherwise-empty header — no
+          second stacked bar, no floating pill. */}
+      <HeaderContent
+        left={
+          <FeedFilterTabs
+            filter={filter}
+            onSelect={selectFilter}
+            onRefresh={() => void loadFirst(filter, "refresh")}
+            refreshing={refreshing}
+            loading={loading}
+          />
+        }
+      />
+
       {/* Hero */}
       <div className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-linear-to-b from-primary/8 via-primary/2 to-transparent" />
@@ -240,46 +256,6 @@ export function FeedClient({
       </div>
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
-        {/* Sticky filter bar — full-bleed within the column with a solid,
-            blurred backdrop + bottom border so rows scroll cleanly beneath it
-            instead of peeking around a floating pill. */}
-        <div className="sticky top-14 z-20 -mx-4 mb-3 border-b border-border/60 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:-mx-6">
-          <div className="flex items-center gap-2 px-4 py-2 sm:px-6">
-            <div className="no-scrollbar flex flex-1 items-center gap-1 overflow-x-auto">
-              {FILTERS.map(({ key, Icon }) => {
-                const active = filter === key;
-                const label = key === "all" ? t("filters.all") : t(`filters.${key}`);
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => selectFilter(key)}
-                    aria-pressed={active}
-                    className={cn(
-                      "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                      active
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    )}
-                  >
-                    <Icon className="size-3.5" />
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              onClick={() => void loadFirst(filter, "refresh")}
-              disabled={refreshing || loading}
-              aria-label={t("refresh")}
-              className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-            >
-              <RefreshCwIcon className={cn("size-4", refreshing && "animate-spin")} />
-            </button>
-          </div>
-        </div>
-
         <FeedComposer signedIn={signedIn} viewerDid={viewerDid} onPost={interactions.addPost} />
 
         <LocalPostsList posts={pendingPosts} viewerDid={viewerDid} />
@@ -347,6 +323,61 @@ export function FeedClient({
         )}
       </div>
     </section>
+  );
+}
+
+/** The filter pills + refresh, rendered inside the top navbar's left slot. The
+ *  strip scrolls horizontally on narrow screens so it never crowds the search
+ *  and profile controls on the right. */
+function FeedFilterTabs({
+  filter,
+  onSelect,
+  onRefresh,
+  refreshing,
+  loading,
+}: {
+  filter: Filter;
+  onSelect: (next: Filter) => void;
+  onRefresh: () => void;
+  refreshing: boolean;
+  loading: boolean;
+}) {
+  const t = useTranslations("common.feed");
+  return (
+    <div className="flex min-w-0 items-center gap-1">
+      <div className="no-scrollbar flex items-center gap-1 overflow-x-auto">
+        {FILTERS.map(({ key, Icon }) => {
+          const active = filter === key;
+          const label = key === "all" ? t("filters.all") : t(`filters.${key}`);
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onSelect(key)}
+              aria-pressed={active}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <Icon className="size-3.5" />
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={onRefresh}
+        disabled={refreshing || loading}
+        aria-label={t("refresh")}
+        className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+      >
+        <RefreshCwIcon className={cn("size-4", refreshing && "animate-spin")} />
+      </button>
+    </div>
   );
 }
 

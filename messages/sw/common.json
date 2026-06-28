@@ -763,7 +763,11 @@
       "yourCommentsNote": "Maoni unayochapisha yanaonekana hapa. Majibu ya umma yataonekana kadri mlisho unavyosasishwa.",
       "errorGeneric": "Hitilafu imetokea. Tafadhali jaribu tena.",
       "loadingComments": "Inapakia maoni…",
-      "noComments": "Hakuna maoni bado. Kuwa wa kwanza."
+      "noComments": "Hakuna maoni bado. Kuwa wa kwanza.",
+      "likedBy": "Imependwa na",
+      "loadingLikes": "Inapakia…",
+      "noLikesYet": "Hakuna mapenzi bado",
+      "moreLikers": "{count, plural, one {+# mwingine} other {+# wengine}}"
     },
     "composer": {
       "placeholder": "Shiriki taarifa mpya na jamii…",

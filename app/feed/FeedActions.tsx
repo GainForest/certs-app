@@ -23,14 +23,17 @@ import {
   emptyEngagement,
   fetchComments,
   fetchEngagement,
+  fetchLikers,
   type Engagement,
   type FeedComment,
+  type Liker,
 } from "@/app/_lib/feed-engagement";
 import { redirectToLogin } from "@/app/_lib/auth-client";
 import { formatRelative } from "@/app/_lib/format";
 import { useAccountList } from "@/app/_lib/account-switcher";
 import { useAddObservations } from "@/app/_components/useAddObservations";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResolvedAvatar } from "./ResolvedAvatar";
 
 /** The signed-in viewer's personal display name + avatar, for composer and
@@ -42,17 +45,23 @@ function useViewerCard(viewerDid: string | null): { name: string | null; avatarU
 
 export type LocalPost = { id: string; text: string; createdAt: string };
 
+export type LikersState = { status: "idle" | "loading" | "ready"; likers: Liker[] };
+
 export type FeedInteractions = {
   viewerDid: string | null;
   getEngagement: (uri: string) => Engagement;
   loadEngagement: (uris: string[]) => void;
   toggleLike: (uri: string) => Promise<void>;
+  getLikers: (uri: string) => LikersState;
+  loadLikers: (uri: string) => void;
   getComments: (uri: string) => FeedComment[] | undefined;
   loadComments: (uri: string) => Promise<void>;
   addComment: (uri: string, text: string) => Promise<void>;
   localPosts: LocalPost[];
   addPost: (text: string) => Promise<void>;
 };
+
+const EMPTY_LIKERS: LikersState = { status: "idle", likers: [] };
 
 const POST_MAX = 300;
 const COMMENT_MAX = 1000;
@@ -66,15 +75,20 @@ function rkeyOf(uri: string): string {
 export function useFeedInteractions(viewerDid: string | null): FeedInteractions {
   const [engagement, setEngagement] = useState<Map<string, Engagement>>(() => new Map());
   const [comments, setComments] = useState<Map<string, FeedComment[]>>(() => new Map());
+  const [likers, setLikers] = useState<Map<string, LikersState>>(() => new Map());
   const [localPosts, setLocalPosts] = useState<LocalPost[]>([]);
   // URIs whose engagement has been requested already (avoids refetch storms).
   const requestedRef = useRef<Set<string>>(new Set());
+  // URIs whose likers have been requested already (avoids refetch storms).
+  const likersRequestedRef = useRef<Set<string>>(new Set());
 
   // Reset everything when the viewer changes (sign in / out).
   useEffect(() => {
     requestedRef.current = new Set();
+    likersRequestedRef.current = new Set();
     setEngagement(new Map());
     setComments(new Map());
+    setLikers(new Map());
     setLocalPosts([]);
   }, [viewerDid]);
 
@@ -119,31 +133,86 @@ export function useFeedInteractions(viewerDid: string | null): FeedInteractions 
     });
   }, []);
 
+  // Optimistically add/remove the viewer from a subject's likers list so the
+  // hover card reflects the viewer's own like immediately; the next lazy fetch
+  // reconciles names/order once the indexer catches up.
+  const patchViewerLiker = useCallback(
+    (uri: string, liked: boolean) => {
+      if (!viewerDid) return;
+      likersRequestedRef.current.delete(uri); // allow a fresh reconcile on next hover
+      setLikers((prev) => {
+        const existing = prev.get(uri);
+        if (!existing) return prev;
+        const without = existing.likers.filter((l) => l.did !== viewerDid);
+        const nextLikers = liked
+          ? [{ did: viewerDid, name: null, avatarRef: null }, ...without]
+          : without;
+        const next = new Map(prev);
+        next.set(uri, { ...existing, likers: nextLikers });
+        return next;
+      });
+    },
+    [viewerDid],
+  );
+
   const toggleLike = useCallback(
     async (uri: string) => {
       const current = engagement.get(uri) ?? emptyEngagement();
       if (current.viewerLikeUri) {
         const likeUri = current.viewerLikeUri;
         setOne(uri, { likeCount: Math.max(0, current.likeCount - 1), viewerLikeUri: null });
+        patchViewerLiker(uri, false);
         try {
           if (likeUri !== "optimistic") await deleteFeedLike(rkeyOf(likeUri));
         } catch (error) {
           setOne(uri, { likeCount: current.likeCount, viewerLikeUri: likeUri });
+          patchViewerLiker(uri, true);
           throw error;
         }
         return;
       }
       setOne(uri, { likeCount: current.likeCount + 1, viewerLikeUri: "optimistic" });
+      patchViewerLiker(uri, true);
       try {
         const result = await createFeedLike(uri);
         setOne(uri, { viewerLikeUri: result.uri });
       } catch (error) {
         setOne(uri, { likeCount: current.likeCount, viewerLikeUri: null });
+        patchViewerLiker(uri, false);
         throw error;
       }
     },
-    [engagement, setOne],
+    [engagement, setOne, patchViewerLiker],
   );
+
+  const getLikers = useCallback((uri: string): LikersState => likers.get(uri) ?? EMPTY_LIKERS, [likers]);
+
+  // Lazily load (once) the accounts that liked a subject, for the hover card.
+  const loadLikers = useCallback((uri: string) => {
+    if (!uri.startsWith("at://") || likersRequestedRef.current.has(uri)) return;
+    likersRequestedRef.current.add(uri);
+    setLikers((prev) => {
+      const next = new Map(prev);
+      next.set(uri, { status: "loading", likers: prev.get(uri)?.likers ?? [] });
+      return next;
+    });
+    void fetchLikers(uri)
+      .then((list) => {
+        setLikers((prev) => {
+          const next = new Map(prev);
+          next.set(uri, { status: "ready", likers: list });
+          return next;
+        });
+      })
+      .catch(() => {
+        likersRequestedRef.current.delete(uri);
+        setLikers((prev) => {
+          const next = new Map(prev);
+          next.set(uri, { status: "idle", likers: prev.get(uri)?.likers ?? [] });
+          return next;
+        });
+      });
+  }, []);
 
   const getComments = useCallback((uri: string) => comments.get(uri), [comments]);
 
@@ -192,6 +261,8 @@ export function useFeedInteractions(viewerDid: string | null): FeedInteractions 
     getEngagement,
     loadEngagement,
     toggleLike,
+    getLikers,
+    loadLikers,
     getComments,
     loadComments,
     addComment,
@@ -357,6 +428,125 @@ function ComposerObservationButton({ sessionDid }: { sessionDid: string }) {
   );
 }
 
+// ── Like button with a "who liked this" hover card ───────────────────────────
+
+/** Heart toggle + count, shared by feed rows and comment replies. Hovering (or
+ *  focusing) the button lazily loads the accounts that liked the subject and
+ *  shows them in a tooltip. */
+export function LikeButton({
+  subjectUri,
+  signedIn,
+  interactions,
+  size = "default",
+}: {
+  subjectUri: string;
+  signedIn: boolean;
+  interactions: FeedInteractions;
+  size?: "default" | "sm";
+}) {
+  const t = useTranslations("common.feed");
+  const engagement = interactions.getEngagement(subjectUri);
+  const liked = Boolean(engagement.viewerLikeUri);
+  const [busy, setBusy] = useState(false);
+  const hasLikes = engagement.likeCount > 0;
+
+  async function onLike() {
+    if (!signedIn) {
+      redirectToLogin();
+      return;
+    }
+    if (busy) return;
+    setBusy(true);
+    try {
+      await interactions.toggleLike(subjectUri);
+    } catch {
+      // The optimistic state already reverted; nothing more to surface here.
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const prefetch = () => {
+    if (hasLikes) interactions.loadLikers(subjectUri);
+  };
+
+  const button = (
+    <button
+      type="button"
+      onClick={() => void onLike()}
+      onMouseEnter={prefetch}
+      onFocus={prefetch}
+      aria-pressed={liked}
+      aria-label={liked ? t("actions.liked") : t("actions.like")}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full font-medium transition-colors hover:bg-muted",
+        size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
+        liked ? "text-rose-500" : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      <HeartIcon className={cn(size === "sm" ? "size-3.5" : "size-4", liked && "fill-current")} />
+      <span className="tabular-nums">{hasLikes ? engagement.likeCount : t("actions.like")}</span>
+    </button>
+  );
+
+  if (!hasLikes) return button;
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip onOpenChange={(open) => open && interactions.loadLikers(subjectUri)}>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipContent side="top" className="max-w-56">
+          <LikersTooltipBody
+            state={interactions.getLikers(subjectUri)}
+            viewerDid={interactions.viewerDid}
+            viewerLiked={liked}
+          />
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function LikersTooltipBody({
+  state,
+  viewerDid,
+  viewerLiked,
+}: {
+  state: LikersState;
+  viewerDid: string | null;
+  viewerLiked: boolean;
+}) {
+  const t = useTranslations("common.feed");
+
+  // Ensure the viewer sees their own like immediately, even while the indexer
+  // is still catching up to it.
+  const likers = [...state.likers];
+  if (viewerLiked && viewerDid && !likers.some((l) => l.did === viewerDid)) {
+    likers.unshift({ did: viewerDid, name: null, avatarRef: null });
+  }
+
+  if (likers.length === 0) {
+    return <span>{state.status === "loading" ? t("actions.loadingLikes") : t("actions.noLikesYet")}</span>;
+  }
+
+  const MAX = 8;
+  const names = likers.map((l) => (viewerDid && l.did === viewerDid ? t("actions.you") : l.name || t("anonymous")));
+  const shown = names.slice(0, MAX);
+  const extra = names.length - shown.length;
+
+  return (
+    <div className="text-left">
+      <p className="mb-1 font-medium">{t("actions.likedBy")}</p>
+      <ul className="space-y-0.5">
+        {shown.map((name, i) => (
+          <li key={i} className="truncate">{name}</li>
+        ))}
+      </ul>
+      {extra > 0 ? <p className="mt-1 opacity-80">{t("actions.moreLikers", { count: extra })}</p> : null}
+    </div>
+  );
+}
+
 // ── Per-row action bar (like + comment) ──────────────────────────────────────
 
 export function FeedActionBar({
@@ -370,27 +560,7 @@ export function FeedActionBar({
 }) {
   const t = useTranslations("common.feed");
   const engagement = interactions.getEngagement(subjectUri);
-  const liked = Boolean(engagement.viewerLikeUri);
   const [open, setOpen] = useState(false);
-  const [likeBusy, setLikeBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function onLike() {
-    if (!signedIn) {
-      redirectToLogin();
-      return;
-    }
-    if (likeBusy) return;
-    setLikeBusy(true);
-    setError(null);
-    try {
-      await interactions.toggleLike(subjectUri);
-    } catch {
-      setError(t("actions.errorGeneric"));
-    } finally {
-      setLikeBusy(false);
-    }
-  }
 
   function onCommentClick() {
     if (!signedIn) {
@@ -403,24 +573,12 @@ export function FeedActionBar({
   return (
     <div className="mt-2">
       <div className="flex items-center gap-1 text-muted-foreground">
-        <button
-          type="button"
-          onClick={() => void onLike()}
-          aria-pressed={liked}
-          aria-label={liked ? t("actions.liked") : t("actions.like")}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted",
-            liked ? "text-rose-500" : "hover:text-foreground",
-          )}
-        >
-          <HeartIcon className={cn("size-4", liked && "fill-current")} />
-          <span className="tabular-nums">{engagement.likeCount > 0 ? engagement.likeCount : t("actions.like")}</span>
-        </button>
+        <LikeButton subjectUri={subjectUri} signedIn={signedIn} interactions={interactions} />
         <button
           type="button"
           onClick={onCommentClick}
           aria-expanded={open}
-          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted hover:text-foreground"
+          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <MessageCircleIcon className="size-4" />
           <span className="tabular-nums">
@@ -429,35 +587,23 @@ export function FeedActionBar({
         </button>
       </div>
 
-      {error ? <p className="px-2.5 pt-1 text-xs text-destructive">{error}</p> : null}
-
-      {open ? (
-        <CommentPanel
-          subjectUri={subjectUri}
-          viewerDid={interactions.viewerDid}
-          comments={interactions.getComments(subjectUri)}
-          loadComments={interactions.loadComments}
-          onSubmit={(text) => interactions.addComment(subjectUri, text)}
-        />
-      ) : null}
+      {open ? <CommentPanel subjectUri={subjectUri} signedIn={signedIn} interactions={interactions} /> : null}
     </div>
   );
 }
 
 function CommentPanel({
   subjectUri,
-  viewerDid,
-  comments,
-  loadComments,
-  onSubmit,
+  signedIn,
+  interactions,
 }: {
   subjectUri: string;
-  viewerDid: string | null;
-  comments: FeedComment[] | undefined;
-  loadComments: (uri: string) => Promise<void>;
-  onSubmit: (text: string) => Promise<void>;
+  signedIn: boolean;
+  interactions: FeedInteractions;
 }) {
   const t = useTranslations("common.feed");
+  const { viewerDid, getComments, loadComments, addComment, loadEngagement } = interactions;
+  const comments = getComments(subjectUri);
   const viewer = useViewerCard(viewerDid);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -481,6 +627,13 @@ function CommentPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subjectUri]);
 
+  // Pull like counts for the replies so each one can show + toggle its heart.
+  const commentUris = (comments ?? []).map((c) => c.uri).join("\u0000");
+  useEffect(() => {
+    const uris = commentUris ? commentUris.split("\u0000") : [];
+    if (uris.length > 0) loadEngagement(uris);
+  }, [commentUris, loadEngagement]);
+
   const canSend = text.trim().length > 0 && text.length <= COMMENT_MAX && !busy;
 
   async function send() {
@@ -488,7 +641,7 @@ function CommentPanel({
     setBusy(true);
     setError(null);
     try {
-      await onSubmit(text.trim());
+      await addComment(subjectUri, text.trim());
       setText("");
     } catch {
       setError(t("actions.errorGeneric"));
@@ -519,12 +672,17 @@ function CommentPanel({
                   className="mt-0.5 size-7"
                   sizes="28px"
                 />
-                <div className="min-w-0 flex-1 text-sm">
-                  <span className="font-medium text-foreground">{name}</span>{" "}
-                  <span className="text-xs text-muted-foreground/70">
-                    {c.createdAt ? formatRelative(c.createdAt) : t("actions.postedJustNow")}
-                  </span>
-                  <p className="whitespace-pre-wrap break-words text-foreground/90">{c.text}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm">
+                    <span className="font-medium text-foreground">{name}</span>{" "}
+                    <span className="text-xs text-muted-foreground/70">
+                      {c.createdAt ? formatRelative(c.createdAt) : t("actions.postedJustNow")}
+                    </span>
+                    <p className="whitespace-pre-wrap break-words text-foreground/90">{c.text}</p>
+                  </div>
+                  <div className="-ml-2 mt-0.5">
+                    <LikeButton subjectUri={c.uri} signedIn={signedIn} interactions={interactions} size="sm" />
+                  </div>
                 </div>
               </li>
             );

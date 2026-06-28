@@ -36,6 +36,13 @@ export type FeedComment = {
   authorAvatarRef: string | null;
 };
 
+/** One account that liked a subject, for the "who liked this" hover. */
+export type Liker = {
+  did: string;
+  name: string | null;
+  avatarRef: string | null;
+};
+
 export function emptyEngagement(): Engagement {
   return { likeCount: 0, commentCount: 0, viewerLikeUri: null };
 }
@@ -149,6 +156,49 @@ type CommentNode = {
     avatar?: { image?: { ref?: string | null } | null } | null;
   } | null;
 };
+
+const LIKERS_FOR_SUBJECT_QUERY = `
+  query FeedLikersForSubject($uri: String!) {
+    appGainforestFeedLike(first: 100, where: { subject: { uri: { eq: $uri } } }) {
+      edges {
+        node {
+          did
+          ${CERTIFIED_PROFILE_DATA_FIELDS}
+        }
+      }
+    }
+  }
+`;
+
+type LikerNode = {
+  did?: string | null;
+  certifiedProfileData?: {
+    displayName?: string | null;
+    avatar?: { image?: { ref?: string | null } | null } | null;
+  } | null;
+};
+
+/** Fetch the accounts that liked one subject (newest indexer order), de-duped
+ *  by DID, for the like-button hover card. */
+export async function fetchLikers(uri: string, signal?: AbortSignal): Promise<Liker[]> {
+  const data = await indexerQuery<{
+    appGainforestFeedLike?: { edges?: Array<{ node?: LikerNode | null } | null> | null } | null;
+  }>(LIKERS_FOR_SUBJECT_QUERY, { uri }, signal).catch(() => null);
+
+  const seen = new Set<string>();
+  const likers: Liker[] = [];
+  for (const edge of data?.appGainforestFeedLike?.edges ?? []) {
+    const node = edge?.node;
+    if (!node?.did || seen.has(node.did)) continue;
+    seen.add(node.did);
+    likers.push({
+      did: node.did,
+      name: node.certifiedProfileData?.displayName?.trim() || null,
+      avatarRef: normaliseRef(node.certifiedProfileData?.avatar?.image?.ref),
+    });
+  }
+  return likers;
+}
 
 /** Fetch the full comment thread (reply-posts) for one subject, oldest-first. */
 export async function fetchComments(uri: string, signal?: AbortSignal): Promise<FeedComment[]> {

@@ -763,7 +763,11 @@
       "yourCommentsNote": "Comments you post show up here. Public replies will appear as the feed catches up.",
       "errorGeneric": "Something went wrong. Please try again.",
       "loadingComments": "Loading comments…",
-      "noComments": "No comments yet. Be the first."
+      "noComments": "No comments yet. Be the first.",
+      "likedBy": "Liked by",
+      "loadingLikes": "Loading…",
+      "noLikesYet": "No likes yet",
+      "moreLikers": "{count, plural, one {+# other} other {+# others}}"
     },
     "composer": {
       "placeholder": "Share an update with the community…",

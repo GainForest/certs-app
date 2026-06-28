@@ -763,7 +763,11 @@
       "yourCommentsNote": "Os comentários que você publicar aparecem aqui. As respostas públicas vão surgir conforme o feed for atualizado.",
       "errorGeneric": "Algo deu errado. Tente novamente.",
       "loadingComments": "Carregando comentários…",
-      "noComments": "Ainda não há comentários. Seja o primeiro."
+      "noComments": "Ainda não há comentários. Seja o primeiro.",
+      "likedBy": "Curtido por",
+      "loadingLikes": "Carregando…",
+      "noLikesYet": "Ainda sem curtidas",
+      "moreLikers": "{count, plural, one {+# outro} other {+# outros}}"
     },
     "composer": {
       "placeholder": "Compartilhe uma novidade com a comunidade…",

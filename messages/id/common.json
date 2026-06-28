@@ -763,7 +763,11 @@
       "yourCommentsNote": "Komentar yang Anda kirim muncul di sini. Balasan publik akan muncul seiring feed diperbarui.",
       "errorGeneric": "Terjadi kesalahan. Silakan coba lagi.",
       "loadingComments": "Memuat komentar…",
-      "noComments": "Belum ada komentar. Jadilah yang pertama."
+      "noComments": "Belum ada komentar. Jadilah yang pertama.",
+      "likedBy": "Disukai oleh",
+      "loadingLikes": "Memuat…",
+      "noLikesYet": "Belum ada suka",
+      "moreLikers": "{count, plural, other {+# lainnya}}"
     },
     "composer": {
       "placeholder": "Bagikan kabar terbaru dengan komunitas…",
