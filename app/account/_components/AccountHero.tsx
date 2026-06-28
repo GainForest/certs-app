@@ -155,7 +155,6 @@ export function AccountHero({
               </Link>
             </Button>
           ) : null}
-          <FollowButton targetDid={account.did} name={account.displayName} />
         </div>
       </div>
 
@@ -208,6 +207,7 @@ export function AccountHero({
                 </span>
               </Button>
             ) : null}
+            <FollowButton targetDid={account.did} name={account.displayName} />
             {account.website ? (
               <Button asChild variant="outline" size="icon" title={formatWebsite(account.website)} aria-label={heroT("openSocialLink", { link: formatWebsite(account.website) })}>
                 <Link href={externalHref(account.website)} target="_blank" rel="noopener noreferrer">
@@ -226,7 +226,11 @@ export function AccountHero({
               );
             })}
           </div>
-        ) : null}
+        ) : (
+          <div className="mt-5">
+            <FollowButton targetDid={account.did} name={account.displayName} />
+          </div>
+        )}
       </div>
     </section>
     </FollowProvider>

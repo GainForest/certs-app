@@ -7,18 +7,17 @@ import {
   BadgeCheckIcon,
   BinocularsIcon,
   Building2Icon,
-  CalendarIcon,
   GlobeIcon,
   Loader2Icon,
-  MapPinIcon,
   StampIcon,
   UserRoundIcon,
 } from "lucide-react";
 import type { AccountSummary } from "../_lib/indexer";
 import { resolveAccountSummary, getCachedAccountSummary } from "../_lib/account-summary-client";
 import { accountHref } from "../_lib/urls";
-import { formatCompact, formatCountry } from "../_lib/format";
+import { formatCompact } from "../_lib/format";
 import { ResolvedAvatar } from "./ResolvedAvatar";
+import { FollowButton, FollowProvider, FollowStats } from "@/app/_components/FollowButton";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
 
@@ -82,7 +81,7 @@ export function AccountHoverCard({
       <HoverCardTrigger asChild>
         <span className={cn("cursor-pointer", triggerClassName)}>{children}</span>
       </HoverCardTrigger>
-      <HoverCardContent>
+      <HoverCardContent className="w-80">
         <AccountCardBody
           did={did}
           summary={summary}
@@ -112,113 +111,92 @@ function AccountCardBody({
 
   const displayName = summary?.displayName?.trim() || fallbackName?.trim() || t("unnamed");
   const isOrg = Boolean(summary?.hasCertifiedOrg);
+  const handle = summary?.handle?.trim() || null;
   const bio = summary?.bio?.trim() || null;
-  const country = summary?.country ? formatCountry(summary.country) : null;
-  const since = formatSince(summary?.foundedDate ?? summary?.createdAt ?? null);
   const website = summary?.website?.trim() || null;
+  const verified = Boolean(summary?.hasCertifiedProfile) || isOrg;
   const kindLabel = isOrg ? summary?.certOrgType?.trim() || t("organization") : t("member");
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Identity */}
-      <Link
-        href={accountHref(did)}
-        className="group/header flex items-start gap-3 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-      >
-        <ResolvedAvatar
-          did={did}
-          imageUrl={summary?.avatarUrl ?? null}
-          avatarRef={summary?.avatarUrl ? null : fallbackAvatarRef}
-          name={displayName}
-          fallbackIcon={isOrg ? <Building2Icon className="size-5" /> : <UserRoundIcon className="size-5" />}
-          className="size-12"
-          sizes="48px"
-        />
-        <div className="min-w-0 flex-1 pt-0.5">
-          <p className="flex items-center gap-1 truncate text-sm font-semibold text-foreground group-hover/header:underline">
-            <span className="truncate">{displayName}</span>
-            {summary?.hasCertifiedProfile || isOrg ? (
+    <FollowProvider targetDid={did}>
+      <div className="flex flex-col gap-3">
+        {/* Avatar + Follow */}
+        <div className="flex items-start justify-between gap-3">
+          <Link
+            href={accountHref(did)}
+            className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            <ResolvedAvatar
+              did={did}
+              imageUrl={summary?.avatarUrl ?? null}
+              avatarRef={summary?.avatarUrl ? null : fallbackAvatarRef}
+              name={displayName}
+              fallbackIcon={isOrg ? <Building2Icon className="size-6" /> : <UserRoundIcon className="size-6" />}
+              className="size-14"
+              sizes="56px"
+            />
+          </Link>
+          <FollowButton targetDid={did} name={displayName} />
+        </div>
+
+        {/* Name + handle */}
+        <div className="min-w-0">
+          <Link href={accountHref(did)} className="group/name inline-flex max-w-full items-center gap-1">
+            <span className="truncate text-[15px] font-semibold leading-tight text-foreground group-hover/name:underline">
+              {displayName}
+            </span>
+            {verified ? (
               <BadgeCheckIcon className="size-3.5 shrink-0 text-primary" aria-label={t("verified")} />
             ) : null}
+          </Link>
+          <p className="truncate text-sm text-muted-foreground">{handle ? `@${handle}` : kindLabel}</p>
+        </div>
+
+        {/* Followers / following */}
+        <FollowStats targetDid={did} />
+
+        {/* Bio */}
+        {bio ? (
+          <p className="line-clamp-3 text-sm leading-relaxed text-foreground/80">{bio}</p>
+        ) : status === "loading" ? (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Loader2Icon className="size-3 animate-spin" />
+            {t("loading")}
           </p>
-          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-            {isOrg ? (
-              <Building2Icon className="size-3 shrink-0" />
-            ) : (
-              <UserRoundIcon className="size-3 shrink-0" />
-            )}
-            <span className="truncate">{kindLabel}</span>
-          </p>
-        </div>
-      </Link>
+        ) : status === "error" ? (
+          <p className="text-xs text-muted-foreground">{t("unavailable")}</p>
+        ) : null}
 
-      {/* Bio */}
-      {bio ? (
-        <p className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">{bio}</p>
-      ) : status === "loading" ? (
-        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Loader2Icon className="size-3 animate-spin" />
-          {t("loading")}
-        </p>
-      ) : status === "error" ? (
-        <p className="text-xs text-muted-foreground">{t("unavailable")}</p>
-      ) : null}
+        {/* Website */}
+        {website ? (
+          <a
+            href={externalHref(website)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 truncate text-sm text-primary hover:underline"
+          >
+            <GlobeIcon className="size-3.5 shrink-0" />
+            <span className="truncate">{formatWebsite(website)}</span>
+          </a>
+        ) : null}
 
-      {/* Meta */}
-      {(country || since) && (
-        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-          {country ? (
-            <span className="flex items-center gap-1.5">
-              <MapPinIcon className="size-3 shrink-0" />
-              <span className="truncate">{country}</span>
-            </span>
-          ) : null}
-          {since ? (
-            <span className="flex items-center gap-1.5">
-              <CalendarIcon className="size-3 shrink-0" />
-              <span className="truncate">{t("since", { date: since })}</span>
-            </span>
-          ) : null}
-        </div>
-      )}
-
-      {/* Stats */}
-      {summary && (summary.observationCount > 0 || summary.bumicertCount > 0) ? (
-        <div className="grid grid-cols-2 gap-2">
-          <Stat
-            icon={<BinocularsIcon className="size-3.5" />}
-            value={formatCompact(summary.observationCount)}
-            label={t("sightings", { count: summary.observationCount })}
-          />
-          <Stat
-            icon={<StampIcon className="size-3.5" />}
-            value={formatCompact(summary.bumicertCount)}
-            label={t("certs", { count: summary.bumicertCount })}
-          />
-        </div>
-      ) : null}
-
-      {/* Website */}
-      {website ? (
-        <a
-          href={externalHref(website)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 truncate text-xs text-primary hover:underline"
-        >
-          <GlobeIcon className="size-3 shrink-0" />
-          <span className="truncate">{formatWebsite(website)}</span>
-        </a>
-      ) : null}
-
-      {/* View profile */}
-      <Link
-        href={accountHref(did)}
-        className="mt-0.5 inline-flex w-full items-center justify-center rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-      >
-        {t("viewProfile")}
-      </Link>
-    </div>
+        {/* GainForest contribution stats */}
+        {summary && (summary.observationCount > 0 || summary.bumicertCount > 0) ? (
+          <div className="grid grid-cols-2 gap-2 border-t border-border/60 pt-3">
+            <Stat
+              icon={<BinocularsIcon className="size-3.5" />}
+              value={formatCompact(summary.observationCount)}
+              label={t("sightings", { count: summary.observationCount })}
+            />
+            <Stat
+              icon={<StampIcon className="size-3.5" />}
+              value={formatCompact(summary.bumicertCount)}
+              label={t("certs", { count: summary.bumicertCount })}
+            />
+          </div>
+        ) : null}
+      </div>
+    </FollowProvider>
   );
 }
 
@@ -232,13 +210,6 @@ function Stat({ icon, value, label }: { icon: ReactNode; value: string; label: s
       <span className="truncate text-[11px] leading-none text-muted-foreground">{label}</span>
     </div>
   );
-}
-
-function formatSince(iso: string | null): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString(undefined, { month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 function formatWebsite(url: string): string {
