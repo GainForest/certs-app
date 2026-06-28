@@ -355,6 +355,7 @@
     "members": "Miembros"
   },
   "accountOrganizations": {
+    "memberOf": "Miembro de",
     "emptyEyebrow": "Sin organizaciones",
     "empty": "Todavía no perteneces a ninguna organización.",
     "emptyHeroCta": "Crear una organización",

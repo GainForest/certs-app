@@ -355,6 +355,7 @@
     "members": "Wanachama"
   },
   "accountOrganizations": {
+    "memberOf": "Mwanachama wa",
     "emptyEyebrow": "Hakuna mashirika",
     "empty": "Bado hujajiunga na shirika lolote.",
     "emptyHeroCta": "Unda shirika",

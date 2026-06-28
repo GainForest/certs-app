@@ -355,6 +355,7 @@
     "members": "Anggota"
   },
   "accountOrganizations": {
+    "memberOf": "Anggota dari",
     "emptyEyebrow": "Belum ada organisasi",
     "empty": "Kamu belum tergabung dalam organisasi mana pun.",
     "emptyHeroCta": "Buat organisasi",
