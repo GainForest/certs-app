@@ -566,9 +566,11 @@ export function RecordDrawer({
             )}
           </div>
 
-          {/* Like + comment a sighting straight from the drawer — the same
-              interaction as the feed + the full sighting page. */}
-          {record.kind === "occurrence" && (
+          {/* Like + comment straight from the drawer — the same interaction as
+              the feed and the full detail page. Available for sightings,
+              projects and organizations (each likes its own record URI, so the
+              count matches the feed). */}
+          {(record.kind === "occurrence" || record.kind === "project" || record.kind === "site") && (
             <div className="mt-4 border-t border-border-soft pt-3">
               <RecordEngagement subjectUri={record.atUri} />
             </div>

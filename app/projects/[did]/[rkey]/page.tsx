@@ -8,6 +8,7 @@ import { fetchRecordByUri } from "../../../_lib/indexer";
 import { isPdsBlobUrl } from "../../../_lib/pds";
 import { getAccountRouteData, readAccountRouteParams } from "../../../account/_lib/account-route";
 import { accountHref, localProjectHref } from "../../../_lib/urls";
+import { RecordEngagement } from "../../../_components/RecordEngagement";
 import { getRequestOrigin } from "../../../_lib/request-origin";
 import {
   ProjectDetailView,
@@ -89,6 +90,9 @@ export default async function ProjectDetailPage({
           // (collection) URI — older projects attached their updates to the
           // collection, which is where this project's timeline lives.
           timelineMatchUris={[routeData.record.atUri, record.atUri]}
+          // Like + comment target the project (collection) record, so the count
+          // matches the activity feed (which folds Certs into their project).
+          engagementSubjectUri={record.atUri}
         />
       );
     }
@@ -170,6 +174,11 @@ async function ProjectFallback({
             ) : (
               <p className="mt-6 max-w-2xl text-[15px] leading-[1.6] text-foreground/60">{t("noCerts")}</p>
             )}
+
+            {/* Like + comment this project — same records + counts as the feed. */}
+            <div className="mt-6 border-t border-border-soft pt-4">
+              <RecordEngagement subjectUri={record.atUri} />
+            </div>
           </div>
 
           {owner ? (

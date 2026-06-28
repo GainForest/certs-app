@@ -29,6 +29,7 @@ import { AuthorInline } from "../../../_components/AuthorChip";
 import { PreferredAccountLink } from "../../../_components/PreferredLinks";
 import { ProjectGalleryViewer } from "../../../_components/ProjectGalleryViewer";
 import { RichText } from "../../../_components/RichText";
+import { RecordEngagement } from "../../../_components/RecordEngagement";
 import { SocialGlyph } from "../../../_components/SocialIcon";
 import { StatsTileGrid, type StatsTileItem } from "../../../_components/StatsTile";
 import { fetchReceipts, type DonorRef, type FundingReceipt } from "../../../_lib/dashboard";
@@ -535,6 +536,7 @@ export async function ProjectDetailView({
   editLabel,
   timelineMatchUris,
   projectRkey,
+  engagementSubjectUri,
 }: {
   routeData: RouteData;
   basePath: string;
@@ -546,6 +548,10 @@ export async function ProjectDetailView({
   timelineMatchUris?: string[];
   /** Project (collection) rkey, so deleting removes the project, not the Cert. */
   projectRkey?: string;
+  /** When set, render the feed's like + comment bar for this record URI under
+   *  the hero (the project page passes its collection URI so the count matches
+   *  the activity feed). Omitted on standalone Cert pages. */
+  engagementSubjectUri?: string;
 }) {
   const { record, detail, owner, fundingConfig, authSession } = routeData;
   const matchUris = timelineMatchUris && timelineMatchUris.length > 0 ? timelineMatchUris : [record.atUri];
@@ -738,6 +744,12 @@ export async function ProjectDetailView({
                 unoptimized={!isPdsBlobUrl(record.imageUrl)}
                 className="object-cover"
               />
+            </div>
+          ) : null}
+          {/* Like + comment this project — same records + counts as the feed. */}
+          {engagementSubjectUri ? (
+            <div className="mt-5 border-t border-border-soft pt-3">
+              <RecordEngagement subjectUri={engagementSubjectUri} />
             </div>
           ) : null}
         </header>
