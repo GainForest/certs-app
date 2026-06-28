@@ -13,6 +13,7 @@ import {
   FolderKanbanIcon,
   HeartHandshakeIcon,
   HeartIcon,
+  ImagePlusIcon,
   LeafIcon,
   Loader2Icon,
   MenuIcon,
@@ -21,7 +22,6 @@ import {
   Share2Icon,
   SparkleIcon,
   SunIcon,
-  UploadCloudIcon,
   UserIcon,
 } from "lucide-react";
 import { createContext, Suspense, useContext, useEffect, useState, type MouseEvent } from "react";
@@ -498,7 +498,7 @@ function UnifiedSidebar({
           {authSession?.isLoggedIn ? (
             <>
               <BumicertCreationCard sessionDid={authSession.did} />
-              <AddDataCard sessionDid={authSession.did} />
+              <AddObservationsCard sessionDid={authSession.did} />
             </>
           ) : (
             <SignInPrompt collapsed={collapsed} />
@@ -704,17 +704,6 @@ function NavLeaf({ item, isActive, index, paired = false }: { item: NavLeaf; isA
 // account (or shows sign-in). Signed-in links target the profile directly via
 // the did-based builders below.
 const PERSONAL_PROJECT_NEW_HREF = manageHref({ basePath: "/manage" }, "projects", { mode: "new" });
-const PERSONAL_ADD_DATA_HREF = manageHref({ basePath: "/manage" }, "add");
-
-function addDataHrefForGroup(identifier: string): string {
-  return manageHref({ basePath: groupManageBasePath(identifier) }, "add");
-}
-
-// Personal context targets the signed-in user's own profile route directly
-// (manageHref maps /account/<id>/manage → /account/<id>), never /manage.
-function addDataHrefForPersonal(did: string): string {
-  return manageHref({ basePath: groupManageBasePath(did) }, "add");
-}
 
 type ContextLinkProps = {
   sessionDid: string | null;
@@ -728,6 +717,25 @@ const CreateProjectModalLazy = dynamic(
   () =>
     import("@/app/(manage)/manage/projects/_components/ManageProjectsClient").then((mod) => ({
       default: mod.CreateProjectModal,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <ModalContent dismissible={false} className="w-full">
+        <div className="flex h-48 items-center justify-center">
+          <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+        </div>
+      </ModalContent>
+    ),
+  },
+);
+
+// The quick "Add observations" modal (iNaturalist-style drop zone + editable
+// cards). Code-split so its image/EXIF/leaflet deps load only when opened.
+const AddObservationsModalLazy = dynamic(
+  () =>
+    import("@/app/(manage)/manage/observations/_components/AddObservationsModal").then((mod) => ({
+      default: mod.AddObservationsModal,
     })),
   {
     ssr: false,
@@ -827,17 +835,73 @@ function AuthenticatedCreateProjectButton({
   );
 }
 
-function AddDataLink({ sessionDid, className, children }: ContextLinkProps) {
+// Opens the quick "Add observations" modal over the current page, honoring the
+// active account context (the org's repo for a group context, the signed-in
+// user otherwise) so new observations land in the right place.
+function AddObservationsButton({
+  sessionDid,
+  className,
+  children,
+}: {
+  sessionDid: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const modal = useModal();
+  const { groups } = useAccountList(sessionDid);
+  const [activeContext, setActiveContext] = useActiveAccountContext(sessionDid);
+
+  const open = () => {
+    let target: ManageTarget;
+    if (activeContext.type === "group") {
+      const activeGroup = groups.find((group) => group.groupDid === activeContext.did) ?? null;
+      const identifier = activeGroup
+        ? switcherGroupIdentifier(activeGroup)
+        : activeContext.identifier?.trim() || activeContext.did;
+      if (activeGroup) {
+        setActiveContext({ type: "group", did: activeGroup.groupDid, identifier, role: activeGroup.role });
+      }
+      target = groupManageTarget({
+        did: activeContext.did,
+        accountKind: "organization",
+        identifier,
+        role: activeGroup?.role ?? null,
+        currentUserDid: sessionDid,
+      });
+    } else {
+      target = personalManageTarget({ did: sessionDid, accountKind: "user", identifier: sessionDid });
+    }
+
+    const observationsHref = manageHref({ basePath: groupManageBasePath(target.identifier) }, "observations");
+    const closeModal = () => {
+      void modal.hide().then(() => modal.clear());
+    };
+    modal.pushModal(
+      {
+        id: "add-observations",
+        dialogWidth: "max-w-2xl w-[calc(100%-2rem)]",
+        forceDialog: true,
+        content: (
+          <AddObservationsModalLazy
+            target={target}
+            onClose={closeModal}
+            onViewObservations={() => {
+              closeModal();
+              router.push(observationsHref);
+            }}
+          />
+        ),
+      },
+      true,
+    );
+    void modal.show();
+  };
+
   return (
-    <ManageContextLink
-      sessionDid={sessionDid}
-      personalHref={PERSONAL_ADD_DATA_HREF}
-      personalHrefForDid={addDataHrefForPersonal}
-      hrefForGroup={addDataHrefForGroup}
-      className={className}
-    >
+    <button type="button" onClick={open} className={className}>
       {children}
-    </ManageContextLink>
+    </button>
   );
 }
 
@@ -1037,24 +1101,24 @@ function BumicertCreationCard({ sessionDid }: { sessionDid: string }) {
   );
 }
 
-function AddDataCard({ sessionDid }: { sessionDid: string }) {
+function AddObservationsCard({ sessionDid }: { sessionDid: string }) {
   const t = useTranslations("common.sidebar.creationCard");
   const collapsed = useSidebarCollapsed();
 
   if (collapsed) {
     return (
-      <SidebarTooltip label={t("addData")}>
+      <SidebarTooltip label={t("addObservations")}>
         <span className="mx-auto flex w-fit">
-          <AddDataLink
+          <AddObservationsButton
             sessionDid={sessionDid}
             className={cn(
               buttonVariants({ variant: "outline", size: "icon" }),
               "bg-background hover:bg-primary hover:text-primary-foreground",
             )}
           >
-            <UploadCloudIcon />
-            <span className="sr-only">{t("addData")}</span>
-          </AddDataLink>
+            <ImagePlusIcon />
+            <span className="sr-only">{t("addObservations")}</span>
+          </AddObservationsButton>
         </span>
       </SidebarTooltip>
     );
@@ -1087,10 +1151,10 @@ function AddDataCard({ sessionDid }: { sessionDid: string }) {
           fill="currentcolor"
           strokeWidth={0}
         />
-        {/*Hover Transitioning Data Card*/}
+        {/*Hover Transitioning Observation Card*/}
         <div className="absolute z-1 -bottom-4 left-1/2 -translate-x-1/2 scale-100 group-hover:scale-120 -rotate-12 group-hover:-rotate-30 transition-transform bg-background/50 backdrop-blur-lg border border-border shadow-xl rounded-xl h-20 w-16 p-1 flex flex-col gap-1">
           <div className="w-full h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-            <UploadCloudIcon className="text-primary size-6 opacity-80" />
+            <ImagePlusIcon className="text-primary size-6 opacity-80" />
           </div>
           <div className="bg-muted h-2 rounded-lg w-8"></div>
           <div className="bg-muted h-2 rounded-lg w-full"></div>
@@ -1098,15 +1162,15 @@ function AddDataCard({ sessionDid }: { sessionDid: string }) {
       </div>
 
       {/*CTA*/}
-      <AddDataLink
+      <AddObservationsButton
         sessionDid={sessionDid}
         className={cn(
           buttonVariants({ variant: "outline", size: "sm" }),
           "relative z-2 w-full bg-background hover:bg-primary hover:text-primary-foreground",
         )}
       >
-        <UploadCloudIcon /> {t("addData")}
-      </AddDataLink>
+        <ImagePlusIcon /> {t("addObservations")}
+      </AddObservationsButton>
     </div>
   );
 }

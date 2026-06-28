@@ -73,6 +73,7 @@ const allowedExactValues = new Set([
   "Schwandenacker 35, 8052 Zurich, Switzerland",
   "team@gainforest.net",
   "{balance} USDC",
+  "{lat}, {lng}",
   "{count, number}",
   "{count, plural, one {# Bumicert} other {# Bumicerts}}",
 ]);
