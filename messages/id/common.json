@@ -843,5 +843,14 @@
     "remove": "Hapus",
     "unnamed": "Akun tanpa nama",
     "error": "Terjadi kesalahan. Silakan coba lagi."
+  },
+  "follow": {
+    "follow": "Ikuti",
+    "following": "Mengikuti",
+    "followAria": "Ikuti {name}",
+    "unfollowAria": "Berhenti mengikuti {name}",
+    "followersLabel": "pengikut",
+    "followingLabel": "mengikuti",
+    "genericName": "akun ini"
   }
 }

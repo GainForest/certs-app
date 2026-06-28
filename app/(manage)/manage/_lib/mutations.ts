@@ -490,3 +490,32 @@ export async function createFeedLike(
 export async function deleteFeedLike(rkey: string, options?: { repo?: string }): Promise<void> {
   await deleteRecord(FEED_LIKE_COLLECTION, rkey, options);
 }
+
+// ── Social graph: follows ───────────────────────────────────────────────────
+// app.certified.graph.follow declares an actor→actor follow: `subject` is the
+// followed account's DID (not a strongRef). The record lives in the follower's
+// repo, so a default write follows on behalf of the signed-in user; pass
+// `{ repo }` to follow on behalf of a group the viewer manages (CGS enforces
+// membership). Mirrors app.bsky.graph.follow.
+
+const FOLLOW_COLLECTION = "app.certified.graph.follow";
+
+/** Follow an account by its DID. Returns the follow record's rkey so the caller
+ *  can later unfollow it via deleteFollow. */
+export async function createFollow(
+  subjectDid: string,
+  options?: { repo?: string },
+): Promise<FeedWriteResult> {
+  const record = {
+    $type: FOLLOW_COLLECTION,
+    subject: subjectDid,
+    createdAt: new Date().toISOString(),
+  };
+  const result = await createRecord(FOLLOW_COLLECTION, record, undefined, options);
+  return { ...result, rkey: rkeyOf(result.uri) };
+}
+
+/** Unfollow by the follow record's rkey. */
+export async function deleteFollow(rkey: string, options?: { repo?: string }): Promise<void> {
+  await deleteRecord(FOLLOW_COLLECTION, rkey, options);
+}

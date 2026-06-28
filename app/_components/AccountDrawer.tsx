@@ -23,6 +23,7 @@ import {
   formatCountry,
 } from "../_lib/format";
 import { TrustedByBadges } from "./TrustedByBadges";
+import { FollowButton, FollowProvider, FollowStats } from "./FollowButton";
 
 // A second, higher-stacked drawer that profiles an *account* (a did:plc) rather
 // than a single record. Opened by clicking any handle/owner chip. It sits at
@@ -104,6 +105,7 @@ function AccountDrawer({ did, onClose }: { did: string | null; onClose: () => vo
   if (summary?.hasCertifiedOrg) roles.push({ label: "Certified organization", tone: "primary" });
 
   return (
+    <FollowProvider targetDid={did}>
     <div
       className="fixed inset-0 z-[100] flex justify-end"
       role="dialog"
@@ -159,6 +161,12 @@ function AccountDrawer({ did, onClose }: { did: string | null; onClose: () => vo
               )}
               <TrustedByBadges did={did} className="mt-2" variant="compact" />
             </div>
+          </div>
+
+          {/* Follow + social-graph counts */}
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <FollowStats targetDid={did} />
+            <FollowButton targetDid={did} name={displayName} />
           </div>
 
           {/* Role badges */}
@@ -235,6 +243,7 @@ function AccountDrawer({ did, onClose }: { did: string | null; onClose: () => vo
         </div>
       </div>
     </div>
+    </FollowProvider>
   );
 }
 

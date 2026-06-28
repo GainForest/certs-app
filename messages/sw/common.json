@@ -843,5 +843,14 @@
     "remove": "Ondoa",
     "unnamed": "Akaunti isiyo na jina",
     "error": "Hitilafu imetokea. Tafadhali jaribu tena."
+  },
+  "follow": {
+    "follow": "Fuata",
+    "following": "Unafuata",
+    "followAria": "Mfuate {name}",
+    "unfollowAria": "Acha kumfuata {name}",
+    "followersLabel": "wafuasi",
+    "followingLabel": "anaofuata",
+    "genericName": "akaunti hii"
   }
 }

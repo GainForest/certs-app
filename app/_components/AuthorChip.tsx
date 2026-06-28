@@ -10,6 +10,7 @@ import {
 import { formatDate } from "../_lib/format";
 import { resolveBlobUrl } from "../_lib/pds";
 import { useAccountDrawer } from "./AccountDrawer";
+import { AccountHoverCard } from "./AccountHoverCard";
 
 // Owner identity + created date, shown on every record card / row / drawer.
 //
@@ -60,22 +61,24 @@ export function AuthorChip({
   const primaryCls = size === "sm" ? "text-[12px]" : "text-[13px]";
 
   return (
-    <button
-      type="button"
-      onClick={() => openAccount(did)}
-      title="View profile"
-      className={`-mx-1 flex w-full min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-surface-sunken ${className}`}
-    >
-      <Avatar did={did} handle={handle} avatar={avatar} avatarRef={avatarRefOverride ?? null} className={av} />
-      <div className="min-w-0 flex-1 leading-tight">
-        <div className={`truncate font-medium text-foreground ${primaryCls}`}>{primary}</div>
-        {date ? (
-          <div className="truncate text-[10.5px] text-foreground/50">
-            Shared {date}
-          </div>
-        ) : null}
-      </div>
-    </button>
+    <AccountHoverCard did={did}>
+      <button
+        type="button"
+        onClick={() => openAccount(did)}
+        title="View profile"
+        className={`-mx-1 flex w-full min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-surface-sunken ${className}`}
+      >
+        <Avatar did={did} handle={handle} avatar={avatar} avatarRef={avatarRefOverride ?? null} className={av} />
+        <div className="min-w-0 flex-1 leading-tight">
+          <div className={`truncate font-medium text-foreground ${primaryCls}`}>{primary}</div>
+          {date ? (
+            <div className="truncate text-[10.5px] text-foreground/50">
+              Shared {date}
+            </div>
+          ) : null}
+        </div>
+      </button>
+    </AccountHoverCard>
   );
 }
 
@@ -111,10 +114,12 @@ export function AuthorInline({
   const label = nameOverride || profile?.displayName || handle || "Supporter";
 
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 align-middle" title={label}>
-      {showAvatar ? <Avatar did={did} handle={handle} avatar={avatar} avatarRef={avatarRefOverride ?? null} className="h-4 w-4 text-[8px]" /> : null}
-      <span className="truncate text-foreground/80">{label}</span>
-    </span>
+    <AccountHoverCard did={did}>
+      <span className="inline-flex min-w-0 cursor-default items-center gap-1.5 align-middle" title={label}>
+        {showAvatar ? <Avatar did={did} handle={handle} avatar={avatar} avatarRef={avatarRefOverride ?? null} className="h-4 w-4 text-[8px]" /> : null}
+        <span className="truncate text-foreground/80">{label}</span>
+      </span>
+    </AccountHoverCard>
   );
 }
 
@@ -156,21 +161,23 @@ export function OwnerBadge({
     openAccount(did);
   };
   return (
-    <span
-      role="button"
-      tabIndex={0}
-      onClick={open}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") open(e);
-      }}
-      className="inline-flex min-w-0 cursor-pointer items-center gap-1.5"
-      title="View profile"
-    >
-      <Avatar did={did} handle={handle} avatar={avatar} avatarRef={avatarRefOverride ?? null} className="h-5 w-5 text-[9px]" />
-      {nameOverride || profile?.displayName || handle ? (
-        <span className="truncate text-[11px] font-medium text-foreground">{nameOverride || profile?.displayName || handle}</span>
-      ) : null}
-    </span>
+    <AccountHoverCard did={did}>
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={open}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") open(e);
+        }}
+        className="inline-flex min-w-0 cursor-pointer items-center gap-1.5"
+        title="View profile"
+      >
+        <Avatar did={did} handle={handle} avatar={avatar} avatarRef={avatarRefOverride ?? null} className="h-5 w-5 text-[9px]" />
+        {nameOverride || profile?.displayName || handle ? (
+          <span className="truncate text-[11px] font-medium text-foreground">{nameOverride || profile?.displayName || handle}</span>
+        ) : null}
+      </span>
+    </AccountHoverCard>
   );
 }
 

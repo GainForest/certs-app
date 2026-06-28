@@ -843,5 +843,14 @@
     "remove": "Remover",
     "unnamed": "Conta sem nome",
     "error": "Algo deu errado. Tente novamente."
+  },
+  "follow": {
+    "follow": "Seguir",
+    "following": "Seguindo",
+    "followAria": "Seguir {name}",
+    "unfollowAria": "Deixar de seguir {name}",
+    "followersLabel": "seguidores",
+    "followingLabel": "seguindo",
+    "genericName": "esta conta"
   }
 }

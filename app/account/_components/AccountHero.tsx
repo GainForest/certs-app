@@ -20,6 +20,7 @@ import { AccountMemberships } from "./AccountMemberships";
 import { formatCountry } from "../../_lib/format";
 import { SocialGlyph } from "@/app/_components/SocialIcon";
 import { TrustedByBadges } from "@/app/_components/TrustedByBadges";
+import { FollowButton, FollowProvider, FollowStats } from "@/app/_components/FollowButton";
 import { Button } from "@/components/ui/button";
 
 function formatWebsite(url: string): string {
@@ -83,6 +84,7 @@ export function AccountHero({
   }
 
   return (
+    <FollowProvider targetDid={account.did}>
     <section className="overflow-hidden rounded-3xl border border-border/60 bg-card">
       <div className="relative h-32 sm:h-40 md:h-44">
         <motion.div
@@ -153,6 +155,7 @@ export function AccountHero({
               </Link>
             </Button>
           ) : null}
+          <FollowButton targetDid={account.did} name={account.displayName} />
         </div>
       </div>
 
@@ -174,6 +177,7 @@ export function AccountHero({
             <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
               {account.description ?? ""}
             </p>
+            <FollowStats targetDid={account.did} className="mt-2.5" />
             <AccountMemberships organizations={memberships} className="mt-3" />
           </div>
         </div>
@@ -225,5 +229,6 @@ export function AccountHero({
         ) : null}
       </div>
     </section>
+    </FollowProvider>
   );
 }

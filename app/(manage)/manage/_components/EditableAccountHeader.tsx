@@ -42,6 +42,7 @@ import {
 import CountrySelectorModal from "@/components/modals/country-selector";
 import { ImageEditorModal } from "@/components/modals/image-editor";
 import { SocialGlyph } from "@/app/_components/SocialIcon";
+import { FollowStats } from "@/app/_components/FollowButton";
 import type { CgsRole } from "../_lib/cgs";
 
 const SECTION_EASE = [0.25, 0.1, 0.25, 1] as const;
@@ -477,6 +478,7 @@ function EditableHero({
               <p className={cn("mt-1.5 line-clamp-2 text-sm leading-relaxed", editState.description ? "text-muted-foreground" : "text-muted-foreground/60")}>
                 {editState.description || t("hero.noBio")}
               </p>
+              <FollowStats targetDid={account.did} className="mt-2.5" />
               <AccountMemberships organizations={memberships} className="mt-3" />
               {editDisabledReason ? <p className="mt-2 text-xs text-muted-foreground">{editDisabledReason}</p> : null}
             </>

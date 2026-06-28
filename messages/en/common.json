@@ -843,5 +843,14 @@
     "remove": "Remove",
     "unnamed": "Unnamed account",
     "error": "Something went wrong. Please try again."
+  },
+  "follow": {
+    "follow": "Follow",
+    "following": "Following",
+    "followAria": "Follow {name}",
+    "unfollowAria": "Unfollow {name}",
+    "followersLabel": "followers",
+    "followingLabel": "following",
+    "genericName": "this account"
   }
 }
