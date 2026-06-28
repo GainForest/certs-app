@@ -217,6 +217,7 @@ export function RecordExplorer({
   emptyFilteredTitle,
   emptyFilteredBody,
   hideToolbarWhenEmpty = false,
+  hideOccurrenceFilters = false,
   onEmptyStateChange,
 }: {
   kind: RecordKind;
@@ -248,6 +249,10 @@ export function RecordExplorer({
   /** Hide the search/sort/view + filter-pill toolbar when there are no records
    *  at all (so a bare empty state can stand on its own). */
   hideToolbarWhenEmpty?: boolean;
+  /** Hide the occurrence badge/media/category filter-pill row. Used by profile
+   *  and manage views, where a single person's small set of sightings doesn't
+   *  warrant the global explore page's filters — keeps the surface minimal. */
+  hideOccurrenceFilters?: boolean;
   /** Fires with true once the explorer has loaded and holds zero records (no
    *  data at all), false otherwise. Lets a parent collapse its own chrome. */
   onEmptyStateChange?: (isEmpty: boolean) => void;
@@ -713,7 +718,7 @@ export function RecordExplorer({
             <OwnerFilterBanner ownerDid={ownerDid} onClear={() => setOwnerDid(null)} />
           ) : null}
 
-          {kind === "occurrence" && (
+          {kind === "occurrence" && !hideOccurrenceFilters && (
             <div
               className="scroll-mask-right scrollbar-hidden relative z-20 overflow-x-auto animate-in"
               style={{ animationDelay: "120ms" }}

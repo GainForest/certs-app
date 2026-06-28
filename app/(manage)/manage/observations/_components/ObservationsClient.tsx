@@ -625,6 +625,7 @@ export function ObservationsClient({ target, initialPage, forProject = null }: {
           leadingCard={<AddObservationTile onAdd={openAddObservations} disabledReason={createPermission.reason} />}
           emptyState={<ObservationEmptyState onAdd={openAddObservations} disabledReason={createPermission.reason} />}
           hideToolbarWhenEmpty
+          hideOccurrenceFilters
           onEmptyStateChange={setIsEmpty}
           showStatsOverview={false}
           hiddenRecordIds={deletedRecordIds}

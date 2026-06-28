@@ -267,7 +267,7 @@ export async function AccountObservationsTabContent({ account, did }: { account:
 
   return (
     <Suspense fallback={null}>
-      <RecordExplorer kind="occurrence" ownerDid={did} showHero={false} />
+      <RecordExplorer kind="occurrence" ownerDid={did} showHero={false} hideOccurrenceFilters />
     </Suspense>
   );
 }
