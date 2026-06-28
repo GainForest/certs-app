@@ -24,7 +24,6 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { RecordExplorer } from "@/app/_components/RecordExplorer";
-import { TAINA_SIM } from "@/app/_lib/taina-sim";
 import type { ExplorerRecord, OccurrenceRecord } from "@/app/_lib/indexer";
 import { resolveBlobUrl } from "@/app/_lib/pds";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useModal } from "@/components/ui/modal/context";
 import QuickTooltip from "@/components/ui/quick-tooltip";
-import TelegramIcon from "@/icons/TelegramIcon";
 import { manageApiHref, manageHref, type ManageTarget } from "@/lib/links";
 import { cn } from "@/lib/utils";
 import { ManageConfirmModal } from "../../_components/ManageConfirmModal";
@@ -119,7 +117,6 @@ type DraftItem = {
   analysis: ObservationAnalysis;
 };
 
-const TAINA_BOT_URL = "https://t.me/The" + "Tain" + "aBot";
 const QUERY_STATE_OPTIONS = { history: "replace", scroll: false, shallow: true } as const;
 // Shared column template so the table header and each row line up. Columns are
 // ordered by review value: select · photo · organism · date · location · kind ·
@@ -724,48 +721,7 @@ export function ObservationsClient({ target, initialPage, forProject = null }: {
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("description")}</p>
         </header>
 
-        <div className="group relative mt-5 overflow-hidden rounded-3xl border border-dashed border-primary/20 bg-gradient-to-br from-primary/[0.07] via-accent/30 to-background p-5 sm:p-6">
-          <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-52 rounded-full bg-primary/15 blur-3xl" />
-          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
-            <div className="relative w-fit shrink-0">
-              <div className="grid size-16 place-items-center overflow-visible rounded-2xl bg-gradient-to-br from-accent/70 to-primary/10 ring-1 ring-primary/15 transition-transform duration-300 group-hover:-rotate-2 group-hover:scale-105 sm:size-20">
-                <img
-                  src={TAINA_SIM.posterUrl}
-                  alt={TAINA_SIM.name}
-                  width={80}
-                  height={80}
-                  loading="lazy"
-                  className="h-[115%] w-[115%] -translate-y-2 object-contain sm:-translate-y-3"
-                />
-              </div>
-              <span className="absolute -bottom-1.5 -right-1.5 grid size-7 place-items-center rounded-full bg-[#229ED9] text-white ring-2 ring-background">
-                <TelegramIcon className="size-3.5" />
-              </span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="font-instrument text-xl font-medium italic tracking-[-0.02em] text-foreground sm:text-2xl">
-                  {t("tainaTitle")}
-                </p>
-                <Button asChild className="hidden sm:inline-flex sm:shrink-0">
-                  <Link href={TAINA_BOT_URL} target="_blank" rel="noreferrer">
-                    <TelegramIcon />
-                    {t("tainaCta")}
-                  </Link>
-                </Button>
-              </div>
-              <p className="mt-1.5 max-w-prose text-sm leading-6 text-muted-foreground">{t("tainaBody")}</p>
-              <Button asChild className="mt-4 w-full sm:hidden">
-                <Link href={TAINA_BOT_URL} target="_blank" rel="noreferrer">
-                  <TelegramIcon />
-                  {t("tainaCta")}
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-muted px-4 py-3">
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-muted px-4 py-3">
           <p className="text-sm text-muted-foreground">
             {selectedRecords.size > 0 ? t("selectedForDelete", { count: selectedRecords.size }) : t("selectToDeleteHint")}
           </p>
