@@ -357,12 +357,17 @@
   "accountOrganizations": {
     "emptyEyebrow": "No organizations",
     "empty": "You don't belong to any organizations yet.",
+    "emptyHeroCta": "Create an organization",
     "fallbackName": "Organization",
     "role": {
       "owner": "Owner",
       "admin": "Admin",
       "member": "Member"
     }
+  },
+  "accountDonations": {
+    "emptyHeroDescription": "Support a project and your contributions show up here, each linked to the project you backed.",
+    "emptyHeroCta": "Explore projects"
   },
   "accountProjects": {
     "emptyEyebrow": "No projects",

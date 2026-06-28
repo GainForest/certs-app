@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Building2Icon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { EmptyHeroBanner } from "../../_components/EmptyHeroBanner";
 import { accountPath } from "../_lib/account-route";
 
 export type AccountOrganization = {
@@ -31,23 +32,13 @@ export function AccountOrganizationsGrid({ organizations }: { organizations: Acc
 
   if (organizations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <span
-          className="mb-4 block text-7xl font-light tracking-tight text-primary/[0.12]"
-          style={{ fontFamily: "var(--font-garamond-var)" }}
-        >
-          0
-        </span>
-        <div className="mb-3 flex items-center gap-2">
-          <Building2Icon className="h-4 w-4 text-primary" />
-          <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">{t("emptyEyebrow")}</span>
-        </div>
-        <p
-          className="max-w-sm text-lg text-foreground/60"
-          style={{ fontFamily: "var(--font-instrument-serif-var)", fontStyle: "italic" }}
-        >
-          {t("empty")}
-        </p>
+      <div className="py-2">
+        <EmptyHeroBanner
+          description={t("empty")}
+          ctaLabel={t("emptyHeroCta")}
+          ctaHref="/manage?mode=onboard-org"
+          ctaIcon={<PlusIcon />}
+        />
       </div>
     );
   }

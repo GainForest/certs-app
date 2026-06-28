@@ -357,12 +357,17 @@
   "accountOrganizations": {
     "emptyEyebrow": "Hakuna mashirika",
     "empty": "Bado hujajiunga na shirika lolote.",
+    "emptyHeroCta": "Unda shirika",
     "fallbackName": "Shirika",
     "role": {
       "owner": "Mmiliki",
       "admin": "Msimamizi",
       "member": "Mwanachama"
     }
+  },
+  "accountDonations": {
+    "emptyHeroDescription": "Unga mkono mradi na michango yako itaonekana hapa, kila moja ikiwa na kiungo kwa mradi uliouunga mkono.",
+    "emptyHeroCta": "Gundua miradi"
   },
   "accountProjects": {
     "emptyEyebrow": "Hakuna miradi",

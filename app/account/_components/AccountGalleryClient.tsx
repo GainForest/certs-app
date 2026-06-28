@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { ManageTarget } from "@/lib/links";
 import type { ProjectImageGallery } from "../../_lib/indexer";
 import { canCreateRecord, canDeleteRecord } from "../../(manage)/manage/_lib/cgs-permissions";
+import { EmptyHeroBanner } from "../../_components/EmptyHeroBanner";
 import { ProjectGalleryViewer } from "../../_components/ProjectGalleryViewer";
 import { AccountGalleryUploader, type GalleryProjectOption } from "./AccountGalleryUploader";
 import { OrphanedGalleryCleanup } from "./OrphanedGalleryCleanup";
@@ -26,6 +28,7 @@ export function AccountGalleryClient({
   accountName: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("common.projectGallery");
   const [galleries, setGalleries] = useState<ProjectImageGallery[]>(initialGalleries);
   const [orphaned, setOrphaned] = useState<ProjectImageGallery[]>(orphanedGalleries);
 
@@ -46,24 +49,35 @@ export function AccountGalleryClient({
     />
   ) : null;
 
-  // The empty state is the only place we offer uploads, and only to people who
-  // can manage this account. Once the first images land we fall through to the
-  // read-only viewer.
-  if (galleries.length === 0 && canUpload && target) {
+  // While the gallery is empty we either offer the uploader (to managers who can
+  // add images) or a bare "nothing here yet" banner (to read-only visitors).
+  // Once the first images land we fall through to the read-only viewer.
+  if (galleries.length === 0) {
+    if (canUpload && target) {
+      return (
+        <>
+          {cleanup}
+          <AccountGalleryUploader
+            target={target}
+            projects={projects}
+            accountName={accountName}
+            onUploaded={(gallery) => {
+              setGalleries([gallery]);
+              // Re-sync from the indexer in the background; the optimistic gallery
+              // keeps the just-uploaded images visible until it catches up.
+              router.refresh();
+            }}
+          />
+        </>
+      );
+    }
+
     return (
       <>
         {cleanup}
-        <AccountGalleryUploader
-          target={target}
-          projects={projects}
-          accountName={accountName}
-          onUploaded={(gallery) => {
-            setGalleries([gallery]);
-            // Re-sync from the indexer in the background; the optimistic gallery
-            // keeps the just-uploaded images visible until it catches up.
-            router.refresh();
-          }}
-        />
+        <div className="py-2">
+          <EmptyHeroBanner description={t("emptyBody")} />
+        </div>
       </>
     );
   }

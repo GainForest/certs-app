@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ComponentProps, type DragEvent, type ReactNode } from "react";
@@ -25,6 +24,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { RecordExplorer } from "@/app/_components/RecordExplorer";
+import { EmptyHeroBanner } from "@/app/_components/EmptyHeroBanner";
 import type { ExplorerRecord, OccurrenceRecord } from "@/app/_lib/indexer";
 import { resolveBlobUrl } from "@/app/_lib/pds";
 import { Button } from "@/components/ui/button";
@@ -833,65 +833,14 @@ function ObservationEmptyState({ target, forProject, disabledReason }: { target:
   const t = useTranslations("upload.observations");
   const addHref = manageHref(target, "observations", { mode: "add", ...(forProject ? { forProject } : {}) });
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-      className="relative overflow-hidden rounded-[1.6rem] border border-border/80 bg-card shadow-sm"
-    >
-      <div className="relative min-h-[7rem] overflow-hidden rounded-[1.55rem]">
-        <Image
-          src="/assets/media/images/create-bumicert/hero-light@2x.webp"
-          alt=""
-          fill
-          quality={95}
-          sizes="100vw"
-          className="object-cover object-center dark:hidden"
-        />
-        <Image
-          src="/assets/media/images/create-bumicert/hero-dark@2x.webp"
-          alt=""
-          fill
-          quality={95}
-          sizes="100vw"
-          className="hidden object-cover object-center dark:block"
-        />
-        <div className="absolute inset-0 bg-linear-to-r from-background/95 via-background/72 to-background/5 dark:from-background/90 dark:via-background/58 dark:to-background/10" />
-        <div className="absolute -top-8 right-[7%] h-28 w-52 rounded-full bg-background/50 blur-2xl dark:bg-primary/10" />
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-foreground/20 via-foreground/5 to-transparent dark:from-black/55" />
-
-        <div className="relative z-30 flex min-h-[7rem] flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 lg:px-9">
-          <p className="w-full text-sm leading-5 text-muted-foreground sm:max-w-[30rem]">
-            {disabledReason ?? t("emptyHeroDescription")}
-          </p>
-          {disabledReason ? (
-            <Button type="button" size="sm" disabled title={disabledReason} className="shrink-0 self-start sm:self-auto">
-              <ImagePlusIcon /> {t("addTileTitle")}
-            </Button>
-          ) : (
-            <Button asChild size="sm" className="shrink-0 self-start sm:self-auto">
-              <Link href={addHref}>
-                <ImagePlusIcon /> {t("addTileTitle")}
-              </Link>
-            </Button>
-          )}
-        </div>
-      </div>
-      <Image
-        src="/assets/media/images/create-bumicert/plant-light.png"
-        alt=""
-        width={1002}
-        height={1146}
-        className="pointer-events-none absolute inset-y-0 right-[4%] z-20 hidden h-full w-auto max-w-[40%] object-contain object-bottom dark:hidden md:block"
-      />
-      <Image
-        src="/assets/media/images/create-bumicert/plant-dark.png"
-        alt=""
-        width={964}
-        height={1129}
-        className="pointer-events-none absolute inset-y-0 right-[4%] z-20 hidden h-full w-auto max-w-[40%] object-contain object-bottom dark:md:block"
-      />
-    </motion.section>
+    <EmptyHeroBanner
+      description={t("emptyHeroDescription")}
+      ctaLabel={t("addTileTitle")}
+      ctaHref={addHref}
+      ctaIcon={<ImagePlusIcon />}
+      ctaDisabled={Boolean(disabledReason)}
+      ctaDisabledReason={disabledReason}
+    />
   );
 }
 

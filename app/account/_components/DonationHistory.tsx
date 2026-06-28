@@ -3,8 +3,10 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { HeartIcon, ExternalLinkIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { FundingReceipt } from "../../_lib/dashboard";
 import { formatCompactUsd } from "../../_lib/format";
+import { EmptyHeroBanner } from "../../_components/EmptyHeroBanner";
 import { PreferredBumicertLink } from "../../_components/PreferredLinks";
 
 interface DonationHistoryProps {
@@ -108,18 +110,16 @@ function DonationCard({
 }
 
 export function DonationHistory({ receipts }: DonationHistoryProps) {
+  const t = useTranslations("common.accountDonations");
   const totalDonated = useMemo(() => receipts.reduce((sum, receipt) => sum + receipt.amount, 0), [receipts]);
 
   if (receipts.length === 0) {
     return (
-      <div className="w-full space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          Donation History
-        </h2>
-        <div className="rounded-lg border border-border bg-card p-8 text-center">
-          <p className="text-sm text-muted-foreground">No donations yet.</p>
-        </div>
-      </div>
+      <EmptyHeroBanner
+        description={t("emptyHeroDescription")}
+        ctaLabel={t("emptyHeroCta")}
+        ctaHref="/projects"
+      />
     );
   }
 

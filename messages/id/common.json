@@ -357,12 +357,17 @@
   "accountOrganizations": {
     "emptyEyebrow": "Belum ada organisasi",
     "empty": "Kamu belum tergabung dalam organisasi mana pun.",
+    "emptyHeroCta": "Buat organisasi",
     "fallbackName": "Organisasi",
     "role": {
       "owner": "Pemilik",
       "admin": "Admin",
       "member": "Anggota"
     }
+  },
+  "accountDonations": {
+    "emptyHeroDescription": "Dukung sebuah proyek dan kontribusi Anda akan muncul di sini, masing-masing tertaut ke proyek yang Anda dukung.",
+    "emptyHeroCta": "Jelajahi proyek"
   },
   "accountProjects": {
     "emptyEyebrow": "Belum ada proyek",
