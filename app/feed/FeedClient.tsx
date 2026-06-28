@@ -221,7 +221,7 @@ export function FeedClient({
       {/* Hero */}
       <div className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-linear-to-b from-primary/8 via-primary/2 to-transparent" />
-        <div className="mx-auto flex max-w-3xl flex-col px-6 pb-6 pt-[72px] sm:px-8 animate-in lg:max-w-5xl">
+        <div className="mx-auto flex max-w-3xl flex-col px-6 pb-6 pt-[72px] sm:px-8 animate-in lg:max-w-4xl">
           <div className="flex items-center gap-2 text-primary/70">
             <NewspaperIcon className="size-5" />
             <span className="text-xs font-medium uppercase tracking-[0.16em]">{t("eyebrow")}</span>
@@ -239,7 +239,7 @@ export function FeedClient({
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-3xl gap-8 px-4 sm:px-6 lg:max-w-5xl">
+      <div className="mx-auto flex w-full max-w-3xl gap-10 px-4 sm:px-6 lg:max-w-4xl">
         <div className="min-w-0 flex-1">
           {/* Below lg the right rail is hidden, so keep a horizontal selector
               pinned at the top of the feed there. */}
@@ -322,8 +322,8 @@ export function FeedClient({
         )}
         </div>
 
-        {/* Right rail — Bluesky-style vertical filter list (lg and up). */}
-        <aside className="hidden w-60 shrink-0 lg:block">
+        {/* Right rail — minimal vertical filter list (lg and up). */}
+        <aside className="hidden w-44 shrink-0 lg:block">
           <div className="sticky top-20">
             <FeedFilterRail
               filter={filter}
@@ -394,8 +394,8 @@ function FeedFilterTabs({
   );
 }
 
-/** Bluesky-style vertical filter rail for the right column (lg and up): a
- *  labelled list of feed filters with icon chips, plus a refresh control. */
+/** Minimal vertical filter rail for the right column (lg and up): a light,
+ *  borderless nav list with a soft active pill, plus a subtle refresh. */
 function FeedFilterRail({
   filter,
   onSelect,
@@ -411,22 +411,8 @@ function FeedFilterRail({
 }) {
   const t = useTranslations("common.feed");
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/30 p-2">
-      <div className="flex items-center justify-between gap-2 px-2 py-1">
-        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          {t("filterHeading")}
-        </p>
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={refreshing || loading}
-          aria-label={t("refresh")}
-          className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-        >
-          <RefreshCwIcon className={cn("size-3.5", refreshing && "animate-spin")} />
-        </button>
-      </div>
-      <nav className="mt-0.5 flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
+      <nav aria-label={t("filterHeading")} className="flex flex-col gap-0.5">
         {FILTERS.map(({ key, Icon }) => {
           const active = filter === key;
           const label = key === "all" ? t("filters.all") : t(`filters.${key}`);
@@ -437,25 +423,32 @@ function FeedFilterRail({
               onClick={() => onSelect(key)}
               aria-pressed={active}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-sm transition-colors",
+                "group flex w-full items-center gap-3 rounded-full px-3 py-1.5 text-sm transition-colors",
                 active
                   ? "bg-primary/10 font-medium text-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
               )}
             >
-              <span
+              <Icon
                 className={cn(
-                  "grid size-7 shrink-0 place-items-center rounded-lg transition-colors",
-                  active ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground",
+                  "size-4 shrink-0 transition-colors",
+                  active ? "text-primary" : "text-muted-foreground/60 group-hover:text-foreground",
                 )}
-              >
-                <Icon className="size-4" />
-              </span>
+              />
               <span className="truncate">{label}</span>
             </button>
           );
         })}
       </nav>
+      <button
+        type="button"
+        onClick={onRefresh}
+        disabled={refreshing || loading}
+        className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs text-muted-foreground/60 transition-colors hover:text-foreground disabled:opacity-50"
+      >
+        <RefreshCwIcon className={cn("size-3.5", refreshing && "animate-spin")} />
+        {t("refresh")}
+      </button>
     </div>
   );
 }
