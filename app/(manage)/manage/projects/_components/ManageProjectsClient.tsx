@@ -1267,6 +1267,7 @@ function ProjectSuccessPanel({
 }) {
   const t = useTranslations("marketplace.manageProjects.editor.success");
   const projectHref = projectHrefFromUri(projectUri);
+  const modal = useModal();
 
   return (
     <motion.div
@@ -1317,7 +1318,10 @@ function ProjectSuccessPanel({
           >
             {projectHref ? (
               <Button asChild size="lg">
-                <Link href={projectHref}>
+                {/* Close the popup as we navigate so it doesn't linger over the
+                    project page (no-op when the success panel is shown inline
+                    for an edit). */}
+                <Link href={projectHref} onClick={() => void modal.hide().then(() => modal.clear())}>
                   {t("view")}
                   <ChevronRightIcon className="size-4" />
                 </Link>
