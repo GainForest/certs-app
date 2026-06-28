@@ -690,14 +690,30 @@
       "removeObservation": "Ondoa uchunguzi",
       "tooManyPerObservation": "Unaweza kuongeza hadi picha {max} kwa kila uchunguzi.",
       "subjectParts": {
-        "wholeOrganism": "Kiumbe kizima",
+        "entireOrganism": "Kiumbe kizima",
+        "unspecifiedPart": "Haijabainishwa / nyingine",
         "leaf": "Jani",
-        "leafUnderside": "Upande wa chini wa jani",
-        "bark": "Gome",
         "flower": "Ua",
-        "fruit": "Tunda au mbegu",
-        "habitat": "Makazi",
-        "other": "Maelezo mengine"
+        "fruit": "Tunda",
+        "seed": "Mbegu",
+        "bark": "Gome",
+        "bud": "Chipukizi",
+        "stem": "Shina",
+        "twig": "Tawi",
+        "head": "Kichwa",
+        "eye": "Jicho",
+        "leg": "Mguu",
+        "wing": "Bawa",
+        "antenna": "Vipapasio",
+        "fin": "Pezi",
+        "shell": "Gamba",
+        "egg": "Yai",
+        "genitalia": "Via vya uzazi"
+      },
+      "subjectPartGroups": {
+        "general": "Kwa ujumla",
+        "plant": "Mmea",
+        "animal": "Mnyama"
       },
       "viewObservations": "Tazama uchunguzi"
     },

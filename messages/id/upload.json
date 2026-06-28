@@ -690,14 +690,30 @@
       "removeObservation": "Hapus observasi",
       "tooManyPerObservation": "Anda dapat menambahkan hingga {max} foto per observasi.",
       "subjectParts": {
-        "wholeOrganism": "Seluruh organisme",
+        "entireOrganism": "Seluruh organisme",
+        "unspecifiedPart": "Tidak ditentukan / lainnya",
         "leaf": "Daun",
-        "leafUnderside": "Bagian bawah daun",
-        "bark": "Kulit kayu",
         "flower": "Bunga",
-        "fruit": "Buah atau biji",
-        "habitat": "Habitat",
-        "other": "Detail lain"
+        "fruit": "Buah",
+        "seed": "Biji",
+        "bark": "Kulit kayu",
+        "bud": "Kuncup",
+        "stem": "Batang",
+        "twig": "Ranting",
+        "head": "Kepala",
+        "eye": "Mata",
+        "leg": "Kaki",
+        "wing": "Sayap",
+        "antenna": "Antena",
+        "fin": "Sirip",
+        "shell": "Cangkang",
+        "egg": "Telur",
+        "genitalia": "Alat kelamin"
+      },
+      "subjectPartGroups": {
+        "general": "Umum",
+        "plant": "Tumbuhan",
+        "animal": "Hewan"
       },
       "viewObservations": "Lihat observasi"
     },

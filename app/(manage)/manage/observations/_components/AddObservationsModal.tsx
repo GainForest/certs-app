@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ModalContent, ModalHeader, ModalTitle, ModalDescription } from "@/components/ui/modal/modal";
 import { useModal } from "@/components/ui/modal/context";
 import { cn } from "@/lib/utils";
@@ -47,21 +47,19 @@ const MAX_PHOTOS_PER_OBSERVATION = 8;
 const ANALYZE_ATTEMPTS = 2;
 const UNIDENTIFIED = "unidentified organism";
 
-// Plain-language "what this photo shows" tags. The value is the canonical
-// `subjectPart` stored on each ac.multimedia record (the explorer renders it),
-// the label is looked up via i18n. The first photo of an observation is its
-// cover and defaults to the whole organism.
-const SUBJECT_PARTS = [
-  "wholeOrganism",
-  "leaf",
-  "leafUnderside",
-  "bark",
-  "flower",
-  "fruit",
-  "habitat",
-  "other",
+// "What this photo shows" tags, drawn from the Audubon/Audiovisual Core
+// `subjectPart` controlled vocabulary (http://rs.tdwg.org/acpart/values/) so the
+// list covers animals as well as plants. Each value is the canonical AC
+// controlled value string stored on the ac.multimedia record (the explorer
+// renders it); the label is looked up via i18n. Grouped (general / plant /
+// animal) for the picker. The first photo of an observation is its cover and
+// defaults to the whole organism (`entireOrganism`).
+const SUBJECT_PART_GROUPS = [
+  { id: "general", parts: ["entireOrganism", "unspecifiedPart"] },
+  { id: "plant", parts: ["leaf", "flower", "fruit", "seed", "bark", "bud", "stem", "twig"] },
+  { id: "animal", parts: ["head", "eye", "leg", "wing", "antenna", "fin", "shell", "egg", "genitalia"] },
 ] as const;
-const PRIMARY_SUBJECT_PART: (typeof SUBJECT_PARTS)[number] = "wholeOrganism";
+const PRIMARY_SUBJECT_PART = "entireOrganism";
 
 type ItemStatus = "identifying" | "ready" | "uploading" | "uploaded" | "error";
 
@@ -864,10 +862,17 @@ function PhotoTile({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {SUBJECT_PARTS.map((part) => (
-            <SelectItem key={part} value={part} className="text-xs">
-              {t(`subjectParts.${part}`)}
-            </SelectItem>
+          {SUBJECT_PART_GROUPS.map((group) => (
+            <SelectGroup key={group.id}>
+              <SelectLabel className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {t(`subjectPartGroups.${group.id}`)}
+              </SelectLabel>
+              {group.parts.map((part) => (
+                <SelectItem key={part} value={part} className="text-xs">
+                  {t(`subjectParts.${part}`)}
+                </SelectItem>
+              ))}
+            </SelectGroup>
           ))}
         </SelectContent>
       </Select>

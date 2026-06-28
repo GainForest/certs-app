@@ -690,14 +690,30 @@
       "removeObservation": "Remover observação",
       "tooManyPerObservation": "Você pode adicionar até {max} fotos por observação.",
       "subjectParts": {
-        "wholeOrganism": "Organismo inteiro",
+        "entireOrganism": "Organismo inteiro",
+        "unspecifiedPart": "Não especificado / outro",
         "leaf": "Folha",
-        "leafUnderside": "Parte de baixo da folha",
-        "bark": "Casca",
         "flower": "Flor",
-        "fruit": "Fruto ou semente",
-        "habitat": "Habitat",
-        "other": "Outro detalhe"
+        "fruit": "Fruto",
+        "seed": "Semente",
+        "bark": "Casca",
+        "bud": "Botão",
+        "stem": "Caule",
+        "twig": "Galho",
+        "head": "Cabeça",
+        "eye": "Olho",
+        "leg": "Perna",
+        "wing": "Asa",
+        "antenna": "Antena",
+        "fin": "Nadadeira",
+        "shell": "Concha",
+        "egg": "Ovo",
+        "genitalia": "Genitália"
+      },
+      "subjectPartGroups": {
+        "general": "Geral",
+        "plant": "Planta",
+        "animal": "Animal"
       },
       "viewObservations": "Ver observações"
     },

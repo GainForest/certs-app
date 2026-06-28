@@ -690,14 +690,30 @@
       "removeObservation": "Remove observation",
       "tooManyPerObservation": "You can add up to {max} photos per observation.",
       "subjectParts": {
-        "wholeOrganism": "Whole organism",
+        "entireOrganism": "Whole organism",
+        "unspecifiedPart": "Unspecified / other",
         "leaf": "Leaf",
-        "leafUnderside": "Leaf underside",
-        "bark": "Bark",
         "flower": "Flower",
-        "fruit": "Fruit or seed",
-        "habitat": "Habitat",
-        "other": "Other detail"
+        "fruit": "Fruit",
+        "seed": "Seed",
+        "bark": "Bark",
+        "bud": "Bud",
+        "stem": "Stem",
+        "twig": "Twig",
+        "head": "Head",
+        "eye": "Eye",
+        "leg": "Leg",
+        "wing": "Wing",
+        "antenna": "Antenna",
+        "fin": "Fin",
+        "shell": "Shell",
+        "egg": "Egg",
+        "genitalia": "Genitalia"
+      },
+      "subjectPartGroups": {
+        "general": "General",
+        "plant": "Plant",
+        "animal": "Animal"
       },
       "viewObservations": "View observations"
     },
