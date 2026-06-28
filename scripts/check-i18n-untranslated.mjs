@@ -76,6 +76,7 @@ const allowedExactValues = new Set([
   "{lat}, {lng}",
   "{count, number}",
   "{count, plural, one {# Bumicert} other {# Bumicerts}}",
+  "{count, plural, one {# Cert} other {# Certs}}",
 ]);
 
 const allowedPathPatterns = [

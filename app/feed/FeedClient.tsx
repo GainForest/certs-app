@@ -27,6 +27,7 @@ import {
 } from "./FeedActions";
 import { formatCompact, formatCompactUsd, formatRelative } from "../_lib/format";
 import { ResolvedAvatar } from "./ResolvedAvatar";
+import { AccountHoverCard } from "./AccountHoverCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -478,9 +479,16 @@ function FeedRow({
         <div className="min-w-0 flex-1">
           {/* Author line */}
           <div className="flex items-center gap-1.5 text-sm">
-            <span className="truncate font-medium text-foreground">
-              {item.actorName || item.actorDid ? item.actorName ?? shortDid(item.actorDid) : t("anonymous")}
-            </span>
+            <AccountHoverCard
+              did={item.actorDid}
+              name={item.actorName}
+              avatarRef={item.actorAvatarRef}
+              triggerClassName="min-w-0"
+            >
+              <span className="block truncate font-medium text-foreground hover:underline">
+                {item.actorName || item.actorDid ? item.actorName ?? shortDid(item.actorDid) : t("anonymous")}
+              </span>
+            </AccountHoverCard>
             <span className="text-muted-foreground/60">·</span>
             <span className="shrink-0 text-xs text-muted-foreground/80" title={fullDate(item.createdAt)}>
               {formatRelative(item.createdAt)}
@@ -615,7 +623,14 @@ function ObservationBatchCard({ items }: { items: ActivityFeedItem[] }) {
         <div className="min-w-0 flex-1">
           {/* Author line */}
           <div className="flex items-center gap-1.5 text-sm">
-            <span className="truncate font-medium text-foreground">{actorName}</span>
+            <AccountHoverCard
+              did={head.actorDid}
+              name={head.actorName}
+              avatarRef={head.actorAvatarRef}
+              triggerClassName="min-w-0"
+            >
+              <span className="block truncate font-medium text-foreground hover:underline">{actorName}</span>
+            </AccountHoverCard>
             <span className="text-muted-foreground/60">·</span>
             <span className="shrink-0 text-xs text-muted-foreground/80" title={fullDate(head.createdAt)}>
               {formatRelative(head.createdAt)}
@@ -699,14 +714,21 @@ function FeedAvatar({ item }: { item: ActivityFeedItem }) {
   // below the text, so it never doubles as the avatar.
   const hasName = Boolean(item.actorName?.trim());
   return (
-    <ResolvedAvatar
+    <AccountHoverCard
       did={item.actorDid}
-      avatarRef={item.actorAvatarRef}
       name={item.actorName}
-      fallbackIcon={hasName ? undefined : <KindIcon kind={item.kind} className="size-4" />}
-      className="mt-0.5 size-10"
-      sizes="40px"
-    />
+      avatarRef={item.actorAvatarRef}
+      triggerClassName="shrink-0"
+    >
+      <ResolvedAvatar
+        did={item.actorDid}
+        avatarRef={item.actorAvatarRef}
+        name={item.actorName}
+        fallbackIcon={hasName ? undefined : <KindIcon kind={item.kind} className="size-4" />}
+        className="mt-0.5 size-10"
+        sizes="40px"
+      />
+    </AccountHoverCard>
   );
 }
 
