@@ -389,7 +389,8 @@
     "drone": "Drone",
     "trees": "Árvores",
     "measurements": "Medições",
-    "members": "Membros"
+    "members": "Membros",
+    "admin": "Admin"
   },
   "accountOrganizations": {
     "memberOf": "Membro de",
@@ -766,7 +767,8 @@
     "batch": {
       "sightings": "{count, plural, one {compartilhou # avistamento} other {compartilhou # avistamentos}}",
       "moreSpecies": "+{count} mais",
-      "viewAll": "Ver todos os avistamentos"
+      "viewAll": "Ver todos os avistamentos",
+      "likesAcross": "{count, plural, one {# curtida nestes avistamentos} other {# curtidas nestes avistamentos}}"
     },
     "profileCard": {
       "unnamed": "Conta sem nome",
@@ -821,5 +823,13 @@
     "flaggedDescription": "Os projetos, as observações e a atividade do feed de {name} estão ocultos para todos. Só a equipe da GainForest pode ver esta conta aqui.",
     "unhideAction": "Tornar visível novamente",
     "genericError": "Algo deu errado. Tente novamente."
+  },
+  "adminTestAccounts": {
+    "title": "Contas de teste",
+    "description": "Estas contas estão marcadas como teste, então seus projetos, observações, resultados de busca e atividade do feed ficam ocultos para todos.",
+    "empty": "Nenhuma conta está marcada como teste no momento.",
+    "remove": "Remover",
+    "unnamed": "Conta sem nome",
+    "error": "Algo deu errado. Tente novamente."
   }
 }

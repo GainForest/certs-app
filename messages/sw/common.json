@@ -389,7 +389,8 @@
     "drone": "Ndege",
     "trees": "Miti",
     "measurements": "Vipimo",
-    "members": "Wanachama"
+    "members": "Wanachama",
+    "admin": "Admin"
   },
   "accountOrganizations": {
     "memberOf": "Mwanachama wa",
@@ -766,7 +767,8 @@
     "batch": {
       "sightings": "{count, plural, one {alishiriki onevu # la asili} other {alishiriki maonevu # ya asili}}",
       "moreSpecies": "+{count} zaidi",
-      "viewAll": "Ona maonevu yote"
+      "viewAll": "Ona maonevu yote",
+      "likesAcross": "{count, plural, one {imependwa mara # kwenye maonevu haya} other {imependwa mara # kwenye maonevu haya}}"
     },
     "profileCard": {
       "unnamed": "Akaunti isiyo na jina",
@@ -821,5 +823,13 @@
     "flaggedDescription": "Miradi, uchunguzi na shughuli za mlisho za {name} zimefichwa kwa kila mtu. Ni wasimamizi wa GainForest pekee wanaoweza kuona akaunti hii hapa.",
     "unhideAction": "Ionyeshe tena",
     "genericError": "Hitilafu imetokea. Tafadhali jaribu tena."
+  },
+  "adminTestAccounts": {
+    "title": "Akaunti za majaribio",
+    "description": "Akaunti hizi zimewekwa alama kama za majaribio, hivyo miradi, uchunguzi, matokeo ya utafutaji na shughuli za mlisho zake zimefichwa kwa kila mtu.",
+    "empty": "Hakuna akaunti iliyowekwa alama kama ya majaribio kwa sasa.",
+    "remove": "Ondoa",
+    "unnamed": "Akaunti isiyo na jina",
+    "error": "Hitilafu imetokea. Tafadhali jaribu tena."
   }
 }

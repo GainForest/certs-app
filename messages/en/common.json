@@ -389,7 +389,8 @@
     "drone": "Drone",
     "trees": "Trees",
     "measurements": "Measurements",
-    "members": "Members"
+    "members": "Members",
+    "admin": "Admin"
   },
   "accountOrganizations": {
     "memberOf": "Member of",
@@ -766,7 +767,8 @@
     "batch": {
       "sightings": "{count, plural, one {shared # nature sighting} other {shared # nature sightings}}",
       "moreSpecies": "+{count} more",
-      "viewAll": "View all sightings"
+      "viewAll": "View all sightings",
+      "likesAcross": "{count, plural, one {# like across these sightings} other {# likes across these sightings}}"
     },
     "profileCard": {
       "unnamed": "Unnamed account",
@@ -821,5 +823,13 @@
     "flaggedDescription": "{name}'s projects, observations and feed activity are hidden from everyone. Only GainForest stewards can see this account here.",
     "unhideAction": "Make visible again",
     "genericError": "Something went wrong. Please try again."
+  },
+  "adminTestAccounts": {
+    "title": "Test accounts",
+    "description": "These accounts are marked as test, so their projects, observations, search results and feed activity are hidden from everyone.",
+    "empty": "No accounts are marked as test right now.",
+    "remove": "Remove",
+    "unnamed": "Unnamed account",
+    "error": "Something went wrong. Please try again."
   }
 }

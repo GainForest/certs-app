@@ -1,6 +1,7 @@
 import "server-only";
 import { getAuthBaseUrl } from "@/app/_lib/auth";
-import { TEST_ACCOUNT_BADGE_TITLE } from "@/app/_lib/indexer";
+import { fetchHiddenAccountDids, TEST_ACCOUNT_BADGE_TITLE } from "@/app/_lib/indexer";
+import { getCertifiedProfileCard } from "@/app/account/_lib/account-route";
 import {
   BADGE_AWARD_COLLECTION,
   BADGE_DEFINITION_COLLECTION,
@@ -127,6 +128,28 @@ export async function flagTestAccount(
       createdAt: new Date().toISOString(),
     },
   });
+}
+
+export type FlaggedTestAccount = {
+  did: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+};
+
+/** The accounts currently flagged as test accounts, resolved to a display name
+ *  + avatar for the admin list view. Sorted by name (then DID) for stable
+ *  ordering. */
+export async function fetchFlaggedTestAccounts(): Promise<FlaggedTestAccount[]> {
+  const dids = await fetchHiddenAccountDids().catch(() => new Set<string>());
+  const accounts = await Promise.all(
+    [...dids].map(async (did): Promise<FlaggedTestAccount> => {
+      const card = await getCertifiedProfileCard(did).catch(() => null);
+      return { did, displayName: card?.displayName?.trim() || null, avatarUrl: card?.avatarUrl ?? null };
+    }),
+  );
+  return accounts.sort((a, b) =>
+    (a.displayName ?? a.did).localeCompare(b.displayName ?? b.did, undefined, { sensitivity: "base" }),
+  );
 }
 
 /** Remove the test-account flag from an account (idempotent). Deletes every

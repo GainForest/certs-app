@@ -389,7 +389,8 @@
     "drone": "Drone",
     "trees": "Pohon",
     "measurements": "Pengukuran",
-    "members": "Anggota"
+    "members": "Anggota",
+    "admin": "Admin"
   },
   "accountOrganizations": {
     "memberOf": "Anggota dari",
@@ -766,7 +767,8 @@
     "batch": {
       "sightings": "{count, plural, other {berbagi # pengamatan alam}}",
       "moreSpecies": "+{count} lagi",
-      "viewAll": "Lihat semua pengamatan"
+      "viewAll": "Lihat semua pengamatan",
+      "likesAcross": "{count, plural, other {# suka pada pengamatan ini}}"
     },
     "profileCard": {
       "unnamed": "Akun tanpa nama",
@@ -821,5 +823,13 @@
     "flaggedDescription": "Proyek, pengamatan, dan aktivitas feed milik {name} disembunyikan dari semua orang. Hanya pengelola GainForest yang bisa melihat akun ini di sini.",
     "unhideAction": "Tampilkan kembali",
     "genericError": "Terjadi kesalahan. Silakan coba lagi."
+  },
+  "adminTestAccounts": {
+    "title": "Akun uji coba",
+    "description": "Akun-akun ini ditandai sebagai uji coba, jadi proyek, pengamatan, hasil pencarian, dan aktivitas feed-nya disembunyikan dari semua orang.",
+    "empty": "Belum ada akun yang ditandai sebagai uji coba.",
+    "remove": "Hapus",
+    "unnamed": "Akun tanpa nama",
+    "error": "Terjadi kesalahan. Silakan coba lagi."
   }
 }

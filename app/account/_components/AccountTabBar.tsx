@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BinocularsIcon, FolderKanbanIcon, HeartHandshakeIcon, HomeIcon, ImageIcon, SettingsIcon, UsersIcon } from "lucide-react";
+import { BinocularsIcon, FolderKanbanIcon, HeartHandshakeIcon, HomeIcon, ImageIcon, SettingsIcon, ShieldCheckIcon, UsersIcon } from "lucide-react";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { cn } from "@/lib/utils";
 import type { AccountKind } from "../_lib/account-route";
 import {
+  accountAdminPath,
   accountAudioPath,
   accountBumicertsPath,
   accountDonationsPath,
@@ -21,7 +22,7 @@ import {
   accountTreesPath,
 } from "../_lib/account-route";
 
-type TabLabelKey = "home" | "overview" | "bumicerts" | "projects" | "donationHistory" | "observations" | "timeline" | "gallery" | "settings" | "sites" | "audio" | "drone" | "trees" | "members";
+type TabLabelKey = "home" | "overview" | "bumicerts" | "projects" | "donationHistory" | "observations" | "timeline" | "gallery" | "settings" | "sites" | "audio" | "drone" | "trees" | "members" | "admin";
 
 interface Tab {
   labelKey: TabLabelKey;
@@ -79,6 +80,7 @@ function buildTabs(
   scope: AccountTabBarScope,
   includeSettings: boolean,
   showOrgData: boolean,
+  showAdmin: boolean,
   manageBasePath?: string,
 ): Tab[] {
   const paths = buildTabPaths(did, scope, manageBasePath);
@@ -87,6 +89,19 @@ function buildTabs(
     href: paths.settings,
     icon: SettingsIcon,
     exact: false,
+  };
+  const adminTab: Tab = {
+    labelKey: "admin",
+    href: accountAdminPath(did),
+    icon: ShieldCheckIcon,
+    exact: false,
+  };
+  // The Admin tab (test-account moderation) only exists on the public profile,
+  // for stewards viewing their own profile.
+  const appendExtras = (tabs: Tab[]): Tab[] => {
+    if (includeSettings) tabs.push(settingsTab);
+    if (showAdmin && scope === "account") tabs.push(adminTab);
+    return tabs;
   };
 
   if (accountKind === "user") {
@@ -116,8 +131,7 @@ function buildTabs(
           donationsTab,
         ]
       : [projectsTab, observationsTab, donationsTab];
-    if (includeSettings) tabs.push(settingsTab);
-    return tabs;
+    return appendExtras(tabs);
   }
 
   const tabs: Tab[] = [
@@ -160,8 +174,7 @@ function buildTabs(
       },
     );
   }
-  if (includeSettings) tabs.push(settingsTab);
-  return tabs;
+  return appendExtras(tabs);
 }
 
 interface OrgTabBarProps {
@@ -170,6 +183,7 @@ interface OrgTabBarProps {
   scope?: AccountTabBarScope;
   includeSettings?: boolean;
   showOrgData?: boolean;
+  showAdmin?: boolean;
   manageBasePath?: string;
 }
 
@@ -179,12 +193,13 @@ export function AccountTabBar({
   scope = "account",
   includeSettings = false,
   showOrgData = false,
+  showAdmin = false,
   manageBasePath,
 }: OrgTabBarProps) {
   const t = useTranslations("common.accountTabs");
   const pathname = stripLocaleFromPathname(usePathname() ?? "/");
   const searchParams = useSearchParams();
-  const tabs = buildTabs(did, accountKind, scope, includeSettings, showOrgData, manageBasePath);
+  const tabs = buildTabs(did, accountKind, scope, includeSettings, showOrgData, showAdmin, manageBasePath);
 
   function isActive(tab: Tab): boolean {
     if (scope === "manage") {
