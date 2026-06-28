@@ -701,7 +701,8 @@ function ProjectEditor({
           />
         ),
       },
-      true,
+      // No replaceAll: stack the place editor on top of the create wizard so
+      // closing it returns to the wizard instead of dismissing everything.
     );
     void modal.show();
   };
