@@ -16,13 +16,15 @@ import { useTranslations } from "next-intl";
 import { HeartIcon, MessageCircleIcon, ReplyIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatRelative } from "@/app/_lib/format";
+import { resolveBlobUrl } from "@/app/_lib/pds";
 import {
   classifyRecordUri,
   fetchProfileLikes,
   fetchProfilePosts,
+  fetchRecordPreview,
   type ProfileLike,
   type ProfilePost,
-  type RecordKind,
+  type RecordPreview,
 } from "@/app/_lib/profile-activity";
 import { emptyEngagement, fetchEngagement, type Engagement } from "@/app/_lib/feed-engagement";
 import { AuthorChip } from "@/app/_components/AuthorChip";
@@ -32,6 +34,8 @@ import { accountLikesPath, accountPostsPath, accountRepliesPath } from "../_lib/
 type Tab = "posts" | "replies" | "likes";
 
 const PAGE = 24;
+const LOAD_MORE_CLASS =
+  "mx-auto mt-4 block rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
 
 export function ProfileActivity({
   did,
@@ -165,17 +169,16 @@ function PostsList({ did, replies }: { did: string; replies: boolean }) {
       <ul className="divide-y divide-border/60">
         {items.map((post) => {
           const stats = engagement.get(post.uri) ?? emptyEngagement();
-          const parent = post.parentUri ? classifyRecordUri(post.parentUri) : null;
           return (
             <li key={post.uri} className="py-3.5">
-              {replies && parent ? (
-                <Link
-                  href={parent.href}
-                  className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline"
-                >
-                  <ReplyIcon className="size-3" />
-                  {t("replyingTo", { kind: t(`kind.${parent.kind}` as const) })}
-                </Link>
+              {replies && post.parentUri ? (
+                <div className="mb-2">
+                  <div className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <ReplyIcon className="size-3" />
+                    {t("inReplyTo")}
+                  </div>
+                  <RecordPreviewCard uri={post.parentUri} />
+                </div>
               ) : null}
               <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground">{post.text}</p>
               <div className="mt-1.5 flex items-center gap-4 text-xs text-muted-foreground">
@@ -195,7 +198,7 @@ function PostsList({ did, replies }: { did: string; replies: boolean }) {
         {!loaded ? <ActivitySkeleton /> : null}
       </ul>
       {loaded ? (
-        <AutoLoadMoreButton hasMore={hasMore} loading={loading} onLoadMore={() => void loadMore()} className="mt-4" />
+        <AutoLoadMoreButton hasMore={hasMore} loading={loading} onLoadMore={() => void loadMore()} className={LOAD_MORE_CLASS} endLabel="" />
       ) : null}
     </div>
   );
@@ -215,43 +218,114 @@ function LikesList({ did }: { did: string }) {
   return (
     <div>
       <ul className="divide-y divide-border/60">
-        {items.map((like) => {
-          const info = classifyRecordUri(like.subjectUri);
-          const kindLabel = info ? t(`kind.${info.kind}` as const) : null;
-          return (
-            <li key={like.uri} className="py-3.5">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <HeartIcon className="size-3.5 fill-current text-rose-500" />
-                <span>{t("liked")}</span>
-                {info && kindLabel ? (
-                  <>
-                    <span aria-hidden>·</span>
-                    <Link href={info.href} className="hover:text-foreground hover:underline">
-                      {kindLabel}
-                    </Link>
-                  </>
-                ) : null}
-                {like.createdAt ? (
-                  <>
-                    <span aria-hidden>·</span>
-                    <span>{formatRelative(like.createdAt)}</span>
-                  </>
-                ) : null}
-              </div>
-              {info ? (
-                <div className="mt-1.5">
-                  <AuthorChip did={info.did} />
-                </div>
+        {items.map((like) => (
+          <li key={like.uri} className="py-3.5">
+            <div className="mb-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <HeartIcon className="size-3.5 fill-current text-rose-500" />
+              <span>{t("liked")}</span>
+              {like.createdAt ? (
+                <>
+                  <span aria-hidden>·</span>
+                  <span>{formatRelative(like.createdAt)}</span>
+                </>
               ) : null}
-            </li>
-          );
-        })}
+            </div>
+            <RecordPreviewCard uri={like.subjectUri} />
+          </li>
+        ))}
         {!loaded ? <ActivitySkeleton /> : null}
       </ul>
       {loaded ? (
-        <AutoLoadMoreButton hasMore={hasMore} loading={loading} onLoadMore={() => void loadMore()} className="mt-4" />
+        <AutoLoadMoreButton hasMore={hasMore} loading={loading} onLoadMore={() => void loadMore()} className={LOAD_MORE_CLASS} endLabel="" />
       ) : null}
     </div>
+  );
+}
+
+/** Compact preview of the record a reply targets or a like points at: thumbnail
+ *  + owner + title/text, linking to it. Falls back to an owner chip + kind link
+ *  for kinds we don't resolve (e.g. certs) or records that no longer exist. */
+function RecordPreviewCard({ uri }: { uri: string }) {
+  const t = useTranslations("common.activity");
+  const base = classifyRecordUri(uri);
+  const [data, setData] = useState<RecordPreview | null | undefined>(undefined);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    setData(undefined);
+    fetchRecordPreview(uri, controller.signal)
+      .then((preview) => {
+        if (active) setData(preview);
+      })
+      .catch(() => {
+        if (active) setData(null);
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [uri]);
+
+  if (!base) return null;
+  const kindLabel = t(`kind.${base.kind}`);
+
+  if (data === undefined) {
+    return (
+      <div className="rounded-xl border border-border/60 bg-card/40 p-3">
+        <span className="skeleton block h-3.5 w-1/2 rounded" />
+        <span className="skeleton mt-2 block h-3 w-2/3 rounded" />
+      </div>
+    );
+  }
+
+  if (data && (data.title || data.text)) {
+    return (
+      <Link
+        href={data.href}
+        className="flex gap-3 rounded-xl border border-border/60 bg-card/40 p-3 transition-colors hover:bg-muted/50"
+      >
+        <Thumb did={data.did} imageUrl={data.imageUrl} imageRef={data.imageRef} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-xs text-muted-foreground">
+            {data.ownerName ? `${data.ownerName} · ${kindLabel}` : kindLabel}
+          </div>
+          {data.title ? <div className="truncate text-sm font-medium text-foreground">{data.title}</div> : null}
+          {data.text ? <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{data.text}</p> : null}
+        </div>
+      </Link>
+    );
+  }
+
+  // No resolvable content (e.g. a cert, or a deleted record): owner + link.
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/40 p-2.5">
+      <div className="min-w-0 flex-1">
+        <AuthorChip did={base.did} />
+      </div>
+      <Link href={base.href} className="shrink-0 text-xs font-medium text-primary hover:underline">
+        {kindLabel}
+      </Link>
+    </div>
+  );
+}
+
+function Thumb({ did, imageUrl, imageRef }: { did: string; imageUrl: string | null; imageRef: string | null }) {
+  const [resolved, setResolved] = useState<string | null>(null);
+  useEffect(() => {
+    setResolved(null);
+    if (imageUrl || !imageRef) return;
+    const controller = new AbortController();
+    resolveBlobUrl(did, imageRef, controller.signal)
+      .then((url) => setResolved(url))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [did, imageUrl, imageRef]);
+  const src = imageUrl ?? resolved;
+  if (!src) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- arbitrary PDS/CDN hosts
+    <img src={src} alt="" className="size-12 shrink-0 rounded-lg object-cover" />
   );
 }
 

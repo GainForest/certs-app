@@ -173,7 +173,8 @@ function FollowList({ did, direction }: { did: string; direction: Direction }) {
           hasMore={hasMore}
           loading={loading}
           onLoadMore={() => void loadMore()}
-          className="mt-4"
+          endLabel=""
+          className="mx-auto mt-4 block rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         />
       ) : null}
     </div>

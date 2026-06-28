@@ -874,6 +874,7 @@
       "post": "postingan",
       "account": "akun",
       "record": "catatan"
-    }
+    },
+    "inReplyTo": "Membalas"
   }
 }

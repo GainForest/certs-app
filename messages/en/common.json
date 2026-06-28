@@ -874,6 +874,7 @@
       "post": "post",
       "account": "account",
       "record": "record"
-    }
+    },
+    "inReplyTo": "In reply to"
   }
 }

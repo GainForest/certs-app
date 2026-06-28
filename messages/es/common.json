@@ -874,6 +874,7 @@
       "post": "publicación",
       "account": "cuenta",
       "record": "registro"
-    }
+    },
+    "inReplyTo": "En respuesta a"
   }
 }
