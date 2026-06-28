@@ -8,18 +8,18 @@ import { parseAsString, parseAsStringEnum, useQueryStates } from "nuqs";
 import {
   BadgeCheckIcon,
   BinocularsIcon,
+  CalendarDaysIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CirclePlusIcon,
   FolderKanbanIcon,
   ImageIcon,
-  LeafIcon,
   Loader2Icon,
   MapPinIcon,
-  PaperclipIcon,
+  PlusIcon,
   RotateCcwIcon,
   SearchIcon,
-  SparkleIcon,
+  SparklesIcon,
   Trash2Icon,
   TriangleAlertIcon,
   XIcon,
@@ -32,10 +32,27 @@ import { useModal } from "@/components/ui/modal/context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { manageApiHref, manageHref, profileBasePath, type ManageTarget } from "@/lib/links";
+import { localProjectHref } from "@/app/_lib/urls";
+import { WORK_SCOPE_MESSAGE_KEYS, type KnownWorkScopeKey } from "@/app/_lib/work-scope-labels";
 import { canCreateRecord, canDeleteRecord, canUpdateRecord } from "../../_lib/cgs-permissions";
-import { createRecord, deleteRecord, putRecord, uploadBlob } from "../../_lib/mutations";
+import { createRecord, deleteRecord, getRecord, putRecord, uploadBlob } from "../../_lib/mutations";
+import {
+  CERT_COLLECTION,
+  PROJECT_COLLECTION,
+  PROJECT_WORK_SCOPE_KEYS,
+  buildCertRecord,
+  buildProjectRecord,
+  certToDraftFields,
+  clampSummary,
+  descriptionText,
+  emptyProjectCertDraft,
+  extractLocationRefs,
+  extractRkey,
+  resolveSiteRefs,
+  type ProjectCertDraft,
+  type StrongRef,
+} from "../../_lib/project-cert";
 
-const PROJECT_COLLECTION = "org.hypercerts.collection";
 const PROJECT_MODES = ["list", "new", "edit"] as const;
 const TITLE_MAX = 90;
 const FIELD =
@@ -44,6 +61,8 @@ const FIELD_ERROR = "!border-2 !border-destructive ring-2 ring-destructive/25 fo
 const ERROR_MESSAGE = "flex items-center gap-1.5 rounded-lg bg-warn/10 px-2.5 py-1.5 text-xs font-medium text-foreground/75";
 const QUERY_STATE_OPTIONS = { history: "push", scroll: false, shallow: true } as const;
 type ProjectMode = (typeof PROJECT_MODES)[number];
+
+const WORK_SCOPE_KEYS: KnownWorkScopeKey[] = [...PROJECT_WORK_SCOPE_KEYS];
 
 type ManagedProject = {
   kind: "project";
@@ -66,31 +85,24 @@ type ManagedProject = {
   rawRecord: Record<string, unknown> | null;
 };
 
-type ProjectDraft = {
-  title: string;
-  shortDescription: string;
-  description: string;
+type ManagedLocation = {
+  metadata: { did: string; uri: string; rkey: string; cid: string; createdAt: string | null };
+  record: { name: string | null; description: string | null; locationType: string | null; location: unknown };
 };
 
-type UploadedBlobLike = {
-  ref?: unknown;
-  mimeType?: unknown;
-  size?: unknown;
-  blob?: unknown;
-};
+type SitesStatus = "idle" | "loading" | "ready" | "error";
+
+type UploadedBlobLike = { ref?: unknown; mimeType?: unknown; size?: unknown; blob?: unknown };
 
 type ProjectField = "title" | "shortDescription" | "description";
-type ProjectIssue = { field: ProjectField; section: "basics" | "story"; message: string };
+type ProjectIssue = { field: ProjectField; message: string };
 
 type EditorState =
   | { mode: "create"; project: null }
   | { mode: "edit"; project: ManagedProject };
 
-const emptyDraft: ProjectDraft = {
-  title: "",
-  shortDescription: "",
-  description: "",
-};
+/** The cert (org.hypercerts.claim.activity) bound 1:1 to a project. */
+type LinkedCert = { rkey: string; cid: string | null; record: Record<string, unknown> } | null;
 
 export function ManageProjectsClient({ target }: { target: ManageTarget }) {
   const [projects, setProjects] = useState<ManagedProject[]>([]);
@@ -175,7 +187,6 @@ export function ManageProjectsClient({ target }: { target: ManageTarget }) {
             key="new-project"
             state={{ mode: "create", project: null }}
             target={target}
-            presentation="inline"
             onClose={backToList}
             onSaved={() => {
               backToList();
@@ -190,7 +201,6 @@ export function ManageProjectsClient({ target }: { target: ManageTarget }) {
               key={selectedProject.atUri}
               state={{ mode: "edit", project: selectedProject }}
               target={target}
-              presentation="inline"
               onClose={backToList}
               onSaved={() => {
                 backToList();
@@ -238,7 +248,6 @@ export function ManageProjectsClient({ target }: { target: ManageTarget }) {
                       project={project}
                       index={index}
                       galleryHref={`${profileBasePath(target)}/projects/${encodeURIComponent(project.rkey)}/gallery`}
-                      certsHref={`${profileBasePath(target)}/projects/${encodeURIComponent(project.rkey)}/certs`}
                       observationsHref={manageHref(target, "observations", { project: project.atUri })}
                       sitesHref={`${profileBasePath(target)}/projects/${encodeURIComponent(project.rkey)}/sites`}
                       timelineHref={`${profileBasePath(target)}/projects/${encodeURIComponent(project.rkey)}/timeline`}
@@ -277,7 +286,6 @@ function ProjectCard({
   project,
   index,
   galleryHref,
-  certsHref,
   observationsHref,
   sitesHref,
   timelineHref,
@@ -287,7 +295,6 @@ function ProjectCard({
   project: ManagedProject;
   index: number;
   galleryHref: string;
-  certsHref: string;
   observationsHref: string;
   sitesHref: string;
   timelineHref: string;
@@ -363,17 +370,10 @@ function ProjectCard({
           ) : (
             <p className="mt-2 text-sm italic text-muted-foreground">No summary yet.</p>
           )}
-          <p className="mt-2 truncate text-xs text-muted-foreground/75">{project.atUri}</p>
         </div>
 
         <div className="mt-3 flex flex-wrap justify-end gap-2 pt-2">
           <div className="flex shrink-0 flex-wrap gap-2">
-            <Button asChild type="button" variant="outline" size="sm" className="h-8" onClick={(event) => event.stopPropagation()}>
-              <Link href={certsHref} aria-label={t("manageCertsFor", { title: project.title })}>
-                <LeafIcon className="size-3.5" />
-                {t("manageCerts")}
-              </Link>
-            </Button>
             <Button asChild type="button" variant="outline" size="sm" className="h-8" onClick={(event) => event.stopPropagation()}>
               <Link href={observationsHref} aria-label={t("manageObservationsFor", { title: project.title })}>
                 <BinocularsIcon className="size-3.5" />
@@ -392,16 +392,69 @@ function ProjectCard({
                 {t("manageSites")}
               </Link>
             </Button>
-            <Button asChild type="button" variant="outline" size="sm" className="h-8" onClick={(event) => event.stopPropagation()}>
-              <Link href={timelineHref} aria-label={t("manageTimelineFor", { title: project.title })}>
-                <PaperclipIcon className="size-3.5" />
-                {t("manageTimeline")}
-              </Link>
-            </Button>
           </div>
         </div>
       </div>
     </motion.article>
+  );
+}
+
+function ProjectCreateHero() {
+  const t = useTranslations("marketplace.manageProjects.editor");
+  return (
+    <section className="relative mb-8 overflow-hidden rounded-[1.8rem] border border-border bg-card shadow-sm">
+      <div className="relative min-h-[15rem] overflow-hidden rounded-[1.72rem] sm:min-h-[17rem]">
+        <Image
+          src="/assets/media/images/create-bumicert/hero-light@2x.webp"
+          alt=""
+          fill
+          priority
+          quality={95}
+          sizes="(min-width: 1024px) 1100px, 100vw"
+          className="object-cover object-center dark:hidden"
+        />
+        <Image
+          src="/assets/media/images/create-bumicert/hero-dark@2x.webp"
+          alt=""
+          fill
+          priority
+          quality={95}
+          sizes="(min-width: 1024px) 1100px, 100vw"
+          className="hidden object-cover object-center dark:block"
+        />
+        <div className="absolute inset-0 bg-linear-to-r from-background/96 via-background/75 to-background/5 dark:from-background/93 dark:via-background/62 dark:to-background/10" />
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-linear-to-t from-foreground/15 via-foreground/5 to-transparent dark:from-black/65" />
+
+        <div className="relative z-10 flex min-h-[15rem] max-w-[30rem] flex-col justify-center px-6 py-9 sm:min-h-[17rem] sm:px-9">
+          <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+            <SparklesIcon className="size-3.5" />
+            {t("hero.eyebrow")}
+          </div>
+          <h2 className="font-instrument text-4xl font-medium italic leading-[0.95] tracking-[-0.03em] text-foreground sm:text-5xl">
+            {t("hero.title")}
+          </h2>
+          <p className="mt-4 max-w-[24rem] text-base leading-7 text-muted-foreground">
+            {t("hero.subtitle")}
+          </p>
+        </div>
+      </div>
+      <Image
+        src="/assets/media/images/create-bumicert/plant-light.png"
+        alt=""
+        width={1002}
+        height={1146}
+        priority
+        className="pointer-events-none absolute bottom-0 right-[3%] z-20 hidden h-[24rem] w-auto max-w-[48%] object-contain dark:hidden md:block"
+      />
+      <Image
+        src="/assets/media/images/create-bumicert/plant-dark.png"
+        alt=""
+        width={964}
+        height={1129}
+        priority
+        className="pointer-events-none absolute bottom-0 right-[3%] z-20 hidden h-[24rem] w-auto max-w-[48%] object-contain dark:md:block"
+      />
+    </section>
   );
 }
 
@@ -411,16 +464,18 @@ function ProjectEditor({
   onClose,
   onSaved,
   onDeleted,
-  presentation = "modal",
 }: {
   state: EditorState;
   target: ManageTarget;
   onClose: () => void;
   onSaved: () => void;
   onDeleted?: () => void;
-  presentation?: "modal" | "inline";
 }) {
-  const [draft, setDraft] = useState<ProjectDraft>(() => draftFromProject(state.project));
+  const t = useTranslations("marketplace.manageProjects.editor");
+  const workScopeT = useTranslations("common.workScopes");
+  const workScopes = WORK_SCOPE_KEYS.map((key) => workScopeT(WORK_SCOPE_MESSAGE_KEYS[key]));
+
+  const [draft, setDraft] = useState<ProjectCertDraft>(() => draftFromProject(state.project));
   const [changedFields, setChangedFields] = useState<Set<ProjectField>>(() => new Set());
   const [saveAttempted, setSaveAttempted] = useState(false);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -429,20 +484,24 @@ function ProjectEditor({
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [savedProjectUri, setSavedProjectUri] = useState<string | null>(state.project?.atUri ?? null);
+
+  // The cert (org.hypercerts.claim.activity) bound 1:1 to this project. Loaded
+  // on edit so its rich fields can hydrate the form and be kept in sync.
+  const [linkedCert, setLinkedCert] = useState<LinkedCert>(null);
+
+  const [sites, setSites] = useState<ManagedLocation[]>([]);
+  const [sitesStatus, setSitesStatus] = useState<SitesStatus>("idle");
+
   const modal = useModal();
   const isEdit = state.mode === "edit";
-  const isInline = presentation === "inline";
   const savePermission = isEdit ? canUpdateRecord(target) : canCreateRecord(target);
   const deletePermission = canDeleteRecord(target);
-  const actionT = useTranslations("marketplace.manageProjects.actions");
+  const repoOptions = target.kind === "group" ? { repo: target.did } : undefined;
   const issues = getProjectIssues(draft);
   const visibleIssues = saveAttempted ? issues : issues.filter((issue) => changedFields.has(issue.field));
   const issuesByName = issuesByProjectField(visibleIssues);
   const coverUrl = coverPreview ?? state.project?.imageUrl ?? null;
-  const shellClass = cn(
-    "relative overflow-visible",
-    isInline ? "w-full" : "max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[1.75rem] bg-background p-5 shadow-2xl sm:p-7",
-  );
+  const sitesHref = `${profileBasePath(target)}/sites`;
 
   useEffect(() => {
     if (!coverFile) {
@@ -454,12 +513,61 @@ function ProjectEditor({
     return () => URL.revokeObjectURL(nextPreview);
   }, [coverFile]);
 
+  // Load the steward's certified sites so they can be attached to the project.
+  useEffect(() => {
+    let active = true;
+    setSitesStatus("loading");
+    fetch(manageApiHref("/api/manage/sites", target), { cache: "no-store" })
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) throw new Error("sites");
+        if (!active) return;
+        setSites(Array.isArray(json) ? json : []);
+        setSitesStatus("ready");
+      })
+      .catch(() => {
+        if (active) setSitesStatus("error");
+      });
+    return () => {
+      active = false;
+    };
+  }, [target]);
+
+  // On edit, fetch the linked cert and hydrate the rich fields (scope, dates,
+  // contributors, places) that the project list endpoint doesn't carry.
+  useEffect(() => {
+    if (!isEdit) return;
+    const firstCertUri = state.project.bumicertUris[0];
+    if (!firstCertUri) return;
+    let active = true;
+    const certRkey = extractRkey(firstCertUri);
+    getRecord(CERT_COLLECTION, certRkey, repoOptions)
+      .then((result) => {
+        if (!active) return;
+        setLinkedCert({ rkey: result.rkey || certRkey, cid: result.cid ?? null, record: result.record });
+        const hydrated = certToDraftFields(result.record);
+        setDraft((current) => ({
+          ...current,
+          ...hydrated,
+          // Prefer the cert's story when the project record didn't carry one.
+          description: current.description || descriptionText(result.record.description),
+        }));
+      })
+      .catch(() => {
+        /* A project without a resolvable cert still edits fine; one is created on save. */
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, state.project?.atUri]);
+
   const markChanged = (field: ProjectField) => {
     setChangedFields((current) => new Set(current).add(field));
   };
 
-  const updateDraft = (field: keyof ProjectDraft, value: string) => {
-    if (field === "title" || field === "shortDescription" || field === "description") markChanged(field);
+  const updateDraft = (field: ProjectField, value: string) => {
+    markChanged(field);
     setDraft((current) => ({ ...current, [field]: value }));
   };
 
@@ -482,15 +590,21 @@ function ProjectEditor({
       setError(deletePermission.reason ?? "You cannot delete this project.");
       return;
     }
+    const project = state.project;
+    const certRkey = linkedCert?.rkey ?? null;
     modal.pushModal(
       {
-        id: `delete-project-${state.project.rkey}`,
+        id: `delete-project-${project.rkey}`,
         dialogWidth: "max-w-md",
         content: (
           <DeleteProjectModal
-            projectTitle={state.project.title}
+            projectTitle={project.title}
             onConfirm={async () => {
-              await deleteRecord(PROJECT_COLLECTION, state.project.rkey, target.kind === "group" ? { repo: target.did } : undefined);
+              await deleteRecord(PROJECT_COLLECTION, project.rkey, repoOptions);
+              // Best-effort: remove the 1:1 cert alongside its project.
+              if (certRkey) {
+                await deleteRecord(CERT_COLLECTION, certRkey, repoOptions).catch(() => {});
+              }
               onDeleted?.();
             }}
           />
@@ -505,138 +619,162 @@ function ProjectEditor({
     event.preventDefault();
     setSaveAttempted(true);
     if (issues.length > 0) {
-      setError(issues[0]?.message ?? "Check the highlighted fields.");
+      setError(issues[0]?.message ?? t("errors.checkFields"));
       return;
     }
     if (!savePermission.allowed) {
-      setError(savePermission.reason ?? "You cannot save this project.");
+      setError(savePermission.reason ?? t("errors.cannotSave"));
       return;
     }
 
     setSaving(true);
     setError(null);
+
+    const siteRefs = resolveSiteRefs(
+      draft.selectedLocationUris,
+      sites.map((site) => ({ uri: site.metadata.uri, cid: site.metadata.cid })),
+      extractLocationRefs(linkedCert?.record),
+    );
+
     try {
-      const writeOptions = target.kind === "group" ? { repo: target.did } : undefined;
-      const cover = coverFile ? await uploadBlob(coverFile, writeOptions) : null;
-      const record = buildProjectRecord(draft, state.project, cover && coverFile ? toLexImageBlob(cover, coverFile) : undefined);
-      const result = isEdit
-        ? await putRecord(PROJECT_COLLECTION, state.project.rkey, record, { ...(state.project.cid ? { swapRecord: state.project.cid } : {}), ...(writeOptions ?? {}) })
-        : await createRecord(PROJECT_COLLECTION, record, undefined, writeOptions);
-      setSavedProjectUri(result.uri);
+      const cover = coverFile ? toLexImageBlob(await uploadBlob(coverFile, repoOptions), coverFile) : undefined;
+
+      if (isEdit) {
+        const project = state.project;
+        // 1) Update (or create) the bound cert so it mirrors the project.
+        let certRef: StrongRef | undefined;
+        if (linkedCert) {
+          const certRecord = buildCertRecord(draft, { existing: linkedCert.record, image: cover, siteRefs });
+          const certResult = await putRecord(CERT_COLLECTION, linkedCert.rkey, certRecord, {
+            ...(linkedCert.cid ? { swapRecord: linkedCert.cid } : {}),
+            ...(repoOptions ?? {}),
+          });
+          certRef = { uri: certResult.uri, cid: certResult.cid };
+        } else {
+          const certRecord = buildCertRecord(draft, { image: cover, siteRefs });
+          const certResult = await createRecord(CERT_COLLECTION, certRecord, undefined, repoOptions);
+          certRef = { uri: certResult.uri, cid: certResult.cid };
+        }
+        // 2) Update the project, keeping the cert linked in items[].
+        const projectRecord = buildProjectRecord(draft, {
+          existing: project.rawRecord,
+          banner: cover,
+          certRef,
+        });
+        const result = await putRecord(PROJECT_COLLECTION, project.rkey, projectRecord, {
+          ...(project.cid ? { swapRecord: project.cid } : {}),
+          ...(repoOptions ?? {}),
+        });
+        setSavedProjectUri(result.uri);
+      } else {
+        // Create flow: cert first, then the project that links to it. If the
+        // project write fails, roll the orphan cert back.
+        const certRecord = buildCertRecord(draft, { image: cover, siteRefs });
+        const certResult = await createRecord(CERT_COLLECTION, certRecord, undefined, repoOptions);
+        const certRef: StrongRef = { uri: certResult.uri, cid: certResult.cid };
+        try {
+          const projectRecord = buildProjectRecord(draft, { banner: cover, certRef });
+          const result = await createRecord(PROJECT_COLLECTION, projectRecord, undefined, repoOptions);
+          setSavedProjectUri(result.uri);
+        } catch (projectError) {
+          await deleteRecord(CERT_COLLECTION, extractRkey(certResult.uri), repoOptions).catch(() => {});
+          throw projectError;
+        }
+      }
       setShowSuccess(true);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Project could not be saved.");
+      setError(saveError instanceof Error ? saveError.message : t("errors.saveFailed"));
     } finally {
       setSaving(false);
     }
   };
 
-  const body = (
-    <AnimatePresence mode="wait">
-      {showSuccess ? (
-        <ProjectSuccessPanel
-          key="success"
-          isInline={isInline}
-          className={shellClass}
-          onBack={onSaved}
-          projectTitle={draft.title.trim()}
-          target={target}
-          projectUri={savedProjectUri}
-          showAddBumicert={!isEdit}
-        />
-      ) : (
+  if (showSuccess) {
+    return (
+      <ProjectSuccessPanel
+        onBack={onSaved}
+        projectTitle={draft.title.trim()}
+        projectUri={savedProjectUri}
+        isEdit={isEdit}
+      />
+    );
+  }
+
+  return (
     <motion.form
-      key="form"
-      initial={{ opacity: 0, y: isInline ? 8 : 18, scale: isInline ? 1 : 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -12, scale: isInline ? 1 : 0.985, filter: "blur(6px)" }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
       onSubmit={handleSubmit}
-      className={shellClass}
+      className="relative w-full"
     >
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-primary/[0.07] via-primary/[0.02] to-transparent" />
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <Button type="button" variant="ghost" size="sm" onClick={onClose} className="-ml-2 text-muted-foreground" disabled={saving}>
+          <ChevronLeftIcon className="size-4" /> {t("backToProjects")}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={resetDraft} className="text-muted-foreground" disabled={saving}>
+          <RotateCcwIcon className="size-4" /> {t("startOver")}
+        </Button>
+      </div>
 
-      {isInline ? (
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <Button type="button" variant="ghost" size="sm" onClick={onClose} className="-ml-2 text-muted-foreground" disabled={saving}>
-            <ChevronLeftIcon className="size-4" /> Back to My Projects
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={resetDraft} className="text-muted-foreground" disabled={saving}>
-            <RotateCcwIcon className="size-4" /> Start over
-          </Button>
-        </div>
-      ) : (
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <Button type="button" variant="ghost" size="sm" onClick={resetDraft} className="text-muted-foreground" disabled={saving}>
-            <RotateCcwIcon className="size-4" /> Start over
-          </Button>
-          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Close project editor" disabled={saving}>
-            <XIcon className="size-5" />
-          </Button>
-        </div>
-      )}
+      {!isEdit ? <ProjectCreateHero /> : null}
 
       <div className="grid gap-x-14 gap-y-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-10">
           <section>
-            <SectionHeader title={isEdit ? "Edit project" : "Create new project"} />
-            {isEdit ? (
-              <div className="mb-8 flex flex-wrap gap-2">
-                <Button asChild type="button" variant="outline">
-                  <Link href={`${profileBasePath(target)}/projects/${encodeURIComponent(state.project.rkey)}/certs`} aria-label={actionT("manageCertsFor", { title: state.project.title })}>
-                    <LeafIcon className="size-4" />
-                    {actionT("manageCerts")}
-                  </Link>
-                </Button>
-                <Button asChild type="button" variant="outline">
-                  <Link href={manageHref(target, "observations", { project: state.project.atUri })} aria-label={actionT("manageObservationsFor", { title: state.project.title })}>
-                    <BinocularsIcon className="size-4" />
-                    {actionT("manageObservations")}
-                  </Link>
-                </Button>
-                <Button asChild type="button" variant="outline">
-                  <Link href={`${profileBasePath(target)}/projects/${encodeURIComponent(state.project.rkey)}/gallery`} aria-label={actionT("manageGalleryFor", { title: state.project.title })}>
-                    <ImageIcon className="size-4" />
-                    {actionT("manageGallery")}
-                  </Link>
-                </Button>
-                <Button asChild type="button" variant="outline">
-                  <Link href={manageHref(target, "sites")} aria-label={actionT("manageSitesFor", { title: state.project.title })}>
-                    <MapPinIcon className="size-4" />
-                    {actionT("manageSites")}
-                  </Link>
-                </Button>
-              </div>
-            ) : null}
+            <SectionHeader title={isEdit ? t("editTitle") : t("createTitle")} />
             <div className="space-y-8">
-              <Field label="Project name" hint="use a name people will understand" htmlFor="project-title" error={issuesByName.title?.message}>
+              <Field label={t("fields.name.label")} hint={t("fields.name.hint")} htmlFor="project-title" error={issuesByName.title?.message}>
                 <input
                   id="project-title"
                   value={draft.title}
                   maxLength={TITLE_MAX}
                   onChange={(event) => updateDraft("title", event.target.value)}
-                  placeholder="Community forest restoration"
+                  placeholder={t("fields.name.placeholder")}
                   className={cn(FIELD, "px-4 py-3 font-instrument text-2xl italic tracking-[-0.01em]", issuesByName.title && FIELD_ERROR)}
                 />
                 <div className="mt-1.5 text-right text-xs text-muted-foreground">{draft.title.length} / {TITLE_MAX}</div>
               </Field>
 
-              <Field label="Short summary" hint="optional — one or two sentences" htmlFor="project-summary" error={issuesByName.shortDescription?.message}>
+              <Field label={t("fields.summary.label")} hint={t("fields.summary.hint")} htmlFor="project-summary" error={issuesByName.shortDescription?.message}>
                 <textarea
                   id="project-summary"
                   value={draft.shortDescription}
-                  onChange={(event) => updateDraft("shortDescription", event.target.value)}
-                  placeholder="Local stewards are restoring forest plots, tracking tree growth, and sharing updates from the field."
+                  onChange={(event) => updateDraft("shortDescription", event.target.value.slice(0, 300))}
+                  placeholder={t("fields.summary.placeholder")}
                   className={cn(FIELD, "min-h-24 resize-y px-4 py-3 text-[15px] leading-7", issuesByName.shortDescription && FIELD_ERROR)}
                 />
+                <div className="mt-1.5 text-right text-xs text-muted-foreground">{clampSummary(draft.shortDescription).length} / 300</div>
               </Field>
 
+              <Field label={t("fields.story.label")} hint={t("fields.story.hint")} htmlFor="project-story">
+                <textarea
+                  id="project-story"
+                  value={draft.description}
+                  onChange={(event) => updateDraft("description", event.target.value)}
+                  placeholder={t("fields.story.placeholder")}
+                  className={cn(FIELD, "min-h-48 resize-y px-4 py-3 text-[15px] leading-7")}
+                />
+              </Field>
             </div>
           </section>
+
+          <ScopeAndDatesSection draft={draft} setDraft={setDraft} workScopes={workScopes} t={t} />
+
+          <ContributorsSection draft={draft} setDraft={setDraft} t={t} />
+
+          <SitesSection
+            draft={draft}
+            setDraft={setDraft}
+            sites={sites}
+            sitesStatus={sitesStatus}
+            sitesHref={sitesHref}
+            t={t}
+          />
         </div>
 
         <aside className="xl:sticky xl:top-20 xl:self-start">
-          <PhotoPanel coverUrl={coverUrl} onChange={handleCoverChange} />
+          <PhotoPanel coverUrl={coverUrl} onChange={handleCoverChange} t={t} />
         </aside>
       </div>
 
@@ -650,74 +788,280 @@ function ProjectEditor({
         {isEdit ? (
           <Button type="button" variant="destructive" size="lg" onClick={() => void handleDeleteProject()} disabled={saving || !deletePermission.allowed} title={deletePermission.reason ?? undefined}>
             <Trash2Icon className="size-4" />
-            Delete project
+            {t("delete")}
           </Button>
         ) : <span />}
         <div className="flex flex-wrap justify-end gap-2">
           <Button type="button" variant="outline" size="lg" onClick={onClose} disabled={saving}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button type="submit" size="lg" disabled={saving || !savePermission.allowed} title={savePermission.reason ?? undefined}>
             {saving ? <Loader2Icon className="size-4 animate-spin" /> : <FolderKanbanIcon className="size-4" />}
-            {saving ? "Saving…" : isEdit ? "Save changes" : "Save project"}
+            {saving ? t("saving") : isEdit ? t("saveChanges") : t("saveProject")}
           </Button>
         </div>
       </div>
     </motion.form>
-      )}
-    </AnimatePresence>
   );
+}
 
-  if (isInline) return body;
+function ScopeAndDatesSection({
+  draft,
+  setDraft,
+  workScopes,
+  t,
+}: {
+  draft: ProjectCertDraft;
+  setDraft: React.Dispatch<React.SetStateAction<ProjectCertDraft>>;
+  workScopes: string[];
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const toggleScope = (scope: string) => {
+    setDraft((current) => ({
+      ...current,
+      scopes: current.scopes.includes(scope) ? current.scopes.filter((item) => item !== scope) : [...current.scopes, scope],
+    }));
+  };
 
   return (
-    <div
-      className="fixed inset-0 z-[1000] flex items-end justify-center bg-background/70 p-3 backdrop-blur-sm sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-editor-title"
-    >
-      {body}
-    </div>
+    <section className="space-y-8">
+      <Field label={t("fields.scope.label")} hint={t("fields.scope.hint")}>
+        <div className="flex flex-wrap gap-2">
+          {workScopes.map((scope) => {
+            const active = draft.scopes.includes(scope);
+            return (
+              <button
+                key={scope}
+                type="button"
+                onClick={() => toggleScope(scope)}
+                className={cn(
+                  "rounded-full border px-4 py-2 text-sm font-medium transition-all",
+                  active
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border bg-background/70 text-foreground/75 hover:border-primary/35 hover:text-foreground",
+                )}
+              >
+                {scope}
+              </button>
+            );
+          })}
+        </div>
+        <input
+          value={draft.customScope}
+          onChange={(event) => setDraft((current) => ({ ...current, customScope: event.target.value }))}
+          placeholder={t("fields.scope.customPlaceholder")}
+          className={cn(FIELD, "mt-3 px-4 py-2.5 text-sm")}
+        />
+      </Field>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={t("fields.startDate.label")} htmlFor="project-start">
+          <div className="relative">
+            <CalendarDaysIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              id="project-start"
+              type="date"
+              value={draft.startDate}
+              onChange={(event) => setDraft((current) => ({ ...current, startDate: event.target.value }))}
+              className={cn(FIELD, "h-11 pl-9 pr-3")}
+            />
+          </div>
+        </Field>
+        <Field label={t("fields.endDate.label")} htmlFor="project-end">
+          <div className="space-y-3">
+            <div className="relative">
+              <CalendarDaysIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="project-end"
+                type="date"
+                value={draft.endDate}
+                disabled={draft.ongoing}
+                onChange={(event) => setDraft((current) => ({ ...current, endDate: event.target.value }))}
+                className={cn(FIELD, "h-11 pl-9 pr-3 disabled:opacity-40")}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={draft.ongoing}
+                onChange={(event) => setDraft((current) => ({ ...current, ongoing: event.target.checked, endDate: event.target.checked ? "" : current.endDate }))}
+                className="size-4 rounded border-border accent-primary"
+              />
+              {t("fields.endDate.ongoing")}
+            </label>
+          </div>
+        </Field>
+      </div>
+    </section>
+  );
+}
+
+function ContributorsSection({
+  draft,
+  setDraft,
+  t,
+}: {
+  draft: ProjectCertDraft;
+  setDraft: React.Dispatch<React.SetStateAction<ProjectCertDraft>>;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const updateContributor = (index: number, value: string) => {
+    setDraft((current) => ({
+      ...current,
+      contributors: current.contributors.map((item, itemIndex) => (itemIndex === index ? value : item)),
+    }));
+  };
+  const removeContributor = (index: number) => {
+    setDraft((current) => ({
+      ...current,
+      contributors: current.contributors.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
+  return (
+    <section>
+      <Field label={t("fields.people.label")} hint={t("fields.people.hint")}>
+        <div className="space-y-3">
+          {draft.contributors.map((contributor, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                value={contributor}
+                onChange={(event) => updateContributor(index, event.target.value)}
+                placeholder={index === 0 ? t("fields.people.placeholderFirst") : t("fields.people.placeholder")}
+                className={cn(FIELD, "h-11 px-4")}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                disabled={draft.contributors.length === 1}
+                onClick={() => removeContributor(index)}
+                aria-label={t("fields.people.remove")}
+              >
+                <Trash2Icon className="size-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setDraft((current) => ({ ...current, contributors: [...current.contributors, ""] }))}
+          className="mt-3"
+        >
+          <PlusIcon /> {t("fields.people.add")}
+        </Button>
+      </Field>
+    </section>
+  );
+}
+
+function SitesSection({
+  draft,
+  setDraft,
+  sites,
+  sitesStatus,
+  sitesHref,
+  t,
+}: {
+  draft: ProjectCertDraft;
+  setDraft: React.Dispatch<React.SetStateAction<ProjectCertDraft>>;
+  sites: ManagedLocation[];
+  sitesStatus: SitesStatus;
+  sitesHref: string;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const toggleLocation = (uri: string) => {
+    setDraft((current) => ({
+      ...current,
+      selectedLocationUris: current.selectedLocationUris.includes(uri)
+        ? current.selectedLocationUris.filter((item) => item !== uri)
+        : [...current.selectedLocationUris, uri],
+    }));
+  };
+
+  return (
+    <section>
+      <Field label={t("fields.sites.label")} hint={t("fields.sites.hint")}>
+        <div className="rounded-2xl border border-border bg-background/70 p-3">
+          {sitesStatus === "loading" ? (
+            <div className="flex items-center gap-3 p-4 text-sm text-muted-foreground">
+              <Loader2Icon className="size-4 animate-spin" /> {t("fields.sites.loading")}
+            </div>
+          ) : sitesStatus === "error" ? (
+            <div className="p-4 text-sm text-muted-foreground">{t("fields.sites.error")}</div>
+          ) : sites.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-5 text-sm leading-6 text-muted-foreground">
+              {t.rich("fields.sites.empty", {
+                link: (chunks) => (
+                  <Link href={sitesHref} className="text-primary hover:underline">
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </div>
+          ) : (
+            <div className="grid gap-2 md:grid-cols-2">
+              {sites.map((site) => {
+                const active = draft.selectedLocationUris.includes(site.metadata.uri);
+                return (
+                  <button
+                    type="button"
+                    key={site.metadata.uri}
+                    onClick={() => toggleLocation(site.metadata.uri)}
+                    className={cn(
+                      "flex items-start gap-3 rounded-xl border p-3 text-left transition-all",
+                      active ? "border-primary/40 bg-primary/[0.08]" : "border-border bg-card hover:border-primary/25",
+                    )}
+                  >
+                    <span className={cn("mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl", active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                      <MapPinIcon className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-foreground">{site.record.name || t("fields.sites.unnamed")}</span>
+                      <span className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                        {site.record.description || site.record.locationType || t("fields.sites.fallback")}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Field>
+    </section>
   );
 }
 
 function ProjectSuccessPanel({
-  isInline,
-  className,
   onBack,
   projectTitle,
-  target,
   projectUri,
-  showAddBumicert,
+  isEdit,
 }: {
-  isInline: boolean;
-  className: string;
   onBack: () => void;
   projectTitle: string;
-  target: ManageTarget;
   projectUri: string | null;
-  showAddBumicert: boolean;
+  isEdit: boolean;
 }) {
-  const addBumicertHref = projectUri
-    ? manageHref(target, "newBumicert", { forProject: projectIdentityFromUri(projectUri) ?? projectUri })
-    : manageHref(target, "newBumicert");
+  const t = useTranslations("marketplace.manageProjects.editor.success");
+  const projectHref = projectHrefFromUri(projectUri);
 
   return (
     <motion.div
-      key="success"
-      initial={{ opacity: 0, y: 18, scale: isInline ? 1 : 0.98 }}
+      initial={{ opacity: 0, y: 18, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10, scale: 0.99 }}
       transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }}
-      className={className}
+      className="relative w-full"
       role="status"
       aria-live="polite"
     >
-      <div className="relative flex min-h-[28rem] overflow-hidden rounded-[2rem] bg-primary/[0.04] px-6 py-12 sm:px-10">
+      <div className="relative flex min-h-[26rem] overflow-hidden rounded-[2rem] bg-primary/[0.04] px-6 py-12 sm:px-10">
         <Button type="button" variant="ghost" size="sm" onClick={onBack} className="absolute left-4 top-4 z-20 text-muted-foreground hover:text-foreground">
           <ChevronLeftIcon className="size-4" />
-          Back to My Projects
+          {t("back")}
         </Button>
         <div className="relative z-10 m-auto flex max-w-2xl flex-col items-center text-center">
           <motion.div
@@ -735,73 +1079,35 @@ function ProjectSuccessPanel({
             transition={{ duration: 0.25, delay: 0.16 }}
             className="mt-3 font-instrument text-4xl font-medium italic leading-tight tracking-[-0.04em] text-foreground sm:text-5xl"
           >
-            Project saved successfully
+            {isEdit ? t("titleEdit") : t("titleCreate")}
           </motion.h3>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, delay: 0.22 }}
-            className="mt-4 max-w-xs text-sm leading-6 text-muted-foreground"
+            className="mt-4 max-w-sm text-sm leading-6 text-muted-foreground"
           >
-            {showAddBumicert
-              ? "When you're ready, mint an impact certificate (Cert) from this project to apply for funding. This step is optional."
-              : "Your project changes have been saved."}
+            {projectTitle ? t("descriptionNamed", { title: projectTitle }) : t("description")}
           </motion.p>
 
-          {showAddBumicert ? (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.28, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-              className="mt-9 w-full max-w-xl overflow-visible"
-            >
-              <Link
-                href={addBumicertHref}
-                className="group relative flex flex-col items-center gap-4 overflow-visible rounded-[2rem] border border-border bg-background p-5 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_22px_80px_color-mix(in_oklab,var(--primary)_16%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:block sm:p-6 sm:pl-40 sm:pr-24 sm:text-left"
-              >
-                <div aria-hidden className="pointer-events-none relative z-20 -mt-10 h-40 w-32 sm:absolute sm:-left-8 sm:-top-10 sm:mt-0 sm:h-44 sm:w-40">
-                  <SparkleIcon
-                    className="absolute right-0 top-8 size-5 rotate-12 text-primary/45 transition-transform duration-300 group-hover:scale-125"
-                    fill="currentColor"
-                    strokeWidth={0}
-                  />
-                  <SparkleIcon
-                    className="absolute left-2 top-4 size-3 -rotate-12 text-primary/55 transition-transform duration-300 group-hover:scale-125"
-                    fill="currentColor"
-                    strokeWidth={0}
-                  />
-                  <div className="absolute left-16 top-16 z-0 h-24 w-[4.5rem] rotate-6 rounded-[0.9rem] border border-border bg-background/55 p-1 shadow-xl backdrop-blur-sm transition-transform duration-300 group-hover:translate-y-1 group-hover:rotate-12 sm:left-20 sm:top-[4.5rem] sm:h-28 sm:w-20">
-                    <div className="h-12 rounded-[0.65rem] bg-foreground/8 sm:h-14" />
-                    <div className="mt-2 h-1.5 w-8 rounded-full bg-muted" />
-                    <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted" />
-                  </div>
-                  <div className="absolute left-4 top-8 z-10 h-28 w-[5.5rem] -rotate-12 rounded-[1rem] border border-border bg-background/80 p-1.5 shadow-2xl backdrop-blur-md transition-transform duration-300 group-hover:-translate-y-1 group-hover:-rotate-[18deg] sm:h-[8.5rem] sm:w-[6.5rem]">
-                    <div className="grid h-16 place-items-center rounded-[0.75rem] bg-primary/15 sm:h-20">
-                      <LeafIcon className="size-8 text-primary/80 sm:size-10" />
-                    </div>
-                    <div className="mt-2 h-2 w-10 rounded-full bg-muted" />
-                    <div className="mt-1.5 h-2 w-full rounded-full bg-muted" />
-                  </div>
-                </div>
-
-                <div aria-hidden className="absolute -left-12 -top-12 size-40 rounded-full bg-primary/10 blur-3xl transition-opacity duration-300 group-hover:opacity-90" />
-                <div className="relative z-10 w-full">
-                  <div className="min-w-0">
-                    <h4 className="font-instrument text-2xl font-medium italic leading-tight tracking-[-0.03em] text-foreground sm:text-3xl">
-                      Mint your first Cert
-                    </h4>
-                    <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground sm:mx-0">
-                      An impact certificate minted from {projectTitle || "this project"} — proof of one contribution, with photos, dates, places, and contributors, so funders can support it.
-                    </p>
-                  </div>
-                </div>
-                <span className="absolute right-6 top-1/2 hidden size-14 -translate-y-1/2 place-items-center rounded-full bg-transparent text-muted-foreground transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1/2 group-hover:bg-muted group-hover:text-primary sm:grid">
-                  <ChevronRightIcon className="size-7" />
-                </span>
-              </Link>
-            </motion.div>
-          ) : null}
-
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, delay: 0.3 }}
+            className="mt-8 flex flex-wrap items-center justify-center gap-3"
+          >
+            {projectHref ? (
+              <Button asChild size="lg">
+                <Link href={projectHref}>
+                  {t("view")}
+                  <ChevronRightIcon className="size-4" />
+                </Link>
+              </Button>
+            ) : null}
+            <Button type="button" variant="outline" size="lg" onClick={onBack}>
+              {t("back")}
+            </Button>
+          </motion.div>
         </div>
       </div>
     </motion.div>
@@ -829,11 +1135,11 @@ function Field({ label, hint, htmlFor, error, children }: { label: string; hint?
   );
 }
 
-function PhotoPanel({ coverUrl, onChange }: { coverUrl: string | null; onChange: (event: ChangeEvent<HTMLInputElement>) => void }) {
+function PhotoPanel({ coverUrl, onChange, t }: { coverUrl: string | null; onChange: (event: ChangeEvent<HTMLInputElement>) => void; t: ReturnType<typeof useTranslations> }) {
   return (
     <div className="rounded-3xl bg-background p-4">
       <label htmlFor="project-image" className="block text-sm font-medium text-foreground">
-        Project photo <span className="font-normal text-muted-foreground">optional</span>
+        {t("fields.photo.label")} <span className="font-normal text-muted-foreground">{t("fields.photo.optional")}</span>
       </label>
       <label
         htmlFor="project-image"
@@ -841,12 +1147,12 @@ function PhotoPanel({ coverUrl, onChange }: { coverUrl: string | null; onChange:
       >
         <div className="relative aspect-[4/3]">
           {coverUrl ? (
-            <Image src={coverUrl} alt="Project photo" fill unoptimized sizes="320px" className="object-cover" />
+            <Image src={coverUrl} alt="" fill unoptimized sizes="320px" className="object-cover" />
           ) : (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center text-muted-foreground">
               <ImageIcon className="mb-3 size-8 text-primary/70" />
-              <span className="font-instrument text-2xl italic text-foreground">Choose a photo</span>
-              <span className="mt-1 text-xs leading-5">JPG, PNG, WebP, HEIC, or HEIF.</span>
+              <span className="font-instrument text-2xl italic text-foreground">{t("fields.photo.cta")}</span>
+              <span className="mt-1 text-xs leading-5">{t("fields.photo.formats")}</span>
             </div>
           )}
         </div>
@@ -863,6 +1169,7 @@ function PhotoPanel({ coverUrl, onChange }: { coverUrl: string | null; onChange:
 }
 
 function DeleteProjectModal({ projectTitle, onConfirm }: { projectTitle: string; onConfirm: () => Promise<void> }) {
+  const t = useTranslations("marketplace.manageProjects.editor.deleteModal");
   const modal = useModal();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -879,7 +1186,7 @@ function DeleteProjectModal({ projectTitle, onConfirm }: { projectTitle: string;
       await onConfirm();
       await close();
     } catch (deleteProjectError) {
-      setError(deleteProjectError instanceof Error ? deleteProjectError.message : "Project could not be deleted.");
+      setError(deleteProjectError instanceof Error ? deleteProjectError.message : t("error"));
       setPending(false);
     }
   };
@@ -887,10 +1194,8 @@ function DeleteProjectModal({ projectTitle, onConfirm }: { projectTitle: string;
   return (
     <ModalContent dismissible={!pending} className="space-y-4">
       <ModalHeader>
-        <ModalTitle>Delete project?</ModalTitle>
-        <ModalDescription>
-          This will remove “{projectTitle}” from your account. This action cannot be undone.
-        </ModalDescription>
+        <ModalTitle>{t("title")}</ModalTitle>
+        <ModalDescription>{t("description", { title: projectTitle })}</ModalDescription>
       </ModalHeader>
       {error ? (
         <p className={ERROR_MESSAGE}>
@@ -898,10 +1203,10 @@ function DeleteProjectModal({ projectTitle, onConfirm }: { projectTitle: string;
         </p>
       ) : null}
       <ModalFooter>
-        <Button type="button" variant="outline" disabled={pending} onClick={() => void close()}>Cancel</Button>
+        <Button type="button" variant="outline" disabled={pending} onClick={() => void close()}>{t("cancel")}</Button>
         <Button type="button" variant="destructive" disabled={pending} onClick={() => void confirm()}>
           {pending ? <Loader2Icon className="size-4 animate-spin" /> : <Trash2Icon className="size-4" />}
-          Delete project
+          {t("confirm")}
         </Button>
       </ModalFooter>
     </ModalContent>
@@ -969,9 +1274,9 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
-function getProjectIssues(draft: ProjectDraft): ProjectIssue[] {
+function getProjectIssues(draft: ProjectCertDraft): ProjectIssue[] {
   const issues: ProjectIssue[] = [];
-  if (draft.title.trim().length < 3) issues.push({ field: "title", section: "basics", message: "Add a project name with at least 3 characters." });
+  if (draft.title.trim().length < 3) issues.push({ field: "title", message: "Add a project name with at least 3 characters." });
   return issues;
 }
 
@@ -979,9 +1284,10 @@ function issuesByProjectField(issues: ProjectIssue[]): Partial<Record<ProjectFie
   return Object.fromEntries(issues.map((issue) => [issue.field, issue])) as Partial<Record<ProjectField, ProjectIssue>>;
 }
 
-function draftFromProject(project: ManagedProject | null): ProjectDraft {
-  if (!project) return emptyDraft;
+function draftFromProject(project: ManagedProject | null): ProjectCertDraft {
+  if (!project) return { ...emptyProjectCertDraft };
   return {
+    ...emptyProjectCertDraft,
     title: project.title,
     shortDescription: project.shortDescription ?? "",
     description: descriptionText(project.rawRecord?.description),
@@ -1005,49 +1311,9 @@ function toLexImageBlob(uploaded: UploadedBlobLike, file: File): Record<string, 
   };
 }
 
-function buildProjectRecord(
-  draft: ProjectDraft,
-  project: ManagedProject | null,
-  uploadedImage?: Record<string, unknown>,
-): Record<string, unknown> {
-  const nextRecord: Record<string, unknown> = {
-    ...(project?.rawRecord ?? {}),
-    $type: PROJECT_COLLECTION,
-    title: draft.title.trim(),
-    type: "project",
-    createdAt: stringValue(project?.rawRecord?.createdAt) ?? project?.createdAt ?? new Date().toISOString(),
-  };
-
-  if (!Array.isArray(project?.rawRecord?.items) && project?.bumicertUris.length) {
-    nextRecord.items = project.bumicertUris.map((uri) => ({ itemIdentifier: { uri } }));
-  }
-
-  const summary = draft.shortDescription.trim();
-  if (summary) nextRecord.shortDescription = summary;
-  else delete nextRecord.shortDescription;
-
-  const description = draft.description.trim();
-  if (description) nextRecord.description = { $type: "org.hypercerts.defs#descriptionString", value: description };
-  else delete nextRecord.description;
-
-  if (uploadedImage) {
-    nextRecord.banner = { $type: "org.hypercerts.defs#largeImage", image: uploadedImage };
-  }
-
-  return nextRecord;
-}
-
-function descriptionText(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (typeof value === "object" && value !== null && "value" in value && typeof value.value === "string") return value.value;
-  return "";
-}
-
-function stringValue(value: unknown): string | null {
-  return typeof value === "string" && value.trim().length > 0 ? value : null;
-}
-
-function projectIdentityFromUri(uri: string): string | null {
+function projectHrefFromUri(uri: string | null): string | null {
+  if (!uri) return null;
   const match = uri.match(/^at:\/\/([^/]+)\/org\.hypercerts\.collection\/([^/]+)$/);
-  return match?.[1] && match[2] ? `${match[1]}/${match[2]}` : null;
+  if (!match?.[1] || !match[2]) return null;
+  return localProjectHref(match[1], match[2]);
 }

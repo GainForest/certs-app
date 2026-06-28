@@ -1162,15 +1162,13 @@
   "manageProjects": {
     "hero": {
       "title": "Miradi Yangu",
-      "description": "Unda na simamia miradi yako. Kila mradi unasimulia hadithi ya kazi yako — kisha unaweza kutoa vyeti vya athari (Certs) kutoka kwake ili kuomba ufadhili."
+      "description": "Unda na simamia miradi yako. Kila mradi unasimulia hadithi ya kazi yako na unaweza kuungwa mkono na wafadhili."
     },
     "metadata": {
       "title": "Simamia Miradi — GainForest",
-      "description": "Unda na simamia miradi yako na utoe vyeti vya athari kutoka kwayo."
+      "description": "Unda na simamia miradi yako kwenye GainForest."
     },
     "actions": {
-      "manageCerts": "Vyeti",
-      "manageCertsFor": "Vyeti vya {title}",
       "manageGallery": "Dhibiti matunzio",
       "manageGalleryFor": "Dhibiti matunzio ya {title}",
       "manageObservations": "Uchunguzi",
@@ -1179,6 +1177,94 @@
       "manageSitesFor": "Maeneo ya {title}",
       "manageTimeline": "Ratiba",
       "manageTimelineFor": "Ratiba ya {title}"
+    },
+    "editor": {
+      "hero": {
+        "eyebrow": "Studio ya hadithi za athari",
+        "title": "Unda mradi",
+        "subtitle": "Geuza kazi ya shambani, ushahidi wa urejeshaji, na utunzaji wa jamii kuwa mradi unaoweza kuchapishwa — bila kuondoka GainForest."
+      },
+      "backToProjects": "Rudi kwa Miradi Yangu",
+      "startOver": "Anza upya",
+      "createTitle": "Unda mradi mpya",
+      "editTitle": "Hariri mradi",
+      "cancel": "Ghairi",
+      "saving": "Inahifadhi…",
+      "saveChanges": "Hifadhi mabadiliko",
+      "saveProject": "Hifadhi mradi",
+      "delete": "Futa mradi",
+      "errors": {
+        "checkFields": "Angalia sehemu zilizoangaziwa.",
+        "cannotSave": "Huwezi kuhifadhi mradi huu.",
+        "saveFailed": "Mradi haukuweza kuhifadhiwa."
+      },
+      "fields": {
+        "name": {
+          "label": "Jina la mradi",
+          "hint": "tumia jina ambalo watu wataelewa",
+          "placeholder": "Urejeshaji wa msitu wa jamii"
+        },
+        "summary": {
+          "label": "Muhtasari mfupi",
+          "hint": "sentensi moja au mbili",
+          "placeholder": "Walinzi wa eneo wanarejesha vipande vya msitu, wakifuatilia ukuaji wa miti, na kushiriki taarifa kutoka shambani."
+        },
+        "story": {
+          "label": "Hadithi",
+          "hint": "hiari — kazi, mbinu, na matokeo",
+          "placeholder": "Nini kilitokea? Athari ilipimwaje? Nani ananufaika na nini kinafuata?"
+        },
+        "scope": {
+          "label": "Maeneo ya kuzingatia",
+          "hint": "chagua kila tokeo linalofaa",
+          "customPlaceholder": "Ongeza eneo lingine, mf. utawala wa kiasili"
+        },
+        "startDate": {
+          "label": "Tarehe ya kuanza"
+        },
+        "endDate": {
+          "label": "Tarehe ya kumaliza",
+          "ongoing": "Kazi hii inaendelea"
+        },
+        "people": {
+          "label": "Watu na vikundi",
+          "hint": "ongeza watu, timu, au jamii nyuma ya kazi hii",
+          "placeholderFirst": "Walinzi wa Mikoko wa Rufiji",
+          "placeholder": "Jina la mtu au kikundi",
+          "remove": "Ondoa mtu au kikundi",
+          "add": "Ongeza mtu au kikundi"
+        },
+        "sites": {
+          "label": "Maeneo",
+          "hint": "hiari — ambatanisha maeneo kutoka akaunti yako",
+          "loading": "Inapakia maeneo yako…",
+          "error": "Imeshindwa kupakia maeneo yako.",
+          "empty": "Bado hakuna maeneo. Unaweza kuyaongeza katika <link>Maeneo</link> kisha urudi.",
+          "unnamed": "Eneo lisilo na jina",
+          "fallback": "Eneo la mradi"
+        },
+        "photo": {
+          "label": "Picha ya mradi",
+          "optional": "hiari",
+          "cta": "Chagua picha",
+          "formats": "JPG, PNG, WebP, HEIC, au HEIF."
+        }
+      },
+      "success": {
+        "back": "Rudi kwa Miradi Yangu",
+        "titleCreate": "Mradi umeundwa",
+        "titleEdit": "Mradi umehifadhiwa",
+        "description": "Mradi wako uko tayari.",
+        "descriptionNamed": "“{title}” uko tayari kushirikiwa na kupokea msaada.",
+        "view": "Tazama mradi"
+      },
+      "deleteModal": {
+        "title": "Futa mradi?",
+        "description": "Hii itaondoa “{title}” kutoka akaunti yako. Kitendo hiki hakiwezi kutenduliwa.",
+        "cancel": "Ghairi",
+        "confirm": "Futa mradi",
+        "error": "Mradi haukuweza kufutwa."
+      }
     }
   },
   "manageBumicerts": {

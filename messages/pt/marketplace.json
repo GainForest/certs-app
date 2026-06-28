@@ -1162,15 +1162,13 @@
   "manageProjects": {
     "hero": {
       "title": "Meus projetos",
-      "description": "Crie e gerencie seus projetos. Cada projeto conta a história do seu trabalho — e a partir dele você pode emitir certificados de impacto (Certs) para solicitar financiamento."
+      "description": "Crie e gerencie seus projetos. Cada projeto conta a história do seu trabalho e pode receber apoio de financiadores."
     },
     "metadata": {
       "title": "Gerenciar projetos — GainForest",
-      "description": "Crie e gerencie seus projetos e emita certificados de impacto a partir deles."
+      "description": "Crie e gerencie seus projetos no GainForest."
     },
     "actions": {
-      "manageCerts": "Certificados",
-      "manageCertsFor": "Certificados de {title}",
       "manageGallery": "Gerenciar galeria",
       "manageGalleryFor": "Gerenciar galeria de {title}",
       "manageObservations": "Observações",
@@ -1179,6 +1177,94 @@
       "manageSitesFor": "Locais de {title}",
       "manageTimeline": "Linha do tempo",
       "manageTimelineFor": "Linha do tempo de {title}"
+    },
+    "editor": {
+      "hero": {
+        "eyebrow": "Estúdio de histórias de impacto",
+        "title": "Criar um projeto",
+        "subtitle": "Transforme o trabalho de campo, as evidências de restauração e a guarda comunitária em um projeto publicável, sem sair do GainForest."
+      },
+      "backToProjects": "Voltar para Meus projetos",
+      "startOver": "Começar de novo",
+      "createTitle": "Criar novo projeto",
+      "editTitle": "Editar projeto",
+      "cancel": "Cancelar",
+      "saving": "Salvando…",
+      "saveChanges": "Salvar alterações",
+      "saveProject": "Salvar projeto",
+      "delete": "Excluir projeto",
+      "errors": {
+        "checkFields": "Verifique os campos destacados.",
+        "cannotSave": "Você não pode salvar este projeto.",
+        "saveFailed": "Não foi possível salvar o projeto."
+      },
+      "fields": {
+        "name": {
+          "label": "Nome do projeto",
+          "hint": "use um nome que as pessoas entendam",
+          "placeholder": "Restauração da floresta comunitária"
+        },
+        "summary": {
+          "label": "Resumo breve",
+          "hint": "uma ou duas frases",
+          "placeholder": "A comunidade local restaura áreas de floresta, acompanha o crescimento das árvores e compartilha novidades do campo."
+        },
+        "story": {
+          "label": "História",
+          "hint": "opcional — o trabalho, os métodos e os resultados",
+          "placeholder": "O que aconteceu? Como o impacto foi medido? Quem se beneficia e o que vem a seguir?"
+        },
+        "scope": {
+          "label": "Áreas de foco",
+          "hint": "escolha todos os resultados aplicáveis",
+          "customPlaceholder": "Adicione outra área, ex.: governança indígena"
+        },
+        "startDate": {
+          "label": "Data de início"
+        },
+        "endDate": {
+          "label": "Data de término",
+          "ongoing": "Este trabalho está em andamento"
+        },
+        "people": {
+          "label": "Pessoas e grupos",
+          "hint": "adicione as pessoas, equipes ou comunidades por trás deste trabalho",
+          "placeholderFirst": "Guardiões do Manguezal de Rufiji",
+          "placeholder": "Nome de pessoa ou grupo",
+          "remove": "Remover pessoa ou grupo",
+          "add": "Adicionar pessoa ou grupo"
+        },
+        "sites": {
+          "label": "Lugares",
+          "hint": "opcional — anexe lugares da sua conta",
+          "loading": "Carregando seus lugares…",
+          "error": "Não foi possível carregar seus lugares.",
+          "empty": "Ainda não há lugares. Você pode adicioná-los em <link>Lugares</link> e voltar.",
+          "unnamed": "Lugar sem nome",
+          "fallback": "Lugar do projeto"
+        },
+        "photo": {
+          "label": "Foto do projeto",
+          "optional": "opcional",
+          "cta": "Escolher uma foto",
+          "formats": "JPG, PNG, WebP, HEIC ou HEIF."
+        }
+      },
+      "success": {
+        "back": "Voltar para Meus projetos",
+        "titleCreate": "Projeto criado",
+        "titleEdit": "Projeto salvo",
+        "description": "Seu projeto está pronto.",
+        "descriptionNamed": "“{title}” está pronto para compartilhar e receber apoio.",
+        "view": "Ver projeto"
+      },
+      "deleteModal": {
+        "title": "Excluir projeto?",
+        "description": "Isto removerá “{title}” da sua conta. Esta ação não pode ser desfeita.",
+        "cancel": "Cancelar",
+        "confirm": "Excluir projeto",
+        "error": "Não foi possível excluir o projeto."
+      }
     }
   },
   "manageBumicerts": {

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 const IMPORTANT_ROUTES = [
-  "/certs",
+  "/projects",
   "/organizations",
   "/observations",
   "/leaderboard",

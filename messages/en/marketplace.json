@@ -1162,15 +1162,13 @@
   "manageProjects": {
     "hero": {
       "title": "My Projects",
-      "description": "Create and manage your projects. Each project tells the story of your work — then you can mint impact certificates (Certs) from it to apply for funding."
+      "description": "Create and manage your projects. Each project tells the story of your work and can be supported by funders."
     },
     "metadata": {
       "title": "Manage Projects — GainForest",
-      "description": "Create and manage your projects and mint impact certificates from them."
+      "description": "Create and manage your projects on GainForest."
     },
     "actions": {
-      "manageCerts": "Certs",
-      "manageCertsFor": "Certs for {title}",
       "manageGallery": "Manage gallery",
       "manageGalleryFor": "Manage gallery for {title}",
       "manageObservations": "Observations",
@@ -1179,6 +1177,94 @@
       "manageSitesFor": "Sites for {title}",
       "manageTimeline": "Timeline",
       "manageTimelineFor": "Timeline for {title}"
+    },
+    "editor": {
+      "hero": {
+        "eyebrow": "Impact story studio",
+        "title": "Create a project",
+        "subtitle": "Turn field work, restoration evidence, and community stewardship into a publishable project — without leaving GainForest."
+      },
+      "backToProjects": "Back to My Projects",
+      "startOver": "Start over",
+      "createTitle": "Create new project",
+      "editTitle": "Edit project",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "saveChanges": "Save changes",
+      "saveProject": "Save project",
+      "delete": "Delete project",
+      "errors": {
+        "checkFields": "Check the highlighted fields.",
+        "cannotSave": "You cannot save this project.",
+        "saveFailed": "Project could not be saved."
+      },
+      "fields": {
+        "name": {
+          "label": "Project name",
+          "hint": "use a name people will understand",
+          "placeholder": "Community forest restoration"
+        },
+        "summary": {
+          "label": "Short summary",
+          "hint": "one or two sentences",
+          "placeholder": "Local stewards are restoring forest plots, tracking tree growth, and sharing updates from the field."
+        },
+        "story": {
+          "label": "Story",
+          "hint": "optional — the work, methods, and outcomes",
+          "placeholder": "What happened? How was impact measured? Who benefits and what happens next?"
+        },
+        "scope": {
+          "label": "Focus areas",
+          "hint": "choose every outcome that applies",
+          "customPlaceholder": "Add another focus area, e.g. Indigenous governance"
+        },
+        "startDate": {
+          "label": "Start date"
+        },
+        "endDate": {
+          "label": "End date",
+          "ongoing": "This work is ongoing"
+        },
+        "people": {
+          "label": "People & groups",
+          "hint": "add the people, teams, or communities behind this work",
+          "placeholderFirst": "Rufiji Mangrove Stewards",
+          "placeholder": "Person or group name",
+          "remove": "Remove person or group",
+          "add": "Add person or group"
+        },
+        "sites": {
+          "label": "Places",
+          "hint": "optional — attach places from your account",
+          "loading": "Loading your places…",
+          "error": "Could not load your places.",
+          "empty": "No places yet. You can add them under <link>Sites</link> and come back.",
+          "unnamed": "Unnamed place",
+          "fallback": "Project place"
+        },
+        "photo": {
+          "label": "Project photo",
+          "optional": "optional",
+          "cta": "Choose a photo",
+          "formats": "JPG, PNG, WebP, HEIC, or HEIF."
+        }
+      },
+      "success": {
+        "back": "Back to My Projects",
+        "titleCreate": "Project created",
+        "titleEdit": "Project saved",
+        "description": "Your project is ready.",
+        "descriptionNamed": "“{title}” is ready to share and to receive support.",
+        "view": "View project"
+      },
+      "deleteModal": {
+        "title": "Delete project?",
+        "description": "This will remove “{title}” from your account. This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete project",
+        "error": "Project could not be deleted."
+      }
     }
   },
   "manageBumicerts": {

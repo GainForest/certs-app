@@ -174,7 +174,7 @@ function EmptyOrganizationChoices() {
   return (
     <section className="grid grid-cols-1 gap-6 sm:grid-cols-2">
       <EmptyChoiceCard
-        href="/certs"
+        href="/projects"
         highlighted
         image="/assets/media/images/landing/supporter-river.jpg"
         label={t("funders.label")}

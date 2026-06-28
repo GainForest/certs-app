@@ -40,7 +40,7 @@ const FEATURE_ITEMS = ["verified", "direct", "transparent"] as const;
 const OPTION_CARDS = [
   {
     key: "funders",
-    href: "/certs",
+    href: "/projects",
     image: "/assets/media/images/landing/supporter-river.jpg",
     // Optional ambient animal b-roll; falls back to `image` until the clip
     // exists at public/assets/media/video/card-funders.{webm,mp4}.
@@ -315,7 +315,7 @@ function HomeStats({ kpis }: { kpis: ExplorerKpis | null }) {
     stats.push({
       value: formatCompact(kpis.bumicerts),
       label: t("bumicertsShared"),
-      href: "/certs",
+      href: "/projects",
       icon: <CompassIcon />,
       accent: true,
     });

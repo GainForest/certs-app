@@ -26,14 +26,6 @@ export function BrowseGrid({ kpis }: { kpis: ExplorerKpis }) {
       statLabel: t("cards.projects.statLabel"),
     },
     {
-      href: "/certs",
-      label: t("cards.bumicerts.label"),
-      title: t("cards.bumicerts.title"),
-      blurb: t("cards.bumicerts.blurb"),
-      stat: formatCompact(kpis.bumicerts),
-      statLabel: t("cards.bumicerts.statLabel"),
-    },
-    {
       href: "/organizations",
       label: t("cards.organizations.label"),
       title: t("cards.organizations.title"),

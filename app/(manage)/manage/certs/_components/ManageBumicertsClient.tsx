@@ -55,7 +55,7 @@ function CreateHeroCard({ target }: { target: ManageTarget }) {
 
         <div className="relative z-30 flex min-h-[6rem] flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 lg:px-9">
           <p className="w-full text-sm leading-5 text-muted-foreground sm:max-w-[30rem]">
-            Certs are public impact stories that connect a project to people, places, time periods, and supporting photos or notes. Use them to make field work easier to review, share, and fund.
+            Certs are impact certificates that connect a project to people, places, time periods, and supporting photos or notes. Use them to make field work easier to review and share, and to raise funds for your project through impact donations.
           </p>
           <Button size="sm" asChild className="shrink-0 self-start sm:self-auto">
             <Link href={manageHref(target, "newBumicert")}>

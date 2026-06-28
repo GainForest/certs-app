@@ -16,7 +16,7 @@ type ChangeFrequency = NonNullable<SitemapEntry["changeFrequency"]>;
 const ROUTES: Array<{ path: string; priority: number; changeFrequency: ChangeFrequency }> = [
   { path: "", priority: 1, changeFrequency: "daily" },
   { path: "/observations", priority: 0.8, changeFrequency: "daily" },
-  { path: "/certs", priority: 0.8, changeFrequency: "daily" },
+  { path: "/projects", priority: 0.8, changeFrequency: "daily" },
   { path: "/organizations", priority: 0.8, changeFrequency: "weekly" },
   { path: "/leaderboard", priority: 0.7, changeFrequency: "weekly" },
   { path: "/bioblitz", priority: 0.7, changeFrequency: "weekly" },

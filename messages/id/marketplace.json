@@ -1162,15 +1162,13 @@
   "manageProjects": {
     "hero": {
       "title": "Proyek Saya",
-      "description": "Buat dan kelola proyek Anda. Setiap proyek menceritakan kisah pekerjaan Anda — lalu Anda dapat menerbitkan sertifikat dampak (Cert) darinya untuk mengajukan pendanaan."
+      "description": "Buat dan kelola proyek Anda. Setiap proyek menceritakan kisah kerja Anda dan dapat didukung oleh pendana."
     },
     "metadata": {
       "title": "Kelola Proyek — GainForest",
-      "description": "Buat dan kelola proyek Anda serta terbitkan sertifikat dampak darinya."
+      "description": "Buat dan kelola proyek Anda di GainForest."
     },
     "actions": {
-      "manageCerts": "Cert",
-      "manageCertsFor": "Cert untuk {title}",
       "manageGallery": "Kelola galeri",
       "manageGalleryFor": "Kelola galeri untuk {title}",
       "manageObservations": "Observasi",
@@ -1179,6 +1177,94 @@
       "manageSitesFor": "Situs untuk {title}",
       "manageTimeline": "Lini Masa",
       "manageTimelineFor": "Lini masa untuk {title}"
+    },
+    "editor": {
+      "hero": {
+        "eyebrow": "Studio kisah dampak",
+        "title": "Buat proyek",
+        "subtitle": "Ubah kerja lapangan, bukti restorasi, dan penjagaan komunitas menjadi proyek yang dapat dipublikasikan — tanpa meninggalkan GainForest."
+      },
+      "backToProjects": "Kembali ke Proyek Saya",
+      "startOver": "Mulai ulang",
+      "createTitle": "Buat proyek baru",
+      "editTitle": "Edit proyek",
+      "cancel": "Batal",
+      "saving": "Menyimpan…",
+      "saveChanges": "Simpan perubahan",
+      "saveProject": "Simpan proyek",
+      "delete": "Hapus proyek",
+      "errors": {
+        "checkFields": "Periksa kolom yang ditandai.",
+        "cannotSave": "Anda tidak dapat menyimpan proyek ini.",
+        "saveFailed": "Proyek tidak dapat disimpan."
+      },
+      "fields": {
+        "name": {
+          "label": "Nama proyek",
+          "hint": "gunakan nama yang mudah dipahami orang",
+          "placeholder": "Restorasi hutan komunitas"
+        },
+        "summary": {
+          "label": "Ringkasan singkat",
+          "hint": "satu atau dua kalimat",
+          "placeholder": "Penjaga setempat memulihkan petak hutan, memantau pertumbuhan pohon, dan berbagi kabar dari lapangan."
+        },
+        "story": {
+          "label": "Kisah",
+          "hint": "opsional — pekerjaan, metode, dan hasilnya",
+          "placeholder": "Apa yang terjadi? Bagaimana dampak diukur? Siapa yang diuntungkan dan apa langkah berikutnya?"
+        },
+        "scope": {
+          "label": "Area fokus",
+          "hint": "pilih semua hasil yang sesuai",
+          "customPlaceholder": "Tambahkan area lain, mis. tata kelola masyarakat adat"
+        },
+        "startDate": {
+          "label": "Tanggal mulai"
+        },
+        "endDate": {
+          "label": "Tanggal selesai",
+          "ongoing": "Pekerjaan ini sedang berlangsung"
+        },
+        "people": {
+          "label": "Orang & kelompok",
+          "hint": "tambahkan orang, tim, atau komunitas di balik pekerjaan ini",
+          "placeholderFirst": "Penjaga Mangrove Rufiji",
+          "placeholder": "Nama orang atau kelompok",
+          "remove": "Hapus orang atau kelompok",
+          "add": "Tambah orang atau kelompok"
+        },
+        "sites": {
+          "label": "Tempat",
+          "hint": "opsional — lampirkan tempat dari akun Anda",
+          "loading": "Memuat tempat Anda…",
+          "error": "Tidak dapat memuat tempat Anda.",
+          "empty": "Belum ada tempat. Anda dapat menambahkannya di <link>Tempat</link> lalu kembali.",
+          "unnamed": "Tempat tanpa nama",
+          "fallback": "Tempat proyek"
+        },
+        "photo": {
+          "label": "Foto proyek",
+          "optional": "opsional",
+          "cta": "Pilih foto",
+          "formats": "JPG, PNG, WebP, HEIC, atau HEIF."
+        }
+      },
+      "success": {
+        "back": "Kembali ke Proyek Saya",
+        "titleCreate": "Proyek dibuat",
+        "titleEdit": "Proyek disimpan",
+        "description": "Proyek Anda siap.",
+        "descriptionNamed": "“{title}” siap dibagikan dan menerima dukungan.",
+        "view": "Lihat proyek"
+      },
+      "deleteModal": {
+        "title": "Hapus proyek?",
+        "description": "Ini akan menghapus “{title}” dari akun Anda. Tindakan ini tidak dapat dibatalkan.",
+        "cancel": "Batal",
+        "confirm": "Hapus proyek",
+        "error": "Proyek tidak dapat dihapus."
+      }
     }
   },
   "manageBumicerts": {

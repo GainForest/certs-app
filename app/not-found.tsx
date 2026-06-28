@@ -13,8 +13,8 @@ export default function NotFound() {
       eyebrow="Page not found"
       title="We couldn’t find that page."
       message="The link may be old, or the page may have moved."
-      primaryHref="/certs"
-      primaryLabel="Explore Certs"
+      primaryHref="/projects"
+      primaryLabel="Explore projects"
       secondaryHref="/"
       secondaryLabel="Return home"
     />

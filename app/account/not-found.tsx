@@ -15,8 +15,8 @@ export default function AccountNotFound() {
       message="Check the profile name, or browse public profiles already listed on GainForest."
       primaryHref="/organizations"
       primaryLabel="Browse organizations"
-      secondaryHref="/certs"
-      secondaryLabel="Explore Certs"
+      secondaryHref="/projects"
+      secondaryLabel="Explore projects"
     />
   );
 }

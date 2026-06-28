@@ -707,7 +707,7 @@ function SuccessModal({
                 </Link>
               </Button>
               <Button variant="secondary" className="h-16 flex-col items-start rounded-2xl" onClick={handleDone} asChild>
-                <Link href="/certs">
+                <Link href="/projects">
                   <CompassIcon className="opacity-40" />
                   <span>Explore more Certs</span>
                 </Link>

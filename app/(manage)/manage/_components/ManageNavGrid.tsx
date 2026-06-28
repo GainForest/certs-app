@@ -23,7 +23,6 @@ import {
   TreesIcon,
   Building2Icon,
 } from "lucide-react";
-import BumicertIcon from "@/icons/BumicertIcon";
 import type { ComponentType } from "react";
 import type { LucideIcon } from "lucide-react";
 
@@ -31,7 +30,7 @@ type AccountKind = "organization" | "user";
 
 interface NavCard {
   id: string;
-  label: "Sites" | "Audio" | "Trees" | "Certs" | "Organizations";
+  label: "Sites" | "Audio" | "Trees" | "Organizations";
   description: string;
   href: string;
   Icon: LucideIcon | ComponentType<{ className?: string }>;
@@ -58,13 +57,6 @@ const ORG_NAV_CARDS: NavCard[] = [
     description: "Manage tree lists and add nature information.",
     href: "/manage/trees",
     Icon: TreesIcon,
-  },
-  {
-    id: "bumicerts",
-    label: "Certs",
-    description: "Create and publish verified impact certificates.",
-    href: "/manage/certs",
-    Icon: BumicertIcon,
   },
   {
     id: "organizations",
