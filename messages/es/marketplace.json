@@ -385,6 +385,14 @@
       "loading": "Cargando los avistamientos de la semana…",
       "empty": "Aún no hay avistamientos con foto y ubicación en esta ronda.",
       "error": "No se pudo cargar el mapa de observaciones."
+    },
+    "gallery": {
+      "heading": "Fotos subidas en esta ronda",
+      "subtitle": "Un muro en vivo con los últimos avistamientos a medida que se suben. Toca cualquier foto para ver los detalles.",
+      "empty": "Aún no se han subido fotos en esta ronda. Sé el primero en añadir una.",
+      "error": "No se pudo cargar el muro de fotos.",
+      "openPhoto": "Abrir este avistamiento: {name}",
+      "unnamed": "Avistamiento sin identificar"
     }
   },
   "dashboard": {

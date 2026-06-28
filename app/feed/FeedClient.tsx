@@ -17,6 +17,13 @@ import {
 import type { ActivityFeedItem, ActivityFeedKind, ActivityFeedPage } from "../_lib/feed";
 import { indexerQuery } from "../_lib/indexer";
 import { resolveBlobUrl } from "../_lib/pds";
+import {
+  FeedActionBar,
+  FeedComposer,
+  LocalPostsList,
+  useFeedInteractions,
+  type FeedInteractions,
+} from "./FeedActions";
 import { formatCompact, formatCompactUsd, formatRelative } from "../_lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -70,12 +77,17 @@ export function FeedClient({
   initialItems,
   initialCursor,
   initialHasMore,
+  signedIn,
+  viewerDid,
 }: {
   initialItems: ActivityFeedItem[];
   initialCursor: string | null;
   initialHasMore: boolean;
+  signedIn: boolean;
+  viewerDid: string | null;
 }) {
   const t = useTranslations("common.feed");
+  const interactions = useFeedInteractions(viewerDid);
   const [items, setItems] = useState<ActivityFeedItem[]>(initialItems);
   const [filter, setFilter] = useState<Filter>("all");
   const [cursor, setCursor] = useState<string | null>(initialCursor);
@@ -211,6 +223,7 @@ export function FeedClient({
       </div>
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
+        <FeedComposer signedIn={signedIn} onPost={interactions.addPost} />
         {/* Filter pills + refresh */}
         <div className="sticky top-14 z-20 -mx-4 mb-2 flex items-center gap-2 border-b border-border/60 bg-background/85 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-full sm:border sm:px-3">
           <div className="flex flex-1 items-center gap-1 overflow-x-auto">
@@ -247,6 +260,8 @@ export function FeedClient({
           </button>
         </div>
 
+        <LocalPostsList posts={interactions.localPosts} />
+
         {/* Timeline */}
         {loading ? (
           <FeedSkeleton />
@@ -274,7 +289,12 @@ export function FeedClient({
                 entry.type === "batch" ? (
                   <ObservationBatchCard key={`batch:${entry.items[0].id}`} items={entry.items} />
                 ) : (
-                  <FeedRow key={entry.item.id} item={entry.item} />
+                  <FeedRow
+                    key={entry.item.id}
+                    item={entry.item}
+                    signedIn={signedIn}
+                    interactions={interactions}
+                  />
                 ),
               )}
             </ol>
@@ -308,7 +328,15 @@ export function FeedClient({
   );
 }
 
-function FeedRow({ item }: { item: ActivityFeedItem }) {
+function FeedRow({
+  item,
+  signedIn,
+  interactions,
+}: {
+  item: ActivityFeedItem;
+  signedIn: boolean;
+  interactions: FeedInteractions;
+}) {
   const t = useTranslations("common.feed");
   const verb = t(`verbs.${item.kind}`);
 
@@ -316,7 +344,7 @@ function FeedRow({ item }: { item: ActivityFeedItem }) {
     <li className="relative">
       <Link
         href={item.href}
-        className="group flex gap-3 rounded-2xl px-3 py-3.5 transition-colors hover:bg-muted/40"
+        className="group flex gap-3 rounded-2xl px-3 pb-1.5 pt-3.5 transition-colors hover:bg-muted/40"
       >
         {/* Avatar */}
         <FeedAvatar item={item} />
@@ -374,6 +402,11 @@ function FeedRow({ item }: { item: ActivityFeedItem }) {
           </span>
         ) : null}
       </Link>
+
+      {/* Like + comment, aligned under the row content (outside the link). */}
+      <div className="pb-2 pl-16 pr-3">
+        <FeedActionBar subjectUri={item.id} signedIn={signedIn} interactions={interactions} />
+      </div>
     </li>
   );
 }

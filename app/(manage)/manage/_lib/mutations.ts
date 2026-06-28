@@ -8,6 +8,7 @@
  */
 
 import { formatCgsErrorMessage } from "@/app/_lib/cgs-errors";
+import { resolveStrongRef, type StrongRef } from "@/app/_lib/pds";
 import type {
   AppendExistingDatasetResponse,
   AppendExistingDatasetRowInput,
@@ -376,4 +377,85 @@ export async function createMultimediaFromUrl(input: CreateMultimediaFromUrlInpu
     ...(input.caption ? { caption: input.caption } : {}),
     ...(options?.repo ? { repo: options.repo } : {}),
   });
+}
+
+// ── GainForest feed: posts, comments (reply-posts), likes ───────────────────
+// app.gainforest.feed.* are Bluesky's feed primitives in our namespace. A
+// comment is a reply-post (a post carrying `reply: { root, parent }`); a like
+// targets a com.atproto.repo.strongRef (uri + cid). The subject's cid is
+// resolved on the fly because feed rows carry only a uri. Default writes land in
+// the signed-in user's own repo; pass `{ repo }` to write to a group repo (CGS
+// enforces membership there). See lexicons/README.md.
+
+const FEED_POST_COLLECTION = "app.gainforest.feed.post";
+const FEED_LIKE_COLLECTION = "app.gainforest.feed.like";
+
+type FeedWriteResult = { uri: string; cid: string; rkey: string };
+
+function rkeyOf(uri: string): string {
+  return uri.split("/").pop() ?? "";
+}
+
+/** Publish a top-level narrative post to the feed (app.gainforest.feed.post). */
+export async function createFeedPost(
+  input: { text: string; langs?: string[]; tags?: string[] },
+  options?: { repo?: string },
+): Promise<FeedWriteResult> {
+  const record: Record<string, unknown> = {
+    $type: FEED_POST_COLLECTION,
+    text: input.text.trim(),
+    createdAt: new Date().toISOString(),
+  };
+  if (input.langs?.length) record.langs = input.langs.slice(0, 3);
+  if (input.tags?.length) record.tags = input.tags.slice(0, 8);
+  const result = await createRecord(FEED_POST_COLLECTION, record, undefined, options);
+  return { ...result, rkey: rkeyOf(result.uri) };
+}
+
+/**
+ * Comment on a record, or reply to another comment. Mirrors Bluesky's model: a
+ * comment is a reply-post whose `reply.parent` is the thing replied to and
+ * `reply.root` is the top of the thread. Pass only `subjectUri` for a top-level
+ * comment (root defaults to it); add `rootUri` for a threaded reply. Both are
+ * resolved to strongRefs (uri + cid).
+ */
+export async function createFeedComment(
+  input: { text: string; subjectUri: string; rootUri?: string; langs?: string[] },
+  options?: { repo?: string },
+): Promise<FeedWriteResult> {
+  const parent: StrongRef = await resolveStrongRef(input.subjectUri);
+  const root: StrongRef =
+    input.rootUri && input.rootUri !== input.subjectUri
+      ? await resolveStrongRef(input.rootUri)
+      : parent;
+  const record: Record<string, unknown> = {
+    $type: FEED_POST_COLLECTION,
+    text: input.text.trim(),
+    reply: { root, parent },
+    createdAt: new Date().toISOString(),
+  };
+  if (input.langs?.length) record.langs = input.langs.slice(0, 3);
+  const result = await createRecord(FEED_POST_COLLECTION, record, undefined, options);
+  return { ...result, rkey: rkeyOf(result.uri) };
+}
+
+/** Like any record/post/comment (app.gainforest.feed.like). Returns the like
+ *  record's rkey so the caller can later unlike it via deleteFeedLike. */
+export async function createFeedLike(
+  subjectUri: string,
+  options?: { repo?: string },
+): Promise<FeedWriteResult> {
+  const subject: StrongRef = await resolveStrongRef(subjectUri);
+  const record = {
+    $type: FEED_LIKE_COLLECTION,
+    subject,
+    createdAt: new Date().toISOString(),
+  };
+  const result = await createRecord(FEED_LIKE_COLLECTION, record, undefined, options);
+  return { ...result, rkey: rkeyOf(result.uri) };
+}
+
+/** Remove a like (unlike) by the like record's rkey. */
+export async function deleteFeedLike(rkey: string, options?: { repo?: string }): Promise<void> {
+  await deleteRecord(FEED_LIKE_COLLECTION, rkey, options);
 }

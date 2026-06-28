@@ -43,9 +43,9 @@ const instrument = Instrument_Serif({
 });
 
 const SITE_NAME = "GainForest";
-const OG_IMAGE = "/og/bumicerts-og.png";
+const OG_IMAGE = "/og/gainforest-og.png";
 const OG_ALT =
-  "GainForest — a warm cream editorial card about environmental impact, with observations, places, Certs, and donations beside a vintage natural-history collage.";
+  "GainForest — verified impact starts with real communities. Fund regenerative projects directly, beside an aerial photo of humpback whales in turquoise water.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = resolveSupportedLanguage(await getLocale());

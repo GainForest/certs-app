@@ -23,6 +23,7 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BioblitzGallery } from "./BioblitzGallery";
 import { BioblitzObservationsMap } from "./BioblitzObservationsMap";
 import { AuthorInline } from "../_components/AuthorChip";
 import { PreferredAccountLink } from "../_components/PreferredLinks";
@@ -176,6 +177,8 @@ export function BioblitzClient() {
         </div>
       </div>
     </section>
+
+      <BioblitzGallery round={round} />
 
       <BioblitzObservationsMap round={round} />
     </>

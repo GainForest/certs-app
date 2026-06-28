@@ -348,6 +348,45 @@ body {
   }
 }
 
+/* BioBlitz photo wall — two rows of square cards auto-scrolling in opposite
+   directions. Each row renders its cards twice so the -50% translate loops
+   seamlessly; the marquee pauses while hovered. */
+@keyframes bioblitz-marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes bioblitz-marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.bioblitz-marquee-track {
+  will-change: transform;
+}
+.bioblitz-marquee-left {
+  animation: bioblitz-marquee-left var(--bioblitz-marquee-duration, 64s) linear infinite;
+}
+.bioblitz-marquee-right {
+  animation: bioblitz-marquee-right var(--bioblitz-marquee-duration, 64s) linear infinite;
+}
+.bioblitz-marquee:hover .bioblitz-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bioblitz-marquee-left,
+  .bioblitz-marquee-right {
+    animation: none;
+  }
+}
+
 /* Hide scrollbars on horizontal rails (tab strips, chips) while keeping
    keyboard + swipe scroll. */
 .no-scrollbar {

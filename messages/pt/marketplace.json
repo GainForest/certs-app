@@ -385,6 +385,14 @@
       "loading": "Mapeando os registros da semana…",
       "empty": "Ainda não há registros com foto e localização nesta rodada.",
       "error": "Não foi possível carregar o mapa de observações."
+    },
+    "gallery": {
+      "heading": "Fotos enviadas nesta rodada",
+      "subtitle": "Um mural ao vivo com os últimos registros à medida que são enviados. Toque em qualquer foto para ver os detalhes.",
+      "empty": "Nenhuma foto enviada nesta rodada ainda. Seja o primeiro a adicionar uma.",
+      "error": "Não foi possível carregar o mural de fotos.",
+      "openPhoto": "Abrir este registro: {name}",
+      "unnamed": "Registro não identificado"
     }
   },
   "dashboard": {

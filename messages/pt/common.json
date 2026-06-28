@@ -747,6 +747,27 @@
       "sightings": "{count, plural, one {compartilhou # avistamento} other {compartilhou # avistamentos}}",
       "moreSpecies": "+{count} mais",
       "viewAll": "Ver todos os avistamentos"
+    },
+    "actions": {
+      "like": "Curtir",
+      "liked": "Curtido",
+      "comment": "Comentar",
+      "comments": "{count, plural, one {# comentário} other {# comentários}}",
+      "signInToInteract": "Entre para publicar, curtir e comentar",
+      "commentPlaceholder": "Escreva um comentário…",
+      "send": "Comentar",
+      "you": "Você",
+      "postedJustNow": "agora mesmo",
+      "yourCommentsNote": "Os comentários que você publicar aparecem aqui. As respostas públicas vão surgir conforme o feed for atualizado.",
+      "errorGeneric": "Algo deu errado. Tente novamente."
+    },
+    "composer": {
+      "placeholder": "Compartilhe uma novidade com a comunidade…",
+      "signedOut": "Entre para compartilhar uma novidade",
+      "post": "Publicar",
+      "posting": "Publicando…",
+      "postedTitle": "Publicado",
+      "postedNote": "Sua novidade está no ar e vai aparecer no feed em breve."
     }
   }
 }

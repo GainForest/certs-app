@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { buildActivityFeed } from "../_lib/feed";
+import { fetchAuthSession } from "../_lib/auth-server";
 import { FeedClient } from "./FeedClient";
 
 export const revalidate = 300;
@@ -27,6 +28,19 @@ export default function FeedPage() {
 async function FeedContent() {
   // Prefetch the first page server-side so the feed shell renders instantly;
   // the client hydrates with it, can load more, and can refetch live activity.
-  const page = await buildActivityFeed().catch(() => ({ items: [], nextCursor: null, hasMore: false }));
-  return <FeedClient initialItems={page.items} initialCursor={page.nextCursor} initialHasMore={page.hasMore} />;
+  // The session decides whether the like / comment / post affordances are live.
+  const [page, session] = await Promise.all([
+    buildActivityFeed().catch(() => ({ items: [], nextCursor: null, hasMore: false })),
+    fetchAuthSession().catch(() => ({ isLoggedIn: false as const })),
+  ]);
+  const viewerDid = session.isLoggedIn ? session.did : null;
+  return (
+    <FeedClient
+      initialItems={page.items}
+      initialCursor={page.nextCursor}
+      initialHasMore={page.hasMore}
+      signedIn={Boolean(viewerDid)}
+      viewerDid={viewerDid}
+    />
+  );
 }

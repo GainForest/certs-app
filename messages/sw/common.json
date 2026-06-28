@@ -747,6 +747,27 @@
       "sightings": "{count, plural, one {alishiriki onevu # la asili} other {alishiriki maonevu # ya asili}}",
       "moreSpecies": "+{count} zaidi",
       "viewAll": "Ona maonevu yote"
+    },
+    "actions": {
+      "like": "Penda",
+      "liked": "Umependa",
+      "comment": "Toa maoni",
+      "comments": "{count, plural, one {maoni #} other {maoni #}}",
+      "signInToInteract": "Ingia ili kuchapisha, kupenda na kutoa maoni",
+      "commentPlaceholder": "Andika maoni…",
+      "send": "Toa maoni",
+      "you": "Wewe",
+      "postedJustNow": "sasa hivi",
+      "yourCommentsNote": "Maoni unayochapisha yanaonekana hapa. Majibu ya umma yataonekana kadri mlisho unavyosasishwa.",
+      "errorGeneric": "Hitilafu imetokea. Tafadhali jaribu tena."
+    },
+    "composer": {
+      "placeholder": "Shiriki taarifa mpya na jamii…",
+      "signedOut": "Ingia ili kushiriki taarifa mpya",
+      "post": "Chapisha",
+      "posting": "Inachapisha…",
+      "postedTitle": "Imechapishwa",
+      "postedNote": "Taarifa yako ipo hewani na itaonekana kwenye mlisho hivi karibuni."
     }
   }
 }

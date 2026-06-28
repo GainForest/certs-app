@@ -385,6 +385,14 @@
       "loading": "Mapping this week’s sightings…",
       "empty": "No geolocated photo sightings in this round yet.",
       "error": "Could not load the observations map."
+    },
+    "gallery": {
+      "heading": "Photos uploaded this round",
+      "subtitle": "A live wall of the latest sightings as people upload them. Tap any photo to see the details.",
+      "empty": "No photos uploaded yet this round. Be the first to add one.",
+      "error": "Could not load the photo wall.",
+      "openPhoto": "Open this sighting: {name}",
+      "unnamed": "Unidentified sighting"
     }
   },
   "dashboard": {

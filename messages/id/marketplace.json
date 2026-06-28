@@ -385,6 +385,14 @@
       "loading": "Memetakan temuan minggu ini…",
       "empty": "Belum ada temuan berfoto dengan lokasi pada ronde ini.",
       "error": "Tidak dapat memuat peta observasi."
+    },
+    "gallery": {
+      "heading": "Foto yang diunggah ronde ini",
+      "subtitle": "Dinding langsung berisi pengamatan terbaru begitu diunggah. Ketuk foto mana pun untuk melihat detailnya.",
+      "empty": "Belum ada foto yang diunggah pada ronde ini. Jadilah yang pertama menambahkannya.",
+      "error": "Tidak dapat memuat dinding foto.",
+      "openPhoto": "Buka pengamatan ini: {name}",
+      "unnamed": "Pengamatan tak teridentifikasi"
     }
   },
   "dashboard": {

@@ -93,3 +93,51 @@ export function blobUrl(host: string, did: string, cid: string): string {
 export function isPdsBlobUrl(url: string | null | undefined): boolean {
   return Boolean(url && url.includes("/xrpc/com.atproto.sync.getBlob"));
 }
+
+// ── Strong references (uri + cid) ─────────────────────────────────────────
+
+/** A content-addressed reference to a record, per com.atproto.repo.strongRef:
+ *  the AT-URI plus the content-hash of the exact record version. Required by
+ *  the app.gainforest.feed.* like/reply subjects. */
+export type StrongRef = { uri: string; cid: string };
+
+/** Split `at://did/collection/rkey` into its parts. */
+export function parseAtUri(
+  uri: string,
+): { did: string; collection: string; rkey: string } | null {
+  const m = uri.match(/^at:\/\/([^/]+)\/([^/]+)\/(.+)$/);
+  return m ? { did: m[1], collection: m[2], rkey: m[3] } : null;
+}
+
+/**
+ * Resolve any record AT-URI to a strongRef (`{ uri, cid }`) by reading the
+ * record from its owner's PDS. `com.atproto.repo.getRecord` is a public,
+ * CORS-open read (same trust model as blob fetching), so this works in the
+ * browser and on the server. The returned `uri` is the PDS-canonical one, and
+ * `cid` pins the exact version — exactly what a like/reply subject needs.
+ */
+export async function resolveStrongRef(
+  uri: string,
+  signal?: AbortSignal,
+): Promise<StrongRef> {
+  const parts = parseAtUri(uri);
+  if (!parts) throw new Error("That item can't be referenced (malformed link).");
+  const host = await resolvePdsHost(parts.did, signal);
+  if (!host) throw new Error("We couldn't reach that item to reference it. Please try again.");
+  const params = new URLSearchParams({
+    repo: parts.did,
+    collection: parts.collection,
+    rkey: parts.rkey,
+  });
+  const res = await fetch(
+    `https://${host}/xrpc/com.atproto.repo.getRecord?${params.toString()}`,
+    { signal },
+  ).catch(() => null);
+  const payload = (await res?.json().catch(() => null)) as
+    | { uri?: unknown; cid?: unknown }
+    | null;
+  if (!res?.ok || typeof payload?.uri !== "string" || typeof payload?.cid !== "string") {
+    throw new Error("We couldn't reference that item. Please try again.");
+  }
+  return { uri: payload.uri, cid: payload.cid };
+}

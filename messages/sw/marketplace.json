@@ -385,6 +385,14 @@
       "loading": "Inaweka uchunguzi wa wiki hii kwenye ramani…",
       "empty": "Bado hakuna uchunguzi wa picha wenye eneo katika raundi hii.",
       "error": "Imeshindwa kupakia ramani ya uchunguzi."
+    },
+    "gallery": {
+      "heading": "Picha zilizopakiwa raundi hii",
+      "subtitle": "Ukuta wa moja kwa moja wa uchunguzi wa hivi karibuni kadiri unavyopakiwa. Gusa picha yoyote kuona maelezo.",
+      "empty": "Bado hakuna picha zilizopakiwa raundi hii. Kuwa wa kwanza kuongeza moja.",
+      "error": "Imeshindwa kupakia ukuta wa picha.",
+      "openPhoto": "Fungua uchunguzi huu: {name}",
+      "unnamed": "Uchunguzi usiotambuliwa"
     }
   },
   "dashboard": {

@@ -747,6 +747,27 @@
       "sightings": "{count, plural, one {shared # nature sighting} other {shared # nature sightings}}",
       "moreSpecies": "+{count} more",
       "viewAll": "View all sightings"
+    },
+    "actions": {
+      "like": "Like",
+      "liked": "Liked",
+      "comment": "Comment",
+      "comments": "{count, plural, one {# comment} other {# comments}}",
+      "signInToInteract": "Sign in to post, like, and comment",
+      "commentPlaceholder": "Write a comment…",
+      "send": "Comment",
+      "you": "You",
+      "postedJustNow": "just now",
+      "yourCommentsNote": "Comments you post show up here. Public replies will appear as the feed catches up.",
+      "errorGeneric": "Something went wrong. Please try again."
+    },
+    "composer": {
+      "placeholder": "Share an update with the community…",
+      "signedOut": "Sign in to share an update",
+      "post": "Post",
+      "posting": "Posting…",
+      "postedTitle": "Posted",
+      "postedNote": "Your update is live and will show up in the feed shortly."
     }
   }
 }

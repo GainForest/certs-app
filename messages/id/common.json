@@ -747,6 +747,27 @@
       "sightings": "{count, plural, other {berbagi # pengamatan alam}}",
       "moreSpecies": "+{count} lagi",
       "viewAll": "Lihat semua pengamatan"
+    },
+    "actions": {
+      "like": "Suka",
+      "liked": "Disukai",
+      "comment": "Komentar",
+      "comments": "{count, plural, other {# komentar}}",
+      "signInToInteract": "Masuk untuk memposting, menyukai, dan berkomentar",
+      "commentPlaceholder": "Tulis komentar…",
+      "send": "Komentar",
+      "you": "Anda",
+      "postedJustNow": "baru saja",
+      "yourCommentsNote": "Komentar yang Anda kirim muncul di sini. Balasan publik akan muncul seiring feed diperbarui.",
+      "errorGeneric": "Terjadi kesalahan. Silakan coba lagi."
+    },
+    "composer": {
+      "placeholder": "Bagikan kabar terbaru dengan komunitas…",
+      "signedOut": "Masuk untuk membagikan kabar terbaru",
+      "post": "Posting",
+      "posting": "Memposting…",
+      "postedTitle": "Terposting",
+      "postedNote": "Kabar Anda sudah tayang dan akan muncul di feed sebentar lagi."
     }
   }
 }
