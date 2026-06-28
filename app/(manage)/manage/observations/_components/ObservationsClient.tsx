@@ -590,6 +590,9 @@ export function ObservationsClient({ target, initialPage, forProject = null }: {
   const [freshRecords, setFreshRecords] = useState<ExplorerRecord[]>([]);
   const [selectedRecords, setSelectedRecords] = useState<Map<string, OccurrenceRecord>>(() => new Map());
   const [visibleRecords, setVisibleRecords] = useState<OccurrenceRecord[]>([]);
+  // True once the explorer has loaded and holds no observations at all. When
+  // empty we strip the page back to just the heading and the seedling banner.
+  const [isEmpty, setIsEmpty] = useState(false);
   const [deletedRecordIds, setDeletedRecordIds] = useState<Set<string>>(() => new Set());
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const createPermission = canCreateRecord(target);
@@ -722,6 +725,7 @@ export function ObservationsClient({ target, initialPage, forProject = null }: {
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("description")}</p>
         </header>
 
+        {isEmpty ? null : (
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-muted px-4 py-3">
           <p className="text-sm text-muted-foreground">
             {selectedRecords.size > 0 ? t("selectedForDelete", { count: selectedRecords.size }) : t("selectToDeleteHint")}
@@ -749,9 +753,10 @@ export function ObservationsClient({ target, initialPage, forProject = null }: {
             </Button>
           </div>
         </div>
+        )}
       </div>
 
-      {projectGroups.length > 0 ? (
+      {!isEmpty && projectGroups.length > 0 ? (
         <div className="mx-auto mt-5 max-w-6xl px-6">
           <ObservationProjectFilter
             groups={projectGroups}
@@ -776,6 +781,8 @@ export function ObservationsClient({ target, initialPage, forProject = null }: {
           emptyFilteredBody={t("filterEmptyBody")}
           leadingCard={<AddObservationTile target={target} forProject={addForProject} disabledReason={createPermission.reason} />}
           emptyState={<ObservationEmptyState target={target} forProject={addForProject} disabledReason={createPermission.reason} />}
+          hideToolbarWhenEmpty
+          onEmptyStateChange={setIsEmpty}
           showStatsOverview={false}
           hiddenRecordIds={deletedRecordIds}
           observationSelection={{
@@ -830,9 +837,9 @@ function ObservationEmptyState({ target, forProject, disabledReason }: { target:
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-      className="relative overflow-visible rounded-[1.6rem] border border-border/80 bg-card shadow-sm"
+      className="relative overflow-hidden rounded-[1.6rem] border border-border/80 bg-card shadow-sm"
     >
-      <div className="relative min-h-[6rem] overflow-hidden rounded-[1.55rem]">
+      <div className="relative min-h-[7rem] overflow-hidden rounded-[1.55rem]">
         <Image
           src="/assets/media/images/create-bumicert/hero-light@2x.webp"
           alt=""
@@ -853,7 +860,7 @@ function ObservationEmptyState({ target, forProject, disabledReason }: { target:
         <div className="absolute -top-8 right-[7%] h-28 w-52 rounded-full bg-background/50 blur-2xl dark:bg-primary/10" />
         <div className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-foreground/20 via-foreground/5 to-transparent dark:from-black/55" />
 
-        <div className="relative z-30 flex min-h-[6rem] flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 lg:px-9">
+        <div className="relative z-30 flex min-h-[7rem] flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 lg:px-9">
           <p className="w-full text-sm leading-5 text-muted-foreground sm:max-w-[30rem]">
             {disabledReason ?? t("emptyHeroDescription")}
           </p>
@@ -875,14 +882,14 @@ function ObservationEmptyState({ target, forProject, disabledReason }: { target:
         alt=""
         width={1002}
         height={1146}
-        className="pointer-events-none absolute bottom-0 right-[4%] z-20 hidden h-[9rem] w-auto max-w-[50%] object-contain dark:hidden md:block"
+        className="pointer-events-none absolute inset-y-0 right-[4%] z-20 hidden h-full w-auto max-w-[40%] object-contain object-bottom dark:hidden md:block"
       />
       <Image
         src="/assets/media/images/create-bumicert/plant-dark.png"
         alt=""
         width={964}
         height={1129}
-        className="pointer-events-none absolute bottom-0 right-[4%] z-20 hidden h-[9rem] w-auto max-w-[50%] object-contain dark:md:block"
+        className="pointer-events-none absolute inset-y-0 right-[4%] z-20 hidden h-full w-auto max-w-[40%] object-contain object-bottom dark:md:block"
       />
     </motion.section>
   );

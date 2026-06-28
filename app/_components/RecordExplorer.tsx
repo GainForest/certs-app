@@ -215,6 +215,8 @@ export function RecordExplorer({
   filterUris = null,
   emptyFilteredTitle,
   emptyFilteredBody,
+  hideToolbarWhenEmpty = false,
+  onEmptyStateChange,
 }: {
   kind: RecordKind;
   initialPage?: InitialExplorerPage;
@@ -242,6 +244,12 @@ export function RecordExplorer({
   filterUris?: ReadonlySet<string> | null;
   emptyFilteredTitle?: string;
   emptyFilteredBody?: string;
+  /** Hide the search/sort/view + filter-pill toolbar when there are no records
+   *  at all (so a bare empty state can stand on its own). */
+  hideToolbarWhenEmpty?: boolean;
+  /** Fires with true once the explorer has loaded and holds zero records (no
+   *  data at all), false otherwise. Lets a parent collapse its own chrome. */
+  onEmptyStateChange?: (isEmpty: boolean) => void;
 }) {
   const meta = KIND_META[kind];
   const exploreT = useTranslations("marketplace.explore");
@@ -614,6 +622,14 @@ export function RecordExplorer({
   // skeleton up so a partial page does not briefly read as empty.
   const showSkeleton = ((phase === "idle" || phase === "loading") && records.length === 0) || Boolean(filterUris && filtered.length === 0 && (walking || hasMore));
 
+  // "No data at all" — loaded (or idle) and holding zero records. Distinct from a
+  // filter/search that simply matched nothing. Used to optionally hide the
+  // toolbar and to let a parent collapse its own chrome down to a bare banner.
+  const noData = !showSkeleton && phase !== "error" && records.length === 0 && !query;
+  useEffect(() => {
+    onEmptyStateChange?.(noData);
+  }, [noData, onEmptyStateChange]);
+
   return (
     <section className={`${showHero ? "-mt-14 " : ""}bg-background pb-20 md:pb-28`}>
       {showHero && (
@@ -638,7 +654,9 @@ export function RecordExplorer({
           </div>
         )}
 
-        {/* Toolbar */}
+        {/* Toolbar — hidden when there is no data and the caller opted in, so a
+            standalone empty state can carry the view on its own. */}
+        {hideToolbarWhenEmpty && noData ? null : (
         <div className="relative z-20 mt-5 space-y-2.5">
           {/* z-30 keeps the sort popover above the filter-pill row below it: both
               rows freeze a `transform` once `animate-in` settles, so each becomes
@@ -748,6 +766,7 @@ export function RecordExplorer({
             </div>
           )}
         </div>
+        )}
 
         {/* Grid / Map */}
         <div className="mt-6">
