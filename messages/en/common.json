@@ -706,6 +706,11 @@
     "emptyFiltered": "No activity of this kind yet.",
     "loadMore": "Load more",
     "loadingMore": "Loading…",
-    "endOfFeed": "You're all caught up"
+    "endOfFeed": "You're all caught up",
+    "batch": {
+      "sightings": "{count, plural, one {shared # nature sighting} other {shared # nature sightings}}",
+      "moreSpecies": "+{count} more",
+      "viewAll": "View all sightings"
+    }
   }
 }

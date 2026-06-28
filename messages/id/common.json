@@ -706,6 +706,11 @@
     "emptyFiltered": "Belum ada aktivitas jenis ini.",
     "loadMore": "Muat lainnya",
     "loadingMore": "Memuat…",
-    "endOfFeed": "Kamu sudah melihat semua"
+    "endOfFeed": "Kamu sudah melihat semua",
+    "batch": {
+      "sightings": "{count, plural, other {berbagi # pengamatan alam}}",
+      "moreSpecies": "+{count} lagi",
+      "viewAll": "Lihat semua pengamatan"
+    }
   }
 }

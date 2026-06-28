@@ -706,6 +706,11 @@
     "emptyFiltered": "Bado hakuna shughuli ya aina hii.",
     "loadMore": "Pakua zaidi",
     "loadingMore": "Inapakia…",
-    "endOfFeed": "Umefika mwisho"
+    "endOfFeed": "Umefika mwisho",
+    "batch": {
+      "sightings": "{count, plural, one {alishiriki onevu # la asili} other {alishiriki maonevu # ya asili}}",
+      "moreSpecies": "+{count} zaidi",
+      "viewAll": "Ona maonevu yote"
+    }
   }
 }

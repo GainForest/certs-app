@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+  ArrowUpRightIcon,
   BinocularsIcon,
   Building2Icon,
   FolderKanbanIcon,
@@ -20,6 +21,41 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type Filter = "all" | ActivityFeedKind;
+
+// A run of this many consecutive sightings from the same account collapses into
+// one summary card instead of N separate rows.
+const MIN_BATCH = 3;
+// How many sample thumbnails the summary card shows.
+const MAX_THUMBS = 4;
+
+/** One rendered slot: a normal row, or a collapsed run of same-owner sightings. */
+type FeedEntry =
+  | { type: "single"; item: ActivityFeedItem }
+  | { type: "batch"; items: ActivityFeedItem[] };
+
+/** Collapse maximal runs of >= MIN_BATCH consecutive observations by the same
+ *  account (adjacent in the newest-first timeline) into one batch entry. Every
+ *  other row passes through unchanged. */
+function groupFeedEntries(items: ActivityFeedItem[]): FeedEntry[] {
+  const entries: FeedEntry[] = [];
+  let i = 0;
+  while (i < items.length) {
+    const item = items[i];
+    if (item.kind === "observation" && item.actorDid) {
+      let j = i + 1;
+      while (j < items.length && items[j].kind === "observation" && items[j].actorDid === item.actorDid) j += 1;
+      const run = items.slice(i, j);
+      if (run.length >= MIN_BATCH) {
+        entries.push({ type: "batch", items: run });
+        i = j;
+        continue;
+      }
+    }
+    entries.push({ type: "single", item });
+    i += 1;
+  }
+  return entries;
+}
 
 const FILTERS: { key: Filter; Icon: typeof NewspaperIcon }[] = [
   { key: "all", Icon: NewspaperIcon },
@@ -123,19 +159,32 @@ export function FeedClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep a stable ref to the latest loadMore so the observer below isn't torn
+  // down and recreated on every page load (which would re-fire immediately
+  // while the sentinel stays in view — a runaway cascade once a big sightings
+  // burst collapses the list to a short height).
+  const loadMoreRef = useRef(loadMore);
+  useEffect(() => {
+    loadMoreRef.current = loadMore;
+  }, [loadMore]);
+
   // Infinite scroll: load the next page when the sentinel nears the viewport.
+  // Recreated only when the sentinel mounts/unmounts (hasMore), so a load that
+  // leaves the sentinel on-screen waits for a real scroll before firing again.
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el) return;
+    if (!el || !hasMore) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) void loadMore();
+        if (entries[0]?.isIntersecting) void loadMoreRef.current();
       },
       { rootMargin: "600px" },
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [loadMore]);
+  }, [hasMore]);
+
+  const entries = useMemo(() => groupFeedEntries(items), [items]);
 
   return (
     <section className="-mt-14 pb-24 md:pb-32">
@@ -220,9 +269,13 @@ export function FeedClient({
         ) : (
           <>
             <ol className="relative">
-              {items.map((item) => (
-                <FeedRow key={item.id} item={item} />
-              ))}
+              {entries.map((entry) =>
+                entry.type === "batch" ? (
+                  <ObservationBatchCard key={`batch:${entry.items[0].id}`} items={entry.items} />
+                ) : (
+                  <FeedRow key={entry.item.id} item={entry.item} />
+                ),
+              )}
             </ol>
 
             {/* Load more — auto-triggers via the sentinel, with a manual
@@ -321,6 +374,118 @@ function FeedRow({ item }: { item: ActivityFeedItem }) {
         ) : null}
       </Link>
     </li>
+  );
+}
+
+/** Collapsed summary for a run of consecutive sightings from one account:
+ *  identity + count, a sample image montage, and a link to all of them. */
+function ObservationBatchCard({ items }: { items: ActivityFeedItem[] }) {
+  const t = useTranslations("common.feed");
+  const head = items[0]; // newest in the run
+  const count = items.length;
+  const actorName = head.actorName || (head.actorDid ? shortDid(head.actorDid) : t("anonymous"));
+
+  const withImages = items.filter((it) => hasImage(it));
+  const thumbs = withImages.slice(0, MAX_THUMBS);
+  const remaining = count - thumbs.length;
+
+  // A short, de-duped species line ("Jaguar · Scarlet Macaw · +6 more"),
+  // skipping junk titles (blank, single-char, or purely numeric source names).
+  const species = Array.from(
+    new Set(
+      items
+        .map((it) => it.title?.trim())
+        .filter((s): s is string => Boolean(s) && s!.length >= 2 && !/^\d+$/.test(s!)),
+    ),
+  );
+  const shownSpecies = species.slice(0, 3);
+  const moreSpecies = species.length - shownSpecies.length;
+
+  const href = head.actorDid ? `/observations?by=${encodeURIComponent(head.actorDid)}` : "/observations";
+
+  return (
+    <li className="relative">
+      <Link href={href} className="group flex gap-3 rounded-2xl px-3 py-3.5 transition-colors hover:bg-muted/40">
+        <FeedAvatar item={head} />
+
+        <div className="min-w-0 flex-1">
+          {/* Author line */}
+          <div className="flex items-center gap-1.5 text-sm">
+            <span className="truncate font-medium text-foreground">{actorName}</span>
+            <span className="text-muted-foreground/60">·</span>
+            <span className="shrink-0 text-xs text-muted-foreground/80" title={fullDate(head.createdAt)}>
+              {formatRelative(head.createdAt)}
+            </span>
+          </div>
+
+          {/* Verb line with the count */}
+          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <BinocularsIcon className="size-3.5 shrink-0 text-primary/70" />
+            <span className="truncate">{t("batch.sightings", { count })}</span>
+          </p>
+
+          {/* Species summary */}
+          {shownSpecies.length > 0 ? (
+            <p className="mt-1.5 line-clamp-1 text-[15px] font-medium leading-snug text-foreground">
+              {shownSpecies.join(" · ")}
+              {moreSpecies > 0 ? (
+                <span className="text-muted-foreground">{" · "}{t("batch.moreSpecies", { count: moreSpecies })}</span>
+              ) : null}
+            </p>
+          ) : null}
+
+          {/* Image montage */}
+          {thumbs.length > 0 ? (
+            <div className="mt-2 grid grid-cols-4 gap-1.5 sm:gap-2">
+              {thumbs.map((it, idx) => (
+                <ObservationThumb
+                  key={it.id}
+                  item={it}
+                  overlay={idx === thumbs.length - 1 && remaining > 0 ? `+${remaining}` : null}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          {/* View-all affordance */}
+          <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
+            {t("batch.viewAll")}
+            <ArrowUpRightIcon className="size-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </span>
+        </div>
+      </Link>
+    </li>
+  );
+}
+
+/** Square thumbnail for one sighting in a batch montage, with an optional
+ *  "+N" overlay on the final tile to signal the rest of the run. */
+function ObservationThumb({ item, overlay }: { item: ActivityFeedItem; overlay: string | null }) {
+  const [resolved, setResolved] = useState<string | null>(null);
+
+  useEffect(() => {
+    setResolved(null);
+    if (item.imageUrl || !item.actorDid || !item.imageRef) return;
+    const controller = new AbortController();
+    resolveBlobUrl(item.actorDid, item.imageRef, controller.signal)
+      .then((url) => setResolved(url))
+      .catch((error) => {
+        if ((error as Error).name !== "AbortError") setResolved(null);
+      });
+    return () => controller.abort();
+  }, [item.actorDid, item.imageRef, item.imageUrl]);
+
+  const src = item.imageUrl ?? resolved;
+
+  return (
+    <div className="relative aspect-square overflow-hidden rounded-lg border border-border/60 bg-muted">
+      {src ? <Image src={src} alt="" fill unoptimized sizes="140px" className="object-cover" /> : null}
+      {overlay ? (
+        <div className="absolute inset-0 grid place-items-center bg-black/55 text-sm font-semibold text-white">
+          {overlay}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

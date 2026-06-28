@@ -706,6 +706,11 @@
     "emptyFiltered": "Ainda não há atividade deste tipo.",
     "loadMore": "Carregar mais",
     "loadingMore": "Carregando…",
-    "endOfFeed": "Você está em dia"
+    "endOfFeed": "Você está em dia",
+    "batch": {
+      "sightings": "{count, plural, one {compartilhou # avistamento} other {compartilhou # avistamentos}}",
+      "moreSpecies": "+{count} mais",
+      "viewAll": "Ver todos os avistamentos"
+    }
   }
 }
