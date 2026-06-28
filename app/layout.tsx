@@ -45,7 +45,7 @@ const instrument = Instrument_Serif({
 const SITE_NAME = "GainForest";
 const OG_IMAGE = "/og/gainforest-og.png";
 const OG_ALT =
-  "GainForest — verified impact starts with real communities. Fund regenerative projects directly, beside an aerial photo of humpback whales in turquoise water.";
+  "GainForest — certified impact for nature stewards. Fund regenerative projects directly, beside an aerial photo of humpback whales in turquoise water.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = resolveSupportedLanguage(await getLocale());
