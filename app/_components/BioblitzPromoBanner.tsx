@@ -40,14 +40,15 @@ export function BioblitzPromoBanner() {
   if (dismissed || !hasBannerCopy) return null;
 
   return (
-    <div className="relative shrink-0">
+    <div className="flex shrink-0 items-stretch bg-primary text-primary-foreground">
       {/* The strip itself — a link straight to the BioBlitz challenge. The
-          message and CTA wrap onto separate lines on narrow screens, and the
-          right padding always clears the absolutely-positioned dismiss control
-          so centered text never slides underneath it. */}
+          message and CTA wrap onto separate lines on narrow screens. The
+          dismiss control is a separate flex column (below), so the link
+          content can never slide underneath it at any width. The left padding
+          mirrors the dismiss column so the message stays roughly centered. */}
       <Link
         href="/bioblitz"
-        className="flex w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1 bg-primary py-2.5 pl-4 pr-11 text-center text-primary-foreground transition-colors hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-foreground/40 sm:gap-x-3 sm:px-11"
+        className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2.5 gap-y-1 py-2.5 pl-11 pr-3 text-center transition-colors hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-foreground/40 sm:gap-x-3 sm:pl-12"
       >
         <span className="inline-flex min-w-0 items-center gap-2">
           <BinocularsIcon className="hidden size-4 shrink-0 sm:block" aria-hidden />
@@ -59,12 +60,13 @@ export function BioblitzPromoBanner() {
         </span>
       </Link>
 
-      {/* Session dismissal — sits above the strip, never navigates. */}
+      {/* Session dismissal — its own full-height column on the right, never
+          navigates, never overlaps the link content. */}
       <button
         type="button"
         onClick={dismiss}
         aria-label={t("banner.dismiss")}
-        className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-primary-foreground/80 transition-colors hover:bg-primary-foreground/15 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-foreground/40 sm:right-2 sm:size-7"
+        className="flex w-11 shrink-0 items-center justify-center text-primary-foreground/70 transition-colors hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-foreground/40 sm:w-12"
       >
         <XIcon className="size-4" aria-hidden />
       </button>
