@@ -1,14 +1,15 @@
 "use client";
 
-import { ClipboardCheckIcon, LeafIcon, MapPinnedIcon, PaperclipIcon } from "lucide-react";
+import { ClipboardCheckIcon, MapPinnedIcon, PaperclipIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ProjectEvidenceCounts } from "../_lib/indexer";
 
 /**
  * Compact at-a-glance evidence summary for a project card: mapped site
- * boundaries, nature sightings, timeline items, and reviews. Zero-states stay
- * visible (muted) so evidence-rich and evidence-light projects are
- * distinguishable at a glance, mirroring the Cert detail Evidence section.
+ * boundaries, timeline items, and reviews. Zero-states stay visible (muted) so
+ * evidence-rich and evidence-light projects are distinguishable at a glance,
+ * mirroring the Cert detail Evidence section. Nature sightings are omitted on
+ * cards because per-project occurrence counts are too slow to batch.
  */
 export function ProjectEvidence({ evidence, className }: { evidence?: ProjectEvidenceCounts; className?: string }) {
   const t = useTranslations("marketplace.projects.evidence");
@@ -16,7 +17,6 @@ export function ProjectEvidence({ evidence, className }: { evidence?: ProjectEvi
 
   const items = [
     { key: "boundaries", Icon: MapPinnedIcon, count: evidence.boundaries, label: t("boundaries", { count: evidence.boundaries }) },
-    { key: "sightings", Icon: LeafIcon, count: evidence.sightings, label: t("sightings", { count: evidence.sightings }) },
     { key: "timeline", Icon: PaperclipIcon, count: evidence.timeline, label: t("timeline", { count: evidence.timeline }) },
     { key: "reviews", Icon: ClipboardCheckIcon, count: evidence.reviews, label: t("reviews", { count: evidence.reviews }) },
   ];
