@@ -1264,6 +1264,55 @@
         "cancel": "Batal",
         "confirm": "Hapus proyek",
         "error": "Proyek tidak dapat dihapus."
+      },
+      "wizard": {
+        "back": "Kembali",
+        "next": "Lanjut",
+        "start": "Mulai",
+        "create": "Buat proyek"
+      },
+      "steps": {
+        "basics": {
+          "title": "Apa nama proyek Anda?",
+          "subtitle": "Beri nama yang jelas dan ringkasan satu baris yang mudah dipahami."
+        },
+        "focus": {
+          "title": "Jenis pekerjaan apa ini?",
+          "subtitle": "Pilih area fokus yang paling menggambarkan proyek Anda."
+        },
+        "timeline": {
+          "title": "Kapan pekerjaan ini dilakukan?",
+          "subtitle": "Tambahkan tanggal mulai, dan tanggal selesai jika sudah berakhir."
+        },
+        "story": {
+          "title": "Ceritakan kisah proyek Anda",
+          "subtitle": "Bagikan pekerjaan, metode, bukti, dan apa yang berubah."
+        },
+        "network": {
+          "title": "Siapa dan di mana?",
+          "subtitle": "Beri penghargaan kepada orang di balik pekerjaan dan lampirkan tempatnya."
+        },
+        "photo": {
+          "title": "Tambahkan foto proyek",
+          "subtitle": "Foto yang baik membantu orang mengenali dan memercayai proyek Anda."
+        },
+        "review": {
+          "title": "Tinjau proyek Anda",
+          "subtitle": "Pastikan semuanya benar, lalu buat proyek Anda."
+        }
+      },
+      "review": {
+        "name": "Nama",
+        "summary": "Ringkasan",
+        "focus": "Area fokus",
+        "timeline": "Periode",
+        "people": "Orang & kelompok",
+        "places": "Tempat",
+        "photo": "Foto",
+        "none": "Belum ditambahkan",
+        "ongoing": "berlangsung",
+        "added": "Ditambahkan",
+        "notAdded": "Belum ditambahkan"
       }
     }
   },

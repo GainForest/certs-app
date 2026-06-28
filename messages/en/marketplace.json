@@ -1264,6 +1264,55 @@
         "cancel": "Cancel",
         "confirm": "Delete project",
         "error": "Project could not be deleted."
+      },
+      "wizard": {
+        "back": "Back",
+        "next": "Next",
+        "start": "Get started",
+        "create": "Create project"
+      },
+      "steps": {
+        "basics": {
+          "title": "What's your project called?",
+          "subtitle": "Give it a clear name and a one-line summary people will understand."
+        },
+        "focus": {
+          "title": "What kind of work is this?",
+          "subtitle": "Choose the focus areas that best describe your project."
+        },
+        "timeline": {
+          "title": "When did the work happen?",
+          "subtitle": "Add a start date, and an end date if the work has finished."
+        },
+        "story": {
+          "title": "Tell your project's story",
+          "subtitle": "Share the work, the methods, the evidence, and what changed."
+        },
+        "network": {
+          "title": "Who and where?",
+          "subtitle": "Credit the people behind the work and attach the places it happened."
+        },
+        "photo": {
+          "title": "Add a project photo",
+          "subtitle": "A strong photo helps people recognise and trust your project."
+        },
+        "review": {
+          "title": "Review your project",
+          "subtitle": "Check everything looks right, then create your project."
+        }
+      },
+      "review": {
+        "name": "Name",
+        "summary": "Summary",
+        "focus": "Focus areas",
+        "timeline": "Timeline",
+        "people": "People & groups",
+        "places": "Places",
+        "photo": "Photo",
+        "none": "Not added",
+        "ongoing": "ongoing",
+        "added": "Added",
+        "notAdded": "Not added"
       }
     }
   },

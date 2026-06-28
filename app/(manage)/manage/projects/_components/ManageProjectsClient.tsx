@@ -44,11 +44,13 @@ import {
   buildProjectRecord,
   certToDraftFields,
   clampSummary,
+  contributorList,
   descriptionText,
   emptyProjectCertDraft,
   extractLocationRefs,
   extractRkey,
   resolveSiteRefs,
+  scopeList,
   type ProjectCertDraft,
   type StrongRef,
 } from "../../_lib/project-cert";
@@ -63,6 +65,12 @@ const QUERY_STATE_OPTIONS = { history: "push", scroll: false, shallow: true } as
 type ProjectMode = (typeof PROJECT_MODES)[number];
 
 const WORK_SCOPE_KEYS: KnownWorkScopeKey[] = [...PROJECT_WORK_SCOPE_KEYS];
+
+// Ma Earth-style progressive-disclosure flow: one focused question per screen,
+// a single progress bar, ending in review → success. Rendered in bumicerts'
+// own editorial styling.
+const WIZARD_STEPS = ["intro", "basics", "focus", "timeline", "story", "network", "photo", "review"] as const;
+type WizardStepId = (typeof WIZARD_STEPS)[number];
 
 type ManagedProject = {
   kind: "project";
@@ -484,6 +492,7 @@ function ProjectEditor({
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [savedProjectUri, setSavedProjectUri] = useState<string | null>(state.project?.atUri ?? null);
+  const [stepIndex, setStepIndex] = useState(0);
 
   // The cert (org.hypercerts.claim.activity) bound 1:1 to this project. Loaded
   // on edit so its rich fields can hydrate the form and be kept in sync.
@@ -579,6 +588,11 @@ function ProjectEditor({
     setError(null);
   };
 
+  const resetWizard = () => {
+    resetDraft();
+    setStepIndex(0);
+  };
+
   const handleCoverChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     setCoverFile(file);
@@ -615,8 +629,8 @@ function ProjectEditor({
     await modal.show();
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = async (event?: FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
     setSaveAttempted(true);
     if (issues.length > 0) {
       setError(issues[0]?.message ?? t("errors.checkFields"));
@@ -700,6 +714,118 @@ function ProjectEditor({
     );
   }
 
+  // ── CREATE: Ma Earth-style step wizard, one focused screen at a time ──
+  if (!isEdit) {
+    const stepId: WizardStepId = WIZARD_STEPS[stepIndex];
+    const lastIndex = WIZARD_STEPS.length - 1;
+    const progress = (stepIndex / lastIndex) * 100;
+    const basicsValid = draft.title.trim().length >= 3;
+    const goNext = () => setStepIndex((index) => Math.min(index + 1, lastIndex));
+    const goPrev = () => setStepIndex((index) => Math.max(index - 1, 0));
+
+    return (
+      <div className="relative w-full">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <Button type="button" variant="ghost" size="sm" onClick={onClose} className="-ml-2 text-muted-foreground" disabled={saving}>
+            <ChevronLeftIcon className="size-4" /> {t("backToProjects")}
+          </Button>
+          {stepIndex > 0 ? (
+            <Button type="button" variant="ghost" size="sm" onClick={resetWizard} className="text-muted-foreground" disabled={saving}>
+              <RotateCcwIcon className="size-4" /> {t("startOver")}
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="mb-9 h-1.5 w-full overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
+          <motion.div
+            className="h-full rounded-full bg-primary"
+            initial={false}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+          />
+        </div>
+
+        <div className="min-h-[24rem]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={stepId}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              {stepId === "intro" ? (
+                <ProjectCreateHero />
+              ) : stepId === "basics" ? (
+                <div className="mx-auto max-w-2xl">
+                  <WizardStepHeader title={t("steps.basics.title")} subtitle={t("steps.basics.subtitle")} />
+                  <BasicsFields draft={draft} onChange={updateDraft} issuesByName={issuesByName} t={t} />
+                </div>
+              ) : stepId === "focus" ? (
+                <div className="mx-auto max-w-2xl">
+                  <WizardStepHeader title={t("steps.focus.title")} subtitle={t("steps.focus.subtitle")} />
+                  <ScopeSection draft={draft} setDraft={setDraft} workScopes={workScopes} t={t} />
+                </div>
+              ) : stepId === "timeline" ? (
+                <div className="mx-auto max-w-2xl">
+                  <WizardStepHeader title={t("steps.timeline.title")} subtitle={t("steps.timeline.subtitle")} />
+                  <DatesSection draft={draft} setDraft={setDraft} t={t} />
+                </div>
+              ) : stepId === "story" ? (
+                <div className="mx-auto max-w-2xl">
+                  <WizardStepHeader title={t("steps.story.title")} subtitle={t("steps.story.subtitle")} />
+                  <StoryField draft={draft} onChange={updateDraft} t={t} />
+                </div>
+              ) : stepId === "network" ? (
+                <div className="mx-auto max-w-2xl space-y-8">
+                  <WizardStepHeader title={t("steps.network.title")} subtitle={t("steps.network.subtitle")} />
+                  <ContributorsSection draft={draft} setDraft={setDraft} t={t} />
+                  <SitesSection draft={draft} setDraft={setDraft} sites={sites} sitesStatus={sitesStatus} sitesHref={sitesHref} t={t} />
+                </div>
+              ) : stepId === "photo" ? (
+                <div className="mx-auto max-w-md">
+                  <WizardStepHeader title={t("steps.photo.title")} subtitle={t("steps.photo.subtitle")} />
+                  <PhotoPanel coverUrl={coverUrl} onChange={handleCoverChange} t={t} />
+                </div>
+              ) : (
+                <div className="mx-auto max-w-2xl">
+                  <WizardStepHeader title={t("steps.review.title")} subtitle={t("steps.review.subtitle")} />
+                  <ReviewList draft={draft} hasCover={Boolean(coverUrl)} t={t} />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {error ? (
+          <p className={cn(ERROR_MESSAGE, "mx-auto mt-8 max-w-2xl")}>
+            <TriangleAlertIcon className="size-3.5 text-warn" /> {error}
+          </p>
+        ) : null}
+
+        <div className="mt-10 flex items-center justify-between gap-3 border-t border-border/60 pt-6">
+          {stepIndex > 0 ? (
+            <Button type="button" variant="secondary" size="lg" onClick={goPrev} disabled={saving}>
+              <ChevronLeftIcon className="size-4" /> {t("wizard.back")}
+            </Button>
+          ) : <span />}
+          {stepId === "review" ? (
+            <Button type="button" size="lg" onClick={() => void handleSubmit()} disabled={saving || !savePermission.allowed} title={savePermission.reason ?? undefined}>
+              {saving ? <Loader2Icon className="size-4 animate-spin" /> : <FolderKanbanIcon className="size-4" />}
+              {saving ? t("saving") : t("wizard.create")}
+            </Button>
+          ) : (
+            <Button type="button" size="lg" onClick={goNext} disabled={stepId === "basics" && !basicsValid}>
+              {stepIndex === 0 ? t("wizard.start") : t("wizard.next")}
+              <ChevronRightIcon className="size-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── EDIT: single-page form ──
   return (
     <motion.form
       initial={{ opacity: 0, y: 8 }}
@@ -717,49 +843,20 @@ function ProjectEditor({
         </Button>
       </div>
 
-      {!isEdit ? <ProjectCreateHero /> : null}
-
       <div className="grid gap-x-14 gap-y-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 space-y-10">
           <section>
-            <SectionHeader title={isEdit ? t("editTitle") : t("createTitle")} />
+            <SectionHeader title={t("editTitle")} />
             <div className="space-y-8">
-              <Field label={t("fields.name.label")} hint={t("fields.name.hint")} htmlFor="project-title" error={issuesByName.title?.message}>
-                <input
-                  id="project-title"
-                  value={draft.title}
-                  maxLength={TITLE_MAX}
-                  onChange={(event) => updateDraft("title", event.target.value)}
-                  placeholder={t("fields.name.placeholder")}
-                  className={cn(FIELD, "px-4 py-3 font-instrument text-2xl italic tracking-[-0.01em]", issuesByName.title && FIELD_ERROR)}
-                />
-                <div className="mt-1.5 text-right text-xs text-muted-foreground">{draft.title.length} / {TITLE_MAX}</div>
-              </Field>
-
-              <Field label={t("fields.summary.label")} hint={t("fields.summary.hint")} htmlFor="project-summary" error={issuesByName.shortDescription?.message}>
-                <textarea
-                  id="project-summary"
-                  value={draft.shortDescription}
-                  onChange={(event) => updateDraft("shortDescription", event.target.value.slice(0, 300))}
-                  placeholder={t("fields.summary.placeholder")}
-                  className={cn(FIELD, "min-h-24 resize-y px-4 py-3 text-[15px] leading-7", issuesByName.shortDescription && FIELD_ERROR)}
-                />
-                <div className="mt-1.5 text-right text-xs text-muted-foreground">{clampSummary(draft.shortDescription).length} / 300</div>
-              </Field>
-
-              <Field label={t("fields.story.label")} hint={t("fields.story.hint")} htmlFor="project-story">
-                <textarea
-                  id="project-story"
-                  value={draft.description}
-                  onChange={(event) => updateDraft("description", event.target.value)}
-                  placeholder={t("fields.story.placeholder")}
-                  className={cn(FIELD, "min-h-48 resize-y px-4 py-3 text-[15px] leading-7")}
-                />
-              </Field>
+              <BasicsFields draft={draft} onChange={updateDraft} issuesByName={issuesByName} t={t} />
+              <StoryField draft={draft} onChange={updateDraft} t={t} />
             </div>
           </section>
 
-          <ScopeAndDatesSection draft={draft} setDraft={setDraft} workScopes={workScopes} t={t} />
+          <section className="space-y-8">
+            <ScopeSection draft={draft} setDraft={setDraft} workScopes={workScopes} t={t} />
+            <DatesSection draft={draft} setDraft={setDraft} t={t} />
+          </section>
 
           <ContributorsSection draft={draft} setDraft={setDraft} t={t} />
 
@@ -785,19 +882,17 @@ function ProjectEditor({
       ) : null}
 
       <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
-        {isEdit ? (
-          <Button type="button" variant="destructive" size="lg" onClick={() => void handleDeleteProject()} disabled={saving || !deletePermission.allowed} title={deletePermission.reason ?? undefined}>
-            <Trash2Icon className="size-4" />
-            {t("delete")}
-          </Button>
-        ) : <span />}
+        <Button type="button" variant="destructive" size="lg" onClick={() => void handleDeleteProject()} disabled={saving || !deletePermission.allowed} title={deletePermission.reason ?? undefined}>
+          <Trash2Icon className="size-4" />
+          {t("delete")}
+        </Button>
         <div className="flex flex-wrap justify-end gap-2">
           <Button type="button" variant="outline" size="lg" onClick={onClose} disabled={saving}>
             {t("cancel")}
           </Button>
           <Button type="submit" size="lg" disabled={saving || !savePermission.allowed} title={savePermission.reason ?? undefined}>
             {saving ? <Loader2Icon className="size-4 animate-spin" /> : <FolderKanbanIcon className="size-4" />}
-            {saving ? t("saving") : isEdit ? t("saveChanges") : t("saveProject")}
+            {saving ? t("saving") : t("saveChanges")}
           </Button>
         </div>
       </div>
@@ -805,7 +900,7 @@ function ProjectEditor({
   );
 }
 
-function ScopeAndDatesSection({
+function ScopeSection({
   draft,
   setDraft,
   workScopes,
@@ -824,37 +919,48 @@ function ScopeAndDatesSection({
   };
 
   return (
-    <section className="space-y-8">
-      <Field label={t("fields.scope.label")} hint={t("fields.scope.hint")}>
-        <div className="flex flex-wrap gap-2">
-          {workScopes.map((scope) => {
-            const active = draft.scopes.includes(scope);
-            return (
-              <button
-                key={scope}
-                type="button"
-                onClick={() => toggleScope(scope)}
-                className={cn(
-                  "rounded-full border px-4 py-2 text-sm font-medium transition-all",
-                  active
-                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                    : "border-border bg-background/70 text-foreground/75 hover:border-primary/35 hover:text-foreground",
-                )}
-              >
-                {scope}
-              </button>
-            );
-          })}
-        </div>
-        <input
-          value={draft.customScope}
-          onChange={(event) => setDraft((current) => ({ ...current, customScope: event.target.value }))}
-          placeholder={t("fields.scope.customPlaceholder")}
-          className={cn(FIELD, "mt-3 px-4 py-2.5 text-sm")}
-        />
-      </Field>
+    <Field label={t("fields.scope.label")} hint={t("fields.scope.hint")}>
+      <div className="flex flex-wrap gap-2">
+        {workScopes.map((scope) => {
+          const active = draft.scopes.includes(scope);
+          return (
+            <button
+              key={scope}
+              type="button"
+              onClick={() => toggleScope(scope)}
+              className={cn(
+                "rounded-full border px-4 py-2 text-sm font-medium transition-all",
+                active
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "border-border bg-background/70 text-foreground/75 hover:border-primary/35 hover:text-foreground",
+              )}
+            >
+              {scope}
+            </button>
+          );
+        })}
+      </div>
+      <input
+        value={draft.customScope}
+        onChange={(event) => setDraft((current) => ({ ...current, customScope: event.target.value }))}
+        placeholder={t("fields.scope.customPlaceholder")}
+        className={cn(FIELD, "mt-3 px-4 py-2.5 text-sm")}
+      />
+    </Field>
+  );
+}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+function DatesSection({
+  draft,
+  setDraft,
+  t,
+}: {
+  draft: ProjectCertDraft;
+  setDraft: React.Dispatch<React.SetStateAction<ProjectCertDraft>>;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t("fields.startDate.label")} htmlFor="project-start">
           <div className="relative">
             <CalendarDaysIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -891,8 +997,7 @@ function ScopeAndDatesSection({
             </label>
           </div>
         </Field>
-      </div>
-    </section>
+    </div>
   );
 }
 
@@ -1111,6 +1216,118 @@ function ProjectSuccessPanel({
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function BasicsFields({
+  draft,
+  onChange,
+  issuesByName,
+  t,
+}: {
+  draft: ProjectCertDraft;
+  onChange: (field: ProjectField, value: string) => void;
+  issuesByName: Partial<Record<ProjectField, ProjectIssue>>;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <div className="space-y-8">
+      <Field label={t("fields.name.label")} hint={t("fields.name.hint")} htmlFor="project-title" error={issuesByName.title?.message}>
+        <input
+          id="project-title"
+          value={draft.title}
+          maxLength={TITLE_MAX}
+          onChange={(event) => onChange("title", event.target.value)}
+          placeholder={t("fields.name.placeholder")}
+          className={cn(FIELD, "px-4 py-3 font-instrument text-2xl italic tracking-[-0.01em]", issuesByName.title && FIELD_ERROR)}
+        />
+        <div className="mt-1.5 text-right text-xs text-muted-foreground">{draft.title.length} / {TITLE_MAX}</div>
+      </Field>
+
+      <Field label={t("fields.summary.label")} hint={t("fields.summary.hint")} htmlFor="project-summary" error={issuesByName.shortDescription?.message}>
+        <textarea
+          id="project-summary"
+          value={draft.shortDescription}
+          onChange={(event) => onChange("shortDescription", event.target.value.slice(0, 300))}
+          placeholder={t("fields.summary.placeholder")}
+          className={cn(FIELD, "min-h-24 resize-y px-4 py-3 text-[15px] leading-7", issuesByName.shortDescription && FIELD_ERROR)}
+        />
+        <div className="mt-1.5 text-right text-xs text-muted-foreground">{clampSummary(draft.shortDescription).length} / 300</div>
+      </Field>
+    </div>
+  );
+}
+
+function StoryField({
+  draft,
+  onChange,
+  t,
+}: {
+  draft: ProjectCertDraft;
+  onChange: (field: ProjectField, value: string) => void;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <Field label={t("fields.story.label")} hint={t("fields.story.hint")} htmlFor="project-story">
+      <textarea
+        id="project-story"
+        value={draft.description}
+        onChange={(event) => onChange("description", event.target.value)}
+        placeholder={t("fields.story.placeholder")}
+        className={cn(FIELD, "min-h-48 resize-y px-4 py-3 text-[15px] leading-7")}
+      />
+    </Field>
+  );
+}
+
+function WizardStepHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="mb-8">
+      <h3 className="font-instrument text-3xl italic leading-[1.05] tracking-[-0.01em] text-foreground sm:text-4xl">{title}</h3>
+      {subtitle ? <p className="mt-2.5 max-w-xl text-sm leading-6 text-muted-foreground">{subtitle}</p> : null}
+    </div>
+  );
+}
+
+function ReviewList({
+  draft,
+  hasCover,
+  t,
+}: {
+  draft: ProjectCertDraft;
+  hasCover: boolean;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const focus = scopeList(draft);
+  const people = contributorList(draft);
+  const placeCount = draft.selectedLocationUris.length;
+  const timeline = draft.startDate
+    ? `${draft.startDate} → ${draft.ongoing ? t("review.ongoing") : draft.endDate || "—"}`
+    : t("review.none");
+  const rows: Array<[string, string]> = [
+    [t("review.name"), draft.title.trim() || "—"],
+    [t("review.summary"), clampSummary(draft.shortDescription) || t("review.none")],
+    [t("review.focus"), focus.length ? focus.join(", ") : t("review.none")],
+    [t("review.timeline"), timeline],
+    [t("review.people"), people.length ? people.join(", ") : t("review.none")],
+    [t("review.places"), placeCount > 0 ? String(placeCount) : t("review.none")],
+    [t("review.photo"), hasCover ? t("review.added") : t("review.notAdded")],
+  ];
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-card/40">
+      {rows.map(([label, value], index) => (
+        <div
+          key={label}
+          className={cn(
+            "grid gap-1 px-4 py-3.5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-3",
+            index !== rows.length - 1 && "border-b border-border/60",
+          )}
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+          <p className="text-sm leading-6 text-foreground">{value}</p>
+        </div>
+      ))}
+    </div>
   );
 }
 

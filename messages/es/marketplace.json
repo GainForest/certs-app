@@ -1264,6 +1264,55 @@
         "cancel": "Cancelar",
         "confirm": "Eliminar proyecto",
         "error": "No se pudo eliminar el proyecto."
+      },
+      "wizard": {
+        "back": "Atrás",
+        "next": "Siguiente",
+        "start": "Empezar",
+        "create": "Crear proyecto"
+      },
+      "steps": {
+        "basics": {
+          "title": "¿Cómo se llama tu proyecto?",
+          "subtitle": "Ponle un nombre claro y un resumen de una línea que la gente entienda."
+        },
+        "focus": {
+          "title": "¿Qué tipo de trabajo es?",
+          "subtitle": "Elige las áreas de enfoque que mejor describan tu proyecto."
+        },
+        "timeline": {
+          "title": "¿Cuándo se hizo el trabajo?",
+          "subtitle": "Añade una fecha de inicio y, si terminó, una fecha de fin."
+        },
+        "story": {
+          "title": "Cuenta la historia de tu proyecto",
+          "subtitle": "Comparte el trabajo, los métodos, las pruebas y lo que cambió."
+        },
+        "network": {
+          "title": "¿Quién y dónde?",
+          "subtitle": "Reconoce a las personas detrás del trabajo y adjunta los lugares donde ocurrió."
+        },
+        "photo": {
+          "title": "Añade una foto del proyecto",
+          "subtitle": "Una buena foto ayuda a reconocer y confiar en tu proyecto."
+        },
+        "review": {
+          "title": "Revisa tu proyecto",
+          "subtitle": "Comprueba que todo está bien y crea tu proyecto."
+        }
+      },
+      "review": {
+        "name": "Nombre",
+        "summary": "Resumen",
+        "focus": "Áreas de enfoque",
+        "timeline": "Periodo",
+        "people": "Personas y grupos",
+        "places": "Lugares",
+        "photo": "Foto",
+        "none": "Sin añadir",
+        "ongoing": "en curso",
+        "added": "Añadida",
+        "notAdded": "Sin añadir"
       }
     }
   },

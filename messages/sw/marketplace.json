@@ -1264,6 +1264,55 @@
         "cancel": "Ghairi",
         "confirm": "Futa mradi",
         "error": "Mradi haukuweza kufutwa."
+      },
+      "wizard": {
+        "back": "Rudi",
+        "next": "Endelea",
+        "start": "Anza",
+        "create": "Unda mradi"
+      },
+      "steps": {
+        "basics": {
+          "title": "Mradi wako unaitwaje?",
+          "subtitle": "Upe jina wazi na muhtasari wa mstari mmoja ambao watu wataelewa."
+        },
+        "focus": {
+          "title": "Hii ni kazi ya aina gani?",
+          "subtitle": "Chagua maeneo ya kuzingatia yanayoelezea mradi wako vyema."
+        },
+        "timeline": {
+          "title": "Kazi ilifanyika lini?",
+          "subtitle": "Ongeza tarehe ya kuanza, na tarehe ya kumaliza ikiwa imekamilika."
+        },
+        "story": {
+          "title": "Simulia hadithi ya mradi wako",
+          "subtitle": "Shiriki kazi, mbinu, ushahidi, na kilichobadilika."
+        },
+        "network": {
+          "title": "Nani na wapi?",
+          "subtitle": "Watambue watu nyuma ya kazi na ambatanisha maeneo ilipofanyika."
+        },
+        "photo": {
+          "title": "Ongeza picha ya mradi",
+          "subtitle": "Picha nzuri husaidia watu kutambua na kuamini mradi wako."
+        },
+        "review": {
+          "title": "Kagua mradi wako",
+          "subtitle": "Hakikisha kila kitu kiko sawa, kisha unda mradi wako."
+        }
+      },
+      "review": {
+        "name": "Jina",
+        "summary": "Muhtasari",
+        "focus": "Maeneo ya kuzingatia",
+        "timeline": "Kipindi",
+        "people": "Watu na vikundi",
+        "places": "Maeneo",
+        "photo": "Picha",
+        "none": "Haijaongezwa",
+        "ongoing": "inaendelea",
+        "added": "Imeongezwa",
+        "notAdded": "Haijaongezwa"
       }
     }
   },
