@@ -851,6 +851,10 @@
     "unfollowAria": "Berhenti mengikuti {name}",
     "followersLabel": "pengikut",
     "followingLabel": "mengikuti",
-    "genericName": "akun ini"
+    "genericName": "akun ini",
+    "followersTab": "Pengikut",
+    "followingTab": "Mengikuti",
+    "emptyFollowers": "Belum ada pengikut.",
+    "emptyFollowing": "Belum mengikuti siapa pun."
   }
 }

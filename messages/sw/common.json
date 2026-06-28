@@ -851,6 +851,10 @@
     "unfollowAria": "Acha kumfuata {name}",
     "followersLabel": "wafuasi",
     "followingLabel": "anaofuata",
-    "genericName": "akaunti hii"
+    "genericName": "akaunti hii",
+    "followersTab": "Wafuasi",
+    "followingTab": "Anaofuata",
+    "emptyFollowers": "Hakuna wafuasi bado.",
+    "emptyFollowing": "Bado hamfuati mtu yeyote."
   }
 }

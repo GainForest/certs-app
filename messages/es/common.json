@@ -851,6 +851,10 @@
     "unfollowAria": "Dejar de seguir a {name}",
     "followersLabel": "seguidores",
     "followingLabel": "siguiendo",
-    "genericName": "esta cuenta"
+    "genericName": "esta cuenta",
+    "followersTab": "Seguidores",
+    "followingTab": "Siguiendo",
+    "emptyFollowers": "Aún no tiene seguidores.",
+    "emptyFollowing": "Todavía no sigue a nadie."
   }
 }

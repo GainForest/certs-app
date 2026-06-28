@@ -851,6 +851,10 @@
     "unfollowAria": "Unfollow {name}",
     "followersLabel": "followers",
     "followingLabel": "following",
-    "genericName": "this account"
+    "genericName": "this account",
+    "followersTab": "Followers",
+    "followingTab": "Following",
+    "emptyFollowers": "No followers yet.",
+    "emptyFollowing": "Not following anyone yet."
   }
 }

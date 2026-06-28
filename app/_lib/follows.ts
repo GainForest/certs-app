@@ -82,6 +82,67 @@ function rkeyOf(uri: string): string {
   return uri.split("/").pop() ?? "";
 }
 
+// ── Connection lists (who follows / who they follow) ─────────────────────────
+
+export type FollowConnection = { did: string; createdAt: string | null };
+
+const FOLLOWERS_LIST_QUERY = `
+  query FollowersList($target: String!, $first: Int!, $after: String) {
+    appCertifiedGraphFollow(first: $first, after: $after, where: { subject: { eq: $target } }) {
+      pageInfo { hasNextPage endCursor }
+      edges { node { did createdAt } }
+    }
+  }
+`;
+
+const FOLLOWING_LIST_QUERY = `
+  query FollowingList($target: String!, $first: Int!, $after: String) {
+    appCertifiedGraphFollow(first: $first, after: $after, where: { did: { eq: $target } }) {
+      pageInfo { hasNextPage endCursor }
+      edges { node { subject createdAt } }
+    }
+  }
+`;
+
+type FollowListResponse = {
+  appCertifiedGraphFollow?: {
+    pageInfo?: { hasNextPage?: boolean | null; endCursor?: string | null } | null;
+    edges?: Array<{ node?: { did?: string | null; subject?: string | null; createdAt?: string | null } | null } | null> | null;
+  } | null;
+};
+
+/**
+ * Fetch one page of an account's followers (`direction: "followers"`, the
+ * accounts that follow it) or following (`"following"`, the accounts it follows).
+ * Returns the displayed account DID per row plus a cursor for the next page.
+ */
+export async function fetchFollowConnections(
+  targetDid: string,
+  direction: "followers" | "following",
+  options: { cursor?: string | null; limit?: number } = {},
+  signal?: AbortSignal,
+): Promise<{ items: FollowConnection[]; nextCursor: string | null }> {
+  const isFollowers = direction === "followers";
+  const data = await indexerQuery<FollowListResponse>(
+    isFollowers ? FOLLOWERS_LIST_QUERY : FOLLOWING_LIST_QUERY,
+    { target: targetDid, first: options.limit ?? 30, after: options.cursor ?? null },
+    signal,
+  ).catch(() => null);
+
+  const conn = data?.appCertifiedGraphFollow;
+  const items: FollowConnection[] = [];
+  for (const edge of conn?.edges ?? []) {
+    const node = edge?.node;
+    const did = isFollowers ? node?.did : node?.subject;
+    if (!did) continue;
+    items.push({ did, createdAt: node?.createdAt ?? null });
+  }
+  return {
+    items,
+    nextCursor: conn?.pageInfo?.hasNextPage ? conn.pageInfo.endCursor ?? null : null,
+  };
+}
+
 export type UseFollow = {
   /** "loading" until the first stats fetch resolves, then "ready". */
   status: "loading" | "ready";

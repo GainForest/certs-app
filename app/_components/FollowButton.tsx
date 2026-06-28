@@ -12,11 +12,13 @@
  */
 
 import { createContext, useContext, type ReactNode } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Loader2Icon, UserCheckIcon, UserPlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatCompact } from "../_lib/format";
+import { accountFollowersPath, accountFollowingPath } from "../account/_lib/account-route";
 import { useFollow, type UseFollow } from "../_lib/follows";
 
 const FollowContext = createContext<UseFollow | null>(null);
@@ -98,16 +100,18 @@ export function FollowStats({
   const follow = useFollowState(targetDid);
   if (!targetDid) return null;
 
+  // Counts link to the followers / following list pages. We pass the DID; the
+  // route redirects to the account's canonical handle path when it has one.
   return (
     <span className={cn("inline-flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground", className)}>
-      <span>
+      <Link href={accountFollowersPath(targetDid)} className="rounded transition-colors hover:text-foreground hover:underline">
         <b className="font-semibold tabular-nums text-foreground">{formatCompact(follow.followers)}</b>{" "}
         {t("followersLabel")}
-      </span>
-      <span>
+      </Link>
+      <Link href={accountFollowingPath(targetDid)} className="rounded transition-colors hover:text-foreground hover:underline">
         <b className="font-semibold tabular-nums text-foreground">{formatCompact(follow.following)}</b>{" "}
         {t("followingLabel")}
-      </span>
+      </Link>
     </span>
   );
 }

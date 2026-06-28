@@ -99,6 +99,14 @@ export function accountObservationsPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/observations`;
 }
 
+export function accountFollowersPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/followers`;
+}
+
+export function accountFollowingPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/following`;
+}
+
 export function accountOrganizationsPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/organizations`;
 }
