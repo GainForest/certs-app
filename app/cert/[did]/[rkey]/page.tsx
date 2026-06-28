@@ -614,6 +614,14 @@ export async function ProjectDetailView({
   const showSupport = Boolean(fundingConfig?.receivingWallet?.uri) || donationReceipts.length > 0 || isOwner;
   const donationsHref = showSupport ? `${detailHref}#support` : detailHref;
   const reviewCount = (reviewCounts?.evaluations ?? 0) + (reviewCounts?.comments ?? 0);
+  const period = record.startDate || record.endDate
+    ? `${record.startDate ? formatDate(record.startDate) : "\u2014"} \u2192 ${record.endDate ? formatDate(record.endDate) : "\u2014"}`
+    : null;
+  const recentUpdates = [...timelineEntries]
+    .sort((a, b) =>
+      (b.record.createdAt ?? b.metadata.createdAt ?? "").localeCompare(a.record.createdAt ?? a.metadata.createdAt ?? ""),
+    )
+    .slice(0, 3);
 
   // Evidence chips double as in-page nav; point each at its section when that
   // section is rendered, otherwise fall back so zero-state chips aren't dead.
@@ -784,11 +792,132 @@ export async function ProjectDetailView({
                 canDelete={certManageAccess.canDelete}
                 mutationRepo={certManageAccess.mutationRepo}
                 deleteRedirectHref={ownerProfileHref}
+                extra={
+                  <ProjectSidebarExtras
+                    record={record}
+                    detail={detail}
+                    workScopeLabels={workScopeLabels}
+                    period={period}
+                    mapLocationUri={hasPlaces ? record.locationUris[0] : null}
+                    recentUpdates={recentUpdates}
+                  />
+                }
               />
             </div>
           </aside>
         </section>
       </main>
+    </>
+  );
+}
+
+/** Rich at-a-glance block injected under the project sidebar cover image: key
+ *  facts, a mini boundary map, and the latest updates — each linking to the
+ *  matching inline section. */
+function ProjectSidebarExtras({
+  record,
+  detail,
+  workScopeLabels,
+  period,
+  mapLocationUri,
+  recentUpdates,
+}: {
+  record: BumicertRecord;
+  detail: RouteData["detail"];
+  workScopeLabels: WorkScopeLabels;
+  period: string | null;
+  mapLocationUri: string | null;
+  recentUpdates: TimelineAttachmentItem[];
+}) {
+  const facts: Array<{ label: string; value: string }> = [];
+  if (period) facts.push({ label: "Active", value: period });
+  if (record.locationUris.length > 0) facts.push({ label: "Places", value: formatNumber(record.locationUris.length) });
+  if (record.contributorCount > 0) facts.push({ label: "Contributors", value: formatNumber(record.contributorCount) });
+  const badges = detail?.badges ?? [];
+
+  return (
+    <>
+      {facts.length > 0 || badges.length > 0 ? (
+        <>
+          <Separator />
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">At a glance</h3>
+            {facts.length > 0 ? (
+              <dl className="space-y-2">
+                {facts.map((fact) => (
+                  <div key={fact.label} className="flex items-baseline justify-between gap-3">
+                    <dt className="shrink-0 text-xs text-muted-foreground">{fact.label}</dt>
+                    <dd className="min-w-0 truncate text-right text-sm font-medium text-foreground">{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+            {badges.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {badges.slice(0, 6).map((badge, index) => (
+                  <span
+                    key={`${badge.label}-${index}`}
+                    className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-secondary-foreground"
+                  >
+                    {formatWorkScopeTag(badge.label, workScopeLabels)}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </>
+      ) : null}
+
+      {mapLocationUri ? (
+        <>
+          <Separator />
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">Map</h3>
+              <a href="#places" className="text-xs font-medium text-primary transition-colors hover:underline">View places</a>
+            </div>
+            <a href="#places" className="group relative block overflow-hidden rounded-2xl border border-border" aria-label="View places">
+              <iframe
+                src={polygonsViewHref(mapLocationUri)}
+                className="pointer-events-none h-44 w-full border-0"
+                loading="lazy"
+                title="Site boundary map"
+              />
+              <span aria-hidden className="absolute inset-0 transition-colors group-hover:bg-primary/[0.06]" />
+            </a>
+          </div>
+        </>
+      ) : null}
+
+      {recentUpdates.length > 0 ? (
+        <>
+          <Separator />
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">Latest updates</h3>
+              <a href="#updates" className="text-xs font-medium text-primary transition-colors hover:underline">See all</a>
+            </div>
+            <ul className="space-y-2">
+              {recentUpdates.map((entry) => {
+                const date = entry.record.createdAt ?? entry.metadata.createdAt;
+                return (
+                  <li key={entry.metadata.uri ?? entry.metadata.rkey}>
+                    <a
+                      href="#updates"
+                      className="group block rounded-xl border border-border-soft bg-surface p-3 transition-colors hover:border-primary/40 hover:bg-surface-sunken"
+                    >
+                      <p className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+                        {entry.record.title?.trim() || entry.record.shortDescription?.trim() || "Update"}
+                      </p>
+                      {date ? <p className="mt-1 text-[11px] text-muted-foreground">{formatRelative(date)}</p> : null}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </>
+      ) : null}
     </>
   );
 }
@@ -996,6 +1125,7 @@ function OverviewSidebar({
   canDelete,
   mutationRepo,
   deleteRedirectHref,
+  extra,
 }: {
   record: BumicertRecord;
   detail: RouteData["detail"];
@@ -1007,6 +1137,8 @@ function OverviewSidebar({
   canDelete: boolean;
   mutationRepo?: string;
   deleteRedirectHref: string;
+  /** Extra rich content rendered under the cover image (project sidebar). */
+  extra?: ReactNode;
 }) {
   const orgLinks = buildOrganizationLinks(owner, detail);
 
@@ -1055,6 +1187,8 @@ function OverviewSidebar({
           </div>
         )}
       </div>
+
+      {extra}
 
       <Separator />
 
