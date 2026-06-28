@@ -7,10 +7,12 @@ import {
   CalendarIcon,
   CheckCircle2Icon,
   ImagePlusIcon,
+  Layers2Icon,
   Loader2Icon,
   MapPinIcon,
   ShieldCheckIcon,
   SparklesIcon,
+  Trash2Icon,
   UploadCloudIcon,
   XIcon,
 } from "lucide-react";
@@ -61,8 +63,15 @@ const UNIDENTIFIED = "unidentified organism";
 
 type ItemStatus = "identifying" | "ready" | "uploading" | "uploaded" | "error";
 
+// Drag payload type used to merge one photo card into another observation.
+const OBS_ITEM_DND = "application/x-obs-item";
+
 type QuickItem = {
   id: string;
+  // Photos sharing a groupId upload as one observation (one occurrence + many
+  // photos). Each photo starts in its own group; dragging one onto another
+  // merges them.
+  groupId: string;
   file: File;
   previewUrl: string;
   scientificName: string;
@@ -96,10 +105,63 @@ function isNamed(name: string): boolean {
   return normalized.length > 0 && normalized !== UNIDENTIFIED;
 }
 
-function canSubmitItem(item: QuickItem): boolean {
-  // A species name is optional — nameless photos are submitted as unidentified
-  // observations. Only a date is required (it auto-fills from EXIF/file).
-  return item.eventDate.trim().length > 0 && item.status !== "uploaded";
+// The occurrence-level fields shared by every photo in one observation. The
+// caption stays per-photo; everything here is unified across the group.
+type QuickGroupFields = {
+  scientificName: string;
+  vernacularName: string;
+  kingdom: string;
+  eventDate: string;
+  notes: string;
+  location: PickedLocation | null;
+};
+
+function mergedGroupFields(items: QuickItem[]): QuickGroupFields {
+  const firstText = (key: "scientificName" | "vernacularName" | "kingdom" | "eventDate" | "notes"): string => {
+    for (const item of items) {
+      const value = item[key].trim();
+      if (value) return value;
+    }
+    return "";
+  };
+  return {
+    scientificName: firstText("scientificName"),
+    vernacularName: firstText("vernacularName"),
+    kingdom: firstText("kingdom") || "Plantae",
+    eventDate: firstText("eventDate"),
+    notes: firstText("notes"),
+    location: items.find((item) => item.location)?.location ?? null,
+  };
+}
+
+type QuickGroup = { id: string; items: QuickItem[]; fields: QuickGroupFields };
+
+function quickGroups(items: QuickItem[]): QuickGroup[] {
+  const order: string[] = [];
+  const byId = new Map<string, QuickItem[]>();
+  for (const item of items) {
+    if (!byId.has(item.groupId)) {
+      order.push(item.groupId);
+      byId.set(item.groupId, []);
+    }
+    byId.get(item.groupId)!.push(item);
+  }
+  return order.map((id) => {
+    const groupItems = byId.get(id)!;
+    return { id, items: groupItems, fields: mergedGroupFields(groupItems) };
+  });
+}
+
+function canSubmitGroup(group: QuickGroup): boolean {
+  return group.fields.eventDate.trim().length > 0 && group.items.some((item) => item.status !== "uploaded");
+}
+
+function quickGroupStatus(items: QuickItem[]): ItemStatus {
+  if (items.some((item) => item.status === "uploading")) return "uploading";
+  if (items.some((item) => item.status === "identifying")) return "identifying";
+  if (items.some((item) => item.status === "error")) return "error";
+  if (items.length > 0 && items.every((item) => item.status === "uploaded")) return "uploaded";
+  return "ready";
 }
 
 export function AddObservationsModal({
@@ -166,10 +228,6 @@ export function AddObservationsModal({
     return () => {
       for (const item of itemsRef.current) URL.revokeObjectURL(item.previewUrl);
     };
-  }, []);
-
-  const patchItem = useCallback((id: string, patch: Partial<QuickItem>) => {
-    setItems((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }, []);
 
   // Ask the device for its current location so photos without their own GPS can
@@ -285,6 +343,7 @@ export function AddObservationsModal({
             }
             const item: QuickItem = {
               id,
+              groupId: id,
               file,
               previewUrl: URL.createObjectURL(file),
               scientificName: "",
@@ -364,25 +423,62 @@ export function AddObservationsModal({
     void addFiles(event.dataTransfer.files);
   }
 
-  function removeItem(id: string) {
+  // Remove a whole observation (all its photos) from the queue.
+  function removeGroup(groupId: string) {
     setItems((current) => {
-      const removed = current.find((item) => item.id === id);
-      if (removed) URL.revokeObjectURL(removed.previewUrl);
-      return current.filter((item) => item.id !== id);
+      for (const item of current) {
+        if (item.groupId === groupId) URL.revokeObjectURL(item.previewUrl);
+      }
+      return current.filter((item) => item.groupId !== groupId);
     });
     setError(null);
   }
 
-  function openLocationPicker(item: QuickItem) {
+  // Apply a shared occurrence-level change to every photo in one observation.
+  function patchGroup(groupId: string, patch: Partial<QuickGroupFields>) {
+    setItems((current) => current.map((item) => (item.groupId === groupId ? { ...item, ...patch } : item)));
+  }
+
+  // Drag a photo onto another observation: move it into that group and unify the
+  // group's shared fields (keeping any non-empty value from either side).
+  function mergeItemIntoGroup(itemId: string, targetGroupId: string) {
+    setItems((current) => {
+      const item = current.find((candidate) => candidate.id === itemId);
+      if (!item || item.groupId === targetGroupId) return current;
+      const combined = [...current.filter((candidate) => candidate.groupId === targetGroupId), item];
+      if (combined.length < 2) return current;
+      const fields = mergedGroupFields(combined);
+      return current.map((candidate) =>
+        candidate.groupId === targetGroupId || candidate.id === itemId
+          ? { ...candidate, groupId: targetGroupId, ...fields }
+          : candidate,
+      );
+    });
+    setError(null);
+  }
+
+  // Pull one photo back out of a multi-photo observation into its own.
+  function separateItem(itemId: string) {
+    setItems((current) => {
+      const item = current.find((candidate) => candidate.id === itemId);
+      if (!item || current.filter((candidate) => candidate.groupId === item.groupId).length <= 1) return current;
+      return current.map((candidate) =>
+        candidate.id === itemId ? { ...candidate, groupId: `${candidate.id}-${crypto.randomUUID()}` } : candidate,
+      );
+    });
+    setError(null);
+  }
+
+  function openLocationPicker(group: QuickGroup) {
     modal.pushModal(
       {
         id: LocationPickerModalId,
         dialogWidth: "max-w-2xl",
         content: (
           <LocationPickerModal
-            initial={item.location}
+            initial={group.fields.location}
             defaultCenter={defaultCenter}
-            onSelect={(location) => patchItem(item.id, { location })}
+            onSelect={(location) => patchGroup(group.id, { location })}
           />
         ),
       },
@@ -391,36 +487,42 @@ export function AddObservationsModal({
     void modal.show();
   }
 
-  const submittableCount = items.filter(canSubmitItem).length;
+  const groups = quickGroups(items);
+  const submittableCount = groups.filter(canSubmitGroup).length;
 
-  async function uploadItem(item: QuickItem): Promise<boolean> {
+  // Upload one observation: a single occurrence carrying every photo in the
+  // group, with the first photo set as the primary image the explorer reads.
+  async function uploadGroup(group: QuickGroup): Promise<boolean> {
+    const { fields } = group;
     // Resolve the location into Darwin Core fields, swapping the precise pin for
     // a randomised circle when the observer opted to keep their location private.
-    const locationFields = item.location
-      ? buildObservationLocationFields(item.location, {
+    const locationFields = fields.location
+      ? buildObservationLocationFields(fields.location, {
           obscure: obscureLocation,
           radiusMeters: radiusForArea(fuzzyArea),
         })
       : { decimalLatitude: "", decimalLongitude: "" };
     const occurrence = await createObservationOccurrence({
       basisOfRecord: "MachineObservation",
-      scientificName: item.scientificName.trim(),
-      vernacularName: item.vernacularName.trim(),
-      kingdom: item.kingdom.trim() || "Plantae",
-      eventDate: item.eventDate.trim(),
-      occurrenceRemarks: item.notes.trim(),
-      associatedMedia: item.file.name,
+      scientificName: fields.scientificName.trim(),
+      vernacularName: fields.vernacularName.trim(),
+      kingdom: fields.kingdom.trim() || "Plantae",
+      eventDate: fields.eventDate.trim(),
+      occurrenceRemarks: fields.notes.trim(),
+      associatedMedia: group.items.map((item) => item.file.name).join(", "),
       ...locationFields,
       ...(projectRef ? { projectRef } : {}),
     });
     let primaryBlobRef: ObservationBlobRef | null = null;
-    const photo = await createObservationPhoto({
-      imageFile: item.file,
-      occurrenceRef: occurrence.uri,
-      subjectPart: "wholeOrganism",
-      caption: item.caption.trim() || undefined,
-    });
-    if (photo.blobRef) primaryBlobRef = photo.blobRef;
+    for (const item of group.items) {
+      const photo = await createObservationPhoto({
+        imageFile: item.file,
+        occurrenceRef: occurrence.uri,
+        subjectPart: "wholeOrganism",
+        caption: item.caption.trim() || undefined,
+      });
+      if (!primaryBlobRef && photo.blobRef) primaryBlobRef = photo.blobRef;
+    }
     if (primaryBlobRef) {
       await setObservationPrimaryImage({
         rkey: occurrence.rkey,
@@ -437,7 +539,7 @@ export function AddObservationsModal({
       setError(disabledReason);
       return;
     }
-    const queue = itemsRef.current.filter(canSubmitItem);
+    const queue = quickGroups(itemsRef.current).filter(canSubmitGroup);
     if (queue.length === 0) {
       setError(t("nothingToSubmit"));
       return;
@@ -445,18 +547,21 @@ export function AddObservationsModal({
     setIsSubmitting(true);
     setError(null);
     let success = 0;
-    for (const item of queue) {
-      patchItem(item.id, { status: "uploading", error: null });
+    for (const group of queue) {
+      const ids = new Set(group.items.map((item) => item.id));
+      setItems((current) => current.map((item) => (ids.has(item.id) ? { ...item, status: "uploading", error: null } : item)));
       try {
-        await uploadItem(item);
+        await uploadGroup(group);
         success += 1;
         setItems((current) => {
-          const uploaded = current.find((candidate) => candidate.id === item.id);
-          if (uploaded) URL.revokeObjectURL(uploaded.previewUrl);
-          return current.filter((candidate) => candidate.id !== item.id);
+          for (const item of current) {
+            if (ids.has(item.id)) URL.revokeObjectURL(item.previewUrl);
+          }
+          return current.filter((item) => !ids.has(item.id));
         });
       } catch (uploadError) {
-        patchItem(item.id, { status: "error", error: formatObservationMutationError(uploadError) });
+        const message = formatObservationMutationError(uploadError);
+        setItems((current) => current.map((item) => (ids.has(item.id) ? { ...item, status: "error", error: message } : item)));
       }
     }
     setIsSubmitting(false);
@@ -550,14 +655,22 @@ export function AddObservationsModal({
           </div>
         ) : (
           <div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">
-            {items.map((item) => (
-              <ObservationCard
-                key={item.id}
-                item={item}
+            {items.length > 1 ? (
+              <p className="flex items-center gap-1.5 px-0.5 text-xs text-muted-foreground">
+                <Layers2Icon className="size-3.5 shrink-0 text-primary" />
+                {t("combineTip")}
+              </p>
+            ) : null}
+            {groups.map((group) => (
+              <ObservationGroupCard
+                key={group.id}
+                group={group}
                 disabled={isSubmitting}
-                onChange={(patch) => patchItem(item.id, patch)}
-                onRemove={() => removeItem(item.id)}
-                onPickLocation={() => openLocationPicker(item)}
+                onChange={(patch) => patchGroup(group.id, patch)}
+                onRemoveGroup={() => removeGroup(group.id)}
+                onSeparateItem={separateItem}
+                onDropItem={(itemId) => mergeItemIntoGroup(itemId, group.id)}
+                onPickLocation={() => openLocationPicker(group)}
                 t={t}
               />
             ))}
@@ -637,42 +750,154 @@ export function AddObservationsModal({
   );
 }
 
-function ObservationCard({
+function GroupThumb({
   item,
+  canSeparate,
   disabled,
-  onChange,
-  onRemove,
-  onPickLocation,
+  onSeparate,
   t,
 }: {
   item: QuickItem;
+  canSeparate: boolean;
   disabled: boolean;
-  onChange: (patch: Partial<QuickItem>) => void;
-  onRemove: () => void;
-  onPickLocation: () => void;
+  onSeparate: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const identifying = item.status === "identifying";
   const uploading = item.status === "uploading";
-  // A blank species is allowed (submitted as unidentified); show a gentle hint
-  // rather than a validation warning.
-  const unnamed = !isNamed(item.scientificName) && !identifying;
-
   return (
-    <div className="relative flex gap-3 rounded-2xl border border-border bg-card p-3">
-      <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-muted">
-        <Image src={item.previewUrl} alt={item.caption} fill sizes="80px" className="object-cover" unoptimized />
+    <div className="group/thumb relative size-20 shrink-0">
+      <div
+        draggable={!disabled && !uploading}
+        onDragStart={(event) => {
+          event.dataTransfer.setData(OBS_ITEM_DND, item.id);
+          event.dataTransfer.setData("text/plain", item.id);
+          event.dataTransfer.effectAllowed = "move";
+        }}
+        className={cn(
+          "relative size-20 overflow-hidden rounded-xl bg-muted ring-1 ring-border",
+          !disabled && !uploading && "cursor-grab active:cursor-grabbing",
+        )}
+      >
+        <Image src={item.previewUrl} alt={item.caption} fill sizes="80px" draggable={false} className="object-cover" unoptimized />
         {uploading ? (
           <div className="absolute inset-0 grid place-items-center bg-background/60">
             <Loader2Icon className="size-5 animate-spin text-primary" />
           </div>
         ) : null}
       </div>
+      {canSeparate && !disabled && !uploading ? (
+        <button
+          type="button"
+          onClick={onSeparate}
+          aria-label={t("separatePhoto")}
+          title={t("separatePhoto")}
+          className="absolute -right-1.5 -top-1.5 grid size-6 place-items-center rounded-full bg-background text-foreground opacity-0 shadow-sm ring-1 ring-border transition-opacity hover:text-destructive group-hover/thumb:opacity-100 focus:opacity-100"
+        >
+          <XIcon className="size-3.5" />
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
-      <div className="min-w-0 flex-1 space-y-2">
+function ObservationGroupCard({
+  group,
+  disabled,
+  onChange,
+  onRemoveGroup,
+  onSeparateItem,
+  onDropItem,
+  onPickLocation,
+  t,
+}: {
+  group: QuickGroup;
+  disabled: boolean;
+  onChange: (patch: Partial<QuickGroupFields>) => void;
+  onRemoveGroup: () => void;
+  onSeparateItem: (itemId: string) => void;
+  onDropItem: (itemId: string) => void;
+  onPickLocation: () => void;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const [isOver, setIsOver] = useState(false);
+  const { fields, items } = group;
+  const status = quickGroupStatus(items);
+  const identifying = status === "identifying";
+  const uploading = status === "uploading";
+  const multi = items.length > 1;
+  // A blank species is allowed (submitted as unidentified); show a gentle hint
+  // rather than a validation warning.
+  const unnamed = !isNamed(fields.scientificName) && !identifying;
+  const error = items.find((item) => item.error)?.error ?? null;
+
+  function isItemDrag(event: DragEvent<HTMLDivElement>): boolean {
+    return Array.from(event.dataTransfer?.types ?? []).includes(OBS_ITEM_DND);
+  }
+
+  return (
+    <div
+      onDragOver={(event) => {
+        if (!isItemDrag(event)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        if (!isOver) setIsOver(true);
+      }}
+      onDragLeave={(event) => {
+        if (!isItemDrag(event)) return;
+        setIsOver(false);
+      }}
+      onDrop={(event) => {
+        if (!isItemDrag(event)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setIsOver(false);
+        const itemId = event.dataTransfer.getData(OBS_ITEM_DND) || event.dataTransfer.getData("text/plain");
+        if (itemId) onDropItem(itemId);
+      }}
+      className={cn(
+        "relative rounded-2xl border bg-card p-3 transition-colors",
+        isOver ? "border-primary ring-2 ring-primary/30" : "border-border",
+      )}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={onRemoveGroup}
+        disabled={disabled || uploading}
+        aria-label={t("removeObservation")}
+        title={t("removeObservation")}
+        className="absolute right-2 top-2 z-10 rounded-full text-muted-foreground hover:text-destructive"
+      >
+        <Trash2Icon className="size-4" />
+      </Button>
+
+      <div className="flex flex-wrap gap-2 pr-8">
+        {items.map((item) => (
+          <GroupThumb
+            key={item.id}
+            item={item}
+            canSeparate={multi}
+            disabled={disabled}
+            onSeparate={() => onSeparateItem(item.id)}
+            t={t}
+          />
+        ))}
+      </div>
+
+      {multi ? (
+        <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-[11px] text-muted-foreground">
+          <Layers2Icon className="size-3.5 shrink-0 text-primary" />
+          <span>{t("photoCount", { count: items.length })}</span>
+          <span className="text-muted-foreground/50">·</span>
+          <span>{t("dragMergeHint")}</span>
+        </p>
+      ) : null}
+
+      <div className="mt-3 space-y-2">
         <div className="relative">
           <Input
-            value={item.scientificName}
+            value={fields.scientificName}
             onChange={(event) => onChange({ scientificName: event.target.value })}
             placeholder={identifying ? t("identifying") : t("speciesPlaceholder")}
             disabled={disabled || uploading}
@@ -687,8 +912,8 @@ function ObservationCard({
             )}
           </span>
         </div>
-        {item.vernacularName ? (
-          <p className="-mt-1 truncate text-xs text-muted-foreground">{item.vernacularName}</p>
+        {fields.vernacularName ? (
+          <p className="-mt-1 truncate text-xs text-muted-foreground">{fields.vernacularName}</p>
         ) : unnamed ? (
           <p className="-mt-1 text-xs text-muted-foreground">{t("speciesOptionalHint")}</p>
         ) : null}
@@ -698,7 +923,7 @@ function ObservationCard({
             <CalendarIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="date"
-              value={item.eventDate}
+              value={fields.eventDate}
               onChange={(event) => onChange({ eventDate: event.target.value })}
               disabled={disabled || uploading}
               aria-label={t("dateLabel")}
@@ -712,15 +937,15 @@ function ObservationCard({
             disabled={disabled || uploading}
             className="justify-start gap-2 font-normal"
           >
-            <MapPinIcon className={cn("size-4 shrink-0", item.location ? "text-primary" : "text-muted-foreground")} />
+            <MapPinIcon className={cn("size-4 shrink-0", fields.location ? "text-primary" : "text-muted-foreground")} />
             <span className="truncate">
-              {item.location ? t("locationSet", { lat: item.location.lat, lng: item.location.lng }) : t("setLocation")}
+              {fields.location ? t("locationSet", { lat: fields.location.lat, lng: fields.location.lng }) : t("setLocation")}
             </span>
           </Button>
         </div>
 
         <Textarea
-          value={item.notes}
+          value={fields.notes}
           onChange={(event) => onChange({ notes: event.target.value })}
           placeholder={t("notesPlaceholder")}
           disabled={disabled || uploading}
@@ -729,20 +954,8 @@ function ObservationCard({
           className="resize-none"
         />
 
-        {item.error ? <p className="text-xs text-destructive">{item.error}</p> : null}
+        {error ? <p className="text-xs text-destructive">{error}</p> : null}
       </div>
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={onRemove}
-        disabled={disabled || uploading}
-        aria-label={t("remove")}
-        className="absolute right-2 top-2 rounded-full text-muted-foreground hover:text-destructive"
-      >
-        <XIcon className="size-4" />
-      </Button>
     </div>
   );
 }

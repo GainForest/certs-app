@@ -656,7 +656,7 @@
     }
   },
   "observations": {
-    "quickAdd":     {
+    "quickAdd": {
       "title": "Adicionar observações",
       "description": "Solte fotos e ajudamos a identificar o que aparece nelas.",
       "close": "Fechar",
@@ -688,7 +688,12 @@
       "uploadFailed": "Não foi possível adicionar estas observações. Tente novamente.",
       "doneTitle": "{count, plural, one {# observação adicionada} other {# observações adicionadas}}",
       "doneBody": "Elas aparecerão nas suas observações em instantes.",
-      "viewObservations": "Ver observações"
+      "viewObservations": "Ver observações",
+      "combineTip": "Arraste uma foto sobre outra para combiná-las em uma única observação.",
+      "photoCount": "{count, plural, one {# foto} other {# fotos}}",
+      "dragMergeHint": "Solte outra foto aqui, ou toque em × para separar uma.",
+      "separatePhoto": "Separar em sua própria observação",
+      "removeObservation": "Remover observação"
     },
     "tainaTitle": "Diga oi para Tainá",
     "tainaBody": "Tainá fica no Telegram. Envie para ela suas fotos de campo, avistamentos e gravações de som, e ela coloca tudo nesta organização para você. Arquivos grandes do AudioMoth também são bem vindos.",
@@ -792,7 +797,7 @@
     "bulkActionsHint": "Agrupar combina apenas essas imagens em uma observação; separar divide novamente.",
     "colKind": "Tipo",
     "colConfidence": "Verificação IA",
-    "mediaGroupHint": "Cada linha é uma observação. As linhas podem incluir várias imagens.",
+    "mediaGroupHint": "Cada linha é uma observação. Arraste uma linha sobre outra para combiná-las em uma.",
     "singlePhoto": "1 foto",
     "mediaInObservation": "Imagens nesta observação",
     "removeMediaHint": "Remova uma imagem aqui para torná-la sua própria linha de observação.",
@@ -871,7 +876,9 @@
     "filterAllProjects": "Todos os projetos",
     "filterByProject": "Filtrar observações por projeto",
     "filterEmptyTitle": "Ainda não há observações para este projeto",
-    "filterEmptyBody": "Colete observações e vincule-as a este projeto para vê-las aqui."
+    "filterEmptyBody": "Colete observações e vincule-as a este projeto para vê-las aqui.",
+    "dragRowHint": "Arraste sobre outra observação para combiná-las",
+    "dragPhotoHint": "Arraste sobre outra observação para mover esta foto"
   },
   "settings": {
     "organizationTitle": "Configurações da organização",

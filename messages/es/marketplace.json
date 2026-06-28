@@ -1096,7 +1096,10 @@
       "mediaCount": "{count, plural, one {# elemento} other {# elementos}}",
       "primaryMedia": "Medio principal",
       "fieldSound": "Sonido de campo",
-      "mediaThumbnail": "Medio de la observación"
+      "mediaThumbnail": "Medio de la observación",
+      "previousPhoto": "Foto anterior",
+      "nextPhoto": "Foto siguiente",
+      "showPhoto": "Mostrar foto"
     },
     "media": {
       "image": "Foto",

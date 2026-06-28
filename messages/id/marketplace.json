@@ -1096,7 +1096,10 @@
       "mediaCount": "{count, plural, one {# item} other {# item}}",
       "primaryMedia": "Media utama",
       "fieldSound": "Suara lapangan",
-      "mediaThumbnail": "Media observasi"
+      "mediaThumbnail": "Media observasi",
+      "previousPhoto": "Foto sebelumnya",
+      "nextPhoto": "Foto berikutnya",
+      "showPhoto": "Tampilkan foto"
     },
     "media": {
       "image": "Foto",

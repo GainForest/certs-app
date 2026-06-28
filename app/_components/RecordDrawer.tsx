@@ -74,6 +74,8 @@ export function RecordDrawer({
 }) {
   const [imgError, setImgError] = useState(false);
   const [resolvedOccurrenceImageUrl, setResolvedOccurrenceImageUrl] = useState<string | null>(null);
+  // Which photo the occurrence hero carousel is showing (0-based).
+  const [occurrenceImageIndex, setOccurrenceImageIndex] = useState(0);
   const [resolvedOccurrenceAudioUrl, setResolvedOccurrenceAudioUrl] = useState<string | null>(null);
   const [detail, setDetail] = useState<RecordDetail | null>(null);
   const [occurrenceMedia, setOccurrenceMedia] = useState<ObservationMediaItem[] | null>(null);
@@ -107,6 +109,7 @@ export function RecordDrawer({
   useEffect(() => {
     setImgError(false);
     setResolvedOccurrenceImageUrl(null);
+    setOccurrenceImageIndex(0);
     if (!record || record.kind !== "occurrence" || record.imageUrl || !record.imageRef) return;
 
     const ctrl = new AbortController();
@@ -313,6 +316,44 @@ export function RecordDrawer({
     () => (projectGalleries ?? []).flatMap((gallery) => gallery.images),
     [projectGalleries],
   );
+  // Every photo on the occurrence, in order, for the arrow-navigable hero.
+  // Prefer the standalone media records (the authoritative set); fall back to the
+  // single primary photo when none have loaded yet.
+  const occurrenceImageUrls = useMemo(() => {
+    if (!record || record.kind !== "occurrence") return [] as string[];
+    const fromMedia = (occurrenceMedia ?? [])
+      .filter(mediaItemIsImage)
+      .map((item) => item.record.accessUri)
+      .filter((url): url is string => Boolean(url));
+    if (fromMedia.length > 0) return fromMedia;
+    const fallback = record.imageUrl ?? resolvedOccurrenceImageUrl;
+    return fallback ? [fallback] : [];
+  }, [record, occurrenceMedia, resolvedOccurrenceImageUrl]);
+  const occurrenceImageCount = occurrenceImageUrls.length;
+  const activeOccurrenceImage = occurrenceImageCount > 0
+    ? Math.min(occurrenceImageIndex, occurrenceImageCount - 1)
+    : 0;
+
+  // Arrow keys flip the occurrence hero between photos (outside the editor /
+  // form fields), mirroring the full observation page.
+  useEffect(() => {
+    if (occurrenceImageCount <= 1) return;
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable)) return;
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setImgError(false);
+        setOccurrenceImageIndex((index) => (index + 1) % occurrenceImageCount);
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setImgError(false);
+        setOccurrenceImageIndex((index) => (index - 1 + occurrenceImageCount) % occurrenceImageCount);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [occurrenceImageCount]);
 
   if (!record) return null;
   const activeRecord = record;
@@ -325,7 +366,11 @@ export function RecordDrawer({
         : record.name;
 
   const siteBannerUrl = record.kind === "site" ? record.bannerUrl ?? (record.coverRef ? record.imageUrl : null) : null;
-  const heroUrl = record.kind === "site" ? siteBannerUrl : record.kind === "occurrence" ? record.imageUrl ?? resolvedOccurrenceImageUrl : record.imageUrl;
+  const heroUrl = record.kind === "site"
+    ? siteBannerUrl
+    : record.kind === "occurrence"
+      ? occurrenceImageUrls[activeOccurrenceImage] ?? record.imageUrl ?? resolvedOccurrenceImageUrl
+      : record.imageUrl;
   const occurrenceAudioUrl = record.kind === "occurrence" ? record.audioUrl ?? resolvedOccurrenceAudioUrl : null;
   const hasOccurrenceAudio = record.kind === "occurrence" && Boolean(record.audioRef || record.audioUrl);
   const ownerAvatarOverride = record.kind === "site" ? record.avatarUrl ?? (!record.coverRef && record.logoRef ? record.imageUrl : null) : undefined;
@@ -451,6 +496,20 @@ export function RecordDrawer({
                   blends the image into the title that overlaps it. */}
               <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-foreground/35 to-transparent" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/40 to-transparent" />
+              {record.kind === "occurrence" && occurrenceImageCount > 1 ? (
+                <HeroCarouselControls
+                  index={activeOccurrenceImage}
+                  count={occurrenceImageCount}
+                  onPrev={() => {
+                    setImgError(false);
+                    setOccurrenceImageIndex((current) => (current - 1 + occurrenceImageCount) % occurrenceImageCount);
+                  }}
+                  onNext={() => {
+                    setImgError(false);
+                    setOccurrenceImageIndex((current) => (current + 1) % occurrenceImageCount);
+                  }}
+                />
+              ) : null}
             </div>
             <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-4">
               <div className="pointer-events-auto">
@@ -597,7 +656,20 @@ export function RecordDrawer({
           )}
 
           {record.kind === "occurrence" && (
-            <ObservationMediaStrip record={record} media={occurrenceMedia} fallbackImageUrl={heroUrl} audioUrl={occurrenceAudioUrl} />
+            <ObservationMediaStrip
+              record={record}
+              media={occurrenceMedia}
+              fallbackImageUrl={heroUrl}
+              audioUrl={occurrenceAudioUrl}
+              activeImageUrl={occurrenceImageUrls[activeOccurrenceImage] ?? null}
+              onSelectImage={(url) => {
+                const next = occurrenceImageUrls.indexOf(url);
+                if (next >= 0) {
+                  setImgError(false);
+                  setOccurrenceImageIndex(next);
+                }
+              }}
+            />
           )}
 
           {record.kind === "occurrence" && occurrenceMeasurements.length > 0 && (
@@ -711,16 +783,72 @@ export function RecordDrawer({
   );
 }
 
+// Audio / image discrimination for the standalone media records. Audio files
+// (or anything that isn't clearly an image) are kept out of the photo carousel.
+const MEDIA_AUDIO_EXT = /\.(?:mp3|m4a|wav|ogg|oga|flac|aac)(?:[?#]|$)/i;
+const MEDIA_IMAGE_EXT = /\.(?:jpe?g|png|webp|gif|avif)(?:[?#]|$)/i;
+
+function mediaItemIsImage(item: ObservationMediaItem): boolean {
+  const url = item.record.accessUri;
+  if (!url) return false;
+  const format = (item.record.format ?? "").toLowerCase();
+  if (format.startsWith("image/")) return true;
+  if (format.startsWith("audio/") || format.startsWith("video/")) return false;
+  if (MEDIA_AUDIO_EXT.test(url)) return false;
+  return !format || MEDIA_IMAGE_EXT.test(url);
+}
+
+function HeroCarouselControls({
+  index,
+  count,
+  onPrev,
+  onNext,
+}: {
+  index: number;
+  count: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const t = useTranslations("marketplace.recordDrawer.observation");
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onPrev}
+        aria-label={t("previousPhoto")}
+        className="pointer-events-auto absolute left-3 top-1/2 z-10 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-foreground/45 text-background backdrop-blur-sm transition-colors hover:bg-foreground/65"
+      >
+        <ChevronLeftIcon className="size-5" aria-hidden />
+      </button>
+      <button
+        type="button"
+        onClick={onNext}
+        aria-label={t("nextPhoto")}
+        className="pointer-events-auto absolute right-3 top-1/2 z-10 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-foreground/45 text-background backdrop-blur-sm transition-colors hover:bg-foreground/65"
+      >
+        <ChevronRightIcon className="size-5" aria-hidden />
+      </button>
+      <span className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-foreground/55 px-2.5 py-1 text-[12px] font-medium tabular-nums text-background backdrop-blur-sm">
+        {index + 1} / {count}
+      </span>
+    </>
+  );
+}
+
 function ObservationMediaStrip({
   record,
   media,
   fallbackImageUrl,
   audioUrl,
+  activeImageUrl,
+  onSelectImage,
 }: {
   record: Extract<ExplorerRecord, { kind: "occurrence" }>;
   media: ObservationMediaItem[] | null;
   fallbackImageUrl: string | null;
   audioUrl: string | null;
+  activeImageUrl?: string | null;
+  onSelectImage?: (url: string) => void;
 }) {
   const t = useTranslations("marketplace.recordDrawer.observation");
   const items = media ?? [];
@@ -744,9 +872,18 @@ function ObservationMediaStrip({
         </span>
       </div>
       <div className="grid grid-cols-4 gap-2">
-        {items.length > 0 ? items.map((item) => (
-          <ObservationMediaThumb key={item.metadata.uri} item={item} />
-        )) : fallbackItems.map((item) => (
+        {items.length > 0 ? items.map((item) => {
+          const url = item.record.accessUri;
+          const selectable = Boolean(url && onSelectImage && mediaItemIsImage(item));
+          return (
+            <ObservationMediaThumb
+              key={item.metadata.uri}
+              item={item}
+              active={Boolean(url && activeImageUrl && url === activeImageUrl)}
+              onSelect={selectable ? () => onSelectImage?.(url!) : undefined}
+            />
+          );
+        }) : fallbackItems.map((item) => (
           <div key={item.key} className="relative aspect-square overflow-hidden rounded-xl bg-background ring-1 ring-border-soft">
             {item.kind === "image" ? (
               <Image
@@ -794,27 +931,42 @@ function ObservationMeasurementsPanel({ facts }: { facts: ObservationMeasurement
   );
 }
 
-function ObservationMediaThumb({ item }: { item: ObservationMediaItem }) {
+function ObservationMediaThumb({ item, active, onSelect }: { item: ObservationMediaItem; active?: boolean; onSelect?: () => void }) {
   const t = useTranslations("marketplace.recordDrawer.observation");
   const url = item.record.accessUri;
-  const format = item.record.format?.toLowerCase() ?? "";
-  const isImage = Boolean(url && (format.startsWith("image/") || !format || /\.(?:jpe?g|png|webp|gif)(?:[?#]|$)/i.test(url)));
+  const isImage = mediaItemIsImage(item);
+  const ringClass = active ? "ring-2 ring-primary" : "ring-1 ring-border-soft";
+  const inner = url && isImage ? (
+    <Image
+      src={url}
+      alt={item.record.caption || t("mediaThumbnail")}
+      fill
+      sizes="110px"
+      unoptimized={!isPdsBlobUrl(url)}
+      className="object-cover"
+    />
+  ) : (
+    <div className="absolute inset-0 grid place-items-center bg-primary/10 text-primary">
+      <AudioLinesIcon className="h-6 w-6" aria-hidden />
+    </div>
+  );
+  if (onSelect) {
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={active}
+        aria-label={item.record.caption || t("showPhoto")}
+        className={`relative aspect-square overflow-hidden rounded-xl bg-background transition-[box-shadow] ${ringClass} hover:ring-2 hover:ring-primary/60`}
+        title={item.record.caption ?? undefined}
+      >
+        {inner}
+      </button>
+    );
+  }
   return (
-    <div className="relative aspect-square overflow-hidden rounded-xl bg-background ring-1 ring-border-soft" title={item.record.caption ?? undefined}>
-      {url && isImage ? (
-        <Image
-          src={url}
-          alt={item.record.caption || t("mediaThumbnail")}
-          fill
-          sizes="110px"
-          unoptimized={!isPdsBlobUrl(url)}
-          className="object-cover"
-        />
-      ) : (
-        <div className="absolute inset-0 grid place-items-center bg-primary/10 text-primary">
-          <AudioLinesIcon className="h-6 w-6" aria-hidden />
-        </div>
-      )}
+    <div className={`relative aspect-square overflow-hidden rounded-xl bg-background ${ringClass}`} title={item.record.caption ?? undefined}>
+      {inner}
     </div>
   );
 }

@@ -656,7 +656,7 @@
     }
   },
   "observations": {
-    "quickAdd":     {
+    "quickAdd": {
       "title": "Add observations",
       "description": "Drop in photos and we'll help identify what's in them.",
       "close": "Close",
@@ -688,7 +688,12 @@
       "uploadFailed": "We couldn't add these observations. Please try again.",
       "doneTitle": "{count, plural, one {# observation added} other {# observations added}}",
       "doneBody": "They'll appear in your observations in a moment.",
-      "viewObservations": "View observations"
+      "viewObservations": "View observations",
+      "combineTip": "Drag one photo onto another to combine them into one observation.",
+      "photoCount": "{count, plural, one {# photo} other {# photos}}",
+      "dragMergeHint": "Drop another photo here, or tap × to separate one.",
+      "separatePhoto": "Separate into its own observation",
+      "removeObservation": "Remove observation"
     },
     "tainaTitle": "Say hi to Tainá",
     "tainaBody": "Prefer chat? Send your photos and recordings to Tainá on Telegram and she will add them here for you.",
@@ -792,7 +797,7 @@
     "bulkActionsHint": "Group selected combines only those images into one observation; make separate splits them again.",
     "colKind": "Kind",
     "colConfidence": "AI check",
-    "mediaGroupHint": "Each row is one observation. Rows can include multiple images.",
+    "mediaGroupHint": "Each row is one observation. Drag a row onto another to combine them into one.",
     "singlePhoto": "1 photo",
     "mediaInObservation": "Images in this observation",
     "removeMediaHint": "Remove an image here to make it its own observation row.",
@@ -871,7 +876,9 @@
     "filterAllProjects": "All projects",
     "filterByProject": "Filter observations by project",
     "filterEmptyTitle": "No observations for this project yet",
-    "filterEmptyBody": "Collect observations and attach them to this project to see them here."
+    "filterEmptyBody": "Collect observations and attach them to this project to see them here.",
+    "dragRowHint": "Drag onto another observation to combine them",
+    "dragPhotoHint": "Drag onto another observation to move this photo"
   },
   "settings": {
     "organizationTitle": "Organization settings",

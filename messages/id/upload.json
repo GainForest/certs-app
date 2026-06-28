@@ -656,7 +656,7 @@
     }
   },
   "observations": {
-    "quickAdd":     {
+    "quickAdd": {
       "title": "Tambah observasi",
       "description": "Jatuhkan foto dan kami bantu mengenali isinya.",
       "close": "Tutup",
@@ -688,7 +688,12 @@
       "uploadFailed": "Kami tidak dapat menambahkan observasi ini. Silakan coba lagi.",
       "doneTitle": "{count, plural, other {# observasi ditambahkan}}",
       "doneBody": "Akan muncul di observasi Anda sebentar lagi.",
-      "viewObservations": "Lihat observasi"
+      "viewObservations": "Lihat observasi",
+      "combineTip": "Seret satu foto ke foto lain untuk menggabungkannya menjadi satu observasi.",
+      "photoCount": "{count, plural, one {# foto} other {# foto}}",
+      "dragMergeHint": "Letakkan foto lain di sini, atau ketuk × untuk memisahkan satu.",
+      "separatePhoto": "Pisahkan menjadi observasi tersendiri",
+      "removeObservation": "Hapus observasi"
     },
     "tainaTitle": "Sapa Tainá",
     "tainaBody": "Tainá ada di Telegram. Kirimkan foto lapangan, temuan satwa atau tumbuhan, dan rekaman suara kepadanya, lalu ia akan memasukkannya ke organisasi ini untukmu. File AudioMoth besar juga boleh.",
@@ -792,7 +797,7 @@
     "bulkActionsHint": "Gabungkan hanya menyatukan gambar yang dipilih menjadi satu observasi; pisahkan untuk membaginya lagi.",
     "colKind": "Jenis",
     "colConfidence": "Cek AI",
-    "mediaGroupHint": "Setiap baris adalah satu observasi. Baris dapat berisi beberapa gambar.",
+    "mediaGroupHint": "Setiap baris adalah satu observasi. Seret satu baris ke baris lain untuk menggabungkannya menjadi satu.",
     "singlePhoto": "1 foto",
     "mediaInObservation": "Gambar dalam observasi ini",
     "removeMediaHint": "Hapus gambar di sini untuk menjadikannya baris observasi tersendiri.",
@@ -871,7 +876,9 @@
     "filterAllProjects": "Semua proyek",
     "filterByProject": "Filter observasi berdasarkan proyek",
     "filterEmptyTitle": "Belum ada observasi untuk proyek ini",
-    "filterEmptyBody": "Kumpulkan observasi dan tautkan ke proyek ini untuk melihatnya di sini."
+    "filterEmptyBody": "Kumpulkan observasi dan tautkan ke proyek ini untuk melihatnya di sini.",
+    "dragRowHint": "Seret ke observasi lain untuk menggabungkannya",
+    "dragPhotoHint": "Seret ke observasi lain untuk memindahkan foto ini"
   },
   "settings": {
     "organizationTitle": "Pengaturan organisasi",

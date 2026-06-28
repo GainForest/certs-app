@@ -656,7 +656,7 @@
     }
   },
   "observations": {
-    "quickAdd":     {
+    "quickAdd": {
       "title": "Ongeza uchunguzi",
       "description": "Dondosha picha nasi tutakusaidia kutambua vilivyomo.",
       "close": "Funga",
@@ -688,7 +688,12 @@
       "uploadFailed": "Hatukuweza kuongeza uchunguzi huu. Tafadhali jaribu tena.",
       "doneTitle": "{count, plural, one {Uchunguzi # umeongezwa} other {Uchunguzi # umeongezwa}}",
       "doneBody": "Utaonekana katika uchunguzi wako hivi punde.",
-      "viewObservations": "Tazama uchunguzi"
+      "viewObservations": "Tazama uchunguzi",
+      "combineTip": "Buruta picha moja juu ya nyingine ili kuziunganisha kuwa uchunguzi mmoja.",
+      "photoCount": "{count, plural, one {picha #} other {picha #}}",
+      "dragMergeHint": "Dondosha picha nyingine hapa, au gusa × kutenganisha moja.",
+      "separatePhoto": "Tenganisha kuwa uchunguzi wake mwenyewe",
+      "removeObservation": "Ondoa uchunguzi"
     },
     "tainaTitle": "Msalimie Tainá",
     "tainaBody": "Tainá yuko Telegram. Mtumie picha zako za uwandani, viumbe ulioona na rekodi za sauti, naye ataziweka kwenye shirika hili kwa ajili yako. Faili kubwa za AudioMoth zinakaribishwa pia.",
@@ -792,7 +797,7 @@
     "bulkActionsHint": "Kuweka pamoja huunganisha picha hizo tu kuwa uchunguzi mmoja; kutenganisha huzigawa tena.",
     "colKind": "Aina",
     "colConfidence": "Ukaguzi wa AI",
-    "mediaGroupHint": "Kila safu ni uchunguzi mmoja. Safu zinaweza kuwa na picha kadhaa.",
+    "mediaGroupHint": "Kila safu ni uchunguzi mmoja. Buruta safu juu ya nyingine ili kuziunganisha kuwa moja.",
     "singlePhoto": "Picha 1",
     "mediaInObservation": "Picha katika uchunguzi huu",
     "removeMediaHint": "Ondoa picha hapa ili iwe safu yake ya uchunguzi.",
@@ -871,7 +876,9 @@
     "filterAllProjects": "Miradi yote",
     "filterByProject": "Chuja uchunguzi kwa mradi",
     "filterEmptyTitle": "Bado hakuna uchunguzi kwa mradi huu",
-    "filterEmptyBody": "Kusanya uchunguzi na uunganishe na mradi huu ili kuuona hapa."
+    "filterEmptyBody": "Kusanya uchunguzi na uunganishe na mradi huu ili kuuona hapa.",
+    "dragRowHint": "Buruta juu ya uchunguzi mwingine ili kuziunganisha",
+    "dragPhotoHint": "Buruta juu ya uchunguzi mwingine ili kuhamisha picha hii"
   },
   "settings": {
     "organizationTitle": "Mipangilio ya shirika",

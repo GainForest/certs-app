@@ -1096,7 +1096,10 @@
       "mediaCount": "{count, plural, one {kipengee #} other {vipengee #}}",
       "primaryMedia": "Media kuu",
       "fieldSound": "Sauti ya uwanjani",
-      "mediaThumbnail": "Media ya uchunguzi"
+      "mediaThumbnail": "Media ya uchunguzi",
+      "previousPhoto": "Picha iliyotangulia",
+      "nextPhoto": "Picha inayofuata",
+      "showPhoto": "Onyesha picha"
     },
     "media": {
       "image": "Picha",

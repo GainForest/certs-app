@@ -31,12 +31,27 @@ export function ObservationMediaViewer({
   const safeActive = Math.min(active, Math.max(images.length - 1, 0));
   const current = images[safeActive] ?? null;
 
+  // Arrow keys flip between photos whether or not the lightbox is open (so the
+  // big viewer is keyboard-navigable too); Escape closes the lightbox. Typing in
+  // a form field is left alone.
   useEffect(() => {
-    if (!lightboxOpen) return;
+    if (images.length <= 1 && !lightboxOpen) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setLightboxOpen(false);
-      if (event.key === "ArrowRight") setActive((index) => (index + 1) % images.length);
-      if (event.key === "ArrowLeft") setActive((index) => (index - 1 + images.length) % images.length);
+      if (event.key === "Escape" && lightboxOpen) {
+        setLightboxOpen(false);
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (images.length <= 1) return;
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setActive((index) => (index + 1) % images.length);
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setActive((index) => (index - 1 + images.length) % images.length);
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);

@@ -116,6 +116,10 @@ type DraftItem = {
 };
 
 const QUERY_STATE_OPTIONS = { history: "replace", scroll: false, shallow: true } as const;
+// Drag-and-drop payload types for merging observations: a whole row (group) or a
+// single photo dragged out of the expanded media editor.
+const DND_GROUP = "application/x-obs-group";
+const DND_ITEM = "application/x-obs-item";
 // Shared column template so the table header and each row line up. Columns are
 // ordered by review value: select · photo · organism · date · location · kind ·
 // observation grouping · AI confidence · trailing action. Lower-priority columns
@@ -1365,6 +1369,27 @@ function ObservationBulkAddPanel({
     setBulkError(null);
   }
 
+  // Drag one observation row onto another: fold every photo from the source
+  // group into the target group so they upload as a single observation. Skips
+  // any photo already uploading/uploaded.
+  function mergeGroups(sourceGroupId: string, targetGroupId: string) {
+    if (sourceGroupId === targetGroupId) return;
+    setItems((current) => {
+      const targetItems = current.filter((item) => item.groupId === targetGroupId);
+      const sourceItems = current.filter(
+        (item) => item.groupId === sourceGroupId && item.status !== "uploading" && item.status !== "uploaded",
+      );
+      if (targetItems.length === 0 || sourceItems.length === 0) return current;
+      const shared = sharedOccurrenceAnalysis(occurrenceAnalysisForUpload([...targetItems, ...sourceItems]));
+      const moving = new Set(sourceItems.map((item) => item.id));
+      return current.map((item) =>
+        moving.has(item.id) ? { ...item, groupId: targetGroupId, analysis: { ...item.analysis, ...shared } } : item,
+      );
+    });
+    setExpandedId(targetGroupId);
+    setBulkError(null);
+  }
+
   async function uploadGroup(groupId: string, itemIds?: Set<string>): Promise<OccurrenceRecord | null> {
     const snapshot = itemsRef.current;
     const groupItems = snapshot.filter((item) => item.groupId === groupId && (!itemIds || itemIds.has(item.id)));
@@ -1672,6 +1697,8 @@ function ObservationBulkAddPanel({
                       onRetry={(id) => retryAnalysis(id)}
                       onSeparateItem={(id) => separateItemFromGroup(id, group.id)}
                       onAddItem={addItemToGroup}
+                      onMergeGroups={mergeGroups}
+                      dragDisabled={isBulkUploading}
                       onChangeLocation={changeItemLocation}
                     />
                   ))}
@@ -1869,6 +1896,8 @@ function ObservationListItem({
   onRetry,
   onSeparateItem,
   onAddItem,
+  onMergeGroups,
+  dragDisabled,
   onChangeLocation,
 }: {
   group: ObservationGroup;
@@ -1881,9 +1910,12 @@ function ObservationListItem({
   onRetry: (id: string) => void;
   onSeparateItem: (id: string) => void;
   onAddItem: (groupId: string, itemId: string) => void;
+  onMergeGroups: (sourceGroupId: string, targetGroupId: string) => void;
+  dragDisabled: boolean;
   onChangeLocation: (id: string) => void;
 }) {
   const t = useTranslations("upload.observations");
+  const [isDropTarget, setIsDropTarget] = useState(false);
   const [item] = group.items;
   const analysis = occurrenceAnalysisForUpload(group.items);
   const groupedCount = group.items.length;
@@ -1895,7 +1927,15 @@ function ObservationListItem({
   const canEdit = group.items.some((candidate) => candidate.status === "ready" || candidate.status === "uploadError");
   const primaryStatus = groupStatus(group.items);
   const isUploaded = primaryStatus === "uploaded";
+  const canDrag = !dragDisabled && !isUploaded && primaryStatus !== "uploading";
   const retryItem = group.items.find((candidate) => candidate.status === "error");
+
+  function rowDragKind(event: DragEvent<HTMLDivElement>): "group" | "item" | null {
+    const types = Array.from(event.dataTransfer?.types ?? []);
+    if (types.includes(DND_GROUP)) return "group";
+    if (types.includes(DND_ITEM)) return "item";
+    return null;
+  }
 
   const isUnidentified = isUnidentifiedScientificName(analysis.scientificName);
   const organism = isUnidentified ? t("unidentifiedOrganism") : analysis.scientificName.trim() || group.label || (item ? cleanFileName(item.file.name) : t("unidentified"));
@@ -1919,7 +1959,31 @@ function ObservationListItem({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0, transition: { duration: 0.25, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(index * 0.03, 0.18) } }}
       exit={{ opacity: 0, height: 0, transition: { duration: ROW_EXIT_MS / 1000, ease: [0.25, 0.1, 0.25, 1] } }}
-      className={`group/row relative transition-colors duration-300 ${isUploaded ? "overflow-hidden bg-primary text-primary-foreground" : expanded ? "bg-primary/[0.045]" : item.selected ? "bg-primary/[0.025]" : "hover:bg-muted/40"}`}
+      onDragOver={(event) => {
+        if (!rowDragKind(event)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        if (!isDropTarget) setIsDropTarget(true);
+      }}
+      onDragLeave={(event) => {
+        if (!rowDragKind(event)) return;
+        setIsDropTarget(false);
+      }}
+      onDrop={(event) => {
+        const kind = rowDragKind(event);
+        if (!kind) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDropTarget(false);
+        if (kind === "group") {
+          const sourceGroupId = event.dataTransfer.getData(DND_GROUP);
+          if (sourceGroupId) onMergeGroups(sourceGroupId, group.id);
+        } else {
+          const itemId = event.dataTransfer.getData(DND_ITEM);
+          if (itemId) onAddItem(group.id, itemId);
+        }
+      }}
+      className={`group/row relative transition-colors duration-300 ${isUploaded ? "overflow-hidden bg-primary text-primary-foreground" : expanded ? "bg-primary/[0.045]" : item.selected ? "bg-primary/[0.025]" : "hover:bg-muted/40"}${isDropTarget ? " ring-2 ring-inset ring-primary/50" : ""}`}
     >
       {isUploaded ? (
         <motion.div
@@ -1945,7 +2009,21 @@ function ObservationListItem({
           aria-label={t("selectImage")}
           className="shrink-0"
         />
-        <StackedThumbnails group={group} />
+        <div
+          draggable={canDrag}
+          onDragStart={(event) => {
+            if (!canDrag) {
+              event.preventDefault();
+              return;
+            }
+            event.dataTransfer.setData(DND_GROUP, group.id);
+            event.dataTransfer.effectAllowed = "move";
+          }}
+          className={canDrag ? "cursor-grab active:cursor-grabbing" : undefined}
+          title={canDrag ? t("dragRowHint") : undefined}
+        >
+          <StackedThumbnails group={group} />
+        </div>
 
         {/* Organism */}
         {canEdit ? (
@@ -2075,7 +2153,7 @@ function StackedThumbnails({ group, size = "sm" }: { group: ObservationGroup; si
           className={`absolute overflow-hidden bg-muted ring-1 ring-background ${large ? "h-20 w-20 rounded-2xl" : "h-10 w-10 rounded-lg"}`}
           style={{ transform: `translate(${index * (large ? 5 : 4)}px, ${index * (large ? -4 : -3)}px)`, zIndex: 3 - index }}
         >
-          <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover" />
+          <img src={item.previewUrl} alt={item.file.name} draggable={false} className="h-full w-full object-cover" />
         </div>
       ))}
       {count > 1 ? (
@@ -2114,10 +2192,27 @@ function GroupMediaEditor({
       <p className="mb-3 text-xs leading-5 text-muted-foreground">{t("mediaEditorHint")}</p>
       <div className="flex flex-wrap gap-2.5">
         {group.items.map((item) => {
-          const canSeparate = group.items.length > 1 && item.status !== "uploading" && item.status !== "uploaded";
+          const editable = item.status !== "uploading" && item.status !== "uploaded";
+          const canSeparate = group.items.length > 1 && editable;
           return (
-            <div key={item.id} className="group/media relative size-20 overflow-hidden rounded-2xl bg-muted ring-1 ring-border">
-              <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover" />
+            <div
+              key={item.id}
+              draggable={editable}
+              onDragStart={(event) => {
+                if (!editable) {
+                  event.preventDefault();
+                  return;
+                }
+                event.dataTransfer.setData(DND_ITEM, item.id);
+                event.dataTransfer.effectAllowed = "move";
+              }}
+              title={editable ? t("dragPhotoHint") : undefined}
+              className={cn(
+                "group/media relative size-20 overflow-hidden rounded-2xl bg-muted ring-1 ring-border",
+                editable && "cursor-grab active:cursor-grabbing",
+              )}
+            >
+              <img src={item.previewUrl} alt={item.file.name} draggable={false} className="h-full w-full object-cover" />
               {canSeparate ? (
                 <QuickTooltip content={t("removeFromObservation")} asChild>
                   <button
