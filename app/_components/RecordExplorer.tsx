@@ -1211,12 +1211,32 @@ const RecordListItem = memo(function RecordListItem({ record, onOpen }: { record
   const [imgError, setImgError] = useState(false);
   const v = cardView(record);
   const occurrenceRecord = record.kind === "occurrence" ? record : null;
-  const hasImage = Boolean(record.imageUrl) && !imgError;
+  // Sightings store their photo as a blob ref, so resolve it client-side (the
+  // card does the same) — otherwise the list shows a placeholder for photos
+  // that the card view displays just fine.
+  const [resolvedImageUrl, setResolvedImageUrl] = useState(record.imageUrl);
+  const imageUrl = resolvedImageUrl ?? record.imageUrl;
+  const hasImage = Boolean(imageUrl) && !imgError;
   const hasAudio = Boolean(occurrenceRecord?.audioRef || occurrenceRecord?.audioUrl);
   const ownerLabel = record.kind === "bumicert" || record.kind === "project" ? record.creatorName ?? "Project steward" : record.kind === "site" ? record.name : record.creatorName ?? "Shared profile";
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const unregisterAudioRef = useRef<(() => void) | null>(null);
   const [audioState, setAudioState] = useState<"idle" | "loading" | "playing" | "paused">("idle");
+
+  const occurrenceImageRef = occurrenceRecord?.imageRef ?? null;
+  useEffect(() => {
+    setImgError(false);
+    setResolvedImageUrl(record.imageUrl);
+    if (record.imageUrl || !occurrenceImageRef) return;
+
+    const controller = new AbortController();
+    resolveBlobUrl(record.did, occurrenceImageRef, controller.signal)
+      .then((url) => setResolvedImageUrl(url))
+      .catch((error) => {
+        if ((error as Error).name !== "AbortError") setResolvedImageUrl(null);
+      });
+    return () => controller.abort();
+  }, [record.did, record.imageUrl, occurrenceImageRef]);
 
   useEffect(
     () => () => {
@@ -1276,11 +1296,11 @@ const RecordListItem = memo(function RecordListItem({ record, onOpen }: { record
       <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface-sunken sm:h-24 sm:w-28">
         {hasImage ? (
           <Image
-            src={record.imageUrl!}
+            src={imageUrl!}
             alt={v.alt}
             fill
             sizes="112px"
-            unoptimized={!isPdsBlobUrl(record.imageUrl)}
+            unoptimized={!isPdsBlobUrl(imageUrl)}
             onError={() => setImgError(true)}
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />

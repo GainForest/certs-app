@@ -771,8 +771,15 @@ const OrganizationListItem = memo(function OrganizationListItem({ record, onOpen
           // eslint-disable-next-line @next/next/no-img-element
           <img src={bannerUrl} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
+          // No cover banner: most organizations still have a logo, so show it
+          // centered on a tinted panel rather than a generic leaf placeholder.
           <span className="grid h-full place-items-center bg-[radial-gradient(circle_at_30%_20%,color-mix(in_oklab,var(--primary)_22%,transparent),transparent_70%),linear-gradient(135deg,var(--muted),var(--card))] text-primary/40">
-            <LeafIcon className="size-9" aria-hidden strokeWidth={1.25} />
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="" loading="lazy" className="size-14 rounded-xl object-cover transition-transform duration-500 group-hover:scale-105" />
+            ) : (
+              <LeafIcon className="size-9" aria-hidden strokeWidth={1.25} />
+            )}
           </span>
         )}
       </span>
