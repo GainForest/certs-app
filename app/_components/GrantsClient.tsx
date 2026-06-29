@@ -27,6 +27,7 @@ import {
   useActiveAccountContext,
 } from "../_lib/account-switcher";
 import { createFeedPost } from "../(manage)/manage/_lib/mutations";
+import { REWILDING_GRANT_TAG } from "../_lib/grants";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ModalContent, ModalDescription, ModalTitle } from "@/components/ui/modal/modal";
 import { useModal } from "@/components/ui/modal/context";
@@ -311,7 +312,7 @@ function RewildingApplyModal({
           ? `${project.title.slice(0, POST_PROJECT_TITLE_MAX - 1).trimEnd()}…`
           : project.title;
         await createFeedPost(
-          { text: rewildingT("postText", { project: title }) },
+          { text: rewildingT("postText", { project: title }), tags: [REWILDING_GRANT_TAG] },
           acting.repo ? { repo: acting.repo } : undefined,
         );
         onApplied(project.title);

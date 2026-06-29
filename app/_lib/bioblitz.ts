@@ -16,7 +16,7 @@
  */
 
 import { INDEXER_URL } from "./urls";
-import { normaliseRef } from "./pds";
+import { normaliseRef, resolveBlobUrl } from "./pds";
 import { fetchHiddenAccountDids, indexerQuery, walkOccurrences, type OccurrenceRecord } from "./indexer";
 import { fetchEngagement } from "./feed-engagement";
 
@@ -488,4 +488,98 @@ function normalizeOrgType(value: unknown): string | null {
   if (typeof token !== "string") return null;
   const trimmed = token.trim().toLowerCase();
   return trimmed || null;
+}
+
+// ── Registrants (admin review) ───────────────────────────────────────────────
+
+export type BioblitzRegistrant = {
+  did: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  /** When they published their most recent join post. */
+  createdAt: string;
+};
+
+type RawRegistrantNode = {
+  did?: string | null;
+  createdAt?: string | null;
+  certifiedProfileData?: {
+    displayName?: string | null;
+    avatar?: { image?: { ref?: string | null } | null } | null;
+  } | null;
+};
+
+type BioblitzRegistrantsResponse = {
+  appGainforestFeedPost?: {
+    pageInfo?: { hasNextPage?: boolean | null; endCursor?: string | null } | null;
+    edges?: Array<{ node?: RawRegistrantNode | null } | null> | null;
+  } | null;
+};
+
+const REGISTRANTS_QUERY = `
+  query BioblitzRegistrants($first: Int!, $after: String, $tag: String!) {
+    appGainforestFeedPost(
+      first: $first
+      after: $after
+      where: { tags: { any: { eq: $tag } } }
+      sortBy: createdAt
+      sortDirection: DESC
+    ) {
+      pageInfo { hasNextPage endCursor }
+      edges {
+        node {
+          did createdAt
+          certifiedProfileData {
+            displayName
+            avatar { __typename ... on OrgHypercertsDefsSmallImage { image { ref } } }
+          }
+        }
+      }
+    }
+  }
+`;
+
+/**
+ * Every account that registered for the BioBlitz (published a join post),
+ * newest first, de-duplicated to one row per account. Scans the program-wide
+ * `bioblitz` tag so it covers all rounds. Returns an empty list on any error.
+ */
+export async function fetchBioblitzRegistrants(signal?: AbortSignal): Promise<BioblitzRegistrant[]> {
+  const nodes: RawRegistrantNode[] = [];
+  let after: string | null = null;
+
+  for (let page = 0; page < 10; page += 1) {
+    const data: BioblitzRegistrantsResponse | null = await indexerQuery<BioblitzRegistrantsResponse>(
+      REGISTRANTS_QUERY,
+      { first: 100, after, tag: BIOBLITZ_TAG },
+      signal,
+    ).catch(() => null);
+
+    const connection: BioblitzRegistrantsResponse["appGainforestFeedPost"] = data?.appGainforestFeedPost;
+    nodes.push(...((connection?.edges ?? []).flatMap((edge: { node?: RawRegistrantNode | null } | null) => (edge?.node ? [edge.node] : []))));
+    after = connection?.pageInfo?.hasNextPage ? connection.pageInfo.endCursor ?? null : null;
+    if (!after) break;
+  }
+
+  const seen = new Set<string>();
+  const deduped: RawRegistrantNode[] = [];
+  for (const node of nodes) {
+    const did = node.did?.trim();
+    if (!did || seen.has(did)) continue;
+    seen.add(did);
+    deduped.push(node);
+  }
+
+  return Promise.all(
+    deduped.map(async (node): Promise<BioblitzRegistrant> => {
+      const did = node.did!.trim();
+      const ref = node.certifiedProfileData?.avatar?.image?.ref ?? null;
+      return {
+        did,
+        displayName: node.certifiedProfileData?.displayName?.trim() || null,
+        avatarUrl: ref ? await resolveBlobUrl(did, ref).catch(() => null) : null,
+        createdAt: node.createdAt ?? "",
+      };
+    }),
+  );
 }

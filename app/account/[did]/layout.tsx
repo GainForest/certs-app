@@ -4,12 +4,15 @@ import { resolveAccountManageAccess } from "@/app/_lib/manage-server";
 import { canEditGroupProfile } from "@/app/(manage)/manage/_lib/cgs-permissions";
 import type { CgsRole } from "@/app/(manage)/manage/_lib/cgs";
 import { EditableAccountHeader } from "@/app/(manage)/manage/_components/EditableAccountHeader";
-import { fetchHiddenAccountDids } from "@/app/_lib/indexer";
+import { fetchHiddenAccountDids, fetchRecognitionBadgesForDid } from "@/app/_lib/indexer";
+import { RECOGNITION_BADGE_KEYS, type RecognitionBadgeKey } from "@/app/_lib/recognition-badges";
 import { getGainForestModeratorAccess } from "@/app/internal/badges/_lib/access";
 import { AccountChrome } from "../_components/AccountChrome";
 import { AccountHero } from "../_components/AccountHero";
 import { AccountTabBar } from "../_components/AccountTabBar";
 import { TestAccountModerationControl } from "../_components/TestAccountModerationControl";
+import { RecognitionBadgeControl } from "../_components/RecognitionBadgeControl";
+import { RecognitionBadgeChips } from "../_components/RecognitionBadgeChips";
 import { loadAccountMemberships } from "../_components/AccountTabContent";
 import { accountSettingsPath, getAccountRouteData, readAccountRouteParams, readOptionalAccountRouteParams } from "../_lib/account-route";
 
@@ -69,6 +72,11 @@ export default async function AccountLayout({
   const testAccountFlagged = moderator?.isModerator
     ? await fetchHiddenAccountDids().then((dids) => dids.has(account.did)).catch(() => false)
     : null;
+  // Steward-awarded recognition badges shown publicly on the profile (and used
+  // as the moderator control's initial state). One cached index read per view.
+  const awardedRecognition: RecognitionBadgeKey[] = await fetchRecognitionBadgesForDid(account.did)
+    .then((keys) => RECOGNITION_BADGE_KEYS.filter((key) => keys.has(key)))
+    .catch(() => []);
   // The Admin tab (list of flagged test accounts) lives on the admin group's
   // own profile, shown to any of its members.
   const showAdminTab = Boolean(moderator?.isModerator && moderator.repoDid === account.did);
@@ -79,11 +87,18 @@ export default async function AccountLayout({
         hero={
           <>
             {moderator?.isModerator && testAccountFlagged !== null ? (
-              <TestAccountModerationControl
-                did={account.did}
-                accountName={account.displayName}
-                initialFlagged={testAccountFlagged}
-              />
+              <>
+                <TestAccountModerationControl
+                  did={account.did}
+                  accountName={account.displayName}
+                  initialFlagged={testAccountFlagged}
+                />
+                <RecognitionBadgeControl
+                  did={account.did}
+                  accountName={account.displayName}
+                  initialAwarded={awardedRecognition}
+                />
+              </>
             ) : null}
             {canEditProfile && target ? (
               <EditableAccountHeader
@@ -98,6 +113,7 @@ export default async function AccountLayout({
             ) : (
               <AccountHero account={account} memberships={memberships} />
             )}
+            <RecognitionBadgeChips badges={awardedRecognition} />
             <AccountTabBar
               did={account.urlIdentifier}
               accountKind={account.kind}

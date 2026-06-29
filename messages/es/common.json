@@ -850,6 +850,49 @@
     "unnamed": "Cuenta sin nombre",
     "error": "Algo salió mal. Inténtalo de nuevo."
   },
+  "recognition": {
+    "eyebrow": "Administración de GainForest",
+    "title": "Otorgar insignias de reconocimiento",
+    "description": "Dale a {name} una insignia por una subvención o una victoria en BioBlitz. Las insignias otorgadas aparecen en su perfil público.",
+    "award": "Otorgar",
+    "remove": "Quitar",
+    "genericError": "Algo salió mal. Inténtalo de nuevo.",
+    "chipsAria": "Insignias de reconocimiento",
+    "badges": {
+      "rewilding-grant": {
+        "label": "Subvención Rewilding",
+        "description": "Recibió una subvención de Resilvestrar la web."
+      },
+      "bioblitz-most-images": {
+        "label": "BioBlitz — más imágenes",
+        "description": "Ganó una ronda de BioBlitz por la mayor cantidad de observaciones."
+      },
+      "bioblitz-best-picture": {
+        "label": "BioBlitz — mejor foto",
+        "description": "Ganó una ronda de BioBlitz por la mejor foto."
+      }
+    }
+  },
+  "adminModeration": {
+    "ariaLabel": "Vistas de moderación",
+    "tabs": {
+      "grants": "Solicitantes de subvención",
+      "bioblitz": "BioBlitz",
+      "testAccounts": "Cuentas de prueba"
+    },
+    "unnamed": "Cuenta sin nombre",
+    "awardHint": "Abre un perfil para otorgar una insignia.",
+    "grants": {
+      "title": "Solicitantes de subvención",
+      "description": "Cuentas que solicitaron la subvención de Resilvestrar la web. Abre un perfil para otorgar la insignia de la subvención.",
+      "empty": "Nadie ha solicitado la subvención todavía."
+    },
+    "bioblitz": {
+      "title": "Inscritos en BioBlitz",
+      "description": "Cuentas que se inscribieron en el BioBlitz. Abre un perfil para otorgar una insignia de ganador.",
+      "empty": "Nadie se ha inscrito en el BioBlitz todavía."
+    }
+  },
   "follow": {
     "follow": "Seguir",
     "following": "Siguiendo",

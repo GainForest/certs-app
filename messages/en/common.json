@@ -850,6 +850,49 @@
     "unnamed": "Unnamed account",
     "error": "Something went wrong. Please try again."
   },
+  "recognition": {
+    "eyebrow": "GainForest steward",
+    "title": "Award recognition badges",
+    "description": "Give {name} a badge for a grant or BioBlitz win. Awarded badges show on their public profile.",
+    "award": "Award",
+    "remove": "Remove",
+    "genericError": "Something went wrong. Please try again.",
+    "chipsAria": "Recognition badges",
+    "badges": {
+      "rewilding-grant": {
+        "label": "Rewilding grant",
+        "description": "Received a Rewilding the Web grant."
+      },
+      "bioblitz-most-images": {
+        "label": "BioBlitz — most images",
+        "description": "Won a BioBlitz round for the most observations."
+      },
+      "bioblitz-best-picture": {
+        "label": "BioBlitz — best picture",
+        "description": "Won a BioBlitz round for the best picture."
+      }
+    }
+  },
+  "adminModeration": {
+    "ariaLabel": "Moderation views",
+    "tabs": {
+      "grants": "Grant applicants",
+      "bioblitz": "BioBlitz",
+      "testAccounts": "Test accounts"
+    },
+    "unnamed": "Unnamed account",
+    "awardHint": "Open a profile to award a badge.",
+    "grants": {
+      "title": "Grant applicants",
+      "description": "Accounts that applied for the Rewilding the Web grant. Open a profile to award the grant badge.",
+      "empty": "No one has applied for the grant yet."
+    },
+    "bioblitz": {
+      "title": "BioBlitz registrants",
+      "description": "Accounts that registered for the BioBlitz. Open a profile to award a winner badge.",
+      "empty": "No one has registered for the BioBlitz yet."
+    }
+  },
   "follow": {
     "follow": "Follow",
     "following": "Following",

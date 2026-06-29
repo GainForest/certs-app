@@ -13,6 +13,7 @@
  */
 
 import { cachedAsync } from "./async-cache";
+import { RECOGNITION_BADGE_KEYS } from "./recognition-badges";
 import { PUBLIC_EXPLORE_CACHE_TTL_MS, publicExploreCache } from "./public-explore-cache";
 import { INDEXER_URL } from "./urls";
 import { countryCodeFromCertifiedLocation, fetchCertifiedLocationCountryCode, type CertifiedLocationLike } from "./country-location";
@@ -1578,6 +1579,82 @@ export function fetchHiddenAccountDids(signal?: AbortSignal): Promise<Set<string
     () => fetchHiddenAccountDidsUncached().catch(() => new Set<string>()),
     signal,
   );
+}
+
+/**
+ * Map of account DID -> the set of recognition badge keys it currently holds
+ * (e.g. "rewilding-grant", "bioblitz-best-picture"). Scans the same moderation
+ * repo as the hidden-account flag, but matches the recognition badge titles.
+ * Public profiles read this to render a steward-awarded badge of honour.
+ */
+async function fetchRecognitionAwardIndexUncached(signal?: AbortSignal): Promise<Map<string, Set<string>>> {
+  const definitions: RawFeaturedBadgeDefinition[] = [];
+  const awards: RawFeaturedBadgeAward[] = [];
+  let afterDefinitions: string | null = null;
+  let afterAwards: string | null = null;
+
+  for (let page = 0; page < 20; page += 1) {
+    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    const shouldCollectDefinitions: boolean = page === 0 || Boolean(afterDefinitions);
+    const payload: FeaturedBadgeIndexPayload | null = await indexerQuery<FeaturedBadgeIndexPayload>(
+      FEATURED_BADGE_INDEX_QUERY,
+      { repo: GAINFOREST_MODERATION_REPO_DID, first: INDEXER_MAX_PAGE, afterDefinitions, afterAwards },
+      signal,
+    );
+    const definitionsPage: Connection<RawFeaturedBadgeDefinition> | null | undefined = payload?.appCertifiedBadgeDefinition;
+    const awardsPage: Connection<RawFeaturedBadgeAward> | null | undefined = payload?.appCertifiedBadgeAward;
+    if (shouldCollectDefinitions) {
+      definitions.push(...((definitionsPage?.edges ?? []).flatMap((edge: { node?: RawFeaturedBadgeDefinition | null } | null) => (edge?.node ? [edge.node] : []))));
+    }
+    awards.push(...((awardsPage?.edges ?? []).flatMap((edge: { node?: RawFeaturedBadgeAward | null } | null) => (edge?.node ? [edge.node] : []))));
+    afterDefinitions = shouldCollectDefinitions && definitionsPage?.pageInfo?.hasNextPage ? definitionsPage.pageInfo.endCursor ?? null : null;
+    afterAwards = awardsPage?.pageInfo?.hasNextPage ? awardsPage.pageInfo.endCursor ?? null : null;
+    if (!afterDefinitions && !afterAwards) break;
+  }
+
+  // Map every recognition badge definition uri -> its normalized key.
+  const recognitionKeys = new Map<string, string>();
+  for (const definition of definitions) {
+    if (!definition.uri || !definition.title) continue;
+    const normalized = normalizeFeaturedBadgeTitle(definition.title);
+    if ((RECOGNITION_BADGE_KEYS as readonly string[]).includes(normalized)) {
+      recognitionKeys.set(definition.uri, normalized);
+    }
+  }
+  if (recognitionKeys.size === 0) return new Map<string, Set<string>>();
+
+  const index = new Map<string, Set<string>>();
+  for (const award of awards) {
+    const badgeUri = award.badge?.uri;
+    const key = badgeUri ? recognitionKeys.get(badgeUri) : undefined;
+    if (!key) continue;
+    const subject = award.subject;
+    if (subject?.__typename === "AppCertifiedDefsDid" && subject.did) {
+      const set = index.get(subject.did) ?? new Set<string>();
+      set.add(key);
+      index.set(subject.did, set);
+    }
+  }
+  return index;
+}
+
+/**
+ * Cached account-DID -> recognition-badge-keys index. Returns an empty map on
+ * any error so a transient indexer hiccup never drops badges site-wide.
+ */
+export function fetchRecognitionAwardIndex(signal?: AbortSignal): Promise<Map<string, Set<string>>> {
+  return cachedAsync(
+    "recognition-award-index:v1",
+    HIDDEN_ACCOUNTS_CACHE_MS,
+    () => fetchRecognitionAwardIndexUncached().catch(() => new Map<string, Set<string>>()),
+    signal,
+  );
+}
+
+/** The recognition badge keys currently awarded to a single account DID. */
+export async function fetchRecognitionBadgesForDid(did: string, signal?: AbortSignal): Promise<Set<string>> {
+  const index = await fetchRecognitionAwardIndex(signal).catch(() => new Map<string, Set<string>>());
+  return index.get(did) ?? new Set<string>();
 }
 
 /** Resolve the hidden-account set unless the query is scoped to a single owner

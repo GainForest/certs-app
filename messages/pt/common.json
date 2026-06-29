@@ -850,6 +850,49 @@
     "unnamed": "Conta sem nome",
     "error": "Algo deu errado. Tente novamente."
   },
+  "recognition": {
+    "eyebrow": "Equipe da GainForest",
+    "title": "Conceder selos de reconhecimento",
+    "description": "Dê a {name} um selo por um subsídio ou uma vitória no BioBlitz. Os selos concedidos aparecem no perfil público.",
+    "award": "Conceder",
+    "remove": "Remover",
+    "genericError": "Algo deu errado. Tente novamente.",
+    "chipsAria": "Selos de reconhecimento",
+    "badges": {
+      "rewilding-grant": {
+        "label": "Subsídio Rewilding",
+        "description": "Recebeu um subsídio de Resselvagem da web."
+      },
+      "bioblitz-most-images": {
+        "label": "BioBlitz — mais imagens",
+        "description": "Venceu uma rodada do BioBlitz por mais observações."
+      },
+      "bioblitz-best-picture": {
+        "label": "BioBlitz — melhor foto",
+        "description": "Venceu uma rodada do BioBlitz pela melhor foto."
+      }
+    }
+  },
+  "adminModeration": {
+    "ariaLabel": "Visualizações de moderação",
+    "tabs": {
+      "grants": "Candidatos ao subsídio",
+      "bioblitz": "BioBlitz",
+      "testAccounts": "Contas de teste"
+    },
+    "unnamed": "Conta sem nome",
+    "awardHint": "Abra um perfil para conceder um selo.",
+    "grants": {
+      "title": "Candidatos ao subsídio",
+      "description": "Contas que se candidataram ao subsídio de Resselvagem da web. Abra um perfil para conceder o selo do subsídio.",
+      "empty": "Ninguém se candidatou ao subsídio ainda."
+    },
+    "bioblitz": {
+      "title": "Inscritos no BioBlitz",
+      "description": "Contas que se inscreveram no BioBlitz. Abra um perfil para conceder um selo de vencedor.",
+      "empty": "Ninguém se inscreveu no BioBlitz ainda."
+    }
+  },
   "follow": {
     "follow": "Seguir",
     "following": "Seguindo",

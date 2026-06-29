@@ -850,6 +850,49 @@
     "unnamed": "Akun tanpa nama",
     "error": "Terjadi kesalahan. Silakan coba lagi."
   },
+  "recognition": {
+    "eyebrow": "Pengelola GainForest",
+    "title": "Berikan lencana penghargaan",
+    "description": "Beri {name} lencana atas hibah atau kemenangan BioBlitz. Lencana yang diberikan tampil di profil publik mereka.",
+    "award": "Berikan",
+    "remove": "Hapus",
+    "genericError": "Terjadi kesalahan. Silakan coba lagi.",
+    "chipsAria": "Lencana penghargaan",
+    "badges": {
+      "rewilding-grant": {
+        "label": "Hibah Rewilding",
+        "description": "Menerima hibah Meliarkan Kembali Web."
+      },
+      "bioblitz-most-images": {
+        "label": "BioBlitz — gambar terbanyak",
+        "description": "Memenangkan ronde BioBlitz untuk observasi terbanyak."
+      },
+      "bioblitz-best-picture": {
+        "label": "BioBlitz — foto terbaik",
+        "description": "Memenangkan ronde BioBlitz untuk foto terbaik."
+      }
+    }
+  },
+  "adminModeration": {
+    "ariaLabel": "Tampilan moderasi",
+    "tabs": {
+      "grants": "Pemohon hibah",
+      "bioblitz": "BioBlitz",
+      "testAccounts": "Akun uji coba"
+    },
+    "unnamed": "Akun tanpa nama",
+    "awardHint": "Buka profil untuk memberikan lencana.",
+    "grants": {
+      "title": "Pemohon hibah",
+      "description": "Akun yang mengajukan hibah Meliarkan Kembali Web. Buka profil untuk memberikan lencana hibah.",
+      "empty": "Belum ada yang mengajukan hibah."
+    },
+    "bioblitz": {
+      "title": "Pendaftar BioBlitz",
+      "description": "Akun yang mendaftar BioBlitz. Buka profil untuk memberikan lencana pemenang.",
+      "empty": "Belum ada yang mendaftar BioBlitz."
+    }
+  },
   "follow": {
     "follow": "Ikuti",
     "following": "Mengikuti",

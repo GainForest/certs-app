@@ -850,6 +850,49 @@
     "unnamed": "Akaunti isiyo na jina",
     "error": "Hitilafu imetokea. Tafadhali jaribu tena."
   },
+  "recognition": {
+    "eyebrow": "Msimamizi wa GainForest",
+    "title": "Toa beji za kutambua",
+    "description": "Mpe {name} beji kwa ruzuku au ushindi wa BioBlitz. Beji zilizotolewa huonekana kwenye wasifu wake wa umma.",
+    "award": "Toa",
+    "remove": "Ondoa",
+    "genericError": "Hitilafu imetokea. Tafadhali jaribu tena.",
+    "chipsAria": "Beji za kutambua",
+    "badges": {
+      "rewilding-grant": {
+        "label": "Ruzuku ya Rewilding",
+        "description": "Alipokea ruzuku ya Kurudisha Uasilia kwenye Wavuti."
+      },
+      "bioblitz-most-images": {
+        "label": "BioBlitz — picha nyingi zaidi",
+        "description": "Alishinda raundi ya BioBlitz kwa uchunguzi mwingi zaidi."
+      },
+      "bioblitz-best-picture": {
+        "label": "BioBlitz — picha bora",
+        "description": "Alishinda raundi ya BioBlitz kwa picha bora zaidi."
+      }
+    }
+  },
+  "adminModeration": {
+    "ariaLabel": "Mwonekano wa usimamizi",
+    "tabs": {
+      "grants": "Waombaji wa ruzuku",
+      "bioblitz": "BioBlitz",
+      "testAccounts": "Akaunti za majaribio"
+    },
+    "unnamed": "Akaunti isiyo na jina",
+    "awardHint": "Fungua wasifu ili kutoa beji.",
+    "grants": {
+      "title": "Waombaji wa ruzuku",
+      "description": "Akaunti zilizoomba ruzuku ya Kurudisha Uasilia kwenye Wavuti. Fungua wasifu ili kutoa beji ya ruzuku.",
+      "empty": "Bado hakuna aliyeomba ruzuku."
+    },
+    "bioblitz": {
+      "title": "Waliojisajili BioBlitz",
+      "description": "Akaunti zilizojisajili BioBlitz. Fungua wasifu ili kutoa beji ya mshindi.",
+      "empty": "Bado hakuna aliyejisajili BioBlitz."
+    }
+  },
   "follow": {
     "follow": "Fuata",
     "following": "Unafuata",

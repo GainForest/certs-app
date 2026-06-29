@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getGainForestModeratorAccess } from "@/app/internal/badges/_lib/access";
 import { fetchFlaggedTestAccounts } from "@/app/internal/badges/_lib/test-accounts";
-import { AdminTestAccountsList } from "../../_components/AdminTestAccountsList";
+import { fetchGrantApplicants } from "@/app/_lib/grants";
+import { fetchBioblitzRegistrants } from "@/app/_lib/bioblitz";
+import { AdminModerationDashboard } from "../../_components/AdminModerationDashboard";
 import { accountAdminPath, getAccountRouteData, readAccountRouteParams } from "../../_lib/account-route";
 
 export const metadata: Metadata = {
-  title: "Admin — Test accounts",
+  title: "Admin — Moderation",
   robots: { index: false, follow: false },
 };
 
@@ -25,6 +27,16 @@ export default async function AccountAdminPage({ params }: { params: Promise<{ d
     notFound();
   }
 
-  const accounts = await fetchFlaggedTestAccounts();
-  return <AdminTestAccountsList accounts={accounts} />;
+  const [testAccounts, grantApplicants, bioblitzRegistrants] = await Promise.all([
+    fetchFlaggedTestAccounts().catch(() => []),
+    fetchGrantApplicants().catch(() => []),
+    fetchBioblitzRegistrants().catch(() => []),
+  ]);
+  return (
+    <AdminModerationDashboard
+      testAccounts={testAccounts}
+      grantApplicants={grantApplicants}
+      bioblitzRegistrants={bioblitzRegistrants}
+    />
+  );
 }
