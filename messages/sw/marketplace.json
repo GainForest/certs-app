@@ -510,6 +510,61 @@
       "ariaLabel": "Mwonekano wa michango"
     }
   },
+  "grants": {
+    "metadata": {
+      "title": "Ruzuku — GainForest",
+      "description": "Omba programu za ruzuku zinazofadhili uhuru wa data na maamuzi kwa jamii zinazotegemea asili."
+    },
+    "hero": {
+      "eyebrow": "Ufadhili",
+      "title": "Ruzuku",
+      "accent": "Programu",
+      "imageAlt": "Mandhari ya uhuishaji yenye ukungu",
+      "lede": "Programu za ruzuku zilizo wazi kwa jamii zinazojenga uhuru wa data na maamuzi. Omba kwa mojawapo ya miradi yako."
+    },
+    "rewilding": {
+      "title": "Kurudisha Uasilia kwenye Wavuti",
+      "slots": "Ruzuku 10 zinapatikana",
+      "description": "Programu ya ruzuku inayofadhili seva 10 za data binafsi na vifaa vya kukusanya data vya ndani, ili jamii ziweze kuhifadhi data zao wenyewe na kushikilia maamuzi mikononi mwao kwa ajili ya uhuru wa data na maamuzi.",
+      "support": "Inafadhiliwa na ruzuku ya Klarna AI for Climate Resilience.",
+      "kits": {
+        "servers": {
+          "title": "Seva za data binafsi",
+          "description": "Seva yako mwenyewe ya kuhifadhi na kumiliki data ya jamii yako."
+        },
+        "collection": {
+          "title": "Vifaa vya kukusanya data vya ndani",
+          "description": "Vifaa vya uwandani vya kukusanya uchunguzi na ushahidi papo hapo."
+        }
+      },
+      "apply": "Omba",
+      "appliedTitle": "Maombi yametumwa",
+      "appliedNote": "Maombi yako kwa {project} sasa yamechapishwa kwenye mlisho.",
+      "postText": "Ninaomba ruzuku ya Kurudisha Uasilia kwenye Wavuti kwa mradi wangu \"{project}\" kwa ajili ya uhuru wa data na maamuzi. 🌱"
+    },
+    "applyModal": {
+      "title": "Chagua mradi wa kuombea",
+      "subtitle": "Chagua mojawapo ya miradi yako kutuma maombi yako.",
+      "searchPlaceholder": "Tafuta miradi yako",
+      "searchAria": "Tafuta miradi yako",
+      "loading": "Inapakia miradi yako…",
+      "errorTitle": "Imeshindikana kupakia miradi yako.",
+      "retry": "Jaribu tena",
+      "noProjectsTitle": "Bado hakuna miradi",
+      "noProjectsDescription": "Tengeneza mradi kwanza, kisha urudi kuombea nao.",
+      "createProject": "Tengeneza mradi",
+      "noMatch": "Hakuna mradi unaolingana na utafutaji wako.",
+      "untitledProject": "Mradi usio na kichwa",
+      "applyWith": "Omba kwa {project}",
+      "submitError": "Imeshindikana kutuma maombi yako. Tafadhali jaribu tena."
+    },
+    "interoperable": {
+      "title": "Programu ya Ruzuku Zinazoshirikiana",
+      "round": "Raundi ya 3",
+      "description": "Ma Earth inaendesha raundi yake ya ufadhili inayoungwa mkono na jamii, ikiwa na hazina ya kulinganisha kwa miradi inayotegemea asili. Omba kwa mradi wako ili kushiriki katika Raundi ya 3.",
+      "apply": "Omba kwa mradi wako"
+    }
+  },
   "account": {
     "metadata": {
       "accountTitle": "Akaunti — vyeti",

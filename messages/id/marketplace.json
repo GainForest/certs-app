@@ -510,6 +510,61 @@
       "ariaLabel": "Tampilan donasi"
     }
   },
+  "grants": {
+    "metadata": {
+      "title": "Hibah — GainForest",
+      "description": "Ajukan program hibah yang mendanai kedaulatan data dan keputusan untuk komunitas berbasis alam."
+    },
+    "hero": {
+      "eyebrow": "Pendanaan",
+      "title": "Hibah",
+      "accent": "Program",
+      "imageAlt": "Lanskap regeneratif berkabut",
+      "lede": "Program hibah terbuka untuk komunitas yang membangun kedaulatan data dan keputusan. Ajukan dengan salah satu proyek Anda."
+    },
+    "rewilding": {
+      "title": "Meliarkan Kembali Web",
+      "slots": "10 hibah tersedia",
+      "description": "Program hibah yang mendanai 10 server data pribadi dan perangkat pengumpulan data lokal, agar komunitas dapat menyimpan data mereka sendiri dan menjaga keputusan tetap di tangan mereka demi kedaulatan data dan keputusan.",
+      "support": "Didukung oleh hibah Klarna AI for Climate Resilience.",
+      "kits": {
+        "servers": {
+          "title": "Server data pribadi",
+          "description": "Server Anda sendiri untuk menyimpan dan memiliki data komunitas Anda."
+        },
+        "collection": {
+          "title": "Perangkat pengumpulan data lokal",
+          "description": "Perangkat lapangan untuk mengumpulkan observasi dan bukti di lapangan."
+        }
+      },
+      "apply": "Ajukan",
+      "appliedTitle": "Pengajuan terkirim",
+      "appliedNote": "Pengajuan Anda untuk {project} kini telah diposting ke feed.",
+      "postText": "Mengajukan hibah Meliarkan Kembali Web dengan proyek saya \"{project}\" demi kedaulatan data dan keputusan. 🌱"
+    },
+    "applyModal": {
+      "title": "Pilih proyek untuk diajukan",
+      "subtitle": "Pilih salah satu proyek Anda untuk mengirim pengajuan.",
+      "searchPlaceholder": "Cari proyek Anda",
+      "searchAria": "Cari proyek Anda",
+      "loading": "Memuat proyek Anda…",
+      "errorTitle": "Tidak dapat memuat proyek Anda.",
+      "retry": "Coba lagi",
+      "noProjectsTitle": "Belum ada proyek",
+      "noProjectsDescription": "Buat proyek terlebih dahulu, lalu kembali untuk mengajukannya.",
+      "createProject": "Buat proyek",
+      "noMatch": "Tidak ada proyek yang cocok dengan pencarian Anda.",
+      "untitledProject": "Proyek tanpa judul",
+      "applyWith": "Ajukan dengan {project}",
+      "submitError": "Tidak dapat mengirim pengajuan Anda. Silakan coba lagi."
+    },
+    "interoperable": {
+      "title": "Program Hibah Interoperabel",
+      "round": "Putaran 3",
+      "description": "Ma Earth sedang menjalankan putaran pendanaan yang didukung komunitas dengan dana penyepadan untuk proyek berbasis alam. Ajukan dengan proyek Anda untuk ikut serta dalam Putaran 3.",
+      "apply": "Ajukan dengan proyek Anda"
+    }
+  },
   "account": {
     "metadata": {
       "accountTitle": "Akun — sertifikat",

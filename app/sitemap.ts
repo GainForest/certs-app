@@ -22,6 +22,7 @@ const ROUTES: Array<{ path: string; priority: number; changeFrequency: ChangeFre
   { path: "/leaderboard", priority: 0.7, changeFrequency: "weekly" },
   { path: "/bioblitz", priority: 0.7, changeFrequency: "weekly" },
   { path: "/donations", priority: 0.7, changeFrequency: "daily" },
+  { path: "/grants", priority: 0.6, changeFrequency: "weekly" },
   { path: "/devices", priority: 0.5, changeFrequency: "hourly" },
   { path: "/status", priority: 0.5, changeFrequency: "hourly" },
   { path: "/docs/lexicons", priority: 0.4, changeFrequency: "monthly" },
