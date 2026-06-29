@@ -15,20 +15,27 @@ import type { ExplorerRecord, OccurrenceRecord } from "../_lib/indexer";
 // card resolving its PDS blob image in the browser. Clicking a photo opens the
 // shared sighting drawer, the same preview used by the map and explorer.
 //
+// The wall is great for atmosphere but scrolls on its own, so it's hard to take
+// stock of everything submitted. A "All submissions" view switches the same set
+// into a static, browsable grid where every sighting can be opened, liked and
+// commented on (the drawer carries the same like + comment bar as the feed).
+//
 // Reuses `fetchRoundObservations` (the exact call the map already makes), so the
 // 24h public-explore cache serves both with a single network round-trip.
 
-// How many of the newest photos to show on the wall.
-const GALLERY_LIMIT = 60;
+// How many of the newest photos to show on the scrolling wall.
+const WALL_LIMIT = 60;
 // Below this, a static centred row reads better than a sparse marquee.
 const MARQUEE_MIN = 8;
 
 type Phase = "loading" | "ready" | "error";
+type View = "wall" | "all";
 
 export function BioblitzGallery({ round }: { round: BioblitzRound }) {
   const t = useTranslations("marketplace.bioblitz.gallery");
   const [records, setRecords] = useState<OccurrenceRecord[]>([]);
   const [phase, setPhase] = useState<Phase>("loading");
+  const [view, setView] = useState<View>("wall");
   const [drawer, setDrawer] = useState<ExplorerRecord | null>(null);
 
   useEffect(() => {
@@ -39,7 +46,7 @@ export function BioblitzGallery({ round }: { round: BioblitzRound }) {
       .then((result) => {
         if (controller.signal.aborted) return;
         // Already photos-only and newest-first inside the round window.
-        setRecords(result.slice(0, GALLERY_LIMIT));
+        setRecords(result);
         setPhase("ready");
       })
       .catch((error) => {
@@ -48,24 +55,38 @@ export function BioblitzGallery({ round }: { round: BioblitzRound }) {
     return () => controller.abort();
   }, [round]);
 
-  // Two rows scrolling opposite directions for a richer wall.
-  const rowA = records.filter((_, index) => index % 2 === 0);
-  const rowB = records.filter((_, index) => index % 2 === 1);
-  const animate = records.length >= MARQUEE_MIN;
+  // The scrolling wall shows the newest slice; the grid shows everything.
+  const wallRecords = records.slice(0, WALL_LIMIT);
+  const rowA = wallRecords.filter((_, index) => index % 2 === 0);
+  const rowB = wallRecords.filter((_, index) => index % 2 === 1);
+  const animate = wallRecords.length >= MARQUEE_MIN;
+  const hasRecords = phase === "ready" && records.length > 0;
 
   return (
     <section>
       <div aria-hidden className="mx-auto h-px w-full max-w-6xl bg-border/60" />
       <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-        <div className="flex items-start gap-2">
-          <span className="mt-1 flex size-5 items-center justify-center text-primary [&_svg]:size-4">
-            <ImagesIcon aria-hidden />
-          </span>
-          <h2 className="font-instrument text-2xl font-light italic leading-tight text-foreground">
-            {t("heading")}
-          </h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="flex size-5 items-center justify-center text-primary [&_svg]:size-4">
+                <ImagesIcon aria-hidden />
+              </span>
+              <h2 className="font-instrument text-2xl font-light italic leading-tight text-foreground">
+                {t("heading")}
+              </h2>
+              {hasRecords ? (
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  {t("count", { count: records.length })}
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-1 max-w-xl text-sm leading-snug text-muted-foreground">
+              {view === "all" ? t("subtitleAll") : t("subtitle")}
+            </p>
+          </div>
+          {hasRecords ? <ViewToggle view={view} onView={setView} t={t} /> : null}
         </div>
-        <p className="mt-1 max-w-xl text-sm leading-snug text-muted-foreground">{t("subtitle")}</p>
 
         <div className="mt-5">
           {phase === "error" ? (
@@ -78,6 +99,14 @@ export function BioblitzGallery({ round }: { round: BioblitzRound }) {
             <div className="rounded-2xl bg-foreground/5 px-6 py-14 text-center text-sm text-muted-foreground">
               {t("empty")}
             </div>
+          ) : view === "all" ? (
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {records.map((record) => (
+                <li key={record.id}>
+                  <GalleryCard record={record} onOpen={setDrawer} t={t} sizeClassName="aspect-square w-full" />
+                </li>
+              ))}
+            </ul>
           ) : (
             <div className="bioblitz-marquee relative overflow-hidden">
               <MarqueeRow items={rowA} dir="left" animate={animate} onOpen={setDrawer} t={t} />
@@ -93,6 +122,38 @@ export function BioblitzGallery({ round }: { round: BioblitzRound }) {
 
       <RecordDrawer record={drawer} onClose={() => setDrawer(null)} />
     </section>
+  );
+}
+
+function ViewToggle({
+  view,
+  onView,
+  t,
+}: {
+  view: View;
+  onView: (view: View) => void;
+  t: ReturnType<typeof useTranslations<"marketplace.bioblitz.gallery">>;
+}) {
+  const options: View[] = ["wall", "all"];
+  return (
+    <div className="inline-flex shrink-0 rounded-full bg-muted/60 p-0.5">
+      {options.map((option) => {
+        const selected = view === option;
+        return (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onView(option)}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              selected ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t(`view.${option}`)}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -130,10 +191,12 @@ function GalleryCard({
   record,
   onOpen,
   t,
+  sizeClassName = "aspect-square h-full shrink-0",
 }: {
   record: OccurrenceRecord;
   onOpen: (record: ExplorerRecord) => void;
   t: ReturnType<typeof useTranslations<"marketplace.bioblitz.gallery">>;
+  sizeClassName?: string;
 }) {
   const [url, setUrl] = useState<string | null>(record.imageUrl);
   const [imgError, setImgError] = useState(false);
@@ -161,7 +224,7 @@ function GalleryCard({
       onClick={() => onOpen(record)}
       title={name ?? undefined}
       aria-label={t("openPhoto", { name: name ?? t("unnamed") })}
-      className="group relative block aspect-square h-full shrink-0 overflow-hidden rounded-2xl bg-surface-sunken text-left outline-none transition duration-300 hover:z-10 hover:shadow-[0_18px_40px_-22px_rgba(20,30,15,0.55)] focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-primary/60"
+      className={`group relative block ${sizeClassName} overflow-hidden rounded-2xl bg-surface-sunken text-left outline-none transition duration-300 hover:z-10 hover:shadow-[0_18px_40px_-22px_rgba(20,30,15,0.55)] focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-primary/60`}
     >
       {hasImage ? (
         <Image

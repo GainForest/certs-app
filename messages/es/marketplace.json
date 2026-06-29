@@ -394,10 +394,16 @@
     "gallery": {
       "heading": "Fotos subidas en esta ronda",
       "subtitle": "Un muro en vivo con los últimos avistamientos a medida que se suben. Toca cualquier foto para ver los detalles.",
+      "subtitleAll": "Todos los avistamientos subidos en esta ronda. Toca cualquier foto para abrirla, darle me gusta y comentar.",
+      "count": "{count, plural, =0 {Sin participaciones} one {# participación} other {# participaciones}}",
       "empty": "Aún no se han subido fotos en esta ronda. Sé el primero en añadir una.",
       "error": "No se pudo cargar el muro de fotos.",
       "openPhoto": "Abrir este avistamiento: {name}",
-      "unnamed": "Avistamiento sin identificar"
+      "unnamed": "Avistamiento sin identificar",
+      "view": {
+        "wall": "Muro de fotos",
+        "all": "Todas las participaciones"
+      }
     },
     "bestPicture": {
       "heading": "Favoritas a mejor foto",

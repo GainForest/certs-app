@@ -394,10 +394,16 @@
     "gallery": {
       "heading": "Photos uploaded this round",
       "subtitle": "A live wall of the latest sightings as people upload them. Tap any photo to see the details.",
+      "subtitleAll": "Every sighting uploaded this round. Tap any photo to open it, like it and leave a comment.",
+      "count": "{count, plural, =0 {No submissions} one {# submission} other {# submissions}}",
       "empty": "No photos uploaded yet this round. Be the first to add one.",
       "error": "Could not load the photo wall.",
       "openPhoto": "Open this sighting: {name}",
-      "unnamed": "Unidentified sighting"
+      "unnamed": "Unidentified sighting",
+      "view": {
+        "wall": "Photo wall",
+        "all": "All submissions"
+      }
     },
     "bestPicture": {
       "heading": "Best picture front-runners",

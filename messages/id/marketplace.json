@@ -394,10 +394,16 @@
     "gallery": {
       "heading": "Foto yang diunggah ronde ini",
       "subtitle": "Dinding langsung berisi pengamatan terbaru begitu diunggah. Ketuk foto mana pun untuk melihat detailnya.",
+      "subtitleAll": "Semua pengamatan yang diunggah pada ronde ini. Ketuk foto mana pun untuk membukanya, menyukainya, dan memberi komentar.",
+      "count": "{count, plural, =0 {Tidak ada kiriman} one {# kiriman} other {# kiriman}}",
       "empty": "Belum ada foto yang diunggah pada ronde ini. Jadilah yang pertama menambahkannya.",
       "error": "Tidak dapat memuat dinding foto.",
       "openPhoto": "Buka pengamatan ini: {name}",
-      "unnamed": "Pengamatan tak teridentifikasi"
+      "unnamed": "Pengamatan tak teridentifikasi",
+      "view": {
+        "wall": "Dinding foto",
+        "all": "Semua kiriman"
+      }
     },
     "bestPicture": {
       "heading": "Unggulan foto terbaik",

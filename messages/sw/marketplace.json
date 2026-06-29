@@ -394,10 +394,16 @@
     "gallery": {
       "heading": "Picha zilizopakiwa raundi hii",
       "subtitle": "Ukuta wa moja kwa moja wa uchunguzi wa hivi karibuni kadiri unavyopakiwa. Gusa picha yoyote kuona maelezo.",
+      "subtitleAll": "Uchunguzi wote uliopakiwa raundi hii. Gusa picha yoyote kuifungua, kuipenda na kuacha maoni.",
+      "count": "{count, plural, =0 {Hakuna mawasilisho} one {Wasilisho #} other {Mawasilisho #}}",
       "empty": "Bado hakuna picha zilizopakiwa raundi hii. Kuwa wa kwanza kuongeza moja.",
       "error": "Imeshindwa kupakia ukuta wa picha.",
       "openPhoto": "Fungua uchunguzi huu: {name}",
-      "unnamed": "Uchunguzi usiotambuliwa"
+      "unnamed": "Uchunguzi usiotambuliwa",
+      "view": {
+        "wall": "Ukuta wa picha",
+        "all": "Mawasilisho yote"
+      }
     },
     "bestPicture": {
       "heading": "Vinara wa picha bora",

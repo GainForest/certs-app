@@ -394,10 +394,16 @@
     "gallery": {
       "heading": "Fotos enviadas nesta rodada",
       "subtitle": "Um mural ao vivo com os últimos registros à medida que são enviados. Toque em qualquer foto para ver os detalhes.",
+      "subtitleAll": "Todos os registros enviados nesta rodada. Toque em qualquer foto para abrir, curtir e comentar.",
+      "count": "{count, plural, =0 {Nenhum envio} one {# envio} other {# envios}}",
       "empty": "Nenhuma foto enviada nesta rodada ainda. Seja o primeiro a adicionar uma.",
       "error": "Não foi possível carregar o mural de fotos.",
       "openPhoto": "Abrir este registro: {name}",
-      "unnamed": "Registro não identificado"
+      "unnamed": "Registro não identificado",
+      "view": {
+        "wall": "Mural de fotos",
+        "all": "Todos os envios"
+      }
     },
     "bestPicture": {
       "heading": "Favoritas a melhor foto",
