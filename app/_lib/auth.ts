@@ -15,6 +15,10 @@ export function getAuthProvider(): string | null {
   return provider || "certs";
 }
 
+export function getAuthInternalServiceToken(): string | null {
+  return process.env.AUTH_INTERNAL_SERVICE_TOKEN?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || null;
+}
+
 function authSessionCookieName(baseUrl: string): string {
   try {
     const host = new URL(baseUrl).hostname.toLowerCase();

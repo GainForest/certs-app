@@ -1,5 +1,5 @@
 import { accountPath, getCertifiedProfileCard } from "@/app/account/_lib/account-route";
-import { getAuthBaseUrl } from "@/app/_lib/auth";
+import { getAuthBaseUrl, getAuthInternalServiceToken } from "@/app/_lib/auth";
 import { fetchCgsMembersWithCookie, type CgsServerRole } from "@/app/_lib/cgs-server";
 import { renderGroupInvitationEmailTemplate, resolveGroupInvitationEmailLocale } from "@/lib/email/group-invitation-template";
 import { supabaseFilterValue, supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/supabase/rest";
@@ -265,7 +265,7 @@ async function sendInvitationEmail({
 }
 
 async function addMemberViaAuthService(invitation: GroupInvitation, memberDid: string): Promise<void> {
-  const internalKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const internalKey = getAuthInternalServiceToken();
   if (!internalKey) throw new GroupInvitationError("We couldn’t add you to the organization right now. Please try again later.", 500);
 
   const response = await fetch(new URL("/api/internal/cgs/member-add", getAuthBaseUrl()), {
@@ -284,7 +284,14 @@ async function addMemberViaAuthService(invitation: GroupInvitation, memberDid: s
   });
   const data = await response.json().catch(() => null) as { message?: string; error?: string } | null;
   if (!response.ok || data?.error) {
-    throw new GroupInvitationError("We couldn’t add you to the organization right now. Please try again later.", response.status || 502);
+    const upstreamMessage = data?.message ?? data?.error ?? `Auth service returned ${response.status || "an error"}`;
+    console.warn("[cgs-invitations] Auth service member-add failed", {
+      status: response.status || null,
+      invitationId: invitation.id,
+      repo: invitation.repo,
+      upstreamMessage,
+    });
+    throw new GroupInvitationError("We couldn’t add you to the organization right now. Please try again later.", 502);
   }
 }
 

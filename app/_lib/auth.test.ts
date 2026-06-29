@@ -10,6 +10,23 @@ afterEach(() => {
   vi.resetModules();
 });
 
+describe("getAuthInternalServiceToken", () => {
+  it("prefers an explicit auth internal token over the Supabase key", async () => {
+    vi.stubEnv("AUTH_INTERNAL_SERVICE_TOKEN", "auth-internal");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "supabase-service-role");
+    const { getAuthInternalServiceToken } = await loadAuth();
+
+    expect(getAuthInternalServiceToken()).toBe("auth-internal");
+  });
+
+  it("falls back to the Supabase service role key for shared-project deployments", async () => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "supabase-service-role");
+    const { getAuthInternalServiceToken } = await loadAuth();
+
+    expect(getAuthInternalServiceToken()).toBe("supabase-service-role");
+  });
+});
+
 describe("getAuthForwardCookie", () => {
   it("forwards only the production auth cookie for the production auth base", async () => {
     vi.stubEnv("NEXT_PUBLIC_AUTH_BASE_URL", "https://www.gainforest.app");
