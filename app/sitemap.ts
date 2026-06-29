@@ -24,6 +24,7 @@ const ROUTES: Array<{ path: string; priority: number; changeFrequency: ChangeFre
   { path: "/donations", priority: 0.7, changeFrequency: "daily" },
   { path: "/devices", priority: 0.5, changeFrequency: "hourly" },
   { path: "/status", priority: 0.5, changeFrequency: "hourly" },
+  { path: "/docs/lexicons", priority: 0.4, changeFrequency: "monthly" },
 ];
 
 const PROJECT_URIS_QUERY = `

@@ -233,7 +233,8 @@
       "leaderboard": "Leaderboard",
       "bioblitz": "BioBlitz",
       "greenGlobe": "Green Globe",
-      "status": "Status"
+      "status": "Status",
+      "lexicons": "Data schemas"
     }
   },
   "browseGrid": {
@@ -879,5 +880,35 @@
       "record": "record"
     },
     "inReplyTo": "In reply to"
+  },
+  "docs": {
+    "metaTitle": "Data schemas",
+    "metaDescription": "The open AT Protocol record schemas behind GainForest — biodiversity observations, impact claims, funding, and identity.",
+    "title": "Data schemas",
+    "lead": "The open record formats behind GainForest. Every observation, project, certificate, donation, and post is stored as a structured record using the schemas below.",
+    "starSchemaCaption": "How biodiversity records link together",
+    "overview": "Overview",
+    "definitions": "Definitions",
+    "rawSchema": "Raw schema",
+    "values": "values",
+    "members": "members",
+    "output": "output",
+    "key": "key",
+    "required": "required",
+    "previous": "Previous",
+    "next": "Next",
+    "namespacesAria": "Schema sections",
+    "graph": {
+      "samplingContext": "sampling context",
+      "measurementOrFact": "measurement or fact",
+      "audiovisualEvidence": "audiovisual evidence"
+    },
+    "sections": {
+      "feed": "Social primitives ported from Bluesky into the GainForest commons — posts (and reply comments) and likes, so the feed can be posted to, commented on, and liked.",
+      "dwc": "Biodiversity occurrence records aligned with the TDWG Simple Darwin Core standard. Occurrences reference a shared event; measurements reference an occurrence.",
+      "ac": "Media and passive-acoustic-monitoring records aligned with TDWG Audiovisual Core. Audio and multimedia link to a Darwin Core occurrence as evidence.",
+      "certified": "Identity primitives from the Hypercerts ecosystem — actor profiles, organizations, follows, badges, and locations.",
+      "hypercerts": "Impact claims (activity, contribution, contributor, rights), collections, funding receipts, attachments, work scope, and shared types."
+    }
   }
 }

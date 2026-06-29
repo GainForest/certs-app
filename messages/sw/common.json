@@ -233,7 +233,8 @@
       "leaderboard": "Ubao wa wanaoongoza",
       "bioblitz": "BioBlitz",
       "greenGlobe": "Green Globe",
-      "status": "Hali"
+      "status": "Hali",
+      "lexicons": "Miundo ya data"
     }
   },
   "browseGrid": {
@@ -879,5 +880,35 @@
       "record": "rekodi"
     },
     "inReplyTo": "Kujibu"
+  },
+  "docs": {
+    "metaTitle": "Miundo ya data",
+    "metaDescription": "Miundo huria ya rekodi za AT Protocol inayoendesha GainForest — uchunguzi wa bioanuwai, madai ya athari, ufadhili na utambulisho.",
+    "title": "Miundo ya data",
+    "lead": "Miundo huria ya rekodi inayoendesha GainForest. Kila uchunguzi, mradi, cheti, mchango na chapisho huhifadhiwa kama rekodi iliyopangwa kwa kutumia miundo iliyo hapa chini.",
+    "starSchemaCaption": "Jinsi rekodi za bioanuwai zinavyounganishwa",
+    "overview": "Muhtasari",
+    "definitions": "Fasili",
+    "rawSchema": "Muundo ghafi",
+    "values": "thamani",
+    "members": "wanachama",
+    "output": "matokeo",
+    "key": "ufunguo",
+    "required": "lazima",
+    "previous": "Iliyotangulia",
+    "next": "Ifuatayo",
+    "namespacesAria": "Sehemu za miundo",
+    "graph": {
+      "samplingContext": "muktadha wa sampuli",
+      "measurementOrFact": "kipimo au taarifa",
+      "audiovisualEvidence": "ushahidi wa sauti na picha"
+    },
+    "sections": {
+      "feed": "Vipengele vya kijamii vilivyotoholewa kutoka Bluesky hadi maliasili ya pamoja ya GainForest — machapisho (na maoni ya majibu) na kupenda, ili mlisho uweze kuchapishwa, kutolewa maoni na kupendwa.",
+      "dwc": "Rekodi za kujitokeza kwa bioanuwai zinazolingana na kiwango cha Simple Darwin Core cha TDWG. Matukio ya kujitokeza hurejelea tukio moja la pamoja; vipimo hurejelea tukio la kujitokeza.",
+      "ac": "Rekodi za media na ufuatiliaji wa sauti tulivu zinazolingana na Audiovisual Core ya TDWG. Sauti na media mbalimbali huunganishwa na tukio la kujitokeza la Darwin Core kama ushahidi.",
+      "certified": "Vipengele vya utambulisho kutoka mfumo wa Hypercerts — wasifu wa watendaji, mashirika, wafuasi, beji na maeneo.",
+      "hypercerts": "Madai ya athari (shughuli, mchango, mchangiaji, haki), makusanyo, risiti za ufadhili, viambatisho, wigo wa kazi na aina za pamoja."
+    }
   }
 }

@@ -233,7 +233,8 @@
       "leaderboard": "Papan peringkat",
       "bioblitz": "BioBlitz",
       "greenGlobe": "Green Globe",
-      "status": "Status"
+      "status": "Status",
+      "lexicons": "Skema data"
     }
   },
   "browseGrid": {
@@ -879,5 +880,35 @@
       "record": "catatan"
     },
     "inReplyTo": "Membalas"
+  },
+  "docs": {
+    "metaTitle": "Skema data",
+    "metaDescription": "Skema rekaman AT Protocol yang terbuka di balik GainForest — observasi keanekaragaman hayati, klaim dampak, pendanaan, dan identitas.",
+    "title": "Skema data",
+    "lead": "Format rekaman terbuka di balik GainForest. Setiap observasi, proyek, sertifikat, donasi, dan kiriman disimpan sebagai rekaman terstruktur menggunakan skema di bawah ini.",
+    "starSchemaCaption": "Bagaimana rekaman keanekaragaman hayati saling terhubung",
+    "overview": "Ikhtisar",
+    "definitions": "Definisi",
+    "rawSchema": "Skema mentah",
+    "values": "nilai",
+    "members": "anggota",
+    "output": "keluaran",
+    "key": "kunci",
+    "required": "wajib",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya",
+    "namespacesAria": "Bagian skema",
+    "graph": {
+      "samplingContext": "konteks pengambilan sampel",
+      "measurementOrFact": "pengukuran atau fakta",
+      "audiovisualEvidence": "bukti audiovisual"
+    },
+    "sections": {
+      "feed": "Primitif sosial yang diadaptasi dari Bluesky ke ranah bersama GainForest — kiriman (dan komentar balasan) serta suka, sehingga umpan dapat diposting, dikomentari, dan disukai.",
+      "dwc": "Rekaman kemunculan keanekaragaman hayati yang selaras dengan standar Simple Darwin Core dari TDWG. Kemunculan merujuk pada satu peristiwa bersama; pengukuran merujuk pada satu kemunculan.",
+      "ac": "Rekaman media dan pemantauan akustik pasif yang selaras dengan Audiovisual Core dari TDWG. Audio dan multimedia tertaut ke kemunculan Darwin Core sebagai bukti.",
+      "certified": "Primitif identitas dari ekosistem Hypercerts — profil aktor, organisasi, pengikut, lencana, dan lokasi.",
+      "hypercerts": "Klaim dampak (aktivitas, kontribusi, kontributor, hak), koleksi, tanda terima pendanaan, lampiran, cakupan kerja, dan tipe bersama."
+    }
   }
 }

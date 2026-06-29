@@ -233,7 +233,8 @@
       "leaderboard": "Clasificación",
       "bioblitz": "BioBlitz",
       "greenGlobe": "Green Globe",
-      "status": "Estado"
+      "status": "Estado",
+      "lexicons": "Esquemas de datos"
     }
   },
   "browseGrid": {
@@ -879,5 +880,35 @@
       "record": "registro"
     },
     "inReplyTo": "En respuesta a"
+  },
+  "docs": {
+    "metaTitle": "Esquemas de datos",
+    "metaDescription": "Los esquemas abiertos de registros del AT Protocol que sustentan GainForest: observaciones de biodiversidad, declaraciones de impacto, financiación e identidad.",
+    "title": "Esquemas de datos",
+    "lead": "Los formatos abiertos de registro que sustentan GainForest. Cada observación, proyecto, certificado, donación y publicación se guarda como un registro estructurado con los esquemas siguientes.",
+    "starSchemaCaption": "Cómo se enlazan los registros de biodiversidad",
+    "overview": "Resumen",
+    "definitions": "Definiciones",
+    "rawSchema": "Esquema sin procesar",
+    "values": "valores",
+    "members": "miembros",
+    "output": "salida",
+    "key": "clave",
+    "required": "obligatorio",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "namespacesAria": "Secciones de esquemas",
+    "graph": {
+      "samplingContext": "contexto de muestreo",
+      "measurementOrFact": "medición o dato",
+      "audiovisualEvidence": "evidencia audiovisual"
+    },
+    "sections": {
+      "feed": "Primitivas sociales adaptadas de Bluesky al común de GainForest: publicaciones (y comentarios de respuesta) y «me gusta», para que el feed permita publicar, comentar y reaccionar.",
+      "dwc": "Registros de presencia de biodiversidad alineados con el estándar Simple Darwin Core de TDWG. Las presencias hacen referencia a un evento compartido; las mediciones hacen referencia a una presencia.",
+      "ac": "Registros multimedia y de monitorización acústica pasiva alineados con Audiovisual Core de TDWG. El audio y el material multimedia se enlazan con una presencia de Darwin Core como evidencia.",
+      "certified": "Primitivas de identidad del ecosistema Hypercerts: perfiles de actor, organizaciones, seguimientos, insignias y ubicaciones.",
+      "hypercerts": "Declaraciones de impacto (actividad, contribución, contribuyente, derechos), colecciones, recibos de financiación, adjuntos, alcance del trabajo y tipos compartidos."
+    }
   }
 }

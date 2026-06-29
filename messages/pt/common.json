@@ -233,7 +233,8 @@
       "leaderboard": "Classificação",
       "bioblitz": "BioBlitz",
       "greenGlobe": "Green Globe",
-      "status": "Status"
+      "status": "Status",
+      "lexicons": "Esquemas de dados"
     }
   },
   "browseGrid": {
@@ -879,5 +880,35 @@
       "record": "registro"
     },
     "inReplyTo": "Em resposta a"
+  },
+  "docs": {
+    "metaTitle": "Esquemas de dados",
+    "metaDescription": "Os esquemas abertos de registros do AT Protocol por trás do GainForest: observações de biodiversidade, declarações de impacto, financiamento e identidade.",
+    "title": "Esquemas de dados",
+    "lead": "Os formatos abertos de registro por trás do GainForest. Cada observação, projeto, certificado, doação e publicação é armazenada como um registro estruturado usando os esquemas abaixo.",
+    "starSchemaCaption": "Como os registros de biodiversidade se conectam",
+    "overview": "Visão geral",
+    "definitions": "Definições",
+    "rawSchema": "Esquema bruto",
+    "values": "valores",
+    "members": "membros",
+    "output": "saída",
+    "key": "chave",
+    "required": "obrigatório",
+    "previous": "Anterior",
+    "next": "Próximo",
+    "namespacesAria": "Seções de esquemas",
+    "graph": {
+      "samplingContext": "contexto de amostragem",
+      "measurementOrFact": "medição ou dado",
+      "audiovisualEvidence": "evidência audiovisual"
+    },
+    "sections": {
+      "feed": "Primitivas sociais adaptadas do Bluesky para o comum do GainForest: publicações (e comentários de resposta) e curtidas, para que o feed permita publicar, comentar e reagir.",
+      "dwc": "Registros de ocorrência de biodiversidade alinhados ao padrão Simple Darwin Core da TDWG. As ocorrências referenciam um evento compartilhado; as medições referenciam uma ocorrência.",
+      "ac": "Registros de mídia e de monitoramento acústico passivo alinhados ao Audiovisual Core da TDWG. Áudio e mídia ligam-se a uma ocorrência de Darwin Core como evidência.",
+      "certified": "Primitivas de identidade do ecossistema Hypercerts: perfis de ator, organizações, seguidores, selos e localizações.",
+      "hypercerts": "Declarações de impacto (atividade, contribuição, contribuinte, direitos), coleções, recibos de financiamento, anexos, escopo de trabalho e tipos compartilhados."
+    }
   }
 }
