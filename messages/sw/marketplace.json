@@ -525,6 +525,7 @@
     "rewilding": {
       "title": "Kurudisha Uasilia kwenye Wavuti",
       "slots": "Ruzuku 10 zinapatikana",
+      "amount": "Hadi $1,000 kila moja",
       "description": "Programu ya ruzuku inayofadhili seva 10 za data binafsi na vifaa vya kukusanya data vya ndani, ili jamii ziweze kuhifadhi data zao wenyewe na kushikilia maamuzi mikononi mwao kwa ajili ya uhuru wa data na maamuzi.",
       "support": "Inafadhiliwa na ruzuku ya Klarna AI for Climate Resilience.",
       "kits": {

@@ -178,8 +178,13 @@ function RewildingSection({ viewerDid, signedIn }: { viewerDid: string | null; s
             <h2 className="font-instrument text-2xl font-light italic tracking-[-0.02em] text-foreground sm:text-3xl">
               {t("title")}
             </h2>
-            <span className="mt-0.5 inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-              {t("slots")}
+            <span className="mt-1 flex flex-wrap gap-1.5">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                {t("slots")}
+              </span>
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                {t("amount")}
+              </span>
             </span>
           </div>
         </div>

@@ -525,6 +525,7 @@
     "rewilding": {
       "title": "Rewilding the Web",
       "slots": "10 grants available",
+      "amount": "Up to $1,000 each",
       "description": "A grant program financing 10 personal data servers and local data collection kits, so communities can store their own data and keep decisions in their own hands — for data and decision sovereignty.",
       "support": "Supported by the Klarna AI for Climate Resilience Grant.",
       "kits": {
