@@ -1099,7 +1099,13 @@
       "mediaThumbnail": "Media ya uchunguzi",
       "previousPhoto": "Picha iliyotangulia",
       "nextPhoto": "Picha inayofuata",
-      "showPhoto": "Onyesha picha"
+      "showPhoto": "Onyesha picha",
+      "reanalyze": "Changanua tena",
+      "reanalyzeHint": "Pata utambuzi mpya wa AI kutoka kwenye picha",
+      "reanalyzeApplied": "Imesasishwa na pendekezo jipya la AI — kagua na uhifadhi.",
+      "reanalyzeUnsure": "AI haikuweza kuitambua kwa uhakika. Jaribu kuongeza jina mwenyewe.",
+      "reanalyzeError": "Hatukuweza kuendesha AI kwa sasa. Tafadhali jaribu tena.",
+      "reanalyzeNoImage": "Hakuna picha ya kuchanganua kwa uchunguzi huu."
     },
     "media": {
       "image": "Picha",

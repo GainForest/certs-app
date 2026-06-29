@@ -1099,7 +1099,13 @@
       "mediaThumbnail": "Medio de la observación",
       "previousPhoto": "Foto anterior",
       "nextPhoto": "Foto siguiente",
-      "showPhoto": "Mostrar foto"
+      "showPhoto": "Mostrar foto",
+      "reanalyze": "Reanalizar",
+      "reanalyzeHint": "Obtén una nueva identificación de IA a partir de la foto",
+      "reanalyzeApplied": "Actualizado con una nueva sugerencia de IA: revísalo y guárdalo.",
+      "reanalyzeUnsure": "La IA no pudo identificarlo con seguridad. Prueba a añadir un nombre tú mismo.",
+      "reanalyzeError": "No pudimos reanalizar con IA ahora mismo. Inténtalo de nuevo.",
+      "reanalyzeNoImage": "No hay ninguna foto que analizar para esta observación."
     },
     "media": {
       "image": "Foto",

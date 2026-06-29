@@ -1099,7 +1099,13 @@
       "mediaThumbnail": "Media observasi",
       "previousPhoto": "Foto sebelumnya",
       "nextPhoto": "Foto berikutnya",
-      "showPhoto": "Tampilkan foto"
+      "showPhoto": "Tampilkan foto",
+      "reanalyze": "Analisis ulang",
+      "reanalyzeHint": "Dapatkan identifikasi AI baru dari foto",
+      "reanalyzeApplied": "Diperbarui dengan saran AI baru — tinjau dan simpan.",
+      "reanalyzeUnsure": "AI tidak dapat mengidentifikasinya dengan yakin. Coba tambahkan nama sendiri.",
+      "reanalyzeError": "Kami tidak dapat menjalankan ulang AI saat ini. Silakan coba lagi.",
+      "reanalyzeNoImage": "Tidak ada foto untuk dianalisis pada pengamatan ini."
     },
     "media": {
       "image": "Foto",

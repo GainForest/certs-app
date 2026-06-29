@@ -5,7 +5,7 @@ import type { Map as LeafletMap, Marker, TileLayer } from "leaflet";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowUpRightIcon, AudioLinesIcon, CalendarRangeIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, ClipboardCheckIcon, HeartIcon, ImageOffIcon, ImagesIcon, Layers3Icon, Loader2Icon, Maximize2Icon, MapPinIcon, PencilIcon, RulerIcon, Share2Icon, Trash2Icon, UsersIcon, XIcon } from "lucide-react";
+import { ArrowUpRightIcon, AudioLinesIcon, CalendarRangeIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, ClipboardCheckIcon, HeartIcon, ImageOffIcon, ImagesIcon, Layers3Icon, Loader2Icon, Maximize2Icon, MapPinIcon, PencilIcon, RulerIcon, Share2Icon, SparklesIcon, Trash2Icon, UsersIcon, XIcon } from "lucide-react";
 import {
   fetchMeasurementsByOccurrence,
   fetchObservationMedia,
@@ -86,6 +86,7 @@ export function RecordDrawer({
   const [occurrenceDraft, setOccurrenceDraft] = useState<ObservationDraft>(EMPTY_OBSERVATION_DRAFT);
   const [occurrenceFeedback, setOccurrenceFeedback] = useState<string | null>(null);
   const [savingOccurrence, setSavingOccurrence] = useState(false);
+  const [reanalyzingOccurrence, setReanalyzingOccurrence] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingOccurrence, setDeletingOccurrence] = useState(false);
@@ -405,9 +406,7 @@ export function RecordDrawer({
   const managingGroupRole = isEditableObservationRecord(record)
     ? groupMemberships.find((group) => group.groupDid === record.did)?.role ?? null
     : null;
-  const canManageOccurrence = isEditableObservationRecord(record) && authSession?.isLoggedIn === true && (
-    authSession.did === record.did || managingGroupRole === "owner" || managingGroupRole === "admin"
-  );
+  const canManageOccurrence = canManageOccurrenceRecord(record, authSession, groupMemberships);
   const occurrenceMutationOptions = managingGroupRole === "owner" || managingGroupRole === "admin" ? { repo: record.did } : undefined;
   const occurrenceValidationError = record.kind === "occurrence" ? validateObservationDraft(occurrenceDraft, t) : null;
   const occurrenceHasChanges = record.kind === "occurrence" && !observationDraftsEqual(occurrenceDraft, observationDraftFromRecord(record));
@@ -438,6 +437,59 @@ export function RecordDrawer({
       setOccurrenceFeedback(t("observation.saveError"));
     } finally {
       setSavingOccurrence(false);
+    }
+  }
+
+  // Re-run the AI identification on demand against the sighting's primary photo,
+  // then pre-fill the species fields in the editor for the owner to accept or
+  // tweak. Leaves date, location and the rest untouched — this only refreshes the
+  // suggested identity. PDS blob URLs serve `access-control-allow-origin: *`, so
+  // the photo can be fetched client-side and handed to the same analyze route the
+  // uploader uses.
+  async function handleReanalyzeOccurrence() {
+    if (activeRecord.kind !== "occurrence" || !canManageOccurrence || reanalyzingOccurrence || savingOccurrence) return;
+    const imageUrl = activeRecord.imageUrl ?? resolvedOccurrenceImageUrl ?? occurrenceImageUrls[0] ?? null;
+    if (!imageUrl) {
+      setIsEditingOccurrence(true);
+      setOccurrenceFeedback(t("observation.reanalyzeNoImage"));
+      return;
+    }
+    setReanalyzingOccurrence(true);
+    setOccurrenceFeedback(null);
+    try {
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) throw new Error("image");
+      const blob = await imageResponse.blob();
+      const file = new File([blob], "observation", { type: blob.type || "image/jpeg" });
+      const formData = new FormData();
+      formData.set("image", file);
+      const response = await fetch("/api/manage/observations/analyze", { method: "POST", body: formData });
+      const data = (await response.json().catch(() => ({}))) as { analysis?: Record<string, string | undefined>; error?: string };
+      setIsEditingOccurrence(true);
+      if (!response.ok || data.error || !data.analysis) {
+        setOccurrenceFeedback(t("observation.reanalyzeError"));
+        return;
+      }
+      const analysis = data.analysis;
+      const suggestion = (analysis.scientificName ?? "").trim();
+      const isUnknown = suggestion === "" || suggestion.toLowerCase() === "unidentified organism";
+      if (isUnknown) {
+        setOccurrenceFeedback(t("observation.reanalyzeUnsure"));
+        return;
+      }
+      setOccurrenceDraft((current) => ({
+        ...current,
+        scientificName: suggestion,
+        vernacularName: (analysis.vernacularName ?? "").trim() || current.vernacularName,
+        kingdom: observationKindFromKingdom(analysis.kingdom) || current.kingdom,
+        occurrenceRemarks: current.occurrenceRemarks || (analysis.occurrenceRemarks ?? "").trim(),
+      }));
+      setOccurrenceFeedback(t("observation.reanalyzeApplied"));
+    } catch {
+      setIsEditingOccurrence(true);
+      setOccurrenceFeedback(t("observation.reanalyzeError"));
+    } finally {
+      setReanalyzingOccurrence(false);
     }
   }
 
@@ -684,6 +736,7 @@ export function RecordDrawer({
               isDeleting={deletingOccurrence}
               isEditing={isEditingOccurrence}
               isSaving={savingOccurrence}
+              isReanalyzing={reanalyzingOccurrence}
               deleteConfirmOpen={deleteConfirmOpen}
               validationError={occurrenceValidationError}
               onCancelEdit={() => {
@@ -702,6 +755,7 @@ export function RecordDrawer({
                 setIsEditingOccurrence(true);
               }}
               onOpenLocationPicker={() => setLocationPickerOpen(true)}
+              onReanalyze={() => void handleReanalyzeOccurrence()}
               onSave={(event) => void handleSaveOccurrence(event)}
               onStopDelete={() => setDeleteConfirmOpen(false)}
             />
@@ -1020,6 +1074,7 @@ function ObservationOwnerControls({
   isDeleting,
   isEditing,
   isSaving,
+  isReanalyzing,
   deleteConfirmOpen,
   validationError,
   onCancelEdit,
@@ -1028,6 +1083,7 @@ function ObservationOwnerControls({
   onDeleteClick,
   onEditClick,
   onOpenLocationPicker,
+  onReanalyze,
   onSave,
   onStopDelete,
 }: {
@@ -1037,6 +1093,7 @@ function ObservationOwnerControls({
   isDeleting: boolean;
   isEditing: boolean;
   isSaving: boolean;
+  isReanalyzing: boolean;
   deleteConfirmOpen: boolean;
   validationError: string | null;
   onCancelEdit: () => void;
@@ -1045,6 +1102,7 @@ function ObservationOwnerControls({
   onDeleteClick: () => void;
   onEditClick: () => void;
   onOpenLocationPicker: () => void;
+  onReanalyze: () => void;
   onSave: (event: FormEvent<HTMLFormElement>) => void;
   onStopDelete: () => void;
 }) {
@@ -1063,16 +1121,28 @@ function ObservationOwnerControls({
             {t("observation.ownerDescription")}
           </p>
         </div>
-        {!isEditing ? (
+        <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
-            onClick={onEditClick}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border-soft bg-background px-3 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            onClick={onReanalyze}
+            disabled={isReanalyzing || isSaving}
+            title={t("observation.reanalyzeHint")}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border-soft bg-background px-3 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-60"
           >
-            <PencilIcon className="h-3.5 w-3.5" />
-            {t("actions.edit")}
+            {isReanalyzing ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <SparklesIcon className="h-3.5 w-3.5" />}
+            {t("observation.reanalyze")}
           </button>
-        ) : null}
+          {!isEditing ? (
+            <button
+              type="button"
+              onClick={onEditClick}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border-soft bg-background px-3 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <PencilIcon className="h-3.5 w-3.5" />
+              {t("actions.edit")}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {isEditing ? (
@@ -1410,8 +1480,24 @@ function ObservationLocationPickerModal({
   );
 }
 
-function isEditableObservationRecord(record: ExplorerRecord): record is Extract<ExplorerRecord, { kind: "occurrence" }> {
+export function isEditableObservationRecord(record: ExplorerRecord): record is Extract<ExplorerRecord, { kind: "occurrence" }> {
   return record.kind === "occurrence" && record.atUri.includes("/app.gainforest.dwc.occurrence/");
+}
+
+// Shared owner/admin gate for editing a sighting, reused by the drawer and the
+// full observation page so both surfaces agree on who may edit. A signed-in user
+// can manage their own sighting, or any sighting owned by a group where they are
+// an owner or admin.
+export function canManageOccurrenceRecord(
+  record: ExplorerRecord | null,
+  session: AuthSession | null,
+  memberships: CgsGroupMembership[],
+): boolean {
+  if (!record || !isEditableObservationRecord(record)) return false;
+  if (session?.isLoggedIn !== true) return false;
+  if (session.did === record.did) return true;
+  const role = memberships.find((group) => group.groupDid === record.did)?.role ?? null;
+  return role === "owner" || role === "admin";
 }
 
 function observationKindFromKingdom(value: string | null | undefined): string {

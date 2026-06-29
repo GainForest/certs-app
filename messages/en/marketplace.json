@@ -1099,7 +1099,13 @@
       "mediaThumbnail": "Observation media",
       "previousPhoto": "Previous photo",
       "nextPhoto": "Next photo",
-      "showPhoto": "Show photo"
+      "showPhoto": "Show photo",
+      "reanalyze": "Re-run AI",
+      "reanalyzeHint": "Get a fresh AI identification from the photo",
+      "reanalyzeApplied": "Updated with a fresh AI suggestion — review and save.",
+      "reanalyzeUnsure": "The AI couldn't confidently identify this one. Try adding a name yourself.",
+      "reanalyzeError": "We couldn't re-run the AI just now. Please try again.",
+      "reanalyzeNoImage": "There's no photo to analyse for this sighting."
     },
     "media": {
       "image": "Photo",
