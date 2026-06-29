@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { HelixMark } from "./_components/HelixMark";
 import { SchemaGraph } from "./_components/SchemaGraph";
 import { GROUPS } from "./_lib/registry";
 import { lexiconDescription, lexiconHref } from "./_lib/types";
@@ -21,12 +22,29 @@ export default async function LexiconsOverviewPage() {
 
   return (
     <>
-      <h1 className="m-0 mb-2 font-serif text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-        {t("title")}
-      </h1>
-      <p className="m-0 mb-6 max-w-[660px] text-[15.5px] text-muted-foreground">{t("lead")}</p>
+      <header className="mb-10">
+        <div className="mb-5 text-primary">
+          <HelixMark size={26} />
+        </div>
+        <h1 className="m-0 font-serif text-4xl font-semibold tracking-tight text-foreground">
+          {t("title")}
+        </h1>
+        <p className="mt-3 max-w-prose text-[15px] leading-relaxed text-muted-foreground">{t("lead")}</p>
+      </header>
 
-      <div className="mb-2">
+      <nav className="mb-12 flex flex-wrap gap-x-5 gap-y-2 border-y border-border/60 py-3 text-[13px]">
+        {GROUPS.map((g) => (
+          <a
+            key={g.id}
+            href={`#${g.id}`}
+            className="text-muted-foreground no-underline transition-colors hover:text-primary"
+          >
+            {g.title}
+          </a>
+        ))}
+      </nav>
+
+      <figure className="mb-14">
         <SchemaGraph
           labels={{
             samplingContext: t("graph.samplingContext"),
@@ -34,36 +52,39 @@ export default async function LexiconsOverviewPage() {
             audiovisualEvidence: t("graph.audiovisualEvidence"),
           }}
         />
-      </div>
-      <div className="mb-10 text-center font-mono text-[11px] text-muted-foreground/60">
-        {t("starSchemaCaption")}
-      </div>
+        <figcaption className="mt-4 text-center font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground/60">
+          {t("starSchemaCaption")}
+        </figcaption>
+      </figure>
 
-      {GROUPS.map((g) => (
-        <section key={g.id} className="mb-8">
-          <h2 className="m-0 mb-0.5 border-t border-border pt-6 font-serif text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-            {g.title}
-          </h2>
-          <div className="mb-3 text-[13.5px] text-muted-foreground">{t(`sections.${g.id}`)}</div>
+      <div className="space-y-12">
+        {GROUPS.map((g) => (
+          <section key={g.id} id={g.id} className="scroll-mt-24">
+            <h2 className="m-0 font-serif text-xl font-semibold tracking-tight text-foreground">{g.title}</h2>
+            <p className="mt-1 mb-4 max-w-prose text-sm leading-relaxed text-muted-foreground">
+              {t(`sections.${g.id}`)}
+            </p>
 
-          <div className="text-[13.5px]">
-            {g.lexicons.map((lex) => (
-              <div
-                key={lex.id}
-                className="flex flex-col gap-1 border-b border-border/60 py-3 sm:flex-row sm:items-start sm:gap-3.5"
-              >
-                <Link
-                  href={lexiconHref(lex.id)}
-                  className="font-mono text-[12.5px] text-primary no-underline [overflow-wrap:anywhere] hover:underline sm:basis-[250px]"
-                >
-                  {lex.id}
-                </Link>
-                <div className="flex-1 text-muted-foreground">{lexiconDescription(lex)}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
+            <ul className="m-0 list-none border-t border-border/60 p-0">
+              {g.lexicons.map((lex) => (
+                <li key={lex.id} className="border-b border-border/60">
+                  <Link
+                    href={lexiconHref(lex.id)}
+                    className="group flex flex-col gap-1 py-3 no-underline sm:flex-row sm:items-baseline sm:gap-4"
+                  >
+                    <span className="font-mono text-[12.5px] text-primary [overflow-wrap:anywhere] group-hover:underline sm:w-64 sm:shrink-0">
+                      {lex.id}
+                    </span>
+                    <span className="flex-1 text-sm leading-relaxed text-muted-foreground">
+                      {lexiconDescription(lex)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
     </>
   );
 }

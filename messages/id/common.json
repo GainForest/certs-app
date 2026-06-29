@@ -897,7 +897,6 @@
     "required": "wajib",
     "previous": "Sebelumnya",
     "next": "Berikutnya",
-    "namespacesAria": "Bagian skema",
     "graph": {
       "samplingContext": "konteks pengambilan sampel",
       "measurementOrFact": "pengukuran atau fakta",

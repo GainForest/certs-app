@@ -897,7 +897,6 @@
     "required": "obligatorio",
     "previous": "Anterior",
     "next": "Siguiente",
-    "namespacesAria": "Secciones de esquemas",
     "graph": {
       "samplingContext": "contexto de muestreo",
       "measurementOrFact": "medición o dato",

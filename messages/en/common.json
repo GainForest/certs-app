@@ -897,7 +897,6 @@
     "required": "required",
     "previous": "Previous",
     "next": "Next",
-    "namespacesAria": "Schema sections",
     "graph": {
       "samplingContext": "sampling context",
       "measurementOrFact": "measurement or fact",
