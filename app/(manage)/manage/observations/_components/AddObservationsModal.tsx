@@ -14,6 +14,7 @@ import {
   RotateCcwIcon,
   ShieldCheckIcon,
   SparklesIcon,
+  SplitIcon,
   Trash2Icon,
   UploadCloudIcon,
   XIcon,
@@ -61,6 +62,10 @@ import {
 // Keep one quick-add session light; the rich bulk panel handles big imports.
 const MAX_PHOTOS = 50;
 const ANALYZE_ATTEMPTS = 2;
+// Safety net so a stalled connection can't leave a card spinning on
+// "Identifying…" forever. Sits above the analyze route's own worst-case runtime
+// so it only ever trips on a genuine hang, never on a slow-but-working call.
+const ANALYZE_TIMEOUT_MS = 75_000;
 const UNIDENTIFIED = "unidentified organism";
 
 type ItemStatus = "identifying" | "ready" | "uploading" | "uploaded" | "error";
@@ -276,10 +281,16 @@ export function AddObservationsModal({
   // couldn't be completed at all.
   const fetchAnalysis = useCallback(async (file: File): Promise<NonNullable<AnalyzeResponse["analysis"]> | null> => {
     for (let attempt = 0; attempt < ANALYZE_ATTEMPTS; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), ANALYZE_TIMEOUT_MS);
       try {
         const formData = new FormData();
         formData.set("image", file);
-        const response = await fetch("/api/manage/observations/analyze", { method: "POST", body: formData });
+        const response = await fetch("/api/manage/observations/analyze", {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        });
         const data = (await response.json().catch(() => ({}))) as AnalyzeResponse;
         if (!response.ok || data.error) {
           const retryable = response.status === 429 || response.status >= 500;
@@ -291,11 +302,14 @@ export function AddObservationsModal({
         }
         return data.analysis ?? {};
       } catch {
+        // Includes the abort fired when one attempt outruns ANALYZE_TIMEOUT_MS.
         if (attempt < ANALYZE_ATTEMPTS - 1) {
           await sleep(700 * (attempt + 1));
           continue;
         }
         return null;
+      } finally {
+        clearTimeout(timeout);
       }
     }
     return null;
@@ -545,6 +559,8 @@ export function AddObservationsModal({
 
   const groups = quickGroups(items);
   const submittableCount = groups.filter(canSubmitGroup).length;
+  // Drives the AI-detection progress bar so the identify phase never feels frozen.
+  const identifyingCount = items.filter((item) => item.status === "identifying").length;
   // Only show the separate zone while dragging a photo out of a multi-photo
   // observation (pulling a solo photo out would be a no-op).
   const draggingItem = draggingItemId ? items.find((item) => item.id === draggingItemId) ?? null : null;
@@ -720,6 +736,13 @@ export function AddObservationsModal({
           </div>
         ) : (
           <div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">
+            {identifyingCount > 0 ? (
+              <QuickProgress
+                label={t("identifyingProgress", { done: items.length - identifyingCount, total: items.length })}
+                done={items.length - identifyingCount}
+                total={items.length}
+              />
+            ) : null}
             {items.length > 1 ? (
               <p className="flex items-center gap-1.5 px-0.5 text-xs text-muted-foreground">
                 <Layers2Icon className="size-3.5 shrink-0 text-primary" />
@@ -817,7 +840,11 @@ export function AddObservationsModal({
       {!showEmptyState ? (
         <div className="space-y-3 border-t border-border pt-3">
           {isSubmitting && uploadProgress ? (
-            <QuickUploadProgress done={uploadProgress.done} total={uploadProgress.total} t={t} />
+            <QuickProgress
+              label={t("uploadingProgress", { done: uploadProgress.done, total: uploadProgress.total })}
+              done={uploadProgress.done}
+              total={uploadProgress.total}
+            />
           ) : null}
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">{t("readyCount", { count: submittableCount })}</p>
@@ -928,23 +955,15 @@ function QuickStatusBadge({
   );
 }
 
-// Determinate progress bar shown in the footer while observations are being
-// added, so the observer can see the upload is moving rather than wondering if
-// the page has frozen.
-function QuickUploadProgress({
-  done,
-  total,
-  t,
-}: {
-  done: number;
-  total: number;
-  t: ReturnType<typeof useTranslations>;
-}) {
+// Determinate progress bar reused for both the AI-detection and upload phases, so
+// the observer can always see things are moving rather than wondering if the page
+// has frozen. The caller passes the already-localized label.
+function QuickProgress({ label, done, total }: { label: string; done: number; total: number }) {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>{t("uploadingProgress", { done, total })}</span>
+        <span>{label}</span>
         <span className="tabular-nums">{pct}%</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
@@ -1001,9 +1020,9 @@ function GroupThumb({
           onClick={onSeparate}
           aria-label={t("separatePhoto")}
           title={t("separatePhoto")}
-          className="absolute -right-1.5 -top-1.5 grid size-6 place-items-center rounded-full bg-background text-foreground opacity-0 shadow-sm ring-1 ring-border transition-opacity hover:text-destructive group-hover/thumb:opacity-100 focus:opacity-100"
+          className="absolute -right-1.5 -top-1.5 grid size-6 place-items-center rounded-full bg-background text-primary shadow-sm ring-1 ring-border transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
-          <XIcon className="size-3.5" />
+          <SplitIcon className="size-3.5" />
         </button>
       ) : null}
     </div>
