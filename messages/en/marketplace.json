@@ -560,9 +560,10 @@
       "submitError": "Couldn't send your application. Please try again."
     },
     "interoperable": {
-      "title": "Interoperable Grants Program",
-      "round": "Round 3",
-      "description": "Ma Earth is running its community-backed funding round with a matching pool for nature-based projects. Apply with your project to take part in Round 3.",
+      "category": "Interoperable Grants Program",
+      "grantName": "Ma Earth Round 3",
+      "fundingType": "Quadratic funding",
+      "description": "Ma Earth is running a community-backed funding round that uses quadratic funding: many smaller donations are matched and amplified more than a few large ones. Apply with your project to take part.",
       "apply": "Apply with your project"
     }
   },

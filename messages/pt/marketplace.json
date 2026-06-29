@@ -560,9 +560,10 @@
       "submitError": "Não foi possível enviar sua candidatura. Tente novamente."
     },
     "interoperable": {
-      "title": "Programa de subsídios interoperáveis",
-      "round": "Rodada 3",
-      "description": "A Ma Earth está realizando sua rodada de financiamento apoiada pela comunidade, com um fundo de contrapartida para projetos baseados na natureza. Candidate-se com o seu projeto para participar da Rodada 3.",
+      "category": "Programa de subsídios interoperáveis",
+      "grantName": "Ma Earth Rodada 3",
+      "fundingType": "Financiamento quadrático",
+      "description": "A Ma Earth está realizando uma rodada de financiamento apoiada pela comunidade que usa financiamento quadrático: muitas doações menores são equiparadas e amplificadas mais do que algumas grandes. Candidate-se com o seu projeto para participar.",
       "apply": "Candidate-se com o seu projeto"
     }
   },

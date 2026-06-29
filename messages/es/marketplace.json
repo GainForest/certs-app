@@ -560,9 +560,10 @@
       "submitError": "No se pudo enviar tu solicitud. Inténtalo de nuevo."
     },
     "interoperable": {
-      "title": "Programa de subvenciones interoperables",
-      "round": "Ronda 3",
-      "description": "Ma Earth está realizando su ronda de financiación respaldada por la comunidad, con un fondo de contrapartida para proyectos basados en la naturaleza. Postula con tu proyecto para participar en la Ronda 3.",
+      "category": "Programa de subvenciones interoperables",
+      "grantName": "Ma Earth Ronda 3",
+      "fundingType": "Financiación cuadrática",
+      "description": "Ma Earth está realizando una ronda de financiación respaldada por la comunidad que usa financiación cuadrática: muchas donaciones pequeñas se igualan y amplifican más que unas pocas grandes. Postula con tu proyecto para participar.",
       "apply": "Postula con tu proyecto"
     }
   },
