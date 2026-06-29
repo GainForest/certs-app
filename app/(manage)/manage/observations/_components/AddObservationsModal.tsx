@@ -6,10 +6,12 @@ import { useTranslations } from "next-intl";
 import {
   CalendarIcon,
   CheckCircle2Icon,
+  CircleHelpIcon,
   ImagePlusIcon,
   Layers2Icon,
   Loader2Icon,
   MapPinIcon,
+  RotateCcwIcon,
   ShieldCheckIcon,
   SparklesIcon,
   Trash2Icon,
@@ -57,7 +59,7 @@ import {
 } from "./fuzzy-location";
 
 // Keep one quick-add session light; the rich bulk panel handles big imports.
-const MAX_PHOTOS = 20;
+const MAX_PHOTOS = 50;
 const ANALYZE_ATTEMPTS = 2;
 const UNIDENTIFIED = "unidentified organism";
 
@@ -103,6 +105,14 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 function isNamed(name: string): boolean {
   const normalized = name.trim().toLowerCase();
   return normalized.length > 0 && normalized !== UNIDENTIFIED;
+}
+
+// The analyze route falls back to an "unidentified organism" placeholder when the
+// model isn't confident. Treat that as blank so the species field stays empty and
+// the observation is clearly flagged as still needing an ID.
+function cleanSpecies(name: string | undefined): string {
+  const value = (name ?? "").trim();
+  return isNamed(value) ? value : "";
 }
 
 // The occurrence-level fields shared by every photo in one observation. The
@@ -194,6 +204,9 @@ export function AddObservationsModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [addedCount, setAddedCount] = useState<number | null>(null);
+  // Tracks how many observations have finished uploading during a submit run, so
+  // the footer can show a progress bar instead of just a spinning button.
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const [defaultCenter, setDefaultCenter] = useState<PickedLocation | null>(null);
   // Privacy: when on, each observation is published as an approximate circle
   // centred on a randomised point rather than the exact pin.
@@ -258,59 +271,100 @@ export function AddObservationsModal({
     return promise;
   }, []);
 
-  const analyzeItem = useCallback(
-    async (id: string, file: File) => {
-      for (let attempt = 0; attempt < ANALYZE_ATTEMPTS; attempt += 1) {
-        try {
-          const formData = new FormData();
-          formData.set("image", file);
-          const response = await fetch("/api/manage/observations/analyze", { method: "POST", body: formData });
-          const data = (await response.json().catch(() => ({}))) as AnalyzeResponse;
-          if (!response.ok || data.error) {
-            const retryable = response.status === 429 || response.status >= 500;
-            if (retryable && attempt < ANALYZE_ATTEMPTS - 1) {
-              await sleep(700 * (attempt + 1));
-              continue;
-            }
-            // Identification is best-effort: leave the fields for the user.
-            setItems((current) =>
-              current.map((item) => (item.id === id && item.status === "identifying" ? { ...item, status: "ready" } : item)),
-            );
-            return;
-          }
-          const a = data.analysis ?? {};
-          setItems((current) =>
-            current.map((item) => {
-              if (item.id !== id) return item;
-              const lat = Number.parseFloat(a.decimalLatitude ?? "");
-              const lng = Number.parseFloat(a.decimalLongitude ?? "");
-              const suggestedLocation =
-                !item.location && Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : item.location;
-              return {
-                ...item,
-                status: "ready",
-                scientificName: isNamed(item.scientificName) ? item.scientificName : a.scientificName?.trim() || "",
-                vernacularName: item.vernacularName || a.vernacularName?.trim() || "",
-                kingdom: a.kingdom?.trim() || item.kingdom,
-                eventDate: item.eventDate || a.eventDate?.trim() || "",
-                location: suggestedLocation,
-                notes: item.notes || a.occurrenceRemarks?.trim() || "",
-              };
-            }),
-          );
-          return;
-        } catch {
-          if (attempt < ANALYZE_ATTEMPTS - 1) {
+  // One analyze call with a couple of retries on transient (429/5xx/network)
+  // failures. Returns the model's suggestion, or null when identification
+  // couldn't be completed at all.
+  const fetchAnalysis = useCallback(async (file: File): Promise<NonNullable<AnalyzeResponse["analysis"]> | null> => {
+    for (let attempt = 0; attempt < ANALYZE_ATTEMPTS; attempt += 1) {
+      try {
+        const formData = new FormData();
+        formData.set("image", file);
+        const response = await fetch("/api/manage/observations/analyze", { method: "POST", body: formData });
+        const data = (await response.json().catch(() => ({}))) as AnalyzeResponse;
+        if (!response.ok || data.error) {
+          const retryable = response.status === 429 || response.status >= 500;
+          if (retryable && attempt < ANALYZE_ATTEMPTS - 1) {
             await sleep(700 * (attempt + 1));
             continue;
           }
-          setItems((current) =>
-            current.map((item) => (item.id === id && item.status === "identifying" ? { ...item, status: "ready" } : item)),
-          );
+          return null;
         }
+        return data.analysis ?? {};
+      } catch {
+        if (attempt < ANALYZE_ATTEMPTS - 1) {
+          await sleep(700 * (attempt + 1));
+          continue;
+        }
+        return null;
       }
+    }
+    return null;
+  }, []);
+
+  // First-pass identification for a freshly added photo. Fills only the fields
+  // the observer hasn't set, so it never clobbers manual edits.
+  const analyzeItem = useCallback(
+    async (id: string, file: File) => {
+      const a = await fetchAnalysis(file);
+      if (!a) {
+        // Identification is best-effort: leave the fields for the user.
+        setItems((current) =>
+          current.map((item) => (item.id === id && item.status === "identifying" ? { ...item, status: "ready" } : item)),
+        );
+        return;
+      }
+      setItems((current) =>
+        current.map((item) => {
+          if (item.id !== id) return item;
+          const lat = Number.parseFloat(a.decimalLatitude ?? "");
+          const lng = Number.parseFloat(a.decimalLongitude ?? "");
+          const suggestedLocation =
+            !item.location && Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : item.location;
+          return {
+            ...item,
+            status: "ready",
+            scientificName: isNamed(item.scientificName) ? item.scientificName : cleanSpecies(a.scientificName),
+            vernacularName: item.vernacularName || a.vernacularName?.trim() || "",
+            kingdom: a.kingdom?.trim() || item.kingdom,
+            eventDate: item.eventDate || a.eventDate?.trim() || "",
+            location: suggestedLocation,
+            notes: item.notes || a.occurrenceRemarks?.trim() || "",
+          };
+        }),
+      );
     },
-    [],
+    [fetchAnalysis],
+  );
+
+  // Re-run identification for one observation on demand and replace the species
+  // suggestion across every photo in it, while keeping the observer's date,
+  // location, notes and captions intact.
+  const reanalyzeGroup = useCallback(
+    async (groupId: string) => {
+      const groupItems = itemsRef.current.filter((item) => item.groupId === groupId);
+      const sample = groupItems[0];
+      if (!sample || groupItems.some((item) => item.status === "uploading" || item.status === "uploaded")) return;
+      const ids = new Set(groupItems.map((item) => item.id));
+      setItems((current) =>
+        current.map((item) => (ids.has(item.id) ? { ...item, status: "identifying", error: null } : item)),
+      );
+      const a = await fetchAnalysis(sample.file);
+      setItems((current) =>
+        current.map((item) => {
+          if (!ids.has(item.id)) return item;
+          if (!a) return { ...item, status: "ready" };
+          return {
+            ...item,
+            status: "ready",
+            scientificName: cleanSpecies(a.scientificName),
+            vernacularName: a.vernacularName?.trim() || "",
+            kingdom: a.kingdom?.trim() || item.kingdom,
+            notes: item.notes || a.occurrenceRemarks?.trim() || "",
+          };
+        }),
+      );
+    },
+    [fetchAnalysis],
   );
 
   const addFiles = useCallback(
@@ -554,6 +608,7 @@ export function AddObservationsModal({
     }
     setIsSubmitting(true);
     setError(null);
+    setUploadProgress({ done: 0, total: queue.length });
     let success = 0;
     for (const group of queue) {
       const ids = new Set(group.items.map((item) => item.id));
@@ -561,6 +616,7 @@ export function AddObservationsModal({
       try {
         await uploadGroup(group);
         success += 1;
+        setUploadProgress((progress) => (progress ? { ...progress, done: progress.done + 1 } : progress));
         setItems((current) => {
           for (const item of current) {
             if (ids.has(item.id)) URL.revokeObjectURL(item.previewUrl);
@@ -573,6 +629,7 @@ export function AddObservationsModal({
       }
     }
     setIsSubmitting(false);
+    setUploadProgress(null);
     if (success > 0) {
       setAddedCount(success);
       setError(null);
@@ -681,6 +738,7 @@ export function AddObservationsModal({
                 onItemDragStart={setDraggingItemId}
                 onItemDragEnd={() => setDraggingItemId(null)}
                 onPickLocation={() => openLocationPicker(group)}
+                onReanalyze={() => reanalyzeGroup(group.id)}
                 t={t}
               />
             ))}
@@ -757,12 +815,17 @@ export function AddObservationsModal({
       ) : null}
 
       {!showEmptyState ? (
-        <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
-          <p className="text-sm text-muted-foreground">{t("readyCount", { count: submittableCount })}</p>
-          <Button onClick={submit} disabled={submittableCount === 0 || isSubmitting || Boolean(disabledReason)}>
-            {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : null}
-            {isSubmitting ? t("submitting") : t("submit", { count: submittableCount })}
-          </Button>
+        <div className="space-y-3 border-t border-border pt-3">
+          {isSubmitting && uploadProgress ? (
+            <QuickUploadProgress done={uploadProgress.done} total={uploadProgress.total} t={t} />
+          ) : null}
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">{t("readyCount", { count: submittableCount })}</p>
+            <Button onClick={submit} disabled={submittableCount === 0 || isSubmitting || Boolean(disabledReason)}>
+              {isSubmitting ? <Loader2Icon className="size-4 animate-spin" /> : null}
+              {isSubmitting ? t("submitting") : t("submit", { count: submittableCount })}
+            </Button>
+          </div>
         </div>
       ) : null}
     </ModalContent>
@@ -808,6 +871,85 @@ function SeparateDropZone({
     >
       <Layers2Icon className="size-4 shrink-0" />
       {t("separateDropZone")}
+    </div>
+  );
+}
+
+// Per-observation status pill: a clear at-a-glance signal for whether a card is
+// still identifying, ready with a name, or uploaded-but-unidentified and waiting
+// for the observer to add an ID.
+function QuickStatusBadge({
+  status,
+  named,
+  t,
+}: {
+  status: ItemStatus;
+  named: boolean;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const base = "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium";
+  if (status === "identifying") {
+    return (
+      <span className={cn(base, "bg-muted text-muted-foreground")}>
+        <Loader2Icon className="size-3.5 animate-spin" />
+        {t("identifying")}
+      </span>
+    );
+  }
+  if (status === "uploading") {
+    return (
+      <span className={cn(base, "bg-muted text-muted-foreground")}>
+        <Loader2Icon className="size-3.5 animate-spin" />
+        {t("submitting")}
+      </span>
+    );
+  }
+  if (status === "error") {
+    return (
+      <span className={cn(base, "bg-destructive/10 text-destructive")}>
+        <CircleHelpIcon className="size-3.5" />
+        {t("statusError")}
+      </span>
+    );
+  }
+  if (named) {
+    return (
+      <span className={cn(base, "bg-primary/10 text-primary")}>
+        <CheckCircle2Icon className="size-3.5" />
+        {t("statusReady")}
+      </span>
+    );
+  }
+  return (
+    <span className={cn(base, "bg-amber-500/10 text-amber-700 dark:text-amber-400")}>
+      <CircleHelpIcon className="size-3.5" />
+      {t("statusNeedsId")}
+    </span>
+  );
+}
+
+// Determinate progress bar shown in the footer while observations are being
+// added, so the observer can see the upload is moving rather than wondering if
+// the page has frozen.
+function QuickUploadProgress({
+  done,
+  total,
+  t,
+}: {
+  done: number;
+  total: number;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>{t("uploadingProgress", { done, total })}</span>
+        <span className="tabular-nums">{pct}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+        <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }
@@ -878,6 +1020,7 @@ function ObservationGroupCard({
   onItemDragStart,
   onItemDragEnd,
   onPickLocation,
+  onReanalyze,
   t,
 }: {
   group: QuickGroup;
@@ -889,6 +1032,7 @@ function ObservationGroupCard({
   onItemDragStart: (itemId: string) => void;
   onItemDragEnd: () => void;
   onPickLocation: () => void;
+  onReanalyze: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
   const [isOver, setIsOver] = useState(false);
@@ -931,20 +1075,38 @@ function ObservationGroupCard({
         isOver ? "border-primary ring-2 ring-primary/30" : "border-border",
       )}
     >
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={onRemoveGroup}
-        disabled={disabled || uploading}
-        aria-label={t("removeObservation")}
-        title={t("removeObservation")}
-        className="absolute right-2 top-2 z-10 rounded-full text-muted-foreground hover:text-destructive"
-      >
-        <Trash2Icon className="size-4" />
-      </Button>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <QuickStatusBadge status={status} named={isNamed(fields.scientificName)} t={t} />
+        <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            onClick={onReanalyze}
+            disabled={disabled || uploading || identifying}
+            aria-label={t("reanalyzeAria")}
+            title={t("reanalyzeAria")}
+            className="h-7 rounded-full px-2 text-muted-foreground hover:text-foreground"
+          >
+            <RotateCcwIcon className="size-3.5" />
+            <span className="hidden sm:inline">{t("reanalyze")}</span>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={onRemoveGroup}
+            disabled={disabled || uploading}
+            aria-label={t("removeObservation")}
+            title={t("removeObservation")}
+            className="rounded-full text-muted-foreground hover:text-destructive"
+          >
+            <Trash2Icon className="size-4" />
+          </Button>
+        </div>
+      </div>
 
-      <div className="flex flex-wrap gap-2 pr-8">
+      <div className="flex flex-wrap gap-2">
         {items.map((item) => (
           <GroupThumb
             key={item.id}

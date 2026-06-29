@@ -694,7 +694,13 @@
       "dragMergeHint": "Dondosha picha nyingine hapa, au gusa × kutenganisha moja.",
       "separatePhoto": "Tenganisha kuwa uchunguzi wake mwenyewe",
       "removeObservation": "Ondoa uchunguzi",
-      "separateDropZone": "Dondosha hapa ili kuunda uchunguzi tofauti"
+      "separateDropZone": "Dondosha hapa ili kuunda uchunguzi tofauti",
+      "statusReady": "Tayari",
+      "statusNeedsId": "Inahitaji kitambulisho",
+      "statusError": "Imeshindwa kuongezwa",
+      "reanalyze": "Changanua tena",
+      "reanalyzeAria": "Endesha AI tena kwa pendekezo jipya",
+      "uploadingProgress": "Inaongeza {done} kati ya {total}"
     },
     "tainaTitle": "Msalimie Tainá",
     "tainaBody": "Tainá yuko Telegram. Mtumie picha zako za uwandani, viumbe ulioona na rekodi za sauti, naye ataziweka kwenye shirika hili kwa ajili yako. Faili kubwa za AudioMoth zinakaribishwa pia.",

@@ -694,7 +694,13 @@
       "dragMergeHint": "Letakkan foto lain di sini, atau ketuk × untuk memisahkan satu.",
       "separatePhoto": "Pisahkan menjadi observasi tersendiri",
       "removeObservation": "Hapus observasi",
-      "separateDropZone": "Letakkan di sini untuk membuat observasi terpisah"
+      "separateDropZone": "Letakkan di sini untuk membuat observasi terpisah",
+      "statusReady": "Siap",
+      "statusNeedsId": "Perlu identifikasi",
+      "statusError": "Gagal ditambahkan",
+      "reanalyze": "Analisis ulang",
+      "reanalyzeAria": "Jalankan ulang AI untuk saran baru",
+      "uploadingProgress": "Menambahkan {done} dari {total}"
     },
     "tainaTitle": "Sapa Tainá",
     "tainaBody": "Tainá ada di Telegram. Kirimkan foto lapangan, temuan satwa atau tumbuhan, dan rekaman suara kepadanya, lalu ia akan memasukkannya ke organisasi ini untukmu. File AudioMoth besar juga boleh.",

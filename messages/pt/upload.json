@@ -694,7 +694,13 @@
       "dragMergeHint": "Solte outra foto aqui, ou toque em × para separar uma.",
       "separatePhoto": "Separar em sua própria observação",
       "removeObservation": "Remover observação",
-      "separateDropZone": "Solte aqui para criar uma observação separada"
+      "separateDropZone": "Solte aqui para criar uma observação separada",
+      "statusReady": "Pronto",
+      "statusNeedsId": "Falta identificar",
+      "statusError": "Não foi possível adicionar",
+      "reanalyze": "Analisar de novo",
+      "reanalyzeAria": "Executar a IA novamente para uma nova sugestão",
+      "uploadingProgress": "Adicionando {done} de {total}"
     },
     "tainaTitle": "Diga oi para Tainá",
     "tainaBody": "Tainá fica no Telegram. Envie para ela suas fotos de campo, avistamentos e gravações de som, e ela coloca tudo nesta organização para você. Arquivos grandes do AudioMoth também são bem vindos.",

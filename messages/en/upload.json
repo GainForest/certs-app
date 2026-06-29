@@ -694,7 +694,13 @@
       "dragMergeHint": "Drop another photo here, or tap × to separate one.",
       "separatePhoto": "Separate into its own observation",
       "removeObservation": "Remove observation",
-      "separateDropZone": "Drop here to make a separate observation"
+      "separateDropZone": "Drop here to make a separate observation",
+      "statusReady": "Ready",
+      "statusNeedsId": "Needs ID",
+      "statusError": "Couldn't add",
+      "reanalyze": "Re-run AI",
+      "reanalyzeAria": "Re-run AI for a new suggestion",
+      "uploadingProgress": "Adding {done} of {total}"
     },
     "tainaTitle": "Say hi to Tainá",
     "tainaBody": "Prefer chat? Send your photos and recordings to Tainá on Telegram and she will add them here for you.",
