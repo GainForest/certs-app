@@ -1070,7 +1070,8 @@
         "habitat": "Hábitat",
         "notes": "Notas",
         "kind": "Planta ou animal",
-        "mapLocation": "Localização no mapa"
+        "mapLocation": "Localização no mapa",
+        "basisOfRecord": "Como foi registrado"
       },
       "validation": {
         "name": "Insira o nome de uma planta ou animal.",
@@ -1105,7 +1106,14 @@
       "reanalyzeApplied": "Atualizado com uma nova sugestão da IA — reveja e guarde.",
       "reanalyzeUnsure": "A IA não conseguiu identificar com confiança. Tente adicionar um nome você mesmo.",
       "reanalyzeError": "Não foi possível executar a IA agora. Tente novamente.",
-      "reanalyzeNoImage": "Não há foto para analisar nesta observação."
+      "reanalyzeNoImage": "Não há foto para analisar nesta observação.",
+      "basisOptions": {
+        "human": "Visto pessoalmente",
+        "machine": "Detecção por IA ou dispositivo",
+        "preserved": "Espécime preservado",
+        "material": "Amostra de material",
+        "living": "Espécime vivo"
+      }
     },
     "media": {
       "image": "Foto",

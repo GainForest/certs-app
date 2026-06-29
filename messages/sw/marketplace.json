@@ -1070,7 +1070,8 @@
         "habitat": "Makazi",
         "notes": "Madokezo",
         "kind": "Mmea au mnyama",
-        "mapLocation": "Eneo kwenye ramani"
+        "mapLocation": "Eneo kwenye ramani",
+        "basisOfRecord": "Jinsi ilivyorekodiwa"
       },
       "validation": {
         "name": "Weka jina la mmea au mnyama.",
@@ -1105,7 +1106,14 @@
       "reanalyzeApplied": "Imesasishwa na pendekezo jipya la AI — kagua na uhifadhi.",
       "reanalyzeUnsure": "AI haikuweza kuitambua kwa uhakika. Jaribu kuongeza jina mwenyewe.",
       "reanalyzeError": "Hatukuweza kuendesha AI kwa sasa. Tafadhali jaribu tena.",
-      "reanalyzeNoImage": "Hakuna picha ya kuchanganua kwa uchunguzi huu."
+      "reanalyzeNoImage": "Hakuna picha ya kuchanganua kwa uchunguzi huu.",
+      "basisOptions": {
+        "human": "Imeonekana ana kwa ana",
+        "machine": "Utambuzi wa AI au kifaa",
+        "preserved": "Sampuli iliyohifadhiwa",
+        "material": "Sampuli ya nyenzo",
+        "living": "Sampuli hai"
+      }
     },
     "media": {
       "image": "Picha",

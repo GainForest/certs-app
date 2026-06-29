@@ -1070,7 +1070,8 @@
         "habitat": "Habitat",
         "notes": "Notes",
         "kind": "Plant or animal",
-        "mapLocation": "Map location"
+        "mapLocation": "Map location",
+        "basisOfRecord": "How it was recorded"
       },
       "validation": {
         "name": "Enter a plant or animal name.",
@@ -1105,7 +1106,14 @@
       "reanalyzeApplied": "Updated with a fresh AI suggestion — review and save.",
       "reanalyzeUnsure": "The AI couldn't confidently identify this one. Try adding a name yourself.",
       "reanalyzeError": "We couldn't re-run the AI just now. Please try again.",
-      "reanalyzeNoImage": "There's no photo to analyse for this sighting."
+      "reanalyzeNoImage": "There's no photo to analyse for this sighting.",
+      "basisOptions": {
+        "human": "Seen in person",
+        "machine": "AI or device detection",
+        "preserved": "Preserved specimen",
+        "material": "Material sample",
+        "living": "Living specimen"
+      }
     },
     "media": {
       "image": "Photo",

@@ -1070,7 +1070,8 @@
         "habitat": "Habitat",
         "notes": "Catatan",
         "kind": "Tumbuhan atau hewan",
-        "mapLocation": "Lokasi peta"
+        "mapLocation": "Lokasi peta",
+        "basisOfRecord": "Bagaimana dicatat"
       },
       "validation": {
         "name": "Masukkan nama tumbuhan atau hewan.",
@@ -1105,7 +1106,14 @@
       "reanalyzeApplied": "Diperbarui dengan saran AI baru — tinjau dan simpan.",
       "reanalyzeUnsure": "AI tidak dapat mengidentifikasinya dengan yakin. Coba tambahkan nama sendiri.",
       "reanalyzeError": "Kami tidak dapat menjalankan ulang AI saat ini. Silakan coba lagi.",
-      "reanalyzeNoImage": "Tidak ada foto untuk dianalisis pada pengamatan ini."
+      "reanalyzeNoImage": "Tidak ada foto untuk dianalisis pada pengamatan ini.",
+      "basisOptions": {
+        "human": "Dilihat langsung",
+        "machine": "Deteksi AI atau perangkat",
+        "preserved": "Spesimen yang diawetkan",
+        "material": "Sampel material",
+        "living": "Spesimen hidup"
+      }
     },
     "media": {
       "image": "Foto",

@@ -25,6 +25,7 @@ type UpdateOccurrenceData = {
   scientificName?: string;
   vernacularName?: string;
   kingdom?: string;
+  basisOfRecord?: string;
   eventDate?: string;
   recordedBy?: string;
   decimalLatitude?: string;

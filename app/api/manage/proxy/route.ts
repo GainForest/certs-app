@@ -22,6 +22,7 @@ type UpdateOccurrenceData = {
   scientificName?: string;
   vernacularName?: string;
   kingdom?: string;
+  basisOfRecord?: string;
   eventDate?: string;
   recordedBy?: string;
   decimalLatitude?: string;
@@ -339,6 +340,7 @@ const UPDATE_OCCURRENCE_DATA_FIELDS = new Set([
   "scientificName",
   "vernacularName",
   "kingdom",
+  "basisOfRecord",
   "eventDate",
   "recordedBy",
   "decimalLatitude",
@@ -398,6 +400,7 @@ function isUpdateOccurrenceData(value: unknown): value is UpdateOccurrenceData {
     isOptionalString(value.scientificName) &&
     isOptionalString(value.vernacularName) &&
     isOptionalString(value.kingdom) &&
+    isOptionalString(value.basisOfRecord) &&
     isOptionalString(value.eventDate) &&
     isOptionalString(value.recordedBy) &&
     isOptionalString(value.decimalLatitude) &&
@@ -1282,7 +1285,12 @@ async function updateOccurrenceByRkey(
     ...current.record,
     ...pickAllowedPatch(body.data, UPDATE_OCCURRENCE_DATA_FIELDS),
     $type: typeof current.record.$type === "string" ? current.record.$type : OCCURRENCE_COLLECTION,
-    basisOfRecord: typeof current.record.basisOfRecord === "string" ? current.record.basisOfRecord : "HumanObservation",
+    basisOfRecord:
+      typeof body.data.basisOfRecord === "string" && body.data.basisOfRecord.trim().length > 0
+        ? body.data.basisOfRecord.trim()
+        : typeof current.record.basisOfRecord === "string"
+          ? current.record.basisOfRecord
+          : "HumanObservation",
     createdAt: typeof current.record.createdAt === "string" ? current.record.createdAt : new Date().toISOString(),
   };
 

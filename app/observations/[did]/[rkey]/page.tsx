@@ -15,13 +15,13 @@ import {
   type OccurrenceRecord,
 } from "../../../_lib/indexer";
 import { resolveBlobUrl, isPdsBlobUrl } from "../../../_lib/pds";
-import { countryFlag, formatDate, formatNumber } from "../../../_lib/format";
+import { countryFlag, formatDate } from "../../../_lib/format";
 import { getAccountRouteData, readAccountRouteParams } from "../../../account/_lib/account-route";
 import { accountHref, localObservationHref } from "../../../_lib/urls";
 import { RecordLocationMap } from "../../../_components/RecordLocationMap";
 import { RecordEngagement } from "../../../_components/RecordEngagement";
 import { ObservationMediaViewer, type ObservationViewerImage } from "./_components/ObservationMediaViewer";
-import { ObservationInlineEditor } from "./_components/ObservationInlineEditor";
+import { ObservationDetailsSection } from "./_components/ObservationDetailsSection";
 
 export const revalidate = 60;
 
@@ -64,7 +64,6 @@ export async function generateMetadata({ params }: { params: ObservationPagePara
 export default async function ObservationDetailPage({ params }: { params: ObservationPageParams }) {
   const { record, did, rkey, urlIdentifier } = await loadObservation(params);
   const t = await getTranslations("marketplace.observationPage");
-  const fieldsT = await getTranslations("marketplace.recordDrawer");
   const measurementsT = await getTranslations("marketplace.measurements");
 
   const [owner, media, resolvedAudio, measurementRecords] = await Promise.all([
@@ -91,10 +90,7 @@ export default async function ObservationDetailPage({ params }: { params: Observ
 
   const name = observationName(record, t);
   const scientific = secondaryScientificName(record);
-  const kindLabel = observationKindLabel(record.kingdom, fieldsT);
   const place = [record.locality, record.stateProvince, record.country].filter(Boolean).join(", ");
-
-  const fields = buildDetailFields(record, fieldsT, kindLabel);
 
   return (
     <main className="min-h-screen bg-background pb-20">
@@ -189,12 +185,6 @@ export default async function ObservationDetailPage({ params }: { params: Observ
           </aside>
         </div>
 
-        <ObservationInlineEditor
-          record={record}
-          primaryImageUrl={images[0]?.url ?? record.imageUrl ?? null}
-          fallbackHref={accountHref(urlIdentifier)}
-        />
-
         {measurementFacts.length > 0 ? (
           <section className="mt-10 border-t border-border-soft pt-8">
             <h2 className="mb-5 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
@@ -214,34 +204,11 @@ export default async function ObservationDetailPage({ params }: { params: Observ
           </section>
         ) : null}
 
-        {fields.length > 0 ? (
-          <section className="mt-10 border-t border-border-soft pt-8">
-            <h2 className="mb-5 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              {t("detailsTitle")}
-            </h2>
-            <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-              {fields.map((f) => (
-                <div key={f.label} className={f.wide ? "sm:col-span-2 lg:col-span-3" : undefined}>
-                  <dt className="text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/45">
-                    {f.label}
-                  </dt>
-                  <dd className="mt-1 text-[14.5px] leading-[1.5] text-foreground">{f.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-        ) : null}
-
-        {record.remarks ? (
-          <section className="mt-8 border-t border-border-soft pt-8">
-            <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              {t("notesTitle")}
-            </h2>
-            <p className="max-w-3xl whitespace-pre-line text-[15px] leading-[1.65] text-foreground/80">
-              {record.remarks}
-            </p>
-          </section>
-        ) : null}
+        <ObservationDetailsSection
+          record={record}
+          primaryImageUrl={images[0]?.url ?? record.imageUrl ?? null}
+          fallbackHref={accountHref(urlIdentifier)}
+        />
       </div>
     </main>
   );
@@ -259,29 +226,7 @@ function MetaRow({ icon, label, children }: { icon: ReactNode; label: string; ch
   );
 }
 
-type DetailField = { label: string; value: string; wide?: boolean };
-type DrawerT = Awaited<ReturnType<typeof getTranslations<"marketplace.recordDrawer">>>;
 type ObservationPageT = Awaited<ReturnType<typeof getTranslations<"marketplace.observationPage">>>;
-
-function buildDetailFields(record: OccurrenceRecord, t: DrawerT, kindLabel: string | null): DetailField[] {
-  const fields: DetailField[] = [];
-  if (record.scientificName) fields.push({ label: t("observation.fields.scientificName"), value: record.scientificName });
-  if (record.vernacularName && record.vernacularName.toLowerCase() !== (record.scientificName ?? "").toLowerCase()) {
-    fields.push({ label: t("observation.fields.vernacularName"), value: record.vernacularName });
-  }
-  if (kindLabel) fields.push({ label: t("observation.fields.kind"), value: kindLabel });
-  if (record.family) fields.push({ label: t("fields.family"), value: record.family });
-  if (record.genus) fields.push({ label: t("fields.genus"), value: record.genus });
-  if (record.basisOfRecord) fields.push({ label: t("fields.basisOfRecord"), value: record.basisOfRecord });
-  if (record.individualCount != null) fields.push({ label: t("fields.count"), value: formatNumber(record.individualCount) });
-  if (record.recordedBy) fields.push({ label: t("fields.sharedBy"), value: record.recordedBy });
-  if (record.habitat) fields.push({ label: t("observation.fields.habitat"), value: record.habitat, wide: true });
-  if (record.lat != null && record.lon != null) {
-    fields.push({ label: t("fields.mapLocation"), value: `${record.lat.toFixed(4)}, ${record.lon.toFixed(4)}` });
-  }
-  if (record.datasetName) fields.push({ label: t("detailLabels.sourceName"), value: record.datasetName });
-  return fields;
-}
 
 function observationName(record: OccurrenceRecord, t: ObservationPageT): string {
   if (record.media.includes("audio") && record.vernacularName === "Nature sound recording") {
@@ -298,13 +243,6 @@ function secondaryScientificName(record: OccurrenceRecord): string | null {
   if (!record.vernacularName || !record.scientificName) return null;
   if (record.vernacularName.toLowerCase() === record.scientificName.toLowerCase()) return null;
   return record.scientificName;
-}
-
-function observationKindLabel(kingdom: string | null, t: DrawerT): string | null {
-  const normalized = kingdom?.trim().toLowerCase();
-  if (normalized === "plantae" || normalized === "plant" || normalized === "flora") return t("observation.kindOptions.plant");
-  if (normalized === "animalia" || normalized === "animal" || normalized === "fauna") return t("observation.kindOptions.animal");
-  return null;
 }
 
 function isImageItem(item: ObservationMediaItem): boolean {

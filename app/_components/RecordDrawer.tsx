@@ -1029,6 +1029,7 @@ export type ObservationDraft = {
   scientificName: string;
   vernacularName: string;
   kingdom: string;
+  basisOfRecord: string;
   eventDate: string;
   recordedBy: string;
   decimalLatitude: string;
@@ -1043,6 +1044,7 @@ export const EMPTY_OBSERVATION_DRAFT: ObservationDraft = {
   scientificName: "",
   vernacularName: "",
   kingdom: "",
+  basisOfRecord: "",
   eventDate: "",
   recordedBy: "",
   decimalLatitude: "",
@@ -1066,6 +1068,70 @@ const INPUT_CLASS = "mt-1.5 h-10 w-full rounded-xl border border-border-soft bg-
 const TEXTAREA_CLASS = "mt-1.5 min-h-20 w-full rounded-xl border border-border-soft bg-background px-3 py-2 text-[14px] leading-5 text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary/50 focus:ring-2 focus:ring-primary/10";
 const LABEL_CLASS = "text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/45";
 const OBSERVATION_KIND_OPTIONS = ["Plantae", "Animalia"] as const;
+const BASIS_OF_RECORD_OPTIONS = ["HumanObservation", "MachineObservation", "PreservedSpecimen", "MaterialSample", "LivingSpecimen"] as const;
+
+function basisOptionKey(value: string): string {
+  switch (value) {
+    case "MachineObservation":
+      return "machine";
+    case "PreservedSpecimen":
+      return "preserved";
+    case "MaterialSample":
+      return "material";
+    case "LivingSpecimen":
+      return "living";
+    default:
+      return "human";
+  }
+}
+
+// Maps a Darwin Core basisOfRecord value onto a plain-language label.
+export function basisOfRecordLabel(value: string | null | undefined, t: RecordDrawerT): string | null {
+  const raw = (value ?? "").trim();
+  if (!raw) return null;
+  if (!BASIS_OF_RECORD_OPTIONS.includes(raw as (typeof BASIS_OF_RECORD_OPTIONS)[number])) return raw;
+  return t(`observation.basisOptions.${basisOptionKey(raw)}`);
+}
+
+// The shared editable field set, used by both the drawer panel and the inline
+// page editor so the two surfaces always offer exactly the same fields.
+export function ObservationFields({
+  draft,
+  onChange,
+  onOpenLocationPicker,
+  t,
+}: {
+  draft: ObservationDraft;
+  onChange: (field: keyof ObservationDraft, value: string) => void;
+  onOpenLocationPicker: () => void;
+  t: RecordDrawerT;
+}) {
+  const kindOptions = OBSERVATION_KIND_OPTIONS.map((value) => ({
+    value,
+    label: value === "Plantae" ? t("observation.kindOptions.plant") : t("observation.kindOptions.animal"),
+  }));
+  const basisOptions = BASIS_OF_RECORD_OPTIONS.map((value) => ({
+    value,
+    label: t(`observation.basisOptions.${basisOptionKey(value)}`),
+  }));
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <TextField label={t("observation.fields.scientificName")} value={draft.scientificName} onChange={(value) => onChange("scientificName", value)} required />
+        <TextField label={t("observation.fields.vernacularName")} value={draft.vernacularName} onChange={(value) => onChange("vernacularName", value)} />
+        <SelectField label={t("observation.fields.kind")} value={draft.kingdom} onChange={(value) => onChange("kingdom", value)} required options={kindOptions} />
+        <SelectField label={t("observation.fields.basisOfRecord")} value={draft.basisOfRecord} onChange={(value) => onChange("basisOfRecord", value)} options={basisOptions} />
+        <TextField label={t("observation.fields.eventDate")} value={draft.eventDate} onChange={(value) => onChange("eventDate", value)} placeholder="YYYY-MM-DD" required />
+        <TextField label={t("observation.fields.recordedBy")} value={draft.recordedBy} onChange={(value) => onChange("recordedBy", value)} />
+        <LocationField latitude={draft.decimalLatitude} longitude={draft.decimalLongitude} onOpenMap={onOpenLocationPicker} />
+        <TextField label={t("observation.fields.place")} value={draft.locality} onChange={(value) => onChange("locality", value)} />
+        <TextField label={t("observation.fields.country")} value={draft.country} onChange={(value) => onChange("country", value)} />
+      </div>
+      <TextAreaField label={t("observation.fields.habitat")} value={draft.habitat} onChange={(value) => onChange("habitat", value)} />
+      <TextAreaField label={t("observation.fields.notes")} value={draft.occurrenceRemarks} onChange={(value) => onChange("occurrenceRemarks", value)} />
+    </>
+  );
+}
 
 export function ObservationOwnerControls({
   draft,
@@ -1107,10 +1173,6 @@ export function ObservationOwnerControls({
   onStopDelete: () => void;
 }) {
   const t = useTranslations("marketplace.recordDrawer");
-  const kindOptions = OBSERVATION_KIND_OPTIONS.map((value) => ({
-    value,
-    label: value === "Plantae" ? t("observation.kindOptions.plant") : t("observation.kindOptions.animal"),
-  }));
 
   return (
     <div className="mt-4 rounded-2xl border border-border-soft bg-surface/60 p-4">
@@ -1147,28 +1209,7 @@ export function ObservationOwnerControls({
 
       {isEditing ? (
         <form onSubmit={onSave} className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <TextField label={t("observation.fields.scientificName")} value={draft.scientificName} onChange={(value) => onChange("scientificName", value)} required />
-            <TextField label={t("observation.fields.vernacularName")} value={draft.vernacularName} onChange={(value) => onChange("vernacularName", value)} />
-            <SelectField
-              label={t("observation.fields.kind")}
-              value={draft.kingdom}
-              onChange={(value) => onChange("kingdom", value)}
-              required
-              options={kindOptions}
-            />
-            <TextField label={t("observation.fields.eventDate")} value={draft.eventDate} onChange={(value) => onChange("eventDate", value)} placeholder="YYYY-MM-DD" required />
-            <TextField label={t("observation.fields.recordedBy")} value={draft.recordedBy} onChange={(value) => onChange("recordedBy", value)} />
-            <LocationField
-              latitude={draft.decimalLatitude}
-              longitude={draft.decimalLongitude}
-              onOpenMap={onOpenLocationPicker}
-            />
-            <TextField label={t("observation.fields.place")} value={draft.locality} onChange={(value) => onChange("locality", value)} />
-            <TextField label={t("observation.fields.country")} value={draft.country} onChange={(value) => onChange("country", value)} />
-          </div>
-          <TextAreaField label={t("observation.fields.habitat")} value={draft.habitat} onChange={(value) => onChange("habitat", value)} />
-          <TextAreaField label={t("observation.fields.notes")} value={draft.occurrenceRemarks} onChange={(value) => onChange("occurrenceRemarks", value)} />
+          <ObservationFields draft={draft} onChange={onChange} onOpenLocationPicker={onOpenLocationPicker} t={t} />
           {(feedback || validationError) && (
             <p className={`text-[13px] ${validationError ? "text-destructive" : "text-muted-foreground"}`}>
               {validationError ?? feedback}
@@ -1528,6 +1569,7 @@ export function observationDraftFromRecord(record: Extract<ExplorerRecord, { kin
     scientificName: record.scientificName ?? "",
     vernacularName: record.vernacularName ?? "",
     kingdom: observationKindFromKingdom(record.kingdom),
+    basisOfRecord: record.basisOfRecord ?? "",
     eventDate: record.eventDate ?? "",
     recordedBy: record.recordedBy ?? "",
     decimalLatitude: record.lat != null ? String(record.lat) : "",
@@ -1571,6 +1613,7 @@ export function observationPatchFromDraft(draft: ObservationDraft): {
     scientificName: string;
     vernacularName?: string;
     kingdom: string;
+    basisOfRecord?: string;
     eventDate: string;
     recordedBy?: string;
     decimalLatitude: string;
@@ -1585,6 +1628,7 @@ export function observationPatchFromDraft(draft: ObservationDraft): {
   const data = {
     scientificName: normalizeDraftValue(draft.scientificName),
     kingdom: observationKindFromKingdom(draft.kingdom),
+    basisOfRecord: optionalDraftValue(draft.basisOfRecord),
     eventDate: normalizeDraftValue(draft.eventDate),
     decimalLatitude: normalizeDraftValue(draft.decimalLatitude),
     decimalLongitude: normalizeDraftValue(draft.decimalLongitude),
@@ -1611,6 +1655,7 @@ function applyObservationDraft(
     scientificName: normalizeDraftValue(draft.scientificName),
     vernacularName: optionalDraftValue(draft.vernacularName) ?? null,
     kingdom: observationKindFromKingdom(draft.kingdom) || null,
+    basisOfRecord: optionalDraftValue(draft.basisOfRecord) ?? record.basisOfRecord ?? null,
     eventDate: normalizeDraftValue(draft.eventDate),
     recordedBy: optionalDraftValue(draft.recordedBy) ?? null,
     lat: Number(normalizeDraftValue(draft.decimalLatitude)),
