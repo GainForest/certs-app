@@ -37,17 +37,17 @@ import { useStableQueryView } from "../_lib/use-stable-query-view";
 
 type SortMode = "newest" | "oldest" | "az" | "za";
 type ViewMode = "cards" | "list" | "map";
-type QuickFilter = "observations" | "bumicerts";
+type QuickFilter = "observations";
 
 const SORT_MODES: SortMode[] = ["newest", "oldest", "az", "za"];
 const VIEW_MODES: ViewMode[] = ["cards", "list", "map"];
-const QUICK_FILTERS: QuickFilter[] = ["observations", "bumicerts"];
+const QUICK_FILTERS: QuickFilter[] = ["observations"];
 const BADGE_FILTER_KEYS: BumicertBadgeFilter[] = ["gainforest", "maearth"];
 const QUERY_STATE_OPTIONS = { history: "replace", scroll: false, shallow: true } as const;
 const SEARCH_QUERY_STATE_OPTIONS = { ...QUERY_STATE_OPTIONS, throttleMs: 200 } as const;
 
 const SORT_OPTION_VALUES: SortMode[] = ["newest", "oldest", "az", "za"];
-const QUICK_CHIP_VALUES: QuickFilter[] = ["observations", "bumicerts"];
+const QUICK_CHIP_VALUES: QuickFilter[] = ["observations"];
 
 const ORGANIZATIONS_PAGE_SIZE = 24;
 const INITIAL_CARD_LIMIT = 96;
@@ -211,7 +211,6 @@ export function OrganizationsClient({ records: initialRecords = [] }: { records?
       if (countryFilter && normalizeCountry(record.country) !== countryFilter) return false;
       if (typeFilter && !orgTypes(record).includes(typeFilter)) return false;
       if (quickFilters.includes("observations") && (record.observationCount ?? 0) <= 0) return false;
-      if (quickFilters.includes("bumicerts") && (record.bumicertCount ?? 0) <= 0) return false;
       if (!normalizedQuery) return true;
       const haystack = [record.name, record.country, countryNameOrEmpty(record.country, locale), record.orgType, record.source]
         .filter(Boolean)

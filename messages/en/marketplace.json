@@ -159,8 +159,7 @@
       "colJoined": "Joined"
     },
     "quickFilters": {
-      "observations": "Has observations",
-      "bumicerts": "Has Certs"
+      "observations": "Has observations"
     },
     "facets": {
       "category": "Category",
@@ -509,6 +508,61 @@
       "overview": "Overview",
       "leaderboard": "Leaderboard",
       "ariaLabel": "Donation views"
+    }
+  },
+  "grants": {
+    "metadata": {
+      "title": "Grants — GainForest",
+      "description": "Apply for grant programs that fund data and decision sovereignty for nature-based communities."
+    },
+    "hero": {
+      "eyebrow": "Funding",
+      "title": "Grants",
+      "accent": "Programs",
+      "imageAlt": "Misty regenerative landscape",
+      "lede": "Open grant programs for communities building data and decision sovereignty. Apply with one of your projects."
+    },
+    "rewilding": {
+      "title": "Rewilding the Web",
+      "slots": "10 grants available",
+      "description": "A grant program financing 10 personal data servers and local data collection kits, so communities can store their own data and keep decisions in their own hands — for data and decision sovereignty.",
+      "support": "Supported by the Klarna AI for Climate Resilience Grant.",
+      "kits": {
+        "servers": {
+          "title": "Personal data servers",
+          "description": "Your own server to store and own your community's data."
+        },
+        "collection": {
+          "title": "Local data collection kits",
+          "description": "Field kits to gather observations and evidence on the ground."
+        }
+      },
+      "apply": "Apply",
+      "appliedTitle": "Application sent",
+      "appliedNote": "Your application for {project} is now posted to the feed.",
+      "postText": "Applying to the Rewilding the Web grant with my project \"{project}\" — for data and decision sovereignty. 🌱"
+    },
+    "applyModal": {
+      "title": "Choose a project to apply with",
+      "subtitle": "Pick one of your projects to send your application.",
+      "searchPlaceholder": "Search your projects",
+      "searchAria": "Search your projects",
+      "loading": "Loading your projects…",
+      "errorTitle": "Couldn't load your projects.",
+      "retry": "Try again",
+      "noProjectsTitle": "No projects yet",
+      "noProjectsDescription": "Create a project first, then come back to apply with it.",
+      "createProject": "Create a project",
+      "noMatch": "No projects match your search.",
+      "untitledProject": "Untitled project",
+      "applyWith": "Apply with {project}",
+      "submitError": "Couldn't send your application. Please try again."
+    },
+    "interoperable": {
+      "title": "Interoperable Grants Program",
+      "round": "Round 3",
+      "description": "Ma Earth is running its community-backed funding round with a matching pool for nature-based projects. Apply with your project to take part in Round 3.",
+      "apply": "Apply with your project"
     }
   },
   "account": {
