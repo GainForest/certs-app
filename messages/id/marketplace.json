@@ -608,7 +608,7 @@
       "home": "Beranda",
       "bumicerts": "sertifikat",
       "donationHistory": "Riwayat donasi",
-      "evidenceTimeline": "Linimasa bukti",
+      "evidenceTimeline": "Pembaruan proyek",
       "settings": "Pengaturan",
       "leaderboard": "Papan peringkat"
     },
@@ -937,7 +937,7 @@
     "evidence": {
       "boundaries": "{count, plural, =0 {Belum ada batas lokasi} other {# batas lokasi dipetakan}}",
       "sightings": "{count, plural, =0 {Belum ada pengamatan alam} other {# pengamatan alam}}",
-      "timeline": "{count, plural, =0 {Belum ada bukti linimasa} other {# item linimasa}}",
+      "timeline": "{count, plural, =0 {Belum ada pembaruan proyek} other {# pembaruan proyek}}",
       "reviews": "{count, plural, =0 {Belum ada ulasan} other {# ulasan}}"
     }
   },

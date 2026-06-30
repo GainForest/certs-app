@@ -609,7 +609,7 @@
       "bumicerts": "Certs",
       "donationHistory": "Donation History",
       "leaderboard": "Leaderboard",
-      "evidenceTimeline": "Evidence Timeline",
+      "evidenceTimeline": "Project Updates",
       "settings": "Settings"
     },
     "setupPrompt": {
@@ -937,7 +937,7 @@
     "evidence": {
       "boundaries": "{count, plural, =0 {No site boundaries yet} one {# site boundary mapped} other {# site boundaries mapped}}",
       "sightings": "{count, plural, =0 {No nature sightings yet} one {# nature sighting} other {# nature sightings}}",
-      "timeline": "{count, plural, =0 {No timeline evidence yet} one {# timeline item} other {# timeline items}}",
+      "timeline": "{count, plural, =0 {No project updates yet} one {# project update} other {# project updates}}",
       "reviews": "{count, plural, =0 {No reviews yet} one {# review} other {# reviews}}"
     }
   },

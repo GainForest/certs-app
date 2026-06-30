@@ -609,7 +609,7 @@
       "bumicerts": "certificados",
       "donationHistory": "Historial de donaciones",
       "leaderboard": "Clasificación",
-      "evidenceTimeline": "Cronología de evidencia",
+      "evidenceTimeline": "Actualizaciones del proyecto",
       "settings": "Configuración"
     },
     "setupPrompt": {
@@ -937,7 +937,7 @@
     "evidence": {
       "boundaries": "{count, plural, =0 {Sin límites de sitio aún} one {# límite de sitio mapeado} other {# límites de sitio mapeados}}",
       "sightings": "{count, plural, =0 {Sin avistamientos de naturaleza aún} one {# avistamiento de naturaleza} other {# avistamientos de naturaleza}}",
-      "timeline": "{count, plural, =0 {Sin evidencia en la cronología aún} one {# elemento de cronología} other {# elementos de cronología}}",
+      "timeline": "{count, plural, =0 {Sin actualizaciones del proyecto aún} one {# actualización del proyecto} other {# actualizaciones del proyecto}}",
       "reviews": "{count, plural, =0 {Sin evaluaciones aún} one {# evaluación} other {# evaluaciones}}"
     }
   },

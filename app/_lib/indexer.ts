@@ -5212,7 +5212,7 @@ export function summarizeObservationMeasurements(records: TreeMeasurementRecord[
   return facts;
 }
 
-// ── 9. Bumicert evidence timeline attachments ─────────────────────────────
+// ── 9. Bumicert project updates attachments ─────────────────────────────
 
 export type TimelineAttachmentSubject = { uri: string | null; cid: string | null };
 
