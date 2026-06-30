@@ -868,13 +868,13 @@
   "projects": {
     "metadata": {
       "title": "Explorar projetos — Trabalho de impacto regenerativo verificado",
-      "description": "Explore coleções de projetos de comunidades e organizações, cada uma agrupando os certificados que documentam seu impacto regenerativo."
+      "description": "Explore projetos: cada um é um trabalho focado com um objetivo claro, um prazo e os resultados esperados."
     },
     "hero": {
       "eyebrow": "Explorar projetos",
       "title": "Explore",
       "accent": "Projetos",
-      "description": "Projetos agrupam certificados relacionados de comunidades e organizações, para que você possa explorar o trabalho no nível do projeto antes de entrar em certificados individuais."
+      "description": "Cada projeto é um trabalho focado — com um objetivo claro, um prazo e os resultados esperados."
     },
     "search": {
       "ariaLabel": "Pesquisar projetos",
