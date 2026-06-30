@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
+import { CanonicalRedirect } from "@/app/account/_components/CanonicalRedirect";
 import { getGainForestModeratorAccess } from "@/app/internal/badges/_lib/access";
 import { fetchFlaggedTestAccounts } from "@/app/internal/badges/_lib/test-accounts";
 import { fetchGrantApplicants } from "@/app/_lib/grants";
@@ -17,7 +18,7 @@ export default async function AccountAdminPage({ params }: { params: Promise<{ d
   const account = await getAccountRouteData(did, urlIdentifier);
 
   if (urlIdentifier !== account.urlIdentifier) {
-    redirect(accountAdminPath(account.urlIdentifier));
+    return <CanonicalRedirect to={accountAdminPath(account.urlIdentifier)} />;
   }
 
   // The admin list lives on the admin group's own profile and is only visible

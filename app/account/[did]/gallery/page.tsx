@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
+import { CanonicalRedirect } from "@/app/account/_components/CanonicalRedirect";
 import { AccountGalleryTabContent } from "../../_components/AccountTabContent";
 import { accountGalleryPath, getAccountRouteData, readAccountRouteParams } from "../../_lib/account-route";
 
@@ -22,7 +22,7 @@ export default async function AccountGalleryPage({ params }: { params: Promise<{
   const account = await getAccountRouteData(did, urlIdentifier);
 
   if (urlIdentifier !== account.urlIdentifier) {
-    redirect(accountGalleryPath(account.urlIdentifier));
+    return <CanonicalRedirect to={accountGalleryPath(account.urlIdentifier)} />;
   }
 
   return <AccountGalleryTabContent account={account} did={did} />;

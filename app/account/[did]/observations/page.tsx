@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { CanonicalRedirect } from "@/app/account/_components/CanonicalRedirect";
 import { resolveAccountManageAccess } from "@/app/_lib/manage-server";
 import { TreesSection } from "@/app/(manage)/manage/_sections";
 import { AccountObservationsTabContent } from "../../_components/AccountTabContent";
@@ -27,7 +27,7 @@ export default async function AccountObservationsPage({
   const account = await getAccountRouteData(did, urlIdentifier);
 
   if (urlIdentifier !== account.urlIdentifier) {
-    redirect(accountObservationsPath(account.urlIdentifier));
+    return <CanonicalRedirect to={accountObservationsPath(account.urlIdentifier)} />;
   }
 
   // Measurements / Audio / Drone are private layers, so only show the secondary

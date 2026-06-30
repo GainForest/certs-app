@@ -797,6 +797,8 @@
       "comments": "{count, plural, one {maoni #} other {maoni #}}",
       "signInToInteract": "Ingia ili kuchapisha, kupenda na kutoa maoni",
       "commentPlaceholder": "Andika maoni…",
+      "reply": "Jibu",
+      "replyPlaceholder": "Andika jibu…",
       "send": "Toa maoni",
       "you": "Wewe",
       "postedJustNow": "sasa hivi",

@@ -34,7 +34,44 @@ export type FeedComment = {
   createdAt: string | null;
   authorName: string | null;
   authorAvatarRef: string | null;
+  /** AT-URI this comment replies to: the subject for a top-level comment, or
+   *  another comment's URI for a threaded reply. Null when unknown. */
+  parentUri: string | null;
 };
+
+/** A comment plus its nested replies, built from a flat thread by parent link. */
+export type CommentTreeNode = {
+  comment: FeedComment;
+  replies: CommentTreeNode[];
+};
+
+/**
+ * Nest a subject's flat comment thread into a reply tree. Top-level comments
+ * (whose `parentUri` is the subject itself, or whose parent isn't in the thread)
+ * become roots; everything else hangs off the comment it replies to. Roots and
+ * replies are each ordered oldest-first so a thread reads top to bottom.
+ */
+export function buildCommentTree(comments: FeedComment[], subjectUri: string): CommentTreeNode[] {
+  const byUri = new Map<string, CommentTreeNode>();
+  for (const comment of comments) byUri.set(comment.uri, { comment, replies: [] });
+
+  const roots: CommentTreeNode[] = [];
+  for (const node of byUri.values()) {
+    const parent = node.comment.parentUri;
+    const parentNode = parent && parent !== subjectUri ? byUri.get(parent) : undefined;
+    if (parentNode) parentNode.replies.push(node);
+    else roots.push(node);
+  }
+
+  const byCreated = (a: CommentTreeNode, b: CommentTreeNode) =>
+    (a.comment.createdAt ?? "").localeCompare(b.comment.createdAt ?? "");
+  const sortDeep = (nodes: CommentTreeNode[]) => {
+    nodes.sort(byCreated);
+    for (const n of nodes) sortDeep(n.replies);
+  };
+  sortDeep(roots);
+  return roots;
+}
 
 /** One account that liked a subject, for the "who liked this" hover. */
 export type Liker = {
@@ -71,16 +108,18 @@ const LIKES_BY_SUBJECT_QUERY = `
   }
 `;
 
+// Count by thread root, so a subject's count includes both its top-level
+// comments and every nested reply (all of which carry `reply.root == subject`).
 const COMMENT_COUNTS_QUERY = `
   query FeedCommentCounts($uris: [String!]!) {
-    appGainforestFeedPost(first: ${SCAN_CAP}, where: { reply: { parent: { uri: { in: $uris } } } }) {
-      edges { node { reply { parent { uri } } } }
+    appGainforestFeedPost(first: ${SCAN_CAP}, where: { reply: { root: { uri: { in: $uris } } } }) {
+      edges { node { reply { root { uri } } } }
     }
   }
 `;
 
 type LikeNode = { uri?: string | null; did?: string | null; subject?: { uri?: string | null } | null };
-type CommentCountNode = { reply?: { parent?: { uri?: string | null } | null } | null };
+type CommentCountNode = { reply?: { root?: { uri?: string | null } | null } | null };
 
 /**
  * Batch-fetch engagement for a set of subject AT-URIs. Returns a map covering
@@ -122,9 +161,9 @@ export async function fetchEngagement(
       }
 
       for (const edge of commentData?.appGainforestFeedPost?.edges ?? []) {
-        const parentUri = edge?.node?.reply?.parent?.uri;
-        if (!parentUri) continue;
-        const e = out.get(parentUri);
+        const rootUri = edge?.node?.reply?.root?.uri;
+        if (!rootUri) continue;
+        const e = out.get(rootUri);
         if (e) e.commentCount += 1;
       }
     }),
@@ -133,12 +172,16 @@ export async function fetchEngagement(
   return out;
 }
 
+// Pull the whole thread for a subject in one query by matching the reply root
+// (which every comment and nested reply on the subject shares), then carry each
+// node's parent uri so the client can nest replies under what they answer.
 const COMMENTS_FOR_SUBJECT_QUERY = `
   query FeedCommentsForSubject($uri: String!) {
-    appGainforestFeedPost(first: 200, where: { reply: { parent: { uri: { eq: $uri } } } }) {
+    appGainforestFeedPost(first: 200, where: { reply: { root: { uri: { eq: $uri } } } }) {
       edges {
         node {
           uri did text createdAt
+          reply { parent { uri } }
           ${CERTIFIED_PROFILE_DATA_FIELDS}
         }
       }
@@ -151,6 +194,7 @@ type CommentNode = {
   did?: string | null;
   text?: string | null;
   createdAt?: string | null;
+  reply?: { parent?: { uri?: string | null } | null } | null;
   certifiedProfileData?: {
     displayName?: string | null;
     avatar?: { image?: { ref?: string | null } | null } | null;
@@ -217,6 +261,7 @@ export async function fetchComments(uri: string, signal?: AbortSignal): Promise<
       createdAt: node.createdAt ?? null,
       authorName: node.certifiedProfileData?.displayName?.trim() || null,
       authorAvatarRef: normaliseRef(node.certifiedProfileData?.avatar?.image?.ref),
+      parentUri: node.reply?.parent?.uri ?? null,
     });
   }
   comments.sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));

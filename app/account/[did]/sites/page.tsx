@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { CanonicalRedirect } from "@/app/account/_components/CanonicalRedirect";
 import { OrgManageTabContent } from "../../_components/OrgManageTabContent";
 import { accountSitesPath, getAccountRouteData, readAccountRouteParams } from "../../_lib/account-route";
 
@@ -13,7 +13,7 @@ export default async function AccountSitesPage({ params }: { params: Promise<{ d
   const account = await getAccountRouteData(did, urlIdentifier);
 
   if (urlIdentifier !== account.urlIdentifier) {
-    redirect(accountSitesPath(account.urlIdentifier));
+    return <CanonicalRedirect to={accountSitesPath(account.urlIdentifier)} />;
   }
 
   return <OrgManageTabContent identifier={account.urlIdentifier} tab="sites" />;

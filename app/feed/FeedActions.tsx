@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { HeartIcon, ImageIcon, Loader2Icon, MessageCircleIcon, PencilIcon, SendHorizonalIcon, Trash2Icon, UserIcon } from "lucide-react";
+import { HeartIcon, ImageIcon, Loader2Icon, MessageCircleIcon, PencilIcon, ReplyIcon, SendHorizonalIcon, Trash2Icon, UserIcon } from "lucide-react";
 import {
   createFeedComment,
   createFeedLike,
@@ -22,10 +22,12 @@ import {
   updateFeedPost,
 } from "@/app/(manage)/manage/_lib/mutations";
 import {
+  buildCommentTree,
   emptyEngagement,
   fetchComments,
   fetchEngagement,
   fetchLikers,
+  type CommentTreeNode,
   type Engagement,
   type FeedComment,
   type Liker,
@@ -103,7 +105,11 @@ export type FeedInteractions = {
   loadLikers: (uri: string) => void;
   getComments: (uri: string) => FeedComment[] | undefined;
   loadComments: (uri: string) => Promise<void>;
-  addComment: (uri: string, text: string) => Promise<void>;
+  /** Comment on `uri`, or reply to it within a thread. Pass `rootUri` (the
+   *  subject at the top of the thread) to make this a threaded reply; omit it
+   *  for a top-level comment. The optimistic comment lands in the thread keyed
+   *  by the root so it nests under what it answers. */
+  addComment: (uri: string, text: string, rootUri?: string) => Promise<void>;
   /** Edit one of the viewer's own comments under `subjectUri`. */
   editComment: (subjectUri: string, commentUri: string, text: string) => Promise<void>;
   /** Delete one of the viewer's own comments under `subjectUri`. */
@@ -304,8 +310,12 @@ export function useFeedInteractions(sessionDid: string | null): FeedInteractions
   }, []);
 
   const addComment = useCallback(
-    async (uri: string, text: string) => {
-      const result = await createFeedComment({ text, subjectUri: uri }, repoOption);
+    async (uri: string, text: string, rootUri?: string) => {
+      // A reply targets the comment (`uri`) as its parent but lives in the
+      // thread keyed by the subject at the top (`rootUri`). A top-level comment
+      // is its own root, so the thread key is just `uri`.
+      const threadKey = rootUri ?? uri;
+      const result = await createFeedComment({ text, subjectUri: uri, rootUri }, repoOption);
       const optimistic: FeedComment = {
         uri: result.uri,
         did: actingDid ?? "",
@@ -313,14 +323,15 @@ export function useFeedInteractions(sessionDid: string | null): FeedInteractions
         createdAt: new Date().toISOString(),
         authorName: null,
         authorAvatarRef: null,
+        parentUri: uri,
       };
       setComments((prev) => {
         const next = new Map(prev);
-        next.set(uri, [...(prev.get(uri) ?? []), optimistic]);
+        next.set(threadKey, [...(prev.get(threadKey) ?? []), optimistic]);
         return next;
       });
-      const current = engagement.get(uri) ?? emptyEngagement();
-      setOne(uri, { commentCount: current.commentCount + 1 });
+      const current = engagement.get(threadKey) ?? emptyEngagement();
+      setOne(threadKey, { commentCount: current.commentCount + 1 });
     },
     [engagement, setOne, actingDid, repoOption],
   );
@@ -557,6 +568,105 @@ export function InlineEditor({
           {t("actions.cancelEdit")}
         </button>
         {error ? <span className="text-xs text-destructive">{error}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+/** The "Reply" affordance under a comment. Signed-out viewers are sent to login
+ *  (mirroring the like button) so the action stays discoverable but only acts
+ *  when permitted; signed-in viewers open the inline reply composer. */
+export function ReplyToggle({ signedIn, onOpen }: { signedIn: boolean; onOpen: () => void }) {
+  const t = useTranslations("common.feed");
+  return (
+    <button
+      type="button"
+      onClick={() => (signedIn ? onOpen() : redirectToLogin())}
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    >
+      <ReplyIcon className="size-3" />
+      {t("actions.reply")}
+    </button>
+  );
+}
+
+/** Inline composer for replying to a comment inside a thread. Styled like the
+ *  comment box; submits the reply and closes itself on success. The caller wires
+ *  `onSubmit` to addComment(parentUri, text, rootUri) so it nests correctly. */
+export function ReplyComposer({
+  viewerDid,
+  onSubmit,
+  onCancel,
+}: {
+  viewerDid: string | null;
+  onSubmit: (text: string) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const t = useTranslations("common.feed");
+  const viewer = useViewerCard(viewerDid);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const canSend = text.trim().length > 0 && text.length <= COMMENT_MAX && !busy;
+
+  async function send() {
+    if (!canSend) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await onSubmit(text.trim());
+      setText("");
+      onCancel();
+    } catch {
+      setError(t("actions.errorGeneric"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-1.5 flex items-end gap-2">
+      <ResolvedAvatar
+        did={viewer.did}
+        imageUrl={viewer.avatarUrl}
+        name={viewer.name}
+        fallbackIcon={<UserIcon className="size-3" />}
+        className="size-6"
+        sizes="24px"
+      />
+      <div className="min-w-0 flex-1">
+        <textarea
+          value={text}
+          autoFocus
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") onCancel();
+          }}
+          rows={1}
+          maxLength={COMMENT_MAX + 40}
+          placeholder={t("actions.replyPlaceholder")}
+          aria-label={t("actions.replyPlaceholder")}
+          className="min-h-8 w-full resize-none rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-primary/50"
+        />
+        <div className="mt-1 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void send()}
+            disabled={!canSend}
+            className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {busy ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
+            {t("actions.reply")}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("actions.cancelEdit")}
+          </button>
+          {error ? <span className="text-xs text-destructive">{error}</span> : null}
+        </div>
       </div>
     </div>
   );
@@ -975,66 +1085,27 @@ function CommentPanel({
   }
 
   const list = comments ?? [];
+  // Nest the flat thread so replies sit under the comment they answer.
+  const tree = useMemo(() => buildCommentTree(list, subjectUri), [list, subjectUri]);
 
   return (
     <div className="mt-2 rounded-xl border border-border/60 bg-muted/30 p-2.5">
       {loading && list.length === 0 ? (
         <p className="mb-2 text-xs text-muted-foreground/70">{t("actions.loadingComments")}</p>
-      ) : list.length > 0 ? (
+      ) : tree.length > 0 ? (
         <ul className="mb-2 space-y-2.5">
-          {list.map((c) => {
-            const isYou = Boolean(viewerDid && c.did === viewerDid);
-            const name = isYou ? t("actions.you") : c.authorName || t("anonymous");
-            return (
-              <li key={c.uri} className="flex gap-2">
-                <ResolvedAvatar
-                  did={c.did}
-                  avatarRef={isYou ? null : c.authorAvatarRef}
-                  imageUrl={isYou ? viewer.avatarUrl : null}
-                  name={isYou ? viewer.name ?? name : name}
-                  fallbackIcon={<UserIcon className="size-3.5" />}
-                  className="mt-0.5 size-7"
-                  sizes="28px"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm">
-                    <span className="font-medium text-foreground">{name}</span>{" "}
-                    <span className="text-xs text-muted-foreground/70">
-                      {c.createdAt ? formatRelative(c.createdAt) : t("actions.postedJustNow")}
-                    </span>
-                    {editingUri === c.uri ? (
-                      <InlineEditor
-                        initial={c.text}
-                        max={COMMENT_MAX}
-                        onSave={(value) => interactions.editComment(subjectUri, c.uri, value)}
-                        onCancel={() => setEditingUri(null)}
-                      />
-                    ) : (
-                      <p className="whitespace-pre-wrap break-words text-foreground/90">{c.text}</p>
-                    )}
-                  </div>
-                  {editingUri !== c.uri ? (
-                    <div className="-ml-2 mt-0.5 flex items-center gap-1">
-                      <LikeButton subjectUri={c.uri} signedIn={signedIn} interactions={interactions} size="sm" />
-                      {isYou ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => setEditingUri(c.uri)}
-                            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                          >
-                            <PencilIcon className="size-3" />
-                            {t("actions.edit")}
-                          </button>
-                          <DeleteButton onDelete={() => interactions.deleteComment(subjectUri, c.uri)} />
-                        </>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              </li>
-            );
-          })}
+          {tree.map((node) => (
+            <LightboxCommentNode
+              key={node.comment.uri}
+              node={node}
+              subjectUri={subjectUri}
+              signedIn={signedIn}
+              interactions={interactions}
+              viewer={viewer}
+              editingUri={editingUri}
+              setEditingUri={setEditingUri}
+            />
+          ))}
         </ul>
       ) : (
         <p className="mb-2 text-xs text-muted-foreground/70">{t("actions.noComments")}</p>
@@ -1069,5 +1140,108 @@ function CommentPanel({
       </div>
       {error ? <p className="mt-1 text-xs text-destructive">{error}</p> : null}
     </div>
+  );
+}
+
+/** One comment in the lightbox thread: identity, text, an inline editor for the
+ *  viewer's own, like + reply actions, the reply composer, and — recursively —
+ *  its nested replies. A reply writes against this comment's URI as parent and
+ *  the subject as root, so it lands back in the same thread one level deeper. */
+function LightboxCommentNode({
+  node,
+  subjectUri,
+  signedIn,
+  interactions,
+  viewer,
+  editingUri,
+  setEditingUri,
+}: {
+  node: CommentTreeNode;
+  subjectUri: string;
+  signedIn: boolean;
+  interactions: FeedInteractions;
+  viewer: { name: string | null; avatarUrl: string | null };
+  editingUri: string | null;
+  setEditingUri: (uri: string | null) => void;
+}) {
+  const t = useTranslations("common.feed");
+  const [replying, setReplying] = useState(false);
+  const c = node.comment;
+  const isYou = Boolean(interactions.viewerDid && c.did === interactions.viewerDid);
+  const name = isYou ? t("actions.you") : c.authorName || t("anonymous");
+  const editing = editingUri === c.uri;
+
+  return (
+    <li className="flex gap-2">
+      <ResolvedAvatar
+        did={c.did}
+        avatarRef={isYou ? null : c.authorAvatarRef}
+        imageUrl={isYou ? viewer.avatarUrl : null}
+        name={isYou ? viewer.name ?? name : name}
+        fallbackIcon={<UserIcon className="size-3.5" />}
+        className="mt-0.5 size-7"
+        sizes="28px"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="text-sm">
+          <span className="font-medium text-foreground">{name}</span>{" "}
+          <span className="text-xs text-muted-foreground/70">
+            {c.createdAt ? formatRelative(c.createdAt) : t("actions.postedJustNow")}
+          </span>
+          {editing ? (
+            <InlineEditor
+              initial={c.text}
+              max={COMMENT_MAX}
+              onSave={(value) => interactions.editComment(subjectUri, c.uri, value)}
+              onCancel={() => setEditingUri(null)}
+            />
+          ) : (
+            <p className="whitespace-pre-wrap break-words text-foreground/90">{c.text}</p>
+          )}
+        </div>
+        {!editing ? (
+          <div className="-ml-2 mt-0.5 flex items-center gap-1">
+            <LikeButton subjectUri={c.uri} signedIn={signedIn} interactions={interactions} size="sm" />
+            <ReplyToggle signedIn={signedIn} onOpen={() => setReplying(true)} />
+            {isYou ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEditingUri(c.uri)}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <PencilIcon className="size-3" />
+                  {t("actions.edit")}
+                </button>
+                <DeleteButton onDelete={() => interactions.deleteComment(subjectUri, c.uri)} />
+              </>
+            ) : null}
+          </div>
+        ) : null}
+        {replying ? (
+          <ReplyComposer
+            viewerDid={interactions.viewerDid}
+            onSubmit={(text) => interactions.addComment(c.uri, text, subjectUri)}
+            onCancel={() => setReplying(false)}
+          />
+        ) : null}
+        {node.replies.length > 0 ? (
+          <ul className="mt-2.5 space-y-2.5 border-l border-border/40 pl-2.5">
+            {node.replies.map((child) => (
+              <LightboxCommentNode
+                key={child.comment.uri}
+                node={child}
+                subjectUri={subjectUri}
+                signedIn={signedIn}
+                interactions={interactions}
+                viewer={viewer}
+                editingUri={editingUri}
+                setEditingUri={setEditingUri}
+              />
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </li>
   );
 }

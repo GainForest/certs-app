@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { CanonicalRedirect } from "@/app/account/_components/CanonicalRedirect";
 import { AccountDonationsTabContent } from "../../_components/AccountTabContent";
 import { accountDonationsPath, getAccountRouteData, readAccountRouteParams } from "../../_lib/account-route";
 
@@ -18,7 +18,7 @@ export default async function AccountDonationsPage({ params }: { params: Promise
   const account = await getAccountRouteData(did, urlIdentifier);
 
   if (urlIdentifier !== account.urlIdentifier) {
-    redirect(accountDonationsPath(account.urlIdentifier));
+    return <CanonicalRedirect to={accountDonationsPath(account.urlIdentifier)} />;
   }
 
   return <AccountDonationsTabContent account={account} did={did} />;

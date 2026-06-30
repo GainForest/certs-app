@@ -29,10 +29,12 @@ import {
   InlineEditor,
   LikeButton,
   LocalPostsList,
+  ReplyComposer,
+  ReplyToggle,
   useFeedInteractions,
   type FeedInteractions,
 } from "./FeedActions";
-import type { FeedComment } from "../_lib/feed-engagement";
+import { buildCommentTree, type CommentTreeNode } from "../_lib/feed-engagement";
 import { formatCompact, formatCompactUsd, formatRelative } from "../_lib/format";
 import { FeedImageLightbox } from "./FeedImageLightbox";
 import { ResolvedAvatar } from "./ResolvedAvatar";
@@ -864,12 +866,14 @@ function BatchComments({
     for (const id of commentedKey.split("\u0000")) void loadComments(id);
   }, [commentedKey, loadComments]);
 
-  // Merge the loaded threads, tagging each comment with its source sighting.
-  const merged = commented
-    .flatMap((it) => (getComments(it.id) ?? []).map((comment) => ({ comment, item: it })))
-    .sort((a, b) => (b.comment.createdAt ?? "").localeCompare(a.comment.createdAt ?? ""));
-  if (merged.length === 0) return null;
-  const shown = merged.slice(0, MAX_BATCH_COMMENTS);
+  // Nest each sighting's thread, then surface the newest top-level comments
+  // across the run, each carrying its source sighting. Replies travel nested
+  // under their parent, so a "Reply" answers in place instead of stacking on top.
+  const roots = commented
+    .flatMap((it) => buildCommentTree(getComments(it.id) ?? [], it.id).map((node) => ({ node, item: it })))
+    .sort((a, b) => (b.node.comment.createdAt ?? "").localeCompare(a.node.comment.createdAt ?? ""));
+  if (roots.length === 0) return null;
+  const shown = roots.slice(0, MAX_BATCH_COMMENTS);
 
   return (
     <div className="mt-3 border-t border-border/40 pt-2.5">
@@ -878,11 +882,12 @@ function BatchComments({
         {t("batch.commentsHeading")}
       </p>
       <ul className="space-y-2.5">
-        {shown.map(({ comment, item }) => (
-          <BatchCommentRow
-            key={comment.uri}
-            comment={comment}
+        {shown.map(({ node, item }) => (
+          <BatchCommentNode
+            key={node.comment.uri}
+            node={node}
             item={item}
+            isRoot
             signedIn={signedIn}
             interactions={interactions}
             onOpenImage={onOpenImage}
@@ -893,23 +898,29 @@ function BatchComments({
   );
 }
 
-/** One merged batch comment: author, which sighting it's on, the text, a like,
- *  and an inline editor for the viewer's own comment. */
-function BatchCommentRow({
-  comment,
+/** One comment in a collapsed run: author, (for a top-level comment) which
+ *  sighting it's on, the text, like + reply, an inline editor for the viewer's
+ *  own, and — recursively — its nested replies. Replies write against this
+ *  comment as parent and the sighting as root, so they nest here next time. */
+function BatchCommentNode({
+  node,
   item,
+  isRoot,
   signedIn,
   interactions,
   onOpenImage,
 }: {
-  comment: FeedComment;
+  node: CommentTreeNode;
   item: ActivityFeedItem;
+  isRoot: boolean;
   signedIn: boolean;
   interactions: FeedInteractions;
   onOpenImage: (item: ActivityFeedItem) => void;
 }) {
   const t = useTranslations("common.feed");
   const [editing, setEditing] = useState(false);
+  const [replying, setReplying] = useState(false);
+  const comment = node.comment;
   const isYou = Boolean(interactions.viewerDid && comment.did === interactions.viewerDid);
   const name = isYou ? t("actions.you") : comment.authorName || t("anonymous");
 
@@ -926,7 +937,7 @@ function BatchCommentRow({
       <div className="min-w-0 flex-1">
         <div className="text-sm">
           <span className="font-medium text-foreground">{name}</span>{" "}
-          {item.title ? (
+          {isRoot && item.title ? (
             <button
               type="button"
               onClick={() => onOpenImage(item)}
@@ -952,6 +963,7 @@ function BatchCommentRow({
         {!editing ? (
           <div className="-ml-2 mt-0.5 flex items-center gap-1">
             <LikeButton subjectUri={comment.uri} signedIn={signedIn} interactions={interactions} size="sm" />
+            <ReplyToggle signedIn={signedIn} onOpen={() => setReplying(true)} />
             {isYou ? (
               <>
                 <button
@@ -966,6 +978,28 @@ function BatchCommentRow({
               </>
             ) : null}
           </div>
+        ) : null}
+        {replying ? (
+          <ReplyComposer
+            viewerDid={interactions.viewerDid}
+            onSubmit={(text) => interactions.addComment(comment.uri, text, item.id)}
+            onCancel={() => setReplying(false)}
+          />
+        ) : null}
+        {node.replies.length > 0 ? (
+          <ul className="mt-2.5 space-y-2.5 border-l border-border/40 pl-2.5">
+            {node.replies.map((child) => (
+              <BatchCommentNode
+                key={child.comment.uri}
+                node={child}
+                item={item}
+                isRoot={false}
+                signedIn={signedIn}
+                interactions={interactions}
+                onOpenImage={onOpenImage}
+              />
+            ))}
+          </ul>
         ) : null}
       </div>
     </li>

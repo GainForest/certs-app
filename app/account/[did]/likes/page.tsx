@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { CanonicalRedirect } from "@/app/account/_components/CanonicalRedirect";
 import { getTranslations } from "next-intl/server";
 import { ProfileActivity } from "../../_components/ProfileActivity";
 import {
@@ -29,7 +29,7 @@ export default async function AccountLikesPage({ params }: { params: Promise<{ d
   const account = await getAccountRouteData(did, urlIdentifier);
 
   if (urlIdentifier !== account.urlIdentifier) {
-    redirect(accountLikesPath(account.urlIdentifier));
+    return <CanonicalRedirect to={accountLikesPath(account.urlIdentifier)} />;
   }
 
   return <ProfileActivity did={account.did} identifier={account.urlIdentifier} active="likes" />;

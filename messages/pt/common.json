@@ -797,6 +797,8 @@
       "comments": "{count, plural, one {# comentário} other {# comentários}}",
       "signInToInteract": "Entre para publicar, curtir e comentar",
       "commentPlaceholder": "Escreva um comentário…",
+      "reply": "Responder",
+      "replyPlaceholder": "Escreva uma resposta…",
       "send": "Comentar",
       "you": "Você",
       "postedJustNow": "agora mesmo",

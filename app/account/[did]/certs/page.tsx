@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { CanonicalRedirect } from "@/app/account/_components/CanonicalRedirect";
 import { AccountBumicertsTabContent } from "../../_components/AccountTabContent";
 import { accountBumicertsPath, getAccountRouteData, readAccountRouteParams } from "../../_lib/account-route";
 
@@ -18,7 +18,7 @@ export default async function AccountBumicertsPage({ params }: { params: Promise
   const account = await getAccountRouteData(did, urlIdentifier);
 
   if (urlIdentifier !== account.urlIdentifier) {
-    redirect(accountBumicertsPath(account.urlIdentifier));
+    return <CanonicalRedirect to={accountBumicertsPath(account.urlIdentifier)} />;
   }
 
   return <AccountBumicertsTabContent account={account} did={did} />;

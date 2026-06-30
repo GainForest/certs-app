@@ -797,6 +797,8 @@
       "comments": "{count, plural, one {# comment} other {# comments}}",
       "signInToInteract": "Sign in to post, like, and comment",
       "commentPlaceholder": "Write a comment…",
+      "reply": "Reply",
+      "replyPlaceholder": "Write a reply…",
       "send": "Comment",
       "you": "You",
       "postedJustNow": "just now",

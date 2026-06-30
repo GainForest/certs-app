@@ -797,6 +797,8 @@
       "comments": "{count, plural, other {# komentar}}",
       "signInToInteract": "Masuk untuk memposting, menyukai, dan berkomentar",
       "commentPlaceholder": "Tulis komentar…",
+      "reply": "Balas",
+      "replyPlaceholder": "Tulis balasan…",
       "send": "Komentar",
       "you": "Anda",
       "postedJustNow": "baru saja",

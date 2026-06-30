@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { CanonicalRedirect } from "@/app/account/_components/CanonicalRedirect";
 import { getTranslations } from "next-intl/server";
 import { ProfileActivity } from "../../_components/ProfileActivity";
 import {
@@ -29,7 +29,7 @@ export default async function AccountPostsPage({ params }: { params: Promise<{ d
   const account = await getAccountRouteData(did, urlIdentifier);
 
   if (urlIdentifier !== account.urlIdentifier) {
-    redirect(accountPostsPath(account.urlIdentifier));
+    return <CanonicalRedirect to={accountPostsPath(account.urlIdentifier)} />;
   }
 
   return <ProfileActivity did={account.did} identifier={account.urlIdentifier} active="posts" />;
