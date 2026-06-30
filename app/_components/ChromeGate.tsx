@@ -17,8 +17,9 @@ export function ChromeGate({ children }: { children: React.ReactNode }) {
   const showFooter = pathname !== "/bioblitz";
 
   return (
-    <AppShell authSession={null} manageAccountKind="user" footer={showFooter ? <Footer /> : null}>
+    <AppShell authSession={null} manageAccountKind="user">
       {children}
+      {showFooter ? <Footer /> : null}
     </AppShell>
   );
 }
