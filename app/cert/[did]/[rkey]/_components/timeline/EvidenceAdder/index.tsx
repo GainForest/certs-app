@@ -30,6 +30,7 @@ import { getLinkedNatureUris, getLinkedTreeGroupUris } from "./linkedEvidence";
 import { AudioEvidencePicker } from "./AudioEvidencePicker";
 import { TreeEvidencePicker } from "./TreeEvidencePicker";
 import { NatureEvidencePicker } from "./NatureEvidencePicker";
+import { NatureCsvUpload } from "./NatureCsvUpload";
 import { FileEvidencePicker } from "./FileEvidencePicker";
 import {
   hasTimelineSourceData,
@@ -333,6 +334,9 @@ export function EvidenceAdder({
             isSubmitting={isSubmitting}
             submitDrafts={submitDrafts}
           />
+        ) : null}
+        {activeTab === "nature" ? (
+          <NatureCsvUpload isSubmitting={isSubmitting} submitDrafts={submitDrafts} />
         ) : null}
         {sourceState.status === "ready" && activeTab === "nature" ? (
           <NatureEvidencePicker

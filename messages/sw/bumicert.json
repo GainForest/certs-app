@@ -177,7 +177,16 @@
         "speciesCount": "{count, plural, =1 {spishi 1} other {spishi #}}",
         "groupStatus": "Data iliyopangwa",
         "manageData": "Dhibiti uchunguzi",
-        "groupedNatureDataFallback": "Data ya asili iliyopangwa pamoja"
+        "groupedNatureDataFallback": "Data ya asili iliyopangwa pamoja",
+        "csvUpload": {
+          "title": "Pakia lahajedwali",
+          "description": "Ongeza CSV ya uchunguzi (pamoja na safu wima zozote za vipimo) kama faili moja. Bora kwa orodha kubwa.",
+          "choose": "Chagua faili la CSV",
+          "hint": "Lahajedwali iliyohifadhiwa kama .csv",
+          "notCsv": "Tafadhali chagua faili la .csv.",
+          "tooLarge": "Faili hili ni kubwa mno. Liwe chini ya {maxSize}.",
+          "remove": "Ondoa faili"
+        }
       },
       "unableToVerifyTreeSiteContext": "Haikuwezekana kukagua miti yote. Onyesha upya kabla ya kuunganisha vikundi vya miti.",
       "validation": {

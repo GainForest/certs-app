@@ -177,7 +177,16 @@
         "speciesCount": "{count, plural, =1 {1 species} other {# species}}",
         "groupStatus": "Grouped data",
         "manageData": "Manage Observations",
-        "groupedNatureDataFallback": "Grouped nature data"
+        "groupedNatureDataFallback": "Grouped nature data",
+        "csvUpload": {
+          "title": "Upload a spreadsheet",
+          "description": "Add a CSV of observations (with any measurement columns) as a single file. Best for large lists.",
+          "choose": "Choose a CSV file",
+          "hint": "A spreadsheet saved as .csv",
+          "notCsv": "Please choose a .csv file.",
+          "tooLarge": "This file is too large. Keep it under {maxSize}.",
+          "remove": "Remove file"
+        }
       },
       "unableToVerifyTreeSiteContext": "Could not check all trees. Refresh before linking tree groups.",
       "validation": {

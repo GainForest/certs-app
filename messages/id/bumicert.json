@@ -177,7 +177,16 @@
         "speciesCount": "{count, plural, =1 {1 spesies} other {# spesies}}",
         "groupStatus": "Data dikelompokkan",
         "manageData": "Kelola observasi",
-        "groupedNatureDataFallback": "Data alam yang dikelompokkan"
+        "groupedNatureDataFallback": "Data alam yang dikelompokkan",
+        "csvUpload": {
+          "title": "Unggah lembar data",
+          "description": "Tambahkan CSV observasi (dengan kolom pengukuran apa pun) sebagai satu berkas. Cocok untuk daftar besar.",
+          "choose": "Pilih berkas CSV",
+          "hint": "Lembar data yang disimpan sebagai .csv",
+          "notCsv": "Silakan pilih berkas .csv.",
+          "tooLarge": "Berkas ini terlalu besar. Jaga di bawah {maxSize}.",
+          "remove": "Hapus berkas"
+        }
       },
       "unableToVerifyTreeSiteContext": "Tidak dapat memeriksa semua pohon. Muat ulang sebelum menautkan grup pohon.",
       "validation": {

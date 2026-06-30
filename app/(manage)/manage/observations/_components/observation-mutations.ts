@@ -12,9 +12,11 @@ type ObservationPhotoResult = MutationResult & { blobRef: ObservationBlobRef | n
 
 const OCCURRENCE_COLLECTION = "app.gainforest.dwc.occurrence";
 const ATTACHMENT_COLLECTION = "org.hypercerts.context.attachment";
-// Tags the attachment so the dataset is recognisable as a bulk observations
-// upload rather than a generic document.
-const OBSERVATION_DATASET_CONTENT_TYPE = "observation-dataset";
+// Registered biodiversity-evidence content type (see the cert/project timeline's
+// evidenceContentTypeRegistry). Tagging the dataset with this groups it under
+// Biodiversity on the project/cert timeline and still renders the CSV as a
+// downloadable spreadsheet, rather than showing up as an unclassified file.
+const OBSERVATION_DATASET_CONTENT_TYPE = "biodiversity-observations";
 // Occurrence photos surface in the explorer/indexer through the occurrence's own
 // `imageEvidence` field (an app.gainforest.common.defs#image wrapper), not the
 // separate ac.multimedia records — so the primary photo must be copied there.

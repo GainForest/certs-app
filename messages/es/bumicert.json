@@ -177,7 +177,16 @@
         "speciesCount": "{count, plural, =1 {1 especie} other {# especies}}",
         "groupStatus": "Datos agrupados",
         "manageData": "Gestionar observaciones",
-        "groupedNatureDataFallback": "Datos de naturaleza agrupados"
+        "groupedNatureDataFallback": "Datos de naturaleza agrupados",
+        "csvUpload": {
+          "title": "Subir una hoja de cálculo",
+          "description": "Agrega un CSV de observaciones (con cualquier columna de medición) como un solo archivo. Ideal para listas grandes.",
+          "choose": "Elegir un archivo CSV",
+          "hint": "Una hoja de cálculo guardada como .csv",
+          "notCsv": "Elige un archivo .csv.",
+          "tooLarge": "Este archivo es demasiado grande. Mantenlo por debajo de {maxSize}.",
+          "remove": "Quitar archivo"
+        }
       },
       "unableToVerifyTreeSiteContext": "No se pudieron comprobar todos los árboles. Actualiza antes de vincular grupos de árboles.",
       "validation": {

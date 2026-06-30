@@ -9,6 +9,9 @@ import type { AttachmentDraft } from "../contextAttachmentMutations";
 export const CONTENT_TYPE_TREE_DATASET = "tree-dataset";
 export const CONTENT_TYPE_NATURE = "biodiversity";
 export const CONTENT_TYPE_NATURE_DATASET = "biodiversity-dataset";
+// A raw observations spreadsheet stored as a single file attachment, grouped
+// under Biodiversity on the timeline.
+export const CONTENT_TYPE_NATURE_OBSERVATIONS = "biodiversity-observations";
 
 export type TimelineSourceData = {
   audio: ManagedAudio[];
