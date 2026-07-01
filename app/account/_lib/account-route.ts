@@ -159,6 +159,10 @@ export function accountMembersPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/members`;
 }
 
+export function accountTainaPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/taina`;
+}
+
 export async function readOptionalAccountRouteParams(
   params: Promise<{ did: string }>,
 ): Promise<{ urlIdentifier: string; did: string } | null> {

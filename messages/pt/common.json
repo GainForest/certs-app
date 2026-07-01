@@ -80,7 +80,8 @@
     "sections": {
       "explore": "EXPLORAR",
       "funding": "FINANCIAMENTO",
-      "manage": "GERENCIAR"
+      "manage": "GERENCIAR",
+      "ai": "AI"
     },
     "items": {
       "bumicerts": "certificados",
@@ -107,7 +108,8 @@
       "myObservations": "Observações",
       "myTrees": "Árvores",
       "myProfile": "Perfil",
-      "feed": "Novidades"
+      "feed": "Novidades",
+      "taina": "Tainá"
     },
     "prompts": {
       "signInDescription": "Entre para gerenciar sua conta e conteúdo.",
@@ -397,7 +399,8 @@
     "posts": "Publicações",
     "filesAndPhotos": "Arquivos e fotos",
     "photos": "Fotos",
-    "files": "Arquivos"
+    "files": "Arquivos",
+    "taina": "Tainá"
   },
   "accountAttachments": {
     "title": "Anexos",
@@ -998,5 +1001,95 @@
       "hypercerts": "Declarações de impacto (atividade, contribuição, contribuinte, direitos), coleções, recibos de financiamento, anexos, escopo de trabalho e tipos compartilhados."
     },
     "sectionsAria": "Seções de esquemas"
+  },
+  "taina": {
+    "meta": {
+      "title": "Tainá — GainForest",
+      "description": "Conecte o seu próprio bot do Telegram e transforme o que você vê na natureza em observações de biodiversidade verificáveis."
+    },
+    "hero": {
+      "eyebrow": "Assistente de campo com IA",
+      "title": "Conheça a Tainá",
+      "description": "A Tainá é a sua companheira de campo no Telegram. Envie uma foto ou uma nota sobre uma planta, um animal ou um fungo — ela identifica a espécie e registra a observação na sua conta GainForest.",
+      "step1Title": "Conecte o seu próprio bot",
+      "step1Description": "Crie um bot privado do Telegram com o @BotFather e vincule-o aqui. Só você pode falar com ele.",
+      "step2Title": "Envie fotos ou notas",
+      "step2Description": "Mande para o seu bot o que você vir em campo. A Tainá identifica a espécie e pergunta pelos detalhes importantes.",
+      "step3Title": "Observações registradas",
+      "step3Description": "Cada avistamento confirmado vira uma observação de biodiversidade salva na sua conta e visível no seu perfil."
+    },
+    "signIn": {
+      "title": "Entre para começar",
+      "description": "A Tainá registra as observações na sua conta GainForest, então entre antes de conectar o seu bot.",
+      "button": "Entrar"
+    },
+    "setup": {
+      "title": "Conecte o seu bot da Tainá",
+      "description": "Crie um bot do Telegram para a Tainá e cole o token abaixo. O bot é privado — funciona só para você.",
+      "howTitle": "Como criar o seu bot (cerca de 2 minutos)",
+      "howStep1": "Abra o <botfather>@BotFather</botfather> no Telegram.",
+      "howStep2": "Envie <code>/newbot</code> e siga as instruções.",
+      "howStep3": "Copie o token que ele fornece (algo como 123456789:ABC…).",
+      "howStep4": "Cole abaixo — este bot é usado só por você.",
+      "tokenLabel": "Token do bot",
+      "focusLabel": "O que você está documentando?",
+      "focusOptional": "opcional",
+      "focusPlaceholder": "ex.: aves e polinizadores, Mata Atlântica",
+      "submit": "Conectar Tainá",
+      "submitting": "Conectando…"
+    },
+    "errors": {
+      "invalidToken": "Isso não parece um token de bot. Copie-o do @BotFather (algo como 123456789:ABC…).",
+      "genericError": "Não foi possível conectar o seu bot. Tente novamente.",
+      "runtimeUnreachable": "A Tainá está indisponível no momento. Tente novamente em instantes."
+    },
+    "activation": {
+      "title": "Ative o seu bot",
+      "description": "O seu bot está conectado, mas ainda é privado. Abra-o no Telegram e envie este código de uso único para que só você possa falar com ele.",
+      "open": "Abrir a Tainá e ativar",
+      "hint": "O botão envia o código por você — ou mande o código diretamente para o bot."
+    },
+    "linked": {
+      "title": "O seu bot da Tainá",
+      "justLinkedTitle": "A Tainá está no ar",
+      "justLinkedNote": "O seu bot está vinculado e pronto.",
+      "badge": "Vinculado",
+      "description": "Você está usando <bot></bot>. Abra-o no Telegram para registrar o que vê ou revise tudo no seu painel.",
+      "openBot": "Abrir {bot} no Telegram",
+      "dashboard": "Ir para o painel da Tainá"
+    },
+    "dashboard": {
+      "loadError": "Não foi possível carregar o seu painel da Tainá. Tente novamente.",
+      "notLinkedTitle": "Nenhum bot conectado ainda",
+      "notLinkedDescription": "Você ainda não conectou um bot do Telegram. Configure um e a Tainá começará a registrar as suas observações aqui.",
+      "setUp": "Configurar a Tainá",
+      "activationTitle": "Ative o seu bot",
+      "activationDescription": "<bot></bot> está conectado, mas é privado. Abra-o no Telegram e envie este código de uso único para que só você possa falar com ele.",
+      "activationOpen": "Abrir a Tainá e ativar",
+      "botCardTitle": "O seu bot",
+      "focus": "Foco",
+      "connectedOn": "Conectado em {date}",
+      "openInTelegram": "Abrir no Telegram",
+      "apiKeyTitle": "Chave de API",
+      "apiKeyDescription": "Criada automaticamente no seu login. A Tainá a usa para registrar observações na sua conta. Mantenha-a em segredo.",
+      "active": "Ativa",
+      "revoked": "Revogada",
+      "reveal": "Mostrar",
+      "hide": "Ocultar",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "regenerate": "Regenerar",
+      "regenerating": "Regenerando…",
+      "revoke": "Revogar",
+      "revoking": "Revogando…",
+      "revokeConfirm": "Revogar esta chave? A Tainá deixará de registrar observações até você gerar uma nova.",
+      "generate": "Gerar uma nova chave",
+      "generating": "Gerando…",
+      "keyActionFailed": "Não deu certo — tente novamente.",
+      "chatTitle": "Chat de observações",
+      "chatActive": "Ativo",
+      "chatWaiting": "Aguardando",
+      "chatEmpty": "Ainda não há mensagens. Abra o seu bot no Telegram e descreva ou fotografe algo que você viu — a sua conversa com a Tainá aparece aqui ao vivo."
+    }
   }
 }

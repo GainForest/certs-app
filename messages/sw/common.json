@@ -80,7 +80,8 @@
     "sections": {
       "explore": "GUNDUA",
       "funding": "UFADHILI",
-      "manage": "SIMAMIA"
+      "manage": "SIMAMIA",
+      "ai": "AI"
     },
     "items": {
       "bumicerts": "vyeti",
@@ -107,7 +108,8 @@
       "myObservations": "Uchunguzi",
       "myTrees": "Miti",
       "myProfile": "Wasifu",
-      "feed": "Matukio"
+      "feed": "Matukio",
+      "taina": "Tainá"
     },
     "prompts": {
       "signInDescription": "Ingia ili kusimamia akaunti na maudhui yako.",
@@ -397,7 +399,8 @@
     "posts": "Machapisho",
     "filesAndPhotos": "Faili na picha",
     "photos": "Picha",
-    "files": "Faili"
+    "files": "Faili",
+    "taina": "Tainá"
   },
   "accountAttachments": {
     "title": "Viambatisho",
@@ -998,5 +1001,95 @@
       "hypercerts": "Madai ya athari (shughuli, mchango, mchangiaji, haki), makusanyo, risiti za ufadhili, viambatisho, wigo wa kazi na aina za pamoja."
     },
     "sectionsAria": "Sehemu za miundo"
+  },
+  "taina": {
+    "meta": {
+      "title": "Tainá — GainForest",
+      "description": "Unganisha boti yako mwenyewe ya Telegram na ubadilishe unachokiona katika mazingira kuwa rekodi za bioanuwai zinazoweza kuthibitishwa."
+    },
+    "hero": {
+      "eyebrow": "Msaidizi wa uwandani wa AI",
+      "title": "Mfahamu Tainá",
+      "description": "Tainá ni mwenzako wa uwandani kwenye Telegram. Mtumie picha au maelezo kuhusu mmea, mnyama au kuvu — atatambua spishi na kurekodi uchunguzi kwenye akaunti yako ya GainForest.",
+      "step1Title": "Unganisha boti yako mwenyewe",
+      "step1Description": "Tengeneza boti binafsi ya Telegram kwa @BotFather kisha uiunganishe hapa. Ni wewe pekee unayeweza kuzungumza nayo.",
+      "step2Title": "Tuma picha au maelezo",
+      "step2Description": "Tumia boti yako chochote unachokiona uwandani. Tainá hutambua spishi na kuuliza maelezo muhimu.",
+      "step3Title": "Uchunguzi umerekodiwa",
+      "step3Description": "Kila mwonekano uliothibitishwa huwa uchunguzi wa bioanuwai uliohifadhiwa kwenye akaunti yako na kuonekana kwenye wasifu wako."
+    },
+    "signIn": {
+      "title": "Ingia ili kuanza",
+      "description": "Tainá hurekodi uchunguzi kwenye akaunti yako ya GainForest, hivyo ingia kwanza kabla ya kuunganisha boti yako.",
+      "button": "Ingia"
+    },
+    "setup": {
+      "title": "Unganisha boti yako ya Tainá",
+      "description": "Tengeneza boti ya Telegram kwa ajili ya Tainá kisha ubandike tokeni yake hapa chini. Boti ni ya faragha — inafanya kazi kwa ajili yako pekee.",
+      "howTitle": "Jinsi ya kutengeneza boti yako (kama dakika 2)",
+      "howStep1": "Fungua <botfather>@BotFather</botfather> kwenye Telegram.",
+      "howStep2": "Tuma <code>/newbot</code> kisha ufuate maelekezo.",
+      "howStep3": "Nakili tokeni utakayopewa (inafanana na 123456789:ABC…).",
+      "howStep4": "Ibandike hapa chini — boti hii inatumiwa na wewe pekee.",
+      "tokenLabel": "Tokeni ya boti",
+      "focusLabel": "Unarekodi nini?",
+      "focusOptional": "hiari",
+      "focusPlaceholder": "mf. ndege na wachavushaji, Msitu wa Atlantiki",
+      "submit": "Unganisha Tainá",
+      "submitting": "Inaunganisha…"
+    },
+    "errors": {
+      "invalidToken": "Hiyo haionekani kama tokeni ya boti. Inakili kutoka @BotFather (inafanana na 123456789:ABC…).",
+      "genericError": "Hatukuweza kuunganisha boti yako. Tafadhali jaribu tena.",
+      "runtimeUnreachable": "Tainá haipatikani kwa sasa. Tafadhali jaribu tena baadaye kidogo."
+    },
+    "activation": {
+      "title": "Washa boti yako",
+      "description": "Boti yako imeunganishwa lakini bado ni ya faragha. Ifungue kwenye Telegram na utume msimbo huu wa mara moja ili wewe pekee uweze kuzungumza nayo.",
+      "open": "Fungua Tainá na uwashe",
+      "hint": "Kitufe hutuma msimbo kwa niaba yako — au tuma msimbo moja kwa moja kwa boti."
+    },
+    "linked": {
+      "title": "Boti yako ya Tainá",
+      "justLinkedTitle": "Tainá iko hewani",
+      "justLinkedNote": "Boti yako imeunganishwa na iko tayari.",
+      "badge": "Imeunganishwa",
+      "description": "Unatumia <bot></bot>. Ifungue kwenye Telegram kurekodi unachokiona, au kagua kila kitu kwenye dashibodi yako.",
+      "openBot": "Fungua {bot} kwenye Telegram",
+      "dashboard": "Nenda kwenye dashibodi yako ya Tainá"
+    },
+    "dashboard": {
+      "loadError": "Hatukuweza kupakia dashibodi yako ya Tainá. Tafadhali jaribu tena.",
+      "notLinkedTitle": "Hakuna boti iliyounganishwa bado",
+      "notLinkedDescription": "Bado hujaunganisha boti ya Telegram. Sanidi moja na Tainá ataanza kurekodi uchunguzi wako hapa.",
+      "setUp": "Sanidi Tainá",
+      "activationTitle": "Washa boti yako",
+      "activationDescription": "<bot></bot> imeunganishwa lakini ni ya faragha. Ifungue kwenye Telegram na utume msimbo huu wa mara moja ili wewe pekee uweze kuzungumza nayo.",
+      "activationOpen": "Fungua Tainá na uwashe",
+      "botCardTitle": "Boti yako",
+      "focus": "Lengo",
+      "connectedOn": "Imeunganishwa {date}",
+      "openInTelegram": "Fungua kwenye Telegram",
+      "apiKeyTitle": "Ufunguo wa API",
+      "apiKeyDescription": "Umetengenezwa kiotomatiki kutoka kwenye kuingia kwako. Tainá huutumia kurekodi uchunguzi kwenye akaunti yako. Uweke siri.",
+      "active": "Inatumika",
+      "revoked": "Umebatilishwa",
+      "reveal": "Onyesha",
+      "hide": "Ficha",
+      "copy": "Nakili",
+      "copied": "Imenakiliwa",
+      "regenerate": "Tengeneza upya",
+      "regenerating": "Inatengeneza upya…",
+      "revoke": "Batilisha",
+      "revoking": "Inabatilisha…",
+      "revokeConfirm": "Ubatilishe ufunguo huu? Tainá ataacha kurekodi uchunguzi hadi utengeneze mpya.",
+      "generate": "Tengeneza ufunguo mpya",
+      "generating": "Inatengeneza…",
+      "keyActionFailed": "Haikufanikiwa — tafadhali jaribu tena.",
+      "chatTitle": "Mazungumzo ya uchunguzi",
+      "chatActive": "Inatumika",
+      "chatWaiting": "Inasubiri",
+      "chatEmpty": "Hakuna ujumbe bado. Fungua boti yako kwenye Telegram na ueleze au upige picha kitu ulichokiona — mazungumzo yako na Tainá yanaonekana hapa moja kwa moja."
+    }
   }
 }

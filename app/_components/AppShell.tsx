@@ -7,6 +7,7 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import {
   ArrowRightIcon,
   BinocularsIcon,
+  BotIcon,
   Building2Icon,
   CheckIcon,
   ChevronLeftIcon,
@@ -149,6 +150,21 @@ const NAV_ITEMS: NavSection[] = [
         Icon: SproutIcon,
         href: "/grants",
         pathCheck: { startsWith: "/grants" },
+      },
+    ],
+  },
+  {
+    kind: "section",
+    id: "ai",
+    text: "AI",
+    items: [
+      {
+        kind: "leaf",
+        id: "taina",
+        text: "Tainá",
+        Icon: BotIcon,
+        href: "/taina",
+        pathCheck: { startsWith: "/taina" },
       },
     ],
   },

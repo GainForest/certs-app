@@ -80,7 +80,8 @@
     "sections": {
       "explore": "JELAJAHI",
       "funding": "PENDANAAN",
-      "manage": "KELOLA"
+      "manage": "KELOLA",
+      "ai": "AI"
     },
     "items": {
       "bumicerts": "sertifikat",
@@ -107,7 +108,8 @@
       "myObservations": "Observasi",
       "myTrees": "Pohon",
       "myProfile": "Profil",
-      "feed": "Aktivitas"
+      "feed": "Aktivitas",
+      "taina": "Tainá"
     },
     "prompts": {
       "signInDescription": "Masuk untuk mengelola akun dan konten Anda.",
@@ -397,7 +399,8 @@
     "posts": "Postingan",
     "filesAndPhotos": "Berkas & foto",
     "photos": "Foto",
-    "files": "Berkas"
+    "files": "Berkas",
+    "taina": "Tainá"
   },
   "accountAttachments": {
     "title": "Lampiran",
@@ -998,5 +1001,95 @@
       "hypercerts": "Klaim dampak (aktivitas, kontribusi, kontributor, hak), koleksi, tanda terima pendanaan, lampiran, cakupan kerja, dan tipe bersama."
     },
     "sectionsAria": "Bagian skema"
+  },
+  "taina": {
+    "meta": {
+      "title": "Tainá — GainForest",
+      "description": "Hubungkan bot Telegram milik Anda dan ubah apa yang Anda lihat di alam menjadi observasi keanekaragaman hayati yang dapat diverifikasi."
+    },
+    "hero": {
+      "eyebrow": "Asisten lapangan AI",
+      "title": "Kenali Tainá",
+      "description": "Tainá adalah teman lapangan Anda di Telegram. Kirim foto atau catatan tentang tumbuhan, hewan, atau jamur — Tainá mengenali spesiesnya dan mencatat observasi di akun GainForest Anda.",
+      "step1Title": "Hubungkan bot Anda sendiri",
+      "step1Description": "Buat bot Telegram pribadi dengan @BotFather lalu tautkan di sini. Hanya Anda yang bisa berbicara dengannya.",
+      "step2Title": "Kirim foto atau catatan",
+      "step2Description": "Kirimkan ke bot Anda apa pun yang Anda lihat di lapangan. Tainá mengenali spesiesnya dan menanyakan detail yang penting.",
+      "step3Title": "Observasi tercatat",
+      "step3Description": "Setiap penampakan yang dikonfirmasi menjadi observasi keanekaragaman hayati yang tersimpan di akun Anda dan tampil di profil Anda."
+    },
+    "signIn": {
+      "title": "Masuk untuk memulai",
+      "description": "Tainá mencatat observasi di akun GainForest Anda, jadi masuklah sebelum menghubungkan bot Anda.",
+      "button": "Masuk"
+    },
+    "setup": {
+      "title": "Hubungkan bot Tainá Anda",
+      "description": "Buat bot Telegram untuk Tainá dan tempel tokennya di bawah. Bot ini pribadi — hanya bekerja untuk Anda.",
+      "howTitle": "Cara membuat bot Anda (sekitar 2 menit)",
+      "howStep1": "Buka <botfather>@BotFather</botfather> di Telegram.",
+      "howStep2": "Kirim <code>/newbot</code> dan ikuti petunjuknya.",
+      "howStep3": "Salin token yang diberikan (bentuknya seperti 123456789:ABC…).",
+      "howStep4": "Tempel di bawah — bot ini hanya digunakan oleh Anda.",
+      "tokenLabel": "Token bot",
+      "focusLabel": "Apa yang sedang Anda dokumentasikan?",
+      "focusOptional": "opsional",
+      "focusPlaceholder": "mis. burung & penyerbuk, Hutan Atlantik",
+      "submit": "Hubungkan Tainá",
+      "submitting": "Menghubungkan…"
+    },
+    "errors": {
+      "invalidToken": "Itu tidak tampak seperti token bot. Salin dari @BotFather (bentuknya seperti 123456789:ABC…).",
+      "genericError": "Kami tidak dapat menghubungkan bot Anda. Silakan coba lagi.",
+      "runtimeUnreachable": "Tainá tidak dapat dijangkau saat ini. Coba lagi sebentar lagi."
+    },
+    "activation": {
+      "title": "Aktifkan bot Anda",
+      "description": "Bot Anda sudah terhubung tetapi masih privat. Buka di Telegram dan kirim kode sekali pakai ini agar hanya Anda yang bisa berbicara dengannya.",
+      "open": "Buka Tainá & aktifkan",
+      "hint": "Tombol ini mengirimkan kodenya untuk Anda — atau kirim kodenya langsung ke bot."
+    },
+    "linked": {
+      "title": "Bot Tainá Anda",
+      "justLinkedTitle": "Tainá sudah aktif",
+      "justLinkedNote": "Bot Anda sudah tertaut dan siap.",
+      "badge": "Tertaut",
+      "description": "Anda menjalankan <bot></bot>. Buka di Telegram untuk mencatat apa yang Anda lihat, atau tinjau semuanya di dasbor Anda.",
+      "openBot": "Buka {bot} di Telegram",
+      "dashboard": "Buka dasbor Tainá Anda"
+    },
+    "dashboard": {
+      "loadError": "Kami tidak dapat memuat dasbor Tainá Anda. Silakan coba lagi.",
+      "notLinkedTitle": "Belum ada bot yang terhubung",
+      "notLinkedDescription": "Anda belum menghubungkan bot Telegram. Siapkan satu dan Tainá akan mulai mencatat observasi Anda di sini.",
+      "setUp": "Siapkan Tainá",
+      "activationTitle": "Aktifkan bot Anda",
+      "activationDescription": "<bot></bot> sudah terhubung tetapi masih privat. Buka di Telegram dan kirim kode sekali pakai ini agar hanya Anda yang bisa berbicara dengannya.",
+      "activationOpen": "Buka Tainá & aktifkan",
+      "botCardTitle": "Bot Anda",
+      "focus": "Fokus",
+      "connectedOn": "Terhubung {date}",
+      "openInTelegram": "Buka di Telegram",
+      "apiKeyTitle": "Kunci API",
+      "apiKeyDescription": "Dibuat otomatis dari proses masuk Anda. Tainá menggunakannya untuk mencatat observasi di akun Anda. Jaga kerahasiaannya.",
+      "active": "Aktif",
+      "revoked": "Dicabut",
+      "reveal": "Tampilkan",
+      "hide": "Sembunyikan",
+      "copy": "Salin",
+      "copied": "Tersalin",
+      "regenerate": "Buat ulang",
+      "regenerating": "Membuat ulang…",
+      "revoke": "Cabut",
+      "revoking": "Mencabut…",
+      "revokeConfirm": "Cabut kunci ini? Tainá akan berhenti mencatat observasi sampai Anda membuat kunci baru.",
+      "generate": "Buat kunci baru",
+      "generating": "Membuat…",
+      "keyActionFailed": "Gagal — silakan coba lagi.",
+      "chatTitle": "Obrolan observasi",
+      "chatActive": "Aktif",
+      "chatWaiting": "Menunggu",
+      "chatEmpty": "Belum ada pesan. Buka bot Anda di Telegram lalu jelaskan atau foto sesuatu yang Anda lihat — percakapan Anda dengan Tainá tampil di sini secara langsung."
+    }
   }
 }

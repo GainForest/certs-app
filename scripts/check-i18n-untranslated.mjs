@@ -65,6 +65,7 @@ const allowedExactValues = new Set([
   "format",
   "online",
   "Tainá",
+  "Tainá — GainForest",
   "Bumi",
   "Pteronotus parnellii",
   "survey-2024-amazon-site-a",
