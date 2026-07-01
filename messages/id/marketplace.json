@@ -1149,7 +1149,7 @@
         "notes": "Catatan",
         "kind": "Tumbuhan atau hewan",
         "mapLocation": "Lokasi peta",
-        "basisOfRecord": "Bagaimana dicatat"
+        "basisOfRecord": "Ini jenis catatan apa?"
       },
       "validation": {
         "name": "Masukkan nama tumbuhan atau hewan.",

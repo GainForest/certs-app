@@ -1149,7 +1149,7 @@
         "notes": "Notas",
         "kind": "Planta ou animal",
         "mapLocation": "Localização no mapa",
-        "basisOfRecord": "Como foi registrado"
+        "basisOfRecord": "Que tipo de registro é este?"
       },
       "validation": {
         "name": "Insira o nome de uma planta ou animal.",
