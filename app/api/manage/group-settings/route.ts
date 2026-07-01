@@ -3,6 +3,7 @@ import { getAuthForwardCookie } from "@/app/_lib/auth";
 import { fetchAuthSession } from "@/app/_lib/auth-server";
 import { fetchCgsMembersWithCookie, type CgsServerMember, type CgsServerRole } from "@/app/_lib/cgs-server";
 import { fetchIndexedCertifiedProfileCards, type IndexedCertifiedProfileCard } from "@/app/_lib/indexer";
+import { fetchBlueskyProfileCard } from "@/app/_lib/bluesky-profile";
 import { loadFastDataCouncilState, type DataCouncilState } from "@/app/_lib/data-council";
 import { listPendingGroupInvitationsForRepo, type GroupInvitation } from "@/app/_lib/cgs-invitations";
 
@@ -29,13 +30,30 @@ function jsonError(message: string, status: number) {
   return Response.json({ error: message }, { status, headers: { "cache-control": "no-store" } });
 }
 
-function profilesFromIndex(members: CgsServerMember[], cards: Map<string, IndexedCertifiedProfileCard>): AccountCardProfile[] {
+async function buildMemberProfiles(
+  members: CgsServerMember[],
+  cards: Map<string, IndexedCertifiedProfileCard>,
+): Promise<AccountCardProfile[]> {
+  // Members without an indexed Certified profile may be external Bluesky
+  // accounts; look those up on the Bluesky appview so they render with a name
+  // and avatar instead of an anonymous placeholder.
+  const missing = members.filter((member) => {
+    const indexed = cards.get(member.did);
+    return !indexed?.displayName?.trim() && !indexed?.avatarUrl?.trim();
+  });
+  const blueskyEntries = await Promise.all(
+    missing.map(async (member) => [member.did, await fetchBlueskyProfileCard(member.did).catch(() => null)] as const),
+  );
+  const blueskyByDid = new Map(blueskyEntries);
+
   return members.flatMap((member) => {
     const indexed = cards.get(member.did);
-    const displayName = indexed?.displayName?.trim() || null;
-    const avatar = indexed?.avatarUrl?.trim() || null;
-    if (!displayName && !avatar) return [];
-    return [{ did: member.did, handle: null, displayName, avatar }];
+    const bluesky = blueskyByDid.get(member.did) ?? null;
+    const displayName = indexed?.displayName?.trim() || bluesky?.displayName?.trim() || null;
+    const avatar = indexed?.avatarUrl?.trim() || bluesky?.avatarUrl?.trim() || null;
+    const handle = bluesky?.handle?.trim() || null;
+    if (!displayName && !avatar && !handle) return [];
+    return [{ did: member.did, handle, displayName, avatar }];
   });
 }
 
@@ -84,7 +102,7 @@ export async function GET(request: Request) {
     const [profilesByDid, invitations, dataCouncilResult] = await Promise.all([profilesPromise, invitationsPromise, dataCouncilPromise]);
     const body: GroupSettingsResponse = {
       members,
-      profiles: profilesFromIndex(members, profilesByDid),
+      profiles: await buildMemberProfiles(members, profilesByDid),
       invitations,
       dataCouncil: dataCouncilResult.state,
       dataCouncilError: dataCouncilResult.error,

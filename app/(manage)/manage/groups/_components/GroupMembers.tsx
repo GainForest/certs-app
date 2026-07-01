@@ -11,9 +11,11 @@ import { cn } from "@/lib/utils";
 import { formatCgsErrorMessage } from "@/app/_lib/cgs-errors";
 import { monogram, resolveDidProfile, type DidProfile } from "@/app/_lib/did-profile";
 import {
+  addCgsMember,
   cancelCgsInvitation,
   inviteCgsMember,
   removeCgsMember,
+  resolveCgsMemberIdentity,
   setCgsMemberRole,
   type CgsMember,
   type CgsPendingInvitation,
@@ -71,6 +73,14 @@ function memberErrorMessage(error: unknown, fallback: string): string {
 
 function isLikelyEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+// A plausible atproto identifier: a DID, a Bluesky/Certified handle, or a bare
+// username (the API appends the default domain). Rejects blanks and anything
+// with internal whitespace.
+function looksLikeMemberIdentifier(value: string): boolean {
+  const trimmed = value.trim().replace(/^@+/, "");
+  return trimmed.length >= 2 && !/\s/.test(trimmed);
 }
 
 function profilesByDid(profiles?: DidProfile[]): Record<string, DidProfile> {
@@ -371,24 +381,67 @@ export function GroupMembers({
   const handleAdd = (event: FormEvent) => {
     event.preventDefault();
     if (!canAddRemove) return;
-    const email = memberIdentifier.trim();
-    if (!email) return;
-    if (!isLikelyEmail(email)) {
-      setSuccess(null);
-      setError(invitationsT("invalidEmail"));
+    const value = memberIdentifier.trim();
+    if (!value) return;
+    const nextRole = canSetRoles ? role : "member";
+
+    // An email address sends an email invitation. Anything else is treated as an
+    // atproto identifier (Bluesky handle, Certified username, or DID) and the
+    // person is added to the organization directly.
+    if (isLikelyEmail(value)) {
+      runPending(async () => {
+        setError(null);
+        setSuccess(null);
+        try {
+          const { invitation } = await inviteCgsMember(groupDid, value, nextRole);
+          setPendingInvitations((current) => upsertInvitation(current, invitation));
+          setMemberIdentifier("");
+          setSuccess(invitationsT("sent", { email: value }));
+        } catch (err) {
+          setError(memberErrorMessage(err, invitationsT("sendError")));
+        }
+      });
       return;
     }
-    const nextRole = canSetRoles ? role : "member";
+
+    if (!looksLikeMemberIdentifier(value)) {
+      setSuccess(null);
+      setError(invitationsT("invalidIdentifier"));
+      return;
+    }
+
     runPending(async () => {
       setError(null);
       setSuccess(null);
+      const previousMembers = members;
       try {
-        const { invitation } = await inviteCgsMember(groupDid, email, nextRole);
-        setPendingInvitations((current) => upsertInvitation(current, invitation));
+        const identity = await resolveCgsMemberIdentity(value);
+        const optimisticMember: CgsMember = {
+          did: identity.did,
+          role: nextRole,
+          addedBy: currentUserDid,
+          addedAt: new Date().toISOString(),
+        };
+        setProfiles((current) => ({
+          ...current,
+          [identity.did]: {
+            did: identity.did,
+            handle: identity.handle ?? null,
+            displayName: identity.displayName ?? null,
+            avatar: identity.avatarUrl ?? null,
+          },
+        }));
+        setMembers((current) =>
+          current.some((member) => member.did === identity.did)
+            ? current.map((member) => (member.did === identity.did ? { ...member, role: nextRole } : member))
+            : [...current, optimisticMember],
+        );
         setMemberIdentifier("");
-        setSuccess(invitationsT("sent", { email }));
+        await addCgsMember(groupDid, identity.did, nextRole);
+        setSuccess(invitationsT("added", { name: identity.displayName?.trim() || identity.handle?.trim() || value }));
       } catch (err) {
-        setError(memberErrorMessage(err, invitationsT("sendError")));
+        setMembers(previousMembers);
+        setError(memberErrorMessage(err, invitationsT("addError")));
       }
     });
   };
@@ -501,8 +554,10 @@ export function GroupMembers({
           value={memberIdentifier}
           onChange={(event) => setMemberIdentifier(event.target.value)}
           placeholder={invitationsT("inputPlaceholder")}
-          type="email"
-          autoComplete="email"
+          type="text"
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
           disabled={isPending}
           aria-label={invitationsT("inputAria")}
         />

@@ -688,11 +688,11 @@
   },
   "groupInvitations": {
     "members": {
-      "inputPlaceholder": "Correo electrónico",
-      "inputAria": "Correo electrónico del miembro",
+      "inputPlaceholder": "Correo o usuario de Bluesky",
+      "inputAria": "Correo o usuario de Bluesky del miembro",
       "invite": "Invitar",
-      "ownerHelp": "Ingresa un correo electrónico para enviar una invitación.",
-      "adminHelp": "Los administradores pueden invitar miembros normales por correo. Pide a una persona propietaria que invite a otro administrador.",
+      "ownerHelp": "Ingresa un correo para enviar una invitación, o un usuario de Bluesky para agregar a alguien de inmediato.",
+      "adminHelp": "Agrega miembros normales por usuario de Bluesky, o invítalos por correo. Pide a una persona propietaria que agregue a otro administrador.",
       "locked": "Solo propietarios y administradores pueden invitar o quitar miembros.",
       "ownerDescription": "Invita personas y controla quién puede hacer cambios para esta organización.",
       "adminDescription": "Invita o quita miembros normales. Solo propietarios pueden cambiar roles.",
@@ -703,6 +703,9 @@
       "canceled": "Invitación quitada para {email}.",
       "cancelError": "No pudimos quitar esa invitación. Inténtalo de nuevo.",
       "invalidEmail": "Ingresa un correo electrónico válido.",
+      "invalidIdentifier": "Ingresa un correo electrónico o un usuario de Bluesky.",
+      "added": "{name} agregado a la organización.",
+      "addError": "No pudimos agregar a ese miembro. Revisa el usuario e inténtalo de nuevo.",
       "roleMember": "miembro",
       "roleAdmin": "administrador",
       "pendingStatus": "Invitado como {role}. Esperando a que acepte."

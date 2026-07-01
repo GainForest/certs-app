@@ -688,11 +688,11 @@
   },
   "groupInvitations": {
     "members": {
-      "inputPlaceholder": "Alamat email",
-      "inputAria": "Alamat email anggota",
+      "inputPlaceholder": "Email atau handle Bluesky",
+      "inputAria": "Email atau handle Bluesky anggota",
       "invite": "Undang",
-      "ownerHelp": "Masukkan alamat email untuk mengirim undangan.",
-      "adminHelp": "Admin dapat mengundang anggota biasa melalui email. Minta pemilik mengundang administrator lain.",
+      "ownerHelp": "Masukkan email untuk mengirim undangan, atau handle Bluesky untuk langsung menambahkan seseorang.",
+      "adminHelp": "Tambahkan anggota biasa lewat handle Bluesky, atau undang mereka lewat email. Minta pemilik menambahkan administrator lain.",
       "locked": "Hanya pemilik dan admin yang dapat mengundang atau menghapus anggota.",
       "ownerDescription": "Undang orang dan atur siapa yang dapat membuat perubahan untuk organisasi ini.",
       "adminDescription": "Undang atau hapus anggota biasa. Hanya pemilik yang dapat mengubah peran.",
@@ -703,6 +703,9 @@
       "canceled": "Undangan untuk {email} dihapus.",
       "cancelError": "Kami tidak dapat menghapus undangan itu. Coba lagi.",
       "invalidEmail": "Masukkan alamat email yang valid.",
+      "invalidIdentifier": "Masukkan alamat email atau handle Bluesky.",
+      "added": "{name} ditambahkan ke organisasi.",
+      "addError": "Kami tidak dapat menambahkan anggota itu. Periksa handle dan coba lagi.",
       "roleMember": "anggota",
       "roleAdmin": "administrator",
       "pendingStatus": "Diundang sebagai {role}. Menunggu mereka menerima."
