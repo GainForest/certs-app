@@ -1,14 +1,23 @@
 import { isResponse, resolveManageApiTarget } from "../../_lib/target";
-import { resolvePdsHost } from "@/app/_lib/pds";
+import { parseAtUri, resolvePdsHost } from "@/app/_lib/pds";
 
 export const runtime = "nodejs";
 
 const OCCURRENCE_COLLECTION = "app.gainforest.dwc.occurrence";
+const DATASET_COLLECTION = "app.gainforest.dwc.dataset";
 const COLLECTION_COLLECTION = "org.hypercerts.collection";
-const DATASET_COLLECTION_TYPE = "dataset";
 
 type ListedRecord = { uri?: string; value?: Record<string, unknown> };
 type ListedRecordsResponse = { records?: ListedRecord[]; cursor?: string };
+
+type DatasetRecord = {
+  uri: string;
+  rkey: string;
+  name: string;
+  description: string | null;
+  recordCount: number | null;
+  createdAt: string | null;
+};
 
 export type ObservationDatasetGroup = {
   datasetUri: string;
@@ -18,8 +27,8 @@ export type ObservationDatasetGroup = {
   count: number;
   createdAt: string | null;
   uris: string[];
-  /** rkeys of collections (e.g. projects) that nest this dataset in items[], so
-   *  deleting the dataset can also remove the dangling reference. */
+  /** rkeys of collections (e.g. projects) that reference this dataset in
+   *  items[], so deleting the dataset can also remove the dangling reference. */
   parentRkeys: string[];
 };
 
@@ -29,6 +38,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function stringValue(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function numberValue(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function datasetRefOf(value: Record<string, unknown> | undefined): string | null {
@@ -43,6 +56,44 @@ function datasetRefOf(value: Record<string, unknown> | undefined): string | null
 
 function rkeyFromUri(uri: string): string {
   return uri.split("/").pop() ?? "";
+}
+
+function dynamicProperty(value: unknown, key: string): string | null {
+  if (typeof value !== "string" || value.trim().length === 0) return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!isRecord(parsed)) return null;
+    return stringValue(parsed[key]);
+  } catch {
+    return null;
+  }
+}
+
+function normalizedDynamicProperty(value: unknown, key: string): string | null {
+  return dynamicProperty(value, key)?.replaceAll(/[_\s-]+/g, "").toLowerCase() ?? null;
+}
+
+function isMeasuredTreeOccurrence(value: Record<string, unknown> | undefined): boolean {
+  if (!value) return false;
+  return (
+    normalizedDynamicProperty(value.dynamicProperties, "dataType") === "measuredtree" ||
+    normalizedDynamicProperty(value.dynamicProperties, "source") === "bumicerts"
+  );
+}
+
+function parseDatasetRecord(record: ListedRecord): DatasetRecord | null {
+  const uri = stringValue(record.uri);
+  if (!uri || parseAtUri(uri)?.collection !== DATASET_COLLECTION) return null;
+  const name = stringValue(record.value?.name);
+  if (!name) return null;
+  return {
+    uri,
+    rkey: rkeyFromUri(uri),
+    name,
+    description: stringValue(record.value?.description),
+    recordCount: numberValue(record.value?.recordCount),
+    createdAt: stringValue(record.value?.createdAt),
+  };
 }
 
 // AT-URIs referenced by a collection's items[] (tolerates both the
@@ -86,34 +137,47 @@ export async function GET(request: Request) {
     const host = await resolvePdsHost(target.did);
     if (!host) return Response.json({ datasets: [] });
 
-    const [occurrences, collections] = await Promise.all([
+    const [occurrences, datasetRecords, collections] = await Promise.all([
       listAllRecords(host, target.did, OCCURRENCE_COLLECTION),
+      listAllRecords(host, target.did, DATASET_COLLECTION),
       listAllRecords(host, target.did, COLLECTION_COLLECTION),
     ]);
 
-    // Seed a group for every dataset-typed collection the steward owns, so a
-    // freshly created (and not-yet-populated) dataset still surfaces as a folder.
-    // Project / portfolio / other collection types are ignored here, and tree
-    // groups (app.gainforest.dwc.dataset) are a different collection entirely —
-    // so neither leaks into the observation dataset list.
-    const groups = new Map<string, ObservationDatasetGroup>();
-    for (const collection of collections) {
-      const uri = stringValue(collection.uri);
-      const type = stringValue(collection.value?.type);
-      if (!uri || type !== DATASET_COLLECTION_TYPE) continue;
-      groups.set(uri, {
-        datasetUri: uri,
-        datasetRkey: rkeyFromUri(uri),
-        name: stringValue(collection.value?.title) ?? "Untitled dataset",
-        description: stringValue(collection.value?.shortDescription),
-        count: 0,
-        createdAt: stringValue(collection.value?.createdAt),
-        uris: [],
-        parentRkeys: [],
-      });
+    const datasetsByUri = new Map<string, DatasetRecord>();
+    for (const record of datasetRecords) {
+      const dataset = parseDatasetRecord(record);
+      if (dataset) datasetsByUri.set(dataset.uri, dataset);
     }
 
-    // Record which collections nest each dataset (so a delete can unnest them).
+    // Observation datasets are app.gainforest.dwc.dataset records referenced by
+    // non-tree occurrence records. We intentionally do not create dataset
+    // folders from org.hypercerts.collection records here.
+    const groups = new Map<string, ObservationDatasetGroup>();
+    for (const occurrence of occurrences) {
+      const uri = stringValue(occurrence.uri);
+      const datasetUri = datasetRefOf(occurrence.value);
+      if (!uri || !datasetUri || parseAtUri(datasetUri)?.collection !== DATASET_COLLECTION) continue;
+      if (isMeasuredTreeOccurrence(occurrence.value)) continue;
+
+      const dataset = datasetsByUri.get(datasetUri);
+      const existing = groups.get(datasetUri);
+      const group = existing ?? {
+        datasetUri,
+        datasetRkey: dataset?.rkey ?? rkeyFromUri(datasetUri),
+        name: dataset?.name ?? stringValue(occurrence.value?.datasetName) ?? "Untitled dataset",
+        description: dataset?.description ?? null,
+        count: 0,
+        createdAt: dataset?.createdAt ?? null,
+        uris: [],
+        parentRkeys: [],
+      };
+      group.count += 1;
+      group.uris.push(uri);
+      groups.set(datasetUri, group);
+    }
+
+    // Record which project/collection records reference each dataset, so a
+    // delete can unnest them without scanning client-side.
     for (const collection of collections) {
       const parentUri = stringValue(collection.uri);
       if (!parentUri) continue;
@@ -123,17 +187,6 @@ export async function GET(request: Request) {
         const group = groups.get(childUri);
         if (group && !group.parentRkeys.includes(parentRkey)) group.parentRkeys.push(parentRkey);
       }
-    }
-
-    // Count only observations that point at one of those dataset collections.
-    for (const occurrence of occurrences) {
-      const uri = stringValue(occurrence.uri);
-      const datasetUri = datasetRefOf(occurrence.value);
-      if (!uri || !datasetUri) continue;
-      const existing = groups.get(datasetUri);
-      if (!existing) continue;
-      existing.count += 1;
-      existing.uris.push(uri);
     }
 
     const sorted = Array.from(groups.values()).sort((a, b) => {

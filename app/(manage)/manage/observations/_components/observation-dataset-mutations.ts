@@ -2,18 +2,16 @@
 
 import { createRecord, deleteRecord, getRecord, putRecord } from "../../_lib/mutations";
 
-// A dataset is a certified collection — the same primitive projects use —
-// distinguished by `type: "dataset"`. Observations point UP to it via the
-// occurrence's `datasetRef` (a back-pointer that scales past the collection's
-// 1000-item cap), while a project nests a dataset by listing it in `items[]`.
+// Observation datasets are first-class Darwin Core dataset records. Observations
+// point up to them via `datasetRef`; the dataset itself stores the steward-facing
+// name/description and a best-effort record count.
+const DATASET_COLLECTION = "app.gainforest.dwc.dataset";
 const COLLECTION_COLLECTION = "org.hypercerts.collection";
 const OCCURRENCE_COLLECTION = "app.gainforest.dwc.occurrence";
-export const DATASET_COLLECTION_TYPE = "dataset";
 
-// Collection lexicon limits (org.hypercerts.collection): title ≤80 graphemes,
-// shortDescription ≤300 graphemes.
-const TITLE_MAX = 80;
-const SHORT_DESCRIPTION_MAX = 300;
+// app.gainforest.dwc.dataset limits: name ≤256 graphemes, description ≤2048.
+const NAME_MAX = 256;
+const DESCRIPTION_MAX = 2048;
 
 type RepoOptions = { repo?: string } | undefined;
 
@@ -29,27 +27,43 @@ function itemUri(item: unknown): string | null {
 
 export type CreatedObservationDataset = { uri: string; rkey: string; cid: string; name: string };
 
-/**
- * Create an `org.hypercerts.collection` record (type "dataset") to group
- * observations under. No recordCount is stored — the dataset's size is derived
- * from the observations that point at it.
- */
+/** Create an `app.gainforest.dwc.dataset` record to group observations under. */
 export async function createObservationDataset(
   input: { name: string; description?: string | null },
   options?: RepoOptions,
 ): Promise<CreatedObservationDataset> {
-  const title = input.name.trim().slice(0, TITLE_MAX);
-  if (!title) throw new Error("Name your dataset first.");
-  const shortDescription = input.description?.trim().slice(0, SHORT_DESCRIPTION_MAX);
+  const name = input.name.trim().slice(0, NAME_MAX);
+  if (!name) throw new Error("Name your dataset first.");
+  const description = input.description?.trim().slice(0, DESCRIPTION_MAX);
   const record: Record<string, unknown> = {
-    $type: COLLECTION_COLLECTION,
-    type: DATASET_COLLECTION_TYPE,
-    title,
-    ...(shortDescription ? { shortDescription } : {}),
+    $type: DATASET_COLLECTION,
+    name,
+    ...(description ? { description } : {}),
+    recordCount: 0,
     createdAt: new Date().toISOString(),
   };
-  const result = await createRecord(COLLECTION_COLLECTION, record, undefined, options);
-  return { uri: result.uri, rkey: result.uri.split("/").pop() ?? "", cid: result.cid, name: title };
+  const result = await createRecord(DATASET_COLLECTION, record, undefined, options);
+  return { uri: result.uri, rkey: result.uri.split("/").pop() ?? "", cid: result.cid, name };
+}
+
+async function incrementObservationDatasetCount(
+  datasetRkey: string,
+  incrementBy: number,
+  options?: RepoOptions,
+): Promise<void> {
+  const current = await getRecord(DATASET_COLLECTION, datasetRkey, options);
+  const storedCount = typeof current.record.recordCount === "number" && Number.isFinite(current.record.recordCount)
+    ? current.record.recordCount
+    : 0;
+  const nextRecord: Record<string, unknown> = {
+    ...current.record,
+    $type: typeof current.record.$type === "string" ? current.record.$type : DATASET_COLLECTION,
+    recordCount: Math.max(0, storedCount + incrementBy),
+  };
+  await putRecord(DATASET_COLLECTION, datasetRkey, nextRecord, {
+    swapRecord: current.cid,
+    ...(options?.repo ? { repo: options.repo } : {}),
+  });
 }
 
 export type AttachInputOccurrence = { rkey: string; datasetRef: string | null };
@@ -62,7 +76,7 @@ export type AttachObservationsResult = {
 
 /**
  * Move observations into a dataset by stamping `datasetRef` (the dataset
- * collection's AT-URI) + `datasetName` onto each occurrence (a read-modify-write
+ * AT-URI) + `datasetName` onto each occurrence (a read-modify-write
  * that preserves everything else, including photo evidence). Observations that
  * already live in a dataset are left alone so membership never silently moves;
  * detach them first to re-group. Never touches `dynamicProperties`, so an
@@ -106,6 +120,15 @@ export async function attachObservationsToDataset(
     }
   }
 
+  if (attached.length > 0) {
+    const datasetRkey = input.datasetUri.split("/").pop();
+    if (datasetRkey) {
+      await incrementObservationDatasetCount(datasetRkey, attached.length, options).catch(() => {
+        // Non-fatal: the folder view derives counts from occurrence refs.
+      });
+    }
+  }
+
   return { attached, skipped, errors };
 }
 
@@ -119,12 +142,12 @@ export type DeleteObservationDatasetResult = {
 };
 
 /**
- * Delete a dataset collection WITHOUT deleting its observations. First ungroups
- * every observation (clears `datasetRef` + `datasetName`, preserving the rest of
- * the occurrence), then deletes the `org.hypercerts.collection` record itself.
+ * Delete a dataset WITHOUT deleting its observations. First ungroups every
+ * observation (clears `datasetRef` + `datasetName`, preserving the rest of
+ * the occurrence), then deletes the `app.gainforest.dwc.dataset` record itself.
  * The observations survive as standalone occurrences. Detach is per-occurrence
  * (getRecord→putRecord with swapRecord); failures are reported, not thrown, and
- * the collection is still removed so the grouping disappears from the UI.
+ * the dataset record is still removed so the grouping disappears from the UI.
  */
 export async function deleteObservationDataset(
   input: { datasetUri: string; datasetRkey: string; occurrenceRkeys: string[]; parentRkeys: string[] },
@@ -155,8 +178,8 @@ export async function deleteObservationDataset(
     }
   }
 
-  // Unnest the dataset from any collection (project, etc.) that lists it in
-  // items[], so no dangling reference is left behind.
+  // Unnest the dataset from any project collection that lists it in items[], so
+  // no dangling reference is left behind.
   const unnestedFrom: string[] = [];
   const unnestErrors: Array<{ rkey: string; error: string }> = [];
   for (const rkey of input.parentRkeys) {
@@ -186,7 +209,7 @@ export async function deleteObservationDataset(
   let collectionDeleted = false;
   let collectionError: string | null = null;
   try {
-    await deleteRecord(COLLECTION_COLLECTION, input.datasetRkey, options);
+    await deleteRecord(DATASET_COLLECTION, input.datasetRkey, options);
     collectionDeleted = true;
   } catch (error) {
     collectionError = error instanceof Error ? error.message : "The dataset could not be deleted.";
@@ -196,9 +219,9 @@ export async function deleteObservationDataset(
 }
 
 /**
- * Nest a dataset collection inside a project collection by adding it to the
- * project's `items[]` (recursive collection nesting). Idempotent: a no-op if the
- * dataset is already listed. Best-effort — callers should not fail the whole
+ * Reference a dataset from a project collection by adding it to the project's
+ * `items[]`. Idempotent: a no-op if the dataset is already listed. Best-effort
+ * — callers should not fail the whole
  * grouping if this throws.
  */
 export async function nestDatasetUnderProject(

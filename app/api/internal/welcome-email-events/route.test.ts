@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const sendResendEmail = vi.fn(async () => ({ id: "resend-test-id" }));
-const getCertifiedProfileCard = vi.fn(async (did: string) => ({
+const getCertifiedProfileCard = vi.fn(async (did: string): Promise<{ displayName: string | null; avatarUrl: string | null }> => ({
   displayName: did === "did:plc:org" ? "Resolved Org" : "Forest Member",
   avatarUrl: null,
 }));

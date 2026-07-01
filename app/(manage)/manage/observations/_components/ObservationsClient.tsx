@@ -618,8 +618,8 @@ export function ObservationsClient({ target, initialPage, forProject = null }: {
     void modal.show();
   }, [activeGroup, createPermission.reason, datasetGroups, loadDatasetGroups, modal, router, selectedRecords, target]);
 
-  // Delete a dataset (the certified collection) WITHOUT deleting its
-  // observations — the records are ungrouped (datasetRef cleared) and survive.
+  // Delete a dataset WITHOUT deleting its observations — the records are
+  // ungrouped (datasetRef cleared) and survive.
   const openDeleteDataset = useCallback(
     (dataset: ObservationDatasetGroup) => {
       if (deleteDisabledReason) return;
