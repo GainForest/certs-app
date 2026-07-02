@@ -147,6 +147,7 @@ async function AccountProjectUpdatesSection({ did }: { did: string }) {
         entries={entries}
         references={references}
         summaryScope="organization"
+        previewMode
       />
     </section>
   );
