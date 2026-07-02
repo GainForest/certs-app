@@ -12,6 +12,8 @@ export type GlobeOrganization = {
   /** Curated map point (marker position). Null when the org has no pin yet. */
   lat: number | null;
   lon: number | null;
+  /** True when the organization carries a Ma Earth badge (any round). */
+  maEarth?: boolean;
 };
 
 export type GlobeLegendEntry = {

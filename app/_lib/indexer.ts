@@ -1555,6 +1555,24 @@ export async function fetchTrustedOrganizationBadges(
   return badges;
 }
 
+/** DIDs of every organization carrying a Ma Earth badge (the umbrella badge
+ *  plus all funding-round badges). Awards subject either a bare DID or a
+ *  StrongRef to a record in the awardee's repo — both resolve to the org DID.
+ *  Powers the globe's Ma Earth roster/pins. */
+export async function fetchMaEarthOrganizationDids(signal?: AbortSignal): Promise<string[]> {
+  const index = await fetchFeaturedBadgeIndex(signal);
+  const dids: string[] = [];
+  for (const key of ["maearth", "maearth-round-1", "maearth-round-2", "maearth-round-3"] as const) {
+    const bucket = index.byBadge[key];
+    dids.push(...bucket.dids);
+    for (const uri of bucket.recordUris) {
+      const match = uri.match(/^at:\/\/([^/]+)\//);
+      if (match?.[1]?.startsWith("did:")) dids.push(match[1]);
+    }
+  }
+  return uniqueSorted(dids);
+}
+
 // ── Hidden (test) accounts ─────────────────────────────────────────────────
 //
 // GainForest stewards can flag an account as a "test" account from its profile.

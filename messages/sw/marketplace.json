@@ -1668,6 +1668,11 @@
         "wetland": "Ardhi oevu",
         "mangroves": "Mikoko"
       }
+    },
+    "loadingGlobe": "Inaandaa dunia…",
+    "sheet": {
+      "expand": "Onyesha maelezo",
+      "collapse": "Ficha maelezo"
     }
   }
 }

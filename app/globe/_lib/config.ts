@@ -14,11 +14,17 @@ export const GLOBE_DATA_BUCKET = "https://gainforest-transparency-dashboard.s3.a
 /** TiTiler endpoint used to tile raster (COG) layers, as on Green Globe. */
 export const GLOBE_TITILER_ENDPOINT = "https://t7mvfdyitg.execute-api.eu-west-3.amazonaws.com";
 
-/** ESA WorldCover 2021 land-cover tiles (Terrascope WMTS), as on Green Globe. */
+/** ESA WorldCover 2021 land-cover tiles. Green Globe used the legacy
+ *  services.terrascope.be WMTS, which no longer responds; Terrascope's
+ *  MapProxy serves the same layer as fast RESTful tiles with CORS `*`. */
 export const LANDCOVER_TILES_URL =
-  "https://services.terrascope.be/wmts/v2?layer=WORLDCOVER_2021_MAP&style=&tilematrixset=EPSG:3857&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileMatrix=EPSG:3857:{z}&TileCol={x}&TileRow={y}&TIME=2023-04-12";
+  "https://mapproxy.terrascope.be/mapproxy/wmts/esa-worldcover-map-10m-2021-v2_map/webmercator/{z}/{x}/{y}.png";
 
 export const PROJECT_MARKER_IMAGE_URL = "/assets/globe/project-marker.webp";
+
+/** Round Ma Earth badge marker (circular-cropped logo with a white ring),
+ *  generated from the Ma Earth badge asset. */
+export const MA_EARTH_MARKER_IMAGE_URL = "/assets/globe/ma-earth-marker.png";
 
 /** Initial camera — mirrors Green Globe's MAP_CONFIG. */
 export const GLOBE_INITIAL_CENTER: [number, number] = [102, 9];

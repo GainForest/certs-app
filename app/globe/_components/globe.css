@@ -17,6 +17,17 @@
   border-top-color: var(--border);
 }
 
+.globe-popup-name {
+  font-weight: 600;
+}
+
+.globe-popup-country {
+  margin-top: 1px;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
 /* Zoom control pills, matched to the app's outline buttons. */
 .maplibregl-ctrl-group {
   background: var(--background);
@@ -54,4 +65,11 @@
 
 .maplibregl-ctrl-attrib a {
   color: var(--muted-foreground);
+}
+
+/* Mobile: lift the map controls clear of the bottom sheet. */
+@media (max-width: 767px) {
+  .maplibregl-ctrl-bottom-right {
+    margin-bottom: 5.5rem;
+  }
 }

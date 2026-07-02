@@ -1668,6 +1668,11 @@
         "wetland": "Wetland",
         "mangroves": "Mangroves"
       }
+    },
+    "loadingGlobe": "Preparing the globe…",
+    "sheet": {
+      "expand": "Show details",
+      "collapse": "Hide details"
     }
   }
 }

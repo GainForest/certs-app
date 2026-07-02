@@ -19,12 +19,14 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./globe.css";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { countryFlag, formatCountry } from "../../_lib/format";
 import {
   EMPTY_FEATURE_COLLECTION,
   GLOBE_INITIAL_CENTER,
   GLOBE_INITIAL_ZOOM,
   GLOBE_TITILER_ENDPOINT,
   LANDCOVER_TILES_URL,
+  MA_EARTH_MARKER_IMAGE_URL,
   PROJECT_MARKER_IMAGE_URL,
   globeMapStyle,
 } from "../_lib/config";
@@ -60,8 +62,26 @@ type GlobeMapProps = {
   landcoverVisible?: boolean;
   /** Currently visible data layers (global + project-specific). */
   activeLayers?: GlobeLayer[];
+  /** Fired once the base style + runtime layers are ready. */
+  onLoaded?: () => void;
   className?: string;
 };
+
+/** Marker hover card: org name + country, built via DOM (XSS-safe). */
+function popupContent(name: string, country: string | null): HTMLElement {
+  const root = document.createElement("div");
+  const title = document.createElement("p");
+  title.className = "globe-popup-name";
+  title.textContent = name;
+  root.appendChild(title);
+  if (country) {
+    const sub = document.createElement("p");
+    sub.className = "globe-popup-country";
+    sub.textContent = `${countryFlag(country)} ${formatCountry(country)}`.trim();
+    root.appendChild(sub);
+  }
+  return root;
+}
 
 // ── Idle globe rotation (port of Green Globe's spinGlobe) ──────────────────
 
@@ -226,6 +246,7 @@ export function GlobeMap({
   spin = false,
   landcoverVisible = false,
   activeLayers = [],
+  onLoaded,
   className,
 }: GlobeMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -234,8 +255,10 @@ export function GlobeMap({
 
   const spinRef = useRef(spin);
   const selectRef = useRef(onSelectOrganization);
+  const loadedRef = useRef(onLoaded);
   const addedLayerIdsRef = useRef(new Set<string>());
   selectRef.current = onSelectOrganization;
+  loadedRef.current = onLoaded;
 
   // One-time map initialisation.
   useEffect(() => {
@@ -327,13 +350,19 @@ export function GlobeMap({
         paint: { "line-color": "#FFEA00", "line-width": 3 },
       });
 
-      // Organization markers.
+      // Organization markers: the GainForest pin, plus a round Ma Earth badge
+      // for Ma Earth–funded organizations.
       map.addSource(MARKER_SOURCE, { type: "geojson", data: EMPTY_FEATURE_COLLECTION });
-      map
-        .loadImage(PROJECT_MARKER_IMAGE_URL)
-        .then((image) => {
+      Promise.all([
+        map.loadImage(PROJECT_MARKER_IMAGE_URL),
+        map.loadImage(MA_EARTH_MARKER_IMAGE_URL),
+      ])
+        .then(([pin, maEarth]) => {
           if (!map.hasImage("projectMarkerImage")) {
-            map.addImage("projectMarkerImage", image.data);
+            map.addImage("projectMarkerImage", pin.data);
+          }
+          if (!map.hasImage("maEarthMarkerImage")) {
+            map.addImage("maEarthMarkerImage", maEarth.data);
           }
           if (!map.getLayer(MARKER_LAYER)) {
             map.addLayer({
@@ -341,15 +370,22 @@ export function GlobeMap({
               type: "symbol",
               source: MARKER_SOURCE,
               layout: {
-                "icon-image": "projectMarkerImage",
-                "icon-size": 0.05,
+                "icon-image": [
+                  "case",
+                  ["==", ["get", "maEarth"], true],
+                  "maEarthMarkerImage",
+                  "projectMarkerImage",
+                ],
+                // Pin renders ~36px; the round Ma Earth badge slightly
+                // smaller (~26px) since there are hundreds of them.
+                "icon-size": ["case", ["==", ["get", "maEarth"], true], 0.058, 0.05],
                 "icon-allow-overlap": true,
-                "icon-anchor": "bottom",
+                "icon-anchor": ["case", ["==", ["get", "maEarth"], true], "center", "bottom"] as unknown as "bottom",
               },
             });
           }
         })
-        .catch((error) => console.warn("[globe] marker image failed", error));
+        .catch((error) => console.warn("[globe] marker images failed", error));
 
       const handleMarkerMove = (event: MapLayerMouseEvent) => {
         map.getCanvas().style.cursor = "pointer";
@@ -360,7 +396,8 @@ export function GlobeMap({
           coordinates[0] += event.lngLat.lng > coordinates[0] ? 360 : -360;
         }
         const name = String(feature.properties?.name ?? "");
-        popup.setLngLat(coordinates).setText(name).addTo(map);
+        const country = feature.properties?.country ? String(feature.properties.country) : null;
+        popup.setLngLat(coordinates).setDOMContent(popupContent(name, country)).addTo(map);
       };
       const handleMarkerLeave = () => {
         map.getCanvas().style.cursor = "";
@@ -375,6 +412,7 @@ export function GlobeMap({
       map.on("click", MARKER_LAYER, handleMarkerClick);
 
       setMapLoaded(true);
+      loadedRef.current?.();
       continueSpin();
     });
 
@@ -407,7 +445,7 @@ export function GlobeMap({
         .map((org) => ({
           type: "Feature" as const,
           geometry: { type: "Point" as const, coordinates: [org.lon as number, org.lat as number] },
-          properties: { did: org.did, name: org.name, country: org.country },
+          properties: { did: org.did, name: org.name, country: org.country, maEarth: org.maEarth === true },
         })),
     });
   }, [organizations, mapLoaded]);
@@ -484,7 +522,11 @@ export function GlobeMap({
     <div
       ref={containerRef}
       data-testid="globe-map"
-      className={cn("h-full w-full bg-[#0b0b19]", className)}
+      className={cn(
+        "h-full w-full bg-[#0b0b19] transition-opacity duration-700",
+        mapLoaded ? "opacity-100" : "opacity-0",
+        className,
+      )}
     />
   );
 }

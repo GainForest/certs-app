@@ -8,10 +8,14 @@
  *                                           idle-spinning globe, search + data layers
  *   - organization (/globe/[identifier]):   zoomed to one org's project sites
  *   - project  (/globe/[identifier]/[rkey]): zoomed to a project's site boundaries
+ *
+ * Layout is responsive: floating glass panels on desktop, a collapsible bottom
+ * sheet on mobile so the map stays front and center.
  */
 
+import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { parseAsString, useQueryState } from "nuqs";
 import { AnimatePresence, motion } from "framer-motion";
@@ -23,7 +27,6 @@ import {
   EarthIcon,
   FolderKanbanIcon,
   LayersIcon,
-  Loader2Icon,
   LocateFixedIcon,
   MapPinnedIcon,
   SearchIcon,
@@ -31,8 +34,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { countryFlag } from "../../_lib/format";
-import { fetchTrustedOrganizationBadges } from "../../_lib/indexer";
+import { countryFlag, formatCountry } from "../../_lib/format";
 import { resolveCertifiedLocationCoords } from "../../_lib/coords";
 import { TrustedByBadges } from "../../_components/TrustedByBadges";
 import { GlobeMap } from "./GlobeMap";
@@ -73,6 +75,9 @@ type GlobeExplorerProps = {
   project?: GlobeProjectFocus | null;
 };
 
+type GlobeMode = "global" | "organization" | "project";
+type PanelVariant = "floating" | "sheet";
+
 type SiteState = {
   status: "idle" | "loading" | "ready";
   sites: GlobeSite[];
@@ -88,7 +93,7 @@ function featureCollection(features: GeoJSON.Feature[]): GeoJSON.FeatureCollecti
 
 export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = null, project = null }: GlobeExplorerProps) {
   const t = useTranslations("marketplace.globe");
-  const mode: "global" | "organization" | "project" = project ? "project" : orgDid ? "organization" : "global";
+  const mode: GlobeMode = project ? "project" : orgDid ? "organization" : "global";
 
   // ── Organization roster ──────────────────────────────────────────────────
   const [organizations, setOrganizations] = useState<GlobeOrganization[] | null>(null);
@@ -114,29 +119,9 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
   );
   const focusName = selectedOrg?.name ?? orgName ?? null;
 
-  // Ma Earth roster filter (global mode). The badge index is cached, so
-  // per-DID lookups after the first resolve are effectively free.
+  // Ma Earth roster filter (global mode). The flag arrives on the roster
+  // itself — the API merges Ma Earth–badged organizations server-side.
   const [maEarthOnly, setMaEarthOnly] = useState(false);
-  const [maEarthDids, setMaEarthDids] = useState<Set<string> | null>(null);
-  useEffect(() => {
-    if (!maEarthOnly || maEarthDids || !organizations) return;
-    let cancelled = false;
-    (async () => {
-      const dids = new Set<string>();
-      for (const org of organizations) {
-        try {
-          const badges = await fetchTrustedOrganizationBadges(org.did);
-          if (badges.includes("maearth")) dids.add(org.did);
-        } catch {
-          /* skip org on badge failure */
-        }
-      }
-      if (!cancelled) setMaEarthDids(dids);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [maEarthOnly, maEarthDids, organizations]);
 
   // ── Sites of the focused organization ────────────────────────────────────
   const [siteState, setSiteState] = useState<SiteState>(EMPTY_SITE_STATE);
@@ -303,12 +288,9 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
   const focusedState = mode === "project" ? projectState : siteState;
   const visibleOrganizations = useMemo(() => {
     if (!organizations) return [];
-    if (mode !== "global") return organizations;
-    if (maEarthOnly && maEarthDids) {
-      return organizations.filter((org) => maEarthDids.has(org.did));
-    }
-    return organizations;
-  }, [organizations, mode, maEarthOnly, maEarthDids]);
+    if (mode !== "global" || !maEarthOnly) return organizations;
+    return organizations.filter((org) => org.maEarth === true);
+  }, [organizations, mode, maEarthOnly]);
 
   const highlightFeatures = useMemo(() => {
     if (!selectedSiteUri) return [];
@@ -335,7 +317,8 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusDid, mode, focusedState, selectedSiteUri, highlightFeatures, selectedOrg, boundsNonce]);
 
-  // Extra camera padding so fitted sites are not hidden under the side panel.
+  // Extra camera padding so fitted sites are not hidden under the side panel
+  // (desktop) or the bottom sheet (mobile).
   const [isDesktop, setIsDesktop] = useState(false);
   useEffect(() => {
     const media = window.matchMedia("(min-width: 768px)");
@@ -344,6 +327,16 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
+
+  // ── Mobile bottom sheet + map readiness ──────────────────────────────────
+  const [mapReady, setMapReady] = useState(false);
+  const [sheetExpanded, setSheetExpanded] = useState(false);
+  const collapseSheet = useCallback(() => setSheetExpanded(false), []);
+
+  // Collapse the sheet whenever the focus changes so the flight is visible.
+  useEffect(() => {
+    setSheetExpanded(false);
+  }, [focusDid]);
 
   const selectOrganization = useCallback(
     (did: string | null) => {
@@ -369,9 +362,56 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
     [bumpBounds],
   );
 
+  // Shared panel props.
+  const globalPanelProps = {
+    organizations,
+    visibleOrganizations,
+    maEarthOnly,
+    onToggleMaEarth: () => setMaEarthOnly((value) => !value),
+    onSelect: (did: string) => {
+      selectOrganization(did);
+      collapseSheet();
+    },
+  };
+
+  const focusPanelProps = focusDid
+    ? {
+        mode,
+        focusDid,
+        focusName,
+        orgIdentifier: mode === "global" ? focusDid : orgIdentifier ?? focusDid,
+        selectedOrg,
+        project,
+        state: focusedState,
+        selectedSiteUri,
+        onSelectSite: (uri: string | null) => {
+          selectSite(uri);
+          collapseSheet();
+        },
+        onClear: mode === "global" ? () => selectOrganization(null) : undefined,
+        onRefit: () => {
+          bumpBounds();
+          collapseSheet();
+        },
+      }
+    : null;
+
+  // Bottom-sheet header summary (mobile).
+  const sheetTitle = focusDid ? (mode === "project" ? project?.title ?? "…" : focusName ?? "…") : t("title");
+  const sheetSubtitle = focusDid
+    ? focusedState.status === "loading"
+      ? t("panel.loading")
+      : mode === "project"
+        ? t("focus.boundaries", { count: focusedState.features.length })
+        : t("focus.sites", { count: focusedState.sites.length })
+    : organizations === null
+      ? t("panel.loading")
+      : t("panel.count", { count: visibleOrganizations.length });
+  const SheetIcon = focusDid ? (mode === "project" ? FolderKanbanIcon : Building2Icon) : EarthIcon;
+
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="absolute inset-0 overflow-hidden" data-testid="globe-explorer">
+    <div className="absolute inset-0 overflow-hidden bg-[#0b0b19]" data-testid="globe-explorer">
       <GlobeMap
         className="absolute inset-0"
         organizations={visibleOrganizations}
@@ -380,55 +420,51 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
         highlightGeojson={featureCollection(highlightFeatures)}
         bounds={mapBounds}
         boundsKey={`${focusDid ?? "none"}:${selectedSiteUri ?? "all"}:${boundsNonce}`}
-        boundsPadding={{ top: 96, bottom: 64, left: isDesktop ? 416 : 40, right: isDesktop ? 64 : 40 }}
+        boundsPadding={
+          isDesktop
+            ? { top: 96, bottom: 64, left: 416, right: 64 }
+            : { top: 84, bottom: 150, left: 36, right: 36 }
+        }
         spin={mode === "global" && !focusDid}
         landcoverVisible={landcoverVisible}
         activeLayers={activeLayers}
+        onLoaded={() => setMapReady(true)}
       />
 
-      {/* ── Left panel ── */}
-      <div className="pointer-events-none absolute inset-x-3 top-[4.25rem] z-10 flex max-h-[calc(100%-6rem)] flex-col gap-3 md:inset-x-auto md:left-4 md:w-[360px]">
-        {mode === "global" && !focusDid ? (
-          <GlobalPanel
-            organizations={organizations}
-            visibleOrganizations={visibleOrganizations}
-            maEarthOnly={maEarthOnly}
-            maEarthReady={!maEarthOnly || maEarthDids !== null}
-            onToggleMaEarth={() => setMaEarthOnly((value) => !value)}
-            onSelect={(did) => selectOrganization(did)}
-          />
+      {/* Loading veil while the globe boots. */}
+      <AnimatePresence>
+        {!mapReady ? (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-[#0b0b19]"
+          >
+            <div className="flex flex-col items-center gap-3">
+              <span className="relative grid size-14 place-items-center">
+                <span className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
+                <EarthIcon className="size-7 text-primary" />
+              </span>
+              <p className="text-sm font-medium text-white/60">{t("loadingGlobe")}</p>
+            </div>
+          </motion.div>
         ) : null}
+      </AnimatePresence>
 
-        {focusDid ? (
-          <FocusPanel
-            mode={mode}
-            focusDid={focusDid}
-            focusName={focusName}
-            orgIdentifier={mode === "global" ? focusDid : orgIdentifier ?? focusDid}
-            selectedOrg={selectedOrg}
-            project={project}
-            state={focusedState}
-            selectedSiteUri={selectedSiteUri}
-            onSelectSite={selectSite}
-            onClear={mode === "global" ? () => selectOrganization(null) : undefined}
-            onRefit={bumpBounds}
-          />
-        ) : null}
-      </div>
-
-      {/* ── Right controls: data layers ── */}
-      <div className="pointer-events-none absolute right-3 top-[4.25rem] z-10 flex max-h-[calc(100%-6rem)] flex-col items-end gap-3 md:right-4">
+      {/* ── Layers control (top-right, both breakpoints) ── */}
+      <div className="pointer-events-none absolute right-3 top-[4.25rem] z-20 flex max-h-[calc(100%-11rem)] flex-col items-end gap-2.5 md:right-4 md:max-h-[calc(100%-6rem)]">
         <button
           type="button"
           onClick={() => setLayersOpen((value) => !value)}
           aria-expanded={layersOpen}
+          aria-label={t("layers.button")}
           className={cn(
-            "pointer-events-auto inline-flex h-10 items-center gap-2 rounded-full border border-border bg-background/85 px-4 text-sm font-medium text-foreground shadow-lg backdrop-blur-xl transition-colors hover:border-primary/40 hover:text-primary",
+            "pointer-events-auto inline-flex h-10 items-center gap-2 rounded-full border border-border bg-background/85 px-3.5 text-sm font-medium text-foreground shadow-lg backdrop-blur-xl transition-all hover:border-primary/40 hover:text-primary active:scale-[0.97] sm:px-4",
             layersOpen && "border-primary/40 text-primary",
           )}
         >
           <LayersIcon className="size-4" />
-          {t("layers.button")}
+          <span className="hidden sm:inline">{t("layers.button")}</span>
         </button>
 
         <AnimatePresence>
@@ -438,7 +474,7 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
-              className="pointer-events-auto flex w-[320px] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-background/90 shadow-xl backdrop-blur-xl"
+              className="pointer-events-auto flex min-h-0 w-[320px] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-background/90 shadow-xl backdrop-blur-xl"
             >
               <LayersPanel
                 landcoverVisible={landcoverVisible}
@@ -456,9 +492,85 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
         </AnimatePresence>
       </div>
 
+      {/* ── Desktop: floating left panel ── */}
+      <div
+        data-testid="globe-desktop-panel"
+        className="pointer-events-none absolute left-4 top-[4.25rem] z-10 hidden max-h-[calc(100%-6rem)] w-[360px] flex-col gap-3 md:flex"
+      >
+        {!focusDid && mode === "global" ? (
+          <motion.section
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+            className="pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-background/90 shadow-xl backdrop-blur-xl"
+          >
+            <GlobalPanel variant="floating" {...globalPanelProps} />
+          </motion.section>
+        ) : null}
+
+        {focusPanelProps ? (
+          <motion.section
+            key={focusDid}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+            className="pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-background/90 shadow-xl backdrop-blur-xl"
+          >
+            <FocusPanel variant="floating" {...focusPanelProps} />
+          </motion.section>
+        ) : null}
+      </div>
+
+      {/* ── Mobile: bottom sheet ── */}
+      <div className="md:hidden">
+        <section
+          aria-label={sheetTitle}
+          data-testid="globe-sheet"
+          className={cn(
+            "pointer-events-auto absolute inset-x-0 bottom-0 z-20 flex h-[min(62dvh,520px)] flex-col rounded-t-2xl border-x border-t border-border bg-background/95 shadow-[0_-8px_32px_rgb(0_0_0/0.25)] backdrop-blur-xl transition-transform duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
+          )}
+          style={{
+            transform: sheetExpanded ? "translateY(0)" : "translateY(calc(100% - 4.75rem))",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setSheetExpanded((value) => !value)}
+            aria-expanded={sheetExpanded}
+            aria-label={sheetExpanded ? t("sheet.collapse") : t("sheet.expand")}
+            className="flex w-full flex-col items-center gap-0 pt-2"
+          >
+            <span aria-hidden className="h-1 w-9 rounded-full bg-border" />
+            <span className="flex w-full items-center gap-3 px-4 pb-2.5 pt-2 text-left">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                <SheetIcon className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-foreground">{sheetTitle}</span>
+                <span className="block truncate text-xs text-muted-foreground">{sheetSubtitle}</span>
+              </span>
+              <ChevronDownIcon
+                className={cn(
+                  "size-4 shrink-0 text-muted-foreground transition-transform duration-300",
+                  sheetExpanded ? "rotate-0" : "rotate-180",
+                )}
+              />
+            </span>
+          </button>
+
+          <div className="flex min-h-0 flex-1 flex-col border-t border-border pb-[env(safe-area-inset-bottom)]">
+            {focusPanelProps ? (
+              <FocusPanel variant="sheet" {...focusPanelProps} />
+            ) : (
+              <GlobalPanel variant="sheet" {...globalPanelProps} />
+            )}
+          </div>
+        </section>
+      </div>
+
       {/* ── Active layer legends ── */}
       {activeLegends.length > 0 || landcoverVisible ? (
-        <div className="pointer-events-none absolute bottom-8 left-3 z-10 flex max-w-[min(360px,calc(100vw-1.5rem))] flex-col gap-2 md:left-4">
+        <div className="pointer-events-none absolute bottom-24 left-3 z-10 flex max-w-[min(320px,calc(100vw-6rem))] flex-col gap-2 md:bottom-8 md:left-4 md:max-w-[min(360px,calc(100vw-1.5rem))]">
           {landcoverVisible ? <LandcoverLegend /> : null}
           {activeLegends.map((layer) => (
             <div
@@ -485,23 +597,26 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
 // ── Global mode: search + roster ───────────────────────────────────────────
 
 function GlobalPanel({
+  variant,
   organizations,
   visibleOrganizations,
   maEarthOnly,
-  maEarthReady,
   onToggleMaEarth,
   onSelect,
 }: {
+  variant: PanelVariant;
   organizations: GlobeOrganization[] | null;
   visibleOrganizations: GlobeOrganization[];
   maEarthOnly: boolean;
-  maEarthReady: boolean;
   onToggleMaEarth: () => void;
   onSelect: (did: string) => void;
 }) {
   const t = useTranslations("marketplace.globe");
   const [query, setQuery] = useState("");
-  const [listOpen, setListOpen] = useState(false);
+  // The floating (desktop) panel shows the roster right away for
+  // discoverability; the sheet always shows it when expanded.
+  const [listOpen, setListOpen] = useState(true);
+  const showList = variant === "sheet" || listOpen;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -510,27 +625,29 @@ function GlobalPanel({
   }, [visibleOrganizations, query]);
 
   return (
-    <section className="pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-background/90 shadow-xl backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-3.5">
-        <div className="min-w-0">
-          <h1 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <EarthIcon className="size-4 text-primary" />
-            {t("title")}
-          </h1>
-          <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t("subtitle")}</p>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {variant === "floating" ? (
+        <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-3.5">
+          <div className="min-w-0">
+            <h1 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <EarthIcon className="size-4 text-primary" />
+              {t("title")}
+            </h1>
+            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t("subtitle")}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setListOpen((value) => !value)}
+            aria-expanded={listOpen}
+            aria-label={t("panel.toggleList")}
+            className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <ChevronDownIcon className={cn("size-4 transition-transform", listOpen && "rotate-180")} />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setListOpen((value) => !value)}
-          aria-expanded={listOpen}
-          aria-label={t("panel.toggleList")}
-          className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-        >
-          <ChevronDownIcon className={cn("size-4 transition-transform", listOpen && "rotate-180")} />
-        </button>
-      </div>
+      ) : null}
 
-      <div className="flex items-center gap-2 px-4 pb-3">
+      <div className={cn("flex items-center gap-2 px-4", variant === "floating" ? "pb-3" : "py-3")}>
         <div className="relative min-w-0 flex-1">
           <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -540,7 +657,6 @@ function GlobalPanel({
               setQuery(event.target.value);
               setListOpen(true);
             }}
-            onFocus={() => setListOpen(true)}
             placeholder={t("panel.searchPlaceholder")}
             className="h-9 w-full rounded-full border border-border bg-background pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
           />
@@ -550,30 +666,41 @@ function GlobalPanel({
           onClick={onToggleMaEarth}
           aria-pressed={maEarthOnly}
           className={cn(
-            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors",
+            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors",
             maEarthOnly
               ? "border-primary/50 bg-primary/10 text-primary"
               : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary",
           )}
         >
-          {maEarthOnly && !maEarthReady ? <Loader2Icon className="size-3 animate-spin" /> : null}
+          <Image
+            src="/assets/media/images/badges/ma-earth-logo.webp"
+            alt=""
+            width={16}
+            height={16}
+            className="size-4 rounded-full"
+          />
           {t("panel.maEarth")}
         </button>
       </div>
 
-      {listOpen ? (
-        <div className="flex min-h-0 flex-col border-t border-border">
-          <p className="px-4 pb-1 pt-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            {organizations === null
-              ? t("panel.loading")
-              : t("panel.count", { count: filtered.length })}
-          </p>
-          <ul className="min-h-0 flex-1 overflow-y-auto pb-2" style={{ maxHeight: "40vh" }}>
+      {showList ? (
+        <div className="flex min-h-0 flex-1 flex-col border-t border-border">
+          {variant === "floating" ? (
+            <p className="px-4 pb-1 pt-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              {organizations === null
+                ? t("panel.loading")
+                : t("panel.count", { count: filtered.length })}
+            </p>
+          ) : null}
+          <ul
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2"
+            style={variant === "floating" ? { maxHeight: "42vh" } : undefined}
+          >
             {organizations === null ? (
               <li className="flex flex-col gap-2 px-4 py-2">
-                <Skeleton className="h-8 w-full rounded-lg" />
-                <Skeleton className="h-8 w-full rounded-lg" />
-                <Skeleton className="h-8 w-3/4 rounded-lg" />
+                <Skeleton className="h-9 w-full rounded-lg" />
+                <Skeleton className="h-9 w-full rounded-lg" />
+                <Skeleton className="h-9 w-3/4 rounded-lg" />
               </li>
             ) : filtered.length === 0 ? (
               <li className="px-4 py-3 text-sm text-muted-foreground">{t("panel.empty")}</li>
@@ -583,14 +710,33 @@ function GlobalPanel({
                   <button
                     type="button"
                     onClick={() => onSelect(org.did)}
-                    className="flex w-full items-center gap-2.5 px-4 py-2 text-left transition-colors hover:bg-muted/60"
+                    className="group flex w-full items-center gap-2.5 px-4 py-2 text-left transition-colors hover:bg-muted/60"
                   >
-                    <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-sm">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-base">
                       {(org.country ? countryFlag(org.country) : "") || "🌍"}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{org.name}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5 text-sm font-medium text-foreground group-hover:text-primary">
+                        <span className="truncate">{org.name}</span>
+                        {org.maEarth ? (
+                          <Image
+                            src="/assets/media/images/badges/ma-earth-logo.webp"
+                            alt="Ma Earth"
+                            title="Ma Earth"
+                            width={14}
+                            height={14}
+                            className="size-3.5 shrink-0 rounded-full"
+                          />
+                        ) : null}
+                      </span>
+                      {org.country ? (
+                        <span className="block truncate text-[11px] text-muted-foreground">
+                          {formatCountry(org.country)}
+                        </span>
+                      ) : null}
+                    </span>
                     {org.lat === null ? null : (
-                      <MapPinnedIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                      <MapPinnedIcon className="size-3.5 shrink-0 text-muted-foreground/60 transition-colors group-hover:text-primary" />
                     )}
                   </button>
                 </li>
@@ -599,13 +745,14 @@ function GlobalPanel({
           </ul>
         </div>
       ) : null}
-    </section>
+    </div>
   );
 }
 
 // ── Focused org / project card ─────────────────────────────────────────────
 
 function FocusPanel({
+  variant,
   mode,
   focusDid,
   focusName,
@@ -618,7 +765,8 @@ function FocusPanel({
   onClear,
   onRefit,
 }: {
-  mode: "global" | "organization" | "project";
+  variant: PanelVariant;
+  mode: GlobeMode;
   focusDid: string;
   focusName: string | null;
   orgIdentifier: string;
@@ -636,47 +784,49 @@ function FocusPanel({
   const boundaryCount = state.features.length;
 
   return (
-    <section className="pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-background/90 shadow-xl backdrop-blur-xl">
-      <div className="flex items-start gap-3 px-4 pb-3 pt-3.5">
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-          {mode === "project" ? <FolderKanbanIcon className="size-4" /> : <Building2Icon className="size-4" />}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            {mode === "project" ? t("focus.projectLabel") : t("focus.organizationLabel")}
-          </p>
-          <h2 className="truncate text-sm font-semibold text-foreground">
-            {mode === "project" ? project?.title : focusName ?? "…"}
-          </h2>
-          {mode === "project" && focusName ? (
-            <Link href={profileHref} className="mt-0.5 block truncate text-xs text-muted-foreground transition-colors hover:text-primary">
-              {focusName}
-            </Link>
-          ) : selectedOrg?.country ? (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {countryFlag(selectedOrg.country)} {selectedOrg.country}
+    <div className="flex min-h-0 flex-1 flex-col">
+      {variant === "floating" ? (
+        <div className="flex items-start gap-3 px-4 pb-3 pt-3.5">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+            {mode === "project" ? <FolderKanbanIcon className="size-4" /> : <Building2Icon className="size-4" />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              {mode === "project" ? t("focus.projectLabel") : t("focus.organizationLabel")}
             </p>
+            <h2 className="truncate text-sm font-semibold text-foreground">
+              {mode === "project" ? project?.title : focusName ?? "…"}
+            </h2>
+            {mode === "project" && focusName ? (
+              <Link href={profileHref} className="mt-0.5 block truncate text-xs text-muted-foreground transition-colors hover:text-primary">
+                {focusName}
+              </Link>
+            ) : selectedOrg?.country ? (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {countryFlag(selectedOrg.country)} {formatCountry(selectedOrg.country)}
+              </p>
+            ) : null}
+          </div>
+          {onClear ? (
+            <button
+              type="button"
+              onClick={onClear}
+              aria-label={t("focus.clear")}
+              className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <XIcon className="size-3.5" />
+            </button>
           ) : null}
         </div>
-        {onClear ? (
-          <button
-            type="button"
-            onClick={onClear}
-            aria-label={t("focus.clear")}
-            className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-          >
-            <XIcon className="size-3.5" />
-          </button>
-        ) : null}
-      </div>
+      ) : null}
 
       {mode !== "project" ? (
-        <div className="px-4 pb-1">
+        <div className={cn("px-4 pb-1", variant === "sheet" && "pt-3")}>
           <TrustedByBadges did={focusDid} variant="plain" className="w-fit" />
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2 px-4 pb-3 pt-1">
+      <div className={cn("flex flex-wrap items-center gap-2 px-4 pb-3 pt-1", variant === "sheet" && mode === "project" && "pt-3")}>
         {mode === "project" && project ? (
           <Link
             href={project.href}
@@ -721,6 +871,16 @@ function FocusPanel({
         >
           <LocateFixedIcon className="size-3.5" />
         </button>
+        {variant === "sheet" && onClear ? (
+          <button
+            type="button"
+            onClick={onClear}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <XIcon className="size-3.5" />
+            {t("focus.clear")}
+          </button>
+        ) : null}
       </div>
 
       {mode === "organization" && (
@@ -733,30 +893,35 @@ function FocusPanel({
         </Link>
       )}
 
-      <div className="flex min-h-0 flex-col border-t border-border">
-        <p className="px-4 pb-1 pt-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          {state.status === "loading"
-            ? t("panel.loading")
-            : mode === "project"
-              ? t("focus.boundaries", { count: boundaryCount })
-              : t("focus.sites", { count: state.sites.length })}
-        </p>
+      <div className="flex min-h-0 flex-1 flex-col border-t border-border">
+        {variant === "floating" ? (
+          <p className="px-4 pb-1 pt-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            {state.status === "loading"
+              ? t("panel.loading")
+              : mode === "project"
+                ? t("focus.boundaries", { count: boundaryCount })
+                : t("focus.sites", { count: state.sites.length })}
+          </p>
+        ) : null}
 
         {state.status === "loading" ? (
-          <div className="flex flex-col gap-2 px-4 pb-3 pt-1">
-            <Skeleton className="h-8 w-full rounded-lg" />
-            <Skeleton className="h-8 w-2/3 rounded-lg" />
+          <div className="flex flex-col gap-2 px-4 pb-3 pt-2">
+            <Skeleton className="h-9 w-full rounded-lg" />
+            <Skeleton className="h-9 w-2/3 rounded-lg" />
           </div>
         ) : mode === "project" ? (
           boundaryCount === 0 ? (
-            <p className="px-4 pb-3 text-sm text-muted-foreground">{t("focus.noBoundaries")}</p>
+            <p className="px-4 py-3 text-sm text-muted-foreground">{t("focus.noBoundaries")}</p>
           ) : (
-            <p className="px-4 pb-3 text-xs leading-5 text-muted-foreground">{t("focus.projectHint")}</p>
+            <p className="px-4 py-3 text-xs leading-5 text-muted-foreground">{t("focus.projectHint")}</p>
           )
         ) : state.sites.length === 0 ? (
-          <p className="px-4 pb-3 text-sm text-muted-foreground">{t("focus.noSites")}</p>
+          <p className="px-4 py-3 text-sm text-muted-foreground">{t("focus.noSites")}</p>
         ) : (
-          <ul className="min-h-0 flex-1 overflow-y-auto pb-2" style={{ maxHeight: "32vh" }}>
+          <ul
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1"
+            style={variant === "floating" ? { maxHeight: "32vh" } : undefined}
+          >
             <li>
               <SiteRow
                 label={t("focus.allSites")}
@@ -776,7 +941,7 @@ function FocusPanel({
           </ul>
         )}
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -793,6 +958,7 @@ function SiteRow({ label, active, onClick }: { label: string; active: boolean; o
     >
       <MapPinnedIcon className={cn("size-3.5 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
       <span className="min-w-0 flex-1 truncate">{label}</span>
+      {active ? <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary" /> : null}
     </button>
   );
 }
@@ -823,7 +989,7 @@ function LayersPanel({
   const t = useTranslations("marketplace.globe");
 
   return (
-    <div className="flex max-h-[min(60vh,520px)] flex-col overflow-y-auto p-4">
+    <div className="flex max-h-[min(56vh,520px)] flex-col overflow-y-auto overscroll-contain p-4">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <LayersIcon className="size-4 text-primary" />
         {t("layers.title")}

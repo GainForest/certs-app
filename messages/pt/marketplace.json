@@ -1668,6 +1668,11 @@
         "wetland": "Zona úmida",
         "mangroves": "Manguezais"
       }
+    },
+    "loadingGlobe": "Preparando o globo…",
+    "sheet": {
+      "expand": "Mostrar detalhes",
+      "collapse": "Ocultar detalhes"
     }
   }
 }

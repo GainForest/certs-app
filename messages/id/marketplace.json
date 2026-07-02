@@ -1668,6 +1668,11 @@
         "wetland": "Lahan basah",
         "mangroves": "Bakau"
       }
+    },
+    "loadingGlobe": "Menyiapkan globe…",
+    "sheet": {
+      "expand": "Tampilkan detail",
+      "collapse": "Sembunyikan detail"
     }
   }
 }

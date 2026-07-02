@@ -1668,6 +1668,11 @@
         "wetland": "Humedal",
         "mangroves": "Manglares"
       }
+    },
+    "loadingGlobe": "Preparando el globo…",
+    "sheet": {
+      "expand": "Mostrar detalles",
+      "collapse": "Ocultar detalles"
     }
   }
 }
