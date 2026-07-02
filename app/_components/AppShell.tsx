@@ -244,20 +244,25 @@ function useCanonicalPathname(): string {
   return canonicalPathname(usePathname() ?? "/");
 }
 
+function isSameSession(a: AuthSession, b: AuthSession): boolean {
+  if (a.isLoggedIn !== b.isLoggedIn) return false;
+  return !a.isLoggedIn || (b.isLoggedIn && a.did === b.did);
+}
+
 export function AppShell({
   children,
   authSession,
-  manageAccountKind,
 }: {
   children: React.ReactNode;
-  authSession: AuthSession | null;
-  manageAccountKind: ManageAccountKind;
+  // Resolved server-side in the root layout, so the shell's first paint
+  // already reflects the real signed-in state.
+  authSession: AuthSession;
 }) {
   const pathname = useCanonicalPathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [resolvedAuthSession, setResolvedAuthSession] = useState<AuthSession | null>(authSession);
-  const [resolvedManageAccountKind, setResolvedManageAccountKind] = useState<ManageAccountKind>(manageAccountKind);
+  const [resolvedAuthSession, setResolvedAuthSession] = useState<AuthSession>(authSession);
+  const [resolvedManageAccountKind, setResolvedManageAccountKind] = useState<ManageAccountKind>("user");
   const [resolvedProfileName, setResolvedProfileName] = useState<string | null | undefined>(
     authSession?.isLoggedIn ? undefined : null,
   );
@@ -274,7 +279,10 @@ export function AppShell({
         if (cancelled) return;
 
         const nextSession = next?.session ?? { isLoggedIn: false as const };
-        setResolvedAuthSession(nextSession);
+        // Only swap the session object when something meaningful changed — the
+        // server already seeded the correct state, so re-setting an identical
+        // session would just re-render the whole shell for nothing.
+        setResolvedAuthSession((prev) => (isSameSession(prev, nextSession) ? prev : nextSession));
 
         if (!nextSession.isLoggedIn) {
           setResolvedManageAccountKind("user");
@@ -336,10 +344,6 @@ export function AppShell({
       // Ignore storage access errors (private windows).
     }
   }, []);
-
-  if (pathname === "/") {
-    return <>{children}</>;
-  }
 
   const isProfileLoading = resolvedAuthSession?.isLoggedIn === true && isShellProfileLoading;
 

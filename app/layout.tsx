@@ -14,6 +14,7 @@ import { RouteChangeIndicator } from "./_components/RouteChangeIndicator";
 import { ModalProvider } from "@/components/ui/modal/context";
 import { WagmiProvider } from "@/components/providers/WagmiProvider";
 import { resolveSupportedLanguage } from "@/lib/i18n/languages";
+import { fetchAuthSession } from "./_lib/auth-server";
 import { getRequestOrigin } from "./_lib/request-origin";
 
 const geistSans = Geist({
@@ -124,8 +125,14 @@ export const viewport: Viewport = {
 const THEME_INIT = `(function(){try{var t=localStorage.getItem('bumicerts-theme');var m=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t!=='light'&&m)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale();
-  const messages = await getMessages();
+  // The session is resolved server-side (in parallel with i18n setup) so the
+  // shell renders with the real signed-in state on first paint — no
+  // signed-out flash, no client-side session fetch waterfall.
+  const [locale, messages, authSession] = await Promise.all([
+    getLocale(),
+    getMessages(),
+    fetchAuthSession(),
+  ]);
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -144,7 +151,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <WagmiProvider>
               <ModalProvider>
                 <AccountDrawerProvider>
-                  <ChromeGate>{children}</ChromeGate>
+                  <ChromeGate authSession={authSession}>{children}</ChromeGate>
                 </AccountDrawerProvider>
               </ModalProvider>
             </WagmiProvider>
