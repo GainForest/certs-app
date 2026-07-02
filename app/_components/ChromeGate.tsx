@@ -2,10 +2,28 @@
 
 import { usePathname } from "next/navigation";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
+import type { AuthSession } from "../_lib/auth";
 import { AppShell } from "./AppShell";
+import { ChromeErrorBoundary } from "./ChromeErrorBoundary";
 import { Footer } from "./Footer";
 
-export function ChromeGate({ children }: { children: React.ReactNode }) {
+/**
+ * Decides which chrome a route gets. The auth flow and the marketing landing
+ * ("/") render without the app shell; every other route gets the sidebar +
+ * header shell. The gate — not the shell — owns this decision, so the shell
+ * can always mount its providers (HeaderSlots etc.) unconditionally.
+ *
+ * `authSession` is fetched server-side in the root layout and passed through,
+ * so the shell paints with the real signed-in state on first render instead
+ * of booting signed-out and correcting itself after a client fetch.
+ */
+export function ChromeGate({
+  children,
+  authSession,
+}: {
+  children: React.ReactNode;
+  authSession: AuthSession;
+}) {
   const pathname = stripLocaleFromPathname(usePathname() ?? "/");
 
   if (pathname.startsWith("/auth")) {
@@ -13,12 +31,24 @@ export function ChromeGate({ children }: { children: React.ReactNode }) {
   }
 
   // BioBlitz is a single-screen dashboard meant to fit without scrolling, so it
-  // omits the page footer (same treatment as the promo banner there).
-  const showFooter = pathname !== "/bioblitz";
-
-  return (
-    <AppShell authSession={null} manageAccountKind="user" footer={showFooter ? <Footer /> : null}>
+  // omits the page footer (same treatment as the promo banner there). The
+  // Globe is a full-bleed map view, so it drops the footer too.
+  const showFooter = pathname !== "/bioblitz" && !pathname.startsWith("/globe");
+  const content = (
+    <>
       {children}
-    </AppShell>
+      {showFooter ? (
+        <ChromeErrorBoundary name="footer">
+          <Footer />
+        </ChromeErrorBoundary>
+      ) : null}
+    </>
   );
+
+  // The landing page brings its own navigation and full-bleed layout.
+  if (pathname === "/") {
+    return content;
+  }
+
+  return <AppShell authSession={authSession}>{content}</AppShell>;
 }

@@ -340,6 +340,17 @@
       "firstSiteBoundary": "First site boundary",
       "firstSiteBoundaryMap": "First site boundary map",
       "contributors": "Contributors"
+    },
+    "headerTabs": {
+      "overview": "Overview",
+      "siteBoundaries": "Site Boundaries",
+      "reviews": "Reviews",
+      "donations": "Donations",
+      "timeline": "Timeline",
+      "share": "Share",
+      "copied": "Copied!",
+      "donate": "Donate",
+      "goToOverview": "Go to overview tab"
     }
   },
   "create": {

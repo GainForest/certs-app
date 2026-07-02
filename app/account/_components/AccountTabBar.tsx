@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BinocularsIcon, FolderKanbanIcon, HeartHandshakeIcon, HomeIcon, ImageIcon, MessageSquareTextIcon, SettingsIcon, UsersIcon } from "lucide-react";
+import { BinocularsIcon, BotIcon, FolderKanbanIcon, HeartHandshakeIcon, HomeIcon, ImageIcon, MessageSquareTextIcon, SettingsIcon, UsersIcon } from "lucide-react";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { cn } from "@/lib/utils";
 import type { AccountKind } from "../_lib/account-route";
@@ -22,10 +22,11 @@ import {
   accountProjectsPath,
   accountRepliesPath,
   accountSettingsPath,
+  accountTainaPath,
   accountTreesPath,
 } from "../_lib/account-route";
 
-type TabLabelKey = "home" | "overview" | "bumicerts" | "projects" | "donationHistory" | "observations" | "posts" | "timeline" | "gallery" | "filesAndPhotos" | "settings" | "sites" | "audio" | "drone" | "trees" | "members";
+type TabLabelKey = "home" | "overview" | "bumicerts" | "projects" | "donationHistory" | "observations" | "posts" | "timeline" | "gallery" | "filesAndPhotos" | "settings" | "sites" | "audio" | "drone" | "trees" | "members" | "taina";
 
 interface Tab {
   labelKey: TabLabelKey;
@@ -83,6 +84,7 @@ function buildTabs(
   scope: AccountTabBarScope,
   includeSettings: boolean,
   showOrgData: boolean,
+  includeTaina: boolean,
   manageBasePath?: string,
 ): Tab[] {
   const paths = buildTabPaths(did, scope, manageBasePath);
@@ -90,6 +92,14 @@ function buildTabs(
     labelKey: "settings",
     href: paths.settings,
     icon: SettingsIcon,
+    exact: false,
+  };
+  // Tainá (the Telegram field assistant) is personal: the tab only shows on
+  // the owner's own profile, next to Settings.
+  const tainaTab: Tab = {
+    labelKey: "taina",
+    href: accountTainaPath(did),
+    icon: BotIcon,
     exact: false,
   };
   // Posts / Replies / Likes share one profile tab (the page carries the
@@ -103,6 +113,7 @@ function buildTabs(
     matchPaths: [accountRepliesPath(did), accountLikesPath(did)],
   };
   const appendExtras = (tabs: Tab[]): Tab[] => {
+    if (includeTaina && scope === "account") tabs.push(tainaTab);
     if (includeSettings) tabs.push(settingsTab);
     return tabs;
   };
@@ -199,6 +210,7 @@ interface OrgTabBarProps {
   scope?: AccountTabBarScope;
   includeSettings?: boolean;
   showOrgData?: boolean;
+  includeTaina?: boolean;
   manageBasePath?: string;
 }
 
@@ -208,12 +220,13 @@ export function AccountTabBar({
   scope = "account",
   includeSettings = false,
   showOrgData = false,
+  includeTaina = false,
   manageBasePath,
 }: OrgTabBarProps) {
   const t = useTranslations("common.accountTabs");
   const pathname = stripLocaleFromPathname(usePathname() ?? "/");
   const searchParams = useSearchParams();
-  const tabs = buildTabs(did, accountKind, scope, includeSettings, showOrgData, manageBasePath);
+  const tabs = buildTabs(did, accountKind, scope, includeSettings, showOrgData, includeTaina, manageBasePath);
 
   function isActive(tab: Tab): boolean {
     if (scope === "manage") {

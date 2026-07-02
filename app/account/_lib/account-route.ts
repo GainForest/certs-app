@@ -159,8 +159,8 @@ export function accountMembersPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/members`;
 }
 
-export function accountAdminPath(didOrHandle: string): string {
-  return `${accountPath(didOrHandle)}/admin`;
+export function accountTainaPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/taina`;
 }
 
 export async function readOptionalAccountRouteParams(

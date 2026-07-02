@@ -1,31 +1,26 @@
 "use client";
 
-// Shared, cached client store for the account switcher used by both the header
-// user menu and the manage-sidebar context switcher.
+// Shared client store for the account switcher used by the header user menu,
+// the sidebar profile row, and the manage-context buttons.
 //
-// Why this exists: the menu used to fetch /api/cgs/groups (plus an N+1 of
-// /api/account/card lookups) every time it opened, with no shared cache. This
-// store fetches once per session and keeps the result in module memory + a
-// localStorage mirror, so the switcher paints instantly and only revalidates
-// in the background (stale-while-revalidate). In-flight requests are deduped so
-// the two consumers never double-fetch.
+// Fetching/caching/deduping is handled by TanStack Query (the app-wide client
+// provided by WagmiProvider): one query per session DID, 5-minute freshness,
+// automatic in-flight dedupe across consumers. A localStorage mirror seeds the
+// cache after hydration so the switcher paints instantly on reload without
+// causing server/client hydration mismatches.
+//
+// The "active account context" (personal vs organization) remains a small
+// hand-rolled localStorage + event store below — it's synchronous,
+// cross-tab-synced UI state, not server data.
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { ACTIVE_MANAGE_CONTEXT_KEY, accountIdentifierFromManagePath } from "@/lib/links";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { ACTIVE_MANAGE_CONTEXT_KEY, accountIdentifierFromPath } from "@/lib/links";
 import type { CgsGroupMembership } from "@/app/(manage)/manage/_lib/cgs";
 
 export type AccountCard = { displayName: string | null; avatarUrl: string | null; handle: string | null };
 export type SwitcherGroup = CgsGroupMembership & AccountCard;
 export type AccountListStatus = "idle" | "loading" | "ready" | "error";
-
-export type AccountListState = {
-  status: AccountListStatus;
-  sessionDid: string | null;
-  personal: AccountCard | null;
-  groups: SwitcherGroup[];
-  error: string | null;
-  fetchedAt: number;
-};
 
 export type ActiveAccountContext =
   | { type: "personal"; did: string; selectedAt?: string }
@@ -35,62 +30,27 @@ const CACHE_KEY = "gainforest-account-switcher-cache";
 const ACTIVE_CONTEXT_EVENT = "gainforest-active-account-context";
 const TTL_MS = 5 * 60 * 1000;
 const EMPTY_GROUP_RECHECK_MS = 30 * 1000;
+const LOAD_ERROR_MESSAGE = "Could not load organizations.";
 
-const SERVER_STATE: AccountListState = {
-  status: "idle",
-  sessionDid: null,
-  personal: null,
-  groups: [],
-  error: null,
-  fetchedAt: 0,
+type AccountListData = {
+  personal: AccountCard | null;
+  groups: SwitcherGroup[];
+  fetchedAt: number;
 };
 
-let state: AccountListState = SERVER_STATE;
-const listeners = new Set<() => void>();
-let inflight: Promise<void> | null = null;
-let inflightSessionDid: string | null = null;
-const emptyGroupRefreshCounts = new Map<string, number>();
+const accountListQueryKey = (sessionDid: string) => ["account-list", sessionDid] as const;
 
-function emit() {
-  for (const listener of listeners) listener();
-}
+// ── localStorage mirror ──────────────────────────────────────────────────────
 
-function setState(patch: Partial<AccountListState>) {
-  state = { ...state, ...patch };
-  emit();
-}
-
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-function getSnapshot(): AccountListState {
-  return state;
-}
-
-export function getAccountListSnapshot(): AccountListState {
-  return state;
-}
-
-function getServerSnapshot(): AccountListState {
-  return SERVER_STATE;
-}
-
-function readCache(sessionDid: string): AccountListState | null {
+function readCache(sessionDid: string): AccountListData | null {
   try {
     const raw = window.localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<AccountListState>;
+    const parsed = JSON.parse(raw) as Partial<AccountListData & { sessionDid: string }>;
     if (parsed?.sessionDid !== sessionDid) return null;
     return {
-      status: "ready",
-      sessionDid,
       personal: parsed.personal ?? null,
       groups: Array.isArray(parsed.groups) ? parsed.groups : [],
-      error: null,
       fetchedAt: typeof parsed.fetchedAt === "number" ? parsed.fetchedAt : 0,
     };
   } catch {
@@ -98,21 +58,18 @@ function readCache(sessionDid: string): AccountListState | null {
   }
 }
 
-function writeCache() {
+function writeCache(sessionDid: string, data: AccountListData) {
   try {
     window.localStorage.setItem(
       CACHE_KEY,
-      JSON.stringify({
-        sessionDid: state.sessionDid,
-        personal: state.personal,
-        groups: state.groups,
-        fetchedAt: state.fetchedAt,
-      }),
+      JSON.stringify({ sessionDid, personal: data.personal, groups: data.groups, fetchedAt: data.fetchedAt }),
     );
   } catch {
-    // Storage may be blocked (private windows); in-memory cache still works.
+    // Storage may be blocked (private windows); the in-memory cache still works.
   }
 }
+
+// ── helpers ─────────────────────────────────────────────────────────────────
 
 export function switcherGroupIdentifier(group: SwitcherGroup): string {
   return group.handle?.trim() || group.groupDid;
@@ -146,106 +103,144 @@ function hasAccountCardData(card: AccountCard | null): boolean {
   return Boolean(card?.displayName?.trim() || card?.avatarUrl?.trim() || card?.handle?.trim());
 }
 
-async function loadAccounts(sessionDid: string): Promise<void> {
-  const hadData = state.status === "ready" && (state.groups.length > 0 || state.personal != null);
-  setState({ status: hadData ? "ready" : "loading", error: null });
+// ── fetching ────────────────────────────────────────────────────────────────
 
-  try {
-    const [personalResponse, groupResponse] = await Promise.all([
-      fetch(`/api/account/card?did=${encodeURIComponent(sessionDid)}`).catch(() => null),
-      fetch("/api/cgs/groups", { cache: "no-store" }).catch(() => null),
-    ]);
+// CGS membership fetches can occasionally come back as an empty success after
+// the app has been idle (usually while auth/session state is being refreshed).
+// Do not let one suspicious empty response erase a known-good account list;
+// keep the previous data once and schedule a recheck, only accepting "no orgs"
+// after a second consecutive empty response.
+const emptyGroupRefreshCounts = new Map<string, number>();
+const emptyGroupRecheckTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-    if (state.sessionDid !== sessionDid) return;
+function scheduleEmptyGroupsRecheck(queryClient: QueryClient, sessionDid: string) {
+  if (emptyGroupRecheckTimers.has(sessionDid)) return;
+  emptyGroupRecheckTimers.set(
+    sessionDid,
+    setTimeout(() => {
+      emptyGroupRecheckTimers.delete(sessionDid);
+      void queryClient.invalidateQueries({ queryKey: accountListQueryKey(sessionDid) });
+    }, EMPTY_GROUP_RECHECK_MS),
+  );
+}
 
-    const fetchedPersonal = personalResponse?.ok ? ((await personalResponse.json()) as AccountCard) : null;
-    const personal = hasAccountCardData(fetchedPersonal) || !hasAccountCardData(state.personal) ? fetchedPersonal : state.personal;
+async function fetchAccountList(
+  queryClient: QueryClient,
+  sessionDid: string,
+): Promise<AccountListData> {
+  const previous = queryClient.getQueryData<AccountListData>(accountListQueryKey(sessionDid));
 
-    if (!groupResponse?.ok) {
-      throw new Error("Could not load organizations.");
-    }
+  const [personalResponse, groupResponse] = await Promise.all([
+    fetch(`/api/account/card?did=${encodeURIComponent(sessionDid)}`).catch(() => null),
+    fetch("/api/cgs/groups", { cache: "no-store" }).catch(() => null),
+  ]);
 
-    const payload = (await groupResponse.json().catch(() => ({}))) as { groups?: CgsGroupMembership[] };
-    if (!Array.isArray(payload.groups)) {
-      throw new Error("Could not load organizations.");
-    }
+  const fetchedPersonal = personalResponse?.ok ? ((await personalResponse.json()) as AccountCard) : null;
+  const personal =
+    hasAccountCardData(fetchedPersonal) || !hasAccountCardData(previous?.personal ?? null)
+      ? fetchedPersonal
+      : previous?.personal ?? null;
 
-    const hydratedGroups = await Promise.all(payload.groups.map(hydrateGroup));
-    let groups = hydratedGroups;
-    let fetchedAt = Date.now();
+  if (!groupResponse?.ok) {
+    throw new Error(LOAD_ERROR_MESSAGE);
+  }
 
-    // CGS membership fetches can occasionally come back as an empty success
-    // after the app has been idle (usually while auth/session state is being
-    // refreshed). Do not let one suspicious empty response erase a known-good
-    // account list in memory/localStorage; keep stale data briefly and require a
-    // second empty response before accepting that the user truly has no orgs.
-    if (hydratedGroups.length > 0) {
+  const payload = (await groupResponse.json().catch(() => ({}))) as { groups?: CgsGroupMembership[] };
+  if (!Array.isArray(payload.groups)) {
+    throw new Error(LOAD_ERROR_MESSAGE);
+  }
+
+  const hydratedGroups = await Promise.all(payload.groups.map(hydrateGroup));
+  let groups = hydratedGroups;
+
+  if (hydratedGroups.length > 0) {
+    emptyGroupRefreshCounts.delete(sessionDid);
+  } else if ((previous?.groups.length ?? 0) > 0) {
+    const emptyCount = (emptyGroupRefreshCounts.get(sessionDid) ?? 0) + 1;
+    emptyGroupRefreshCounts.set(sessionDid, emptyCount);
+    if (emptyCount < 2) {
+      groups = previous?.groups ?? [];
+      scheduleEmptyGroupsRecheck(queryClient, sessionDid);
+    } else {
       emptyGroupRefreshCounts.delete(sessionDid);
-    } else if (state.groups.length > 0) {
-      const emptyCount = (emptyGroupRefreshCounts.get(sessionDid) ?? 0) + 1;
-      emptyGroupRefreshCounts.set(sessionDid, emptyCount);
-      if (emptyCount < 2) {
-        groups = state.groups;
-        fetchedAt = Date.now() - TTL_MS + EMPTY_GROUP_RECHECK_MS;
-      } else {
-        emptyGroupRefreshCounts.delete(sessionDid);
-      }
     }
-
-    state = { status: "ready", sessionDid, personal, groups, error: null, fetchedAt };
-    emit();
-    writeCache();
-  } catch {
-    if (state.sessionDid !== sessionDid) return;
-    setState({ status: state.groups.length || state.personal ? "ready" : "error", error: "Could not load organizations." });
-  }
-}
-
-/**
- * Ensure the account list is loaded for the given session. Paints from cache
- * immediately, skips the network when data is fresh, and dedupes concurrent
- * callers. Pass `force` to bypass the TTL (e.g. an explicit retry).
- */
-export function ensureAccountList(sessionDid: string, options?: { force?: boolean }): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-
-  if (state.sessionDid !== sessionDid) {
-    state = readCache(sessionDid) ?? { ...SERVER_STATE, sessionDid };
-    emit();
   }
 
-  const fresh = state.status === "ready" && state.groups.length > 0 && Date.now() - state.fetchedAt < TTL_MS;
-  if (!options?.force && fresh) return Promise.resolve();
-  if (inflight && inflightSessionDid === sessionDid) return inflight;
-
-  inflightSessionDid = sessionDid;
-  inflight = loadAccounts(sessionDid).finally(() => {
-    inflight = null;
-    inflightSessionDid = null;
-  });
-  return inflight;
+  const data: AccountListData = { personal, groups, fetchedAt: Date.now() };
+  writeCache(sessionDid, data);
+  return data;
 }
 
-export type UseAccountListResult = AccountListState & { reload: () => Promise<void> };
+// ── public hook ─────────────────────────────────────────────────────────────
+
+export type UseAccountListResult = {
+  status: AccountListStatus;
+  sessionDid: string | null;
+  personal: AccountCard | null;
+  groups: SwitcherGroup[];
+  error: string | null;
+  fetchedAt: number;
+  reload: () => Promise<void>;
+};
+
+const EMPTY_GROUPS: SwitcherGroup[] = [];
 
 export function useAccountList(sessionDid: string | null): UseAccountListResult {
-  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const queryClient = useQueryClient();
 
+  const query = useQuery({
+    queryKey: accountListQueryKey(sessionDid ?? ""),
+    queryFn: () => fetchAccountList(queryClient, sessionDid ?? ""),
+    enabled: Boolean(sessionDid),
+    // An empty group list is treated as immediately stale (mirrors the old
+    // store, which only trusted non-empty results for the 5-minute TTL).
+    staleTime: (q) => ((q.state.data?.groups.length ?? 0) > 0 ? TTL_MS : 0),
+    // The old store never refetched on window focus; keep that behavior so
+    // /api/cgs/groups isn't hammered on every tab switch.
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
+  // Seed the query cache from the localStorage mirror AFTER hydration (an
+  // effect, not initialData) so server HTML and the first client render stay
+  // identical — reading localStorage during render caused hydration
+  // mismatches in the previous incarnations of this store.
   useEffect(() => {
-    if (sessionDid) {
-      void ensureAccountList(sessionDid);
-      return;
-    }
+    if (!sessionDid) return;
+    const key = accountListQueryKey(sessionDid);
+    const state = queryClient.getQueryState<AccountListData>(key);
+    if (state?.data !== undefined) return;
+    const cached = readCache(sessionDid);
+    if (!cached) return;
+    // Only seed when nothing fresher has landed in the meantime.
+    if ((queryClient.getQueryState<AccountListData>(key)?.dataUpdatedAt ?? 0) > 0) return;
+    queryClient.setQueryData<AccountListData>(key, cached, { updatedAt: cached.fetchedAt });
+  }, [queryClient, sessionDid]);
 
-    state = SERVER_STATE;
-    emit();
-  }, [sessionDid]);
+  const data = query.data;
+  const status: AccountListStatus = !sessionDid
+    ? "idle"
+    : data !== undefined
+      ? "ready"
+      : query.isError
+        ? "error"
+        : "loading";
 
   return {
-    ...snapshot,
-    reload: () => (sessionDid ? ensureAccountList(sessionDid, { force: true }) : Promise.resolve()),
+    status,
+    sessionDid,
+    personal: data?.personal ?? null,
+    groups: data?.groups ?? EMPTY_GROUPS,
+    error: query.isError ? (query.error instanceof Error ? query.error.message : LOAD_ERROR_MESSAGE) : null,
+    fetchedAt: data?.fetchedAt ?? 0,
+    reload: async () => {
+      if (!sessionDid) return;
+      await query.refetch();
+    },
   };
 }
+
+// ── active account context (personal vs organization) ──────────────────────
 
 export function readActiveContext(sessionDid: string): ActiveAccountContext {
   if (typeof window === "undefined") return { type: "personal", did: sessionDid };
@@ -329,14 +324,15 @@ export function useActiveAccountContext(
   return [active, rememberActiveContext];
 }
 
-export function useManagePathContextSync(options: {
+export function useAccountPathContextSync(options: {
   pathname: string;
   sessionDid: string;
+  personalHandle?: string | null;
   groups: SwitcherGroup[];
   activeContext: ActiveAccountContext;
   setActiveContext: (context: ActiveAccountContext) => void;
 }): void {
-  const { pathname, sessionDid, groups, activeContext, setActiveContext } = options;
+  const { pathname, sessionDid, personalHandle, groups, activeContext, setActiveContext } = options;
   const activeContextRef = useRef(activeContext);
 
   useEffect(() => {
@@ -344,8 +340,8 @@ export function useManagePathContextSync(options: {
   }, [activeContext]);
 
   useEffect(() => {
-    const accountIdentifier = accountIdentifierFromManagePath(pathname);
-    // Not on a manage route (/account/<id>/manage): leave the context untouched.
+    const accountIdentifier = accountIdentifierFromPath(pathname);
+    // Not on an account route (/account/<id>/...): leave the context untouched.
     if (!accountIdentifier) return;
 
     const match = findSwitcherGroupByIdentifier(groups, accountIdentifier);
@@ -362,10 +358,17 @@ export function useManagePathContextSync(options: {
       return;
     }
 
-    // A manage route whose account is not one of the user's organizations is the
-    // user's own personal manage surface.
+    // Not one of the user's organizations. Only sync to personal when this is
+    // the user's OWN account route — visiting someone else's profile must not
+    // change the active context.
+    const normalized = accountIdentifier.trim().toLowerCase();
+    const ownsPersonalRoute =
+      normalized === sessionDid.trim().toLowerCase() ||
+      (personalHandle ? normalized === personalHandle.trim().toLowerCase() : false);
+    if (!ownsPersonalRoute) return;
+
     const current = activeContextRef.current;
     if (current.type === "personal" && current.did === sessionDid) return;
     setActiveContext({ type: "personal", did: sessionDid });
-  }, [groups, pathname, sessionDid, setActiveContext]);
+  }, [groups, pathname, sessionDid, personalHandle, setActiveContext]);
 }

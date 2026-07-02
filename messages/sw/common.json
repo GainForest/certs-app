@@ -80,7 +80,8 @@
     "sections": {
       "explore": "GUNDUA",
       "funding": "UFADHILI",
-      "manage": "SIMAMIA"
+      "manage": "SIMAMIA",
+      "ai": "AI"
     },
     "items": {
       "bumicerts": "vyeti",
@@ -107,7 +108,9 @@
       "myObservations": "Uchunguzi",
       "myTrees": "Miti",
       "myProfile": "Wasifu",
-      "feed": "Matukio"
+      "feed": "Matukio",
+      "taina": "Tainá",
+      "globe": "Dunia"
     },
     "prompts": {
       "signInDescription": "Ingia ili kusimamia akaunti na maudhui yako.",
@@ -201,7 +204,9 @@
       },
       "connectCaption": "Bandika hii kwenye wakala wako wa AI (ChatGPT, Claude, boti ya Telegram…) ili kuiunganisha na GainForest.",
       "generateAndCopy": "Tengeneza ufunguo na unakili ujumbe",
-      "defaultKeyName": "Wakala wa AI"
+      "defaultKeyName": "Wakala wa AI",
+      "tainaBadge": "Tainá",
+      "tainaBadgeTitle": "Ufunguo huu umeunganishwa na boti yako ya Telegram ya Tainá"
     }
   },
   "bumicertCard": {
@@ -236,7 +241,8 @@
       "bioblitz": "BioBlitz",
       "greenGlobe": "Green Globe",
       "status": "Hali",
-      "lexicons": "Miundo ya data"
+      "lexicons": "Miundo ya data",
+      "privacyPolicy": "Sera ya faragha"
     }
   },
   "browseGrid": {
@@ -397,7 +403,8 @@
     "posts": "Machapisho",
     "filesAndPhotos": "Faili na picha",
     "photos": "Picha",
-    "files": "Faili"
+    "files": "Faili",
+    "taina": "Tainá"
   },
   "accountAttachments": {
     "title": "Viambatisho",
@@ -688,11 +695,11 @@
   },
   "groupInvitations": {
     "members": {
-      "inputPlaceholder": "Anwani ya barua pepe",
-      "inputAria": "Anwani ya barua pepe ya mwanachama",
+      "inputPlaceholder": "Barua pepe au kitambulisho cha Bluesky",
+      "inputAria": "Barua pepe au kitambulisho cha Bluesky cha mwanachama",
       "invite": "Alika",
-      "ownerHelp": "Weka anwani ya barua pepe ili kutuma mwaliko.",
-      "adminHelp": "Wasimamizi wanaweza kualika wanachama wa kawaida kwa barua pepe. Mwombe mmiliki kumwalika msimamizi mwingine.",
+      "ownerHelp": "Weka barua pepe kutuma mwaliko, au kitambulisho cha Bluesky kumuongeza mtu papo hapo.",
+      "adminHelp": "Ongeza wanachama wa kawaida kwa kitambulisho cha Bluesky, au waalike kwa barua pepe. Mwombe mmiliki kumuongeza msimamizi mwingine.",
       "locked": "Wamiliki na wasimamizi pekee wanaweza kualika au kuondoa wanachama.",
       "ownerDescription": "Alika watu na udhibiti nani anaweza kufanya mabadiliko kwa shirika hili.",
       "adminDescription": "Alika au ondoa wanachama wa kawaida. Wamiliki pekee wanaweza kubadilisha majukumu.",
@@ -703,6 +710,9 @@
       "canceled": "Mwaliko umeondolewa kwa {email}.",
       "cancelError": "Hatukuweza kuondoa mwaliko huo. Jaribu tena.",
       "invalidEmail": "Weka anwani halali ya barua pepe.",
+      "invalidIdentifier": "Weka anwani ya barua pepe au kitambulisho cha Bluesky.",
+      "added": "{name} ameongezwa kwenye shirika.",
+      "addError": "Hatukuweza kumuongeza mwanachama huyo. Angalia kitambulisho na ujaribu tena.",
       "roleMember": "mwanachama",
       "roleAdmin": "msimamizi",
       "pendingStatus": "Amealikwa kama {role}. Tunasubiri akubali."
@@ -913,9 +923,11 @@
   "adminModeration": {
     "ariaLabel": "Mwonekano wa usimamizi",
     "tabs": {
+      "taina": "Mawakala wa Tainá",
       "grants": "Waombaji wa ruzuku",
       "bioblitz": "BioBlitz",
-      "testAccounts": "Akaunti za majaribio"
+      "testAccounts": "Akaunti za majaribio",
+      "endorsers": "Wadhamini"
     },
     "unnamed": "Akaunti isiyo na jina",
     "awardHint": "Fungua wasifu ili kutoa beji.",
@@ -928,7 +940,33 @@
       "title": "Waliojisajili BioBlitz",
       "description": "Akaunti zilizojisajili BioBlitz. Fungua wasifu ili kutoa beji ya mshindi.",
       "empty": "Bado hakuna aliyejisajili BioBlitz."
+    },
+    "page": {
+      "title": "Msimamizi",
+      "subtitle": "Kagua waombaji wa ruzuku na matukio, dhibiti akaunti zilizowekwa alama, na simamia mawakala wa Tainá."
     }
+  },
+  "adminTaina": {
+    "title": "Mawakala wa Tainá",
+    "description": "Kila mtu anayetumia msaidizi wa uwandani wa Tainá — boti yake, mara ya mwisho alipoitumia, na kiasi ilichotumia. Ujumbe unaotuma unafikishwa na Tainá wake, kwa sauti yake mwenyewe.",
+    "empty": "Hakuna aliyeunganisha Tainá bado.",
+    "unavailable": "Mfumo wa Tainá haupatikani kwa sasa, hivyo orodha haiwezi kupakiwa. Jaribu tena baada ya muda mfupi.",
+    "unnamed": "Akaunti isiyo na jina",
+    "statusActive": "Inatumika",
+    "statusPending": "Inasubiri kuwashwa",
+    "lastUsed": "Ilitumika mwisho {when}",
+    "neverUsed": "Haijawahi kutumika",
+    "credits": "{used} zimetumika",
+    "creditsAllowance": "Salio lililotengwa: {allowance}",
+    "message": "Ujumbe",
+    "messagePlaceholder": "Tainá amwambie nini mtu huyu?",
+    "messageHint": "Unafikishwa kupitia boti yake kwa sauti ya Tainá — mpokeaji anauona kama ujumbe kutoka kwa msaidizi wake.",
+    "send": "Tuma",
+    "sending": "Inatuma…",
+    "sent": "Umefikishwa kwenye mazungumzo yake.",
+    "sendFailed": "Ujumbe haukuweza kutumwa. Tafadhali jaribu tena.",
+    "notActivated": "Mmiliki bado hajawasha boti hii, hivyo haiwezi kupokea ujumbe.",
+    "cancel": "Ghairi"
   },
   "follow": {
     "follow": "Fuata",
@@ -991,5 +1029,129 @@
       "hypercerts": "Madai ya athari (shughuli, mchango, mchangiaji, haki), makusanyo, risiti za ufadhili, viambatisho, wigo wa kazi na aina za pamoja."
     },
     "sectionsAria": "Sehemu za miundo"
+  },
+  "taina": {
+    "meta": {
+      "title": "Tainá — GainForest",
+      "description": "Unganisha boti yako mwenyewe ya Telegram na ubadilishe unachokiona katika mazingira kuwa rekodi za bioanuwai zinazoweza kuthibitishwa."
+    },
+    "hero": {
+      "eyebrow": "Msaidizi wa uwandani wa AI",
+      "title": "Mfahamu Tainá",
+      "description": "Tainá ni mwenzako wa uwandani kwenye Telegram. Mtumie picha au maelezo kuhusu mmea, mnyama au kuvu — atatambua spishi na kurekodi uchunguzi kwenye akaunti yako ya GainForest.",
+      "step1Title": "Unganisha boti yako mwenyewe",
+      "step1Description": "Tengeneza boti binafsi ya Telegram kwa @BotFather kisha uiunganishe hapa. Ni wewe pekee unayeweza kuzungumza nayo.",
+      "step2Title": "Tuma picha au maelezo",
+      "step2Description": "Tumia boti yako chochote unachokiona uwandani. Tainá hutambua spishi na kuuliza maelezo muhimu.",
+      "step3Title": "Uchunguzi umerekodiwa",
+      "step3Description": "Kila mwonekano uliothibitishwa huwa uchunguzi wa bioanuwai uliohifadhiwa kwenye akaunti yako na kuonekana kwenye wasifu wako."
+    },
+    "signIn": {
+      "title": "Ingia ili kuanza",
+      "description": "Tainá hurekodi uchunguzi kwenye akaunti yako ya GainForest, hivyo ingia kwanza kabla ya kuunganisha boti yako.",
+      "button": "Ingia"
+    },
+    "setup": {
+      "title": "Unganisha boti yako ya Tainá",
+      "description": "Tengeneza boti ya Telegram kwa ajili ya Tainá kisha ubandike tokeni yake hapa chini. Boti ni ya faragha — inafanya kazi kwa ajili yako pekee.",
+      "howTitle": "Jinsi ya kutengeneza boti yako (kama dakika 2)",
+      "howStep1": "Fungua <botfather>@BotFather</botfather> kwenye Telegram.",
+      "howStep2": "Tuma <code>/newbot</code> kisha ufuate maelekezo.",
+      "howStep3": "Nakili tokeni utakayopewa (inafanana na 123456789:ABC…).",
+      "howStep4": "Ibandike hapa chini — boti hii inatumiwa na wewe pekee.",
+      "tokenLabel": "Tokeni ya boti",
+      "focusLabel": "Unarekodi nini?",
+      "focusOptional": "hiari",
+      "focusPlaceholder": "mf. ndege na wachavushaji, Msitu wa Atlantiki",
+      "submit": "Unganisha Tainá",
+      "submitting": "Inaunganisha…"
+    },
+    "errors": {
+      "invalidToken": "Hiyo haionekani kama tokeni ya boti. Inakili kutoka @BotFather (inafanana na 123456789:ABC…).",
+      "genericError": "Hatukuweza kuunganisha boti yako. Tafadhali jaribu tena.",
+      "runtimeUnreachable": "Tainá haipatikani kwa sasa. Tafadhali jaribu tena baadaye kidogo."
+    },
+    "activation": {
+      "title": "Washa boti yako",
+      "description": "Boti yako imeunganishwa lakini bado ni ya faragha. Ifungue kwenye Telegram na utume msimbo huu wa mara moja ili wewe pekee uweze kuzungumza nayo.",
+      "open": "Fungua Tainá na uwashe",
+      "hint": "Kitufe hutuma msimbo kwa niaba yako — au tuma msimbo moja kwa moja kwa boti."
+    },
+    "linked": {
+      "title": "Boti yako ya Tainá",
+      "justLinkedTitle": "Tainá iko hewani",
+      "justLinkedNote": "Boti yako imeunganishwa na iko tayari.",
+      "badge": "Imeunganishwa",
+      "description": "Unatumia <bot></bot>. Ifungue kwenye Telegram kurekodi unachokiona, au kagua kila kitu kwenye dashibodi yako.",
+      "openBot": "Fungua {bot} kwenye Telegram",
+      "dashboard": "Nenda kwenye dashibodi yako ya Tainá"
+    },
+    "dashboard": {
+      "loadError": "Hatukuweza kupakia dashibodi yako ya Tainá. Tafadhali jaribu tena.",
+      "notLinkedTitle": "Hakuna boti iliyounganishwa bado",
+      "notLinkedDescription": "Bado hujaunganisha boti ya Telegram. Sanidi moja na Tainá ataanza kurekodi uchunguzi wako hapa.",
+      "setUp": "Sanidi Tainá",
+      "activationTitle": "Washa boti yako",
+      "activationDescription": "<bot></bot> imeunganishwa lakini ni ya faragha. Ifungue kwenye Telegram na utume msimbo huu wa mara moja ili wewe pekee uweze kuzungumza nayo.",
+      "activationOpen": "Fungua Tainá na uwashe",
+      "botCardTitle": "Boti yako",
+      "focus": "Lengo",
+      "connectedOn": "Imeunganishwa {date}",
+      "openInTelegram": "Fungua kwenye Telegram",
+      "apiKeyTitle": "Ufunguo wa API",
+      "apiKeyDescription": "Ufunguo wa wakala wa AI wa GainForest uliotengenezwa kwa ajili ya Tainá. Pia unaonekana kwenye Mipangilio → Funguo za wakala wa AI, ukiwa na alama ya Tainá. Uweke siri.",
+      "active": "Inatumika",
+      "revoked": "Umebatilishwa",
+      "reveal": "Onyesha",
+      "hide": "Ficha",
+      "copy": "Nakili",
+      "copied": "Imenakiliwa",
+      "regenerate": "Tengeneza upya",
+      "regenerating": "Inatengeneza upya…",
+      "revoke": "Batilisha",
+      "revoking": "Inabatilisha…",
+      "revokeConfirm": "Ubatilishe ufunguo huu? Tainá ataacha kurekodi uchunguzi hadi utengeneze mpya.",
+      "generate": "Tengeneza ufunguo mpya",
+      "generating": "Inatengeneza…",
+      "keyActionFailed": "Haikufanikiwa — tafadhali jaribu tena.",
+      "chatTitle": "Mazungumzo ya uchunguzi",
+      "chatActive": "Inatumika",
+      "chatWaiting": "Inasubiri",
+      "chatEmpty": "Hakuna ujumbe bado. Fungua boti yako kwenye Telegram na ueleze au upige picha kitu ulichokiona — mazungumzo yako na Tainá yanaonekana hapa moja kwa moja.",
+      "restart": "Anzisha upya kikao",
+      "restarting": "Inaanzisha upya…",
+      "restartConfirm": "Uanze mazungumzo mapya na Tainá? Atasahau historia ya gumzo hili — uchunguzi wako uliorekodiwa hautaathirika.",
+      "restartFailed": "Kuanzisha upya hakukufanikiwa — tafadhali jaribu tena.",
+      "creditsTitle": "Matumizi ya salio",
+      "creditsSummary": "{used} zimetumika · {left} zimebaki",
+      "resetAgent": "Weka upya wakala wangu",
+      "resetting": "Inaweka upya…",
+      "resetConfirm": "Uweke upya wakala wako wa Tainá? Hii itatenganisha boti yako, kufuta historia ya mazungumzo na wasifu wako hapa, na kubatilisha ufunguo wake. Uchunguzi wako uliorekodiwa hautaathirika. Unaweza kusanidi Tainá tena wakati wowote.",
+      "resetFailed": "Kuweka upya hakukufanikiwa — tafadhali jaribu tena.",
+      "profileTitle": "Wasifu wako",
+      "profileDescription": "Wasifu mfupi wa Markdown unaohifadhiwa na wakala wako ili Tainá ajue wewe ni nani. Unaathiri jinsi anavyozungumza nawe na miunganisho anayoweza kupendekeza.",
+      "profilePromptTitle": "Andaa wasifu wako",
+      "profilePromptIntro": "Nakili maelekezo haya kwenye ChatGPT au Claude ili kuandaa wasifu wa USER.md, kisha tuma Markdown itakayotolewa kwa wakala wako kwenye Telegram — au ibandike hapa chini.",
+      "profilePromptBody": "Tengeneza wasifu wa kurasa mbili, usio na taarifa nyeti, wa kuunganisha watu — unaosaidia watu au mawakala kupata sababu nzuri za kuzungumza nami, kushirikiana, kubadilishana mawazo, kunialika kwenye jambo fulani, au kunitambulisha kwa mtu nisiyemtarajia.\n\nUsiufanye kuwa CV, historia ya maisha, aina ya haiba, wala maelezo ya mwisho. Ufanye uwe wa kirafiki, mahususi, wenye ubunifu kidogo, na wenye manufaa kwa mikutano ya bahati.\n\nIbua udadisi wangu unaojirudia, maswali yaliyo hai, ladha zangu, miradi, maadili katika vitendo, mada za mazungumzo, ninachoweza kutoa na kuomba, na aina za watu, mazingira, ushirikiano au fursa ninazoweza kuendana nazo. Jumuisha kazi, lakini kazi isiwe fremu nzima.\n\nBaki na uhalisia: tofautisha ushahidi na dhana, na eleza mambo yasiyo na uhakika kama uwezekano au maswali. Usikisie taarifa nyeti au za faragha. Jumuisha kile kisichopaswa kudhaniwa, na mahali ambapo muktadha zaidi ungesaidia.",
+      "profileLabel": "Wasifu wako kwa USER.md",
+      "profilePlaceholder": "Bandika wasifu wa Markdown hapa. Usiweke siri wala chochote usichotaka kihifadhiwe na wakala wako.",
+      "profileCounter": "Hii inakuwa USER.md katika eneo la kazi la wakala wako. Herufi {count}/{max}.",
+      "profileSave": "Hifadhi wasifu",
+      "profileSaving": "Inahifadhi…",
+      "profileSaved": "Imehifadhiwa — Tainá ataitumia kuanzia jibu lake lijalo.",
+      "profileSaveFailed": "Hatukuweza kuhifadhi wasifu wako. Tafadhali jaribu tena."
+    }
+  },
+  "adminEndorsers": {
+    "title": "Wadhamini",
+    "description": "Mashirika ambayo tunasikiliza beji zao. Uidhinishaji wao huonekana kotekote kwenye programu kama “Imeaminiwa na” na huonyesha miradi wanayounga mkono.",
+    "inputLabel": "Kitambulisho cha shirika au kitambulisho cha akaunti",
+    "inputPlaceholder": "handle.certified.one au did:plc:…",
+    "addButton": "Ongeza mdhamini",
+    "addError": "Imeshindwa kuongeza mdhamini.",
+    "removeError": "Imeshindwa kuondoa mdhamini.",
+    "removeLabel": "Ondoa {name}",
+    "builtinChip": "Iliyojengwa",
+    "propagationHint": "Wadhamini wapya huchukua dakika chache kuonekana kwenye programu."
   }
 }

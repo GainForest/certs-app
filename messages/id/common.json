@@ -80,7 +80,8 @@
     "sections": {
       "explore": "JELAJAHI",
       "funding": "PENDANAAN",
-      "manage": "KELOLA"
+      "manage": "KELOLA",
+      "ai": "AI"
     },
     "items": {
       "bumicerts": "sertifikat",
@@ -107,7 +108,9 @@
       "myObservations": "Observasi",
       "myTrees": "Pohon",
       "myProfile": "Profil",
-      "feed": "Aktivitas"
+      "feed": "Aktivitas",
+      "taina": "Tainá",
+      "globe": "Bola Dunia"
     },
     "prompts": {
       "signInDescription": "Masuk untuk mengelola akun dan konten Anda.",
@@ -201,7 +204,9 @@
       },
       "connectCaption": "Tempel ini ke agen AI Anda (ChatGPT, Claude, bot Telegram…) untuk menghubungkannya ke GainForest.",
       "generateAndCopy": "Buat kunci & salin pesan",
-      "defaultKeyName": "Agen AI"
+      "defaultKeyName": "Agen AI",
+      "tainaBadge": "Tainá",
+      "tainaBadgeTitle": "Kunci ini tertaut ke bot Telegram Tainá Anda"
     }
   },
   "bumicertCard": {
@@ -236,7 +241,8 @@
       "bioblitz": "BioBlitz",
       "greenGlobe": "Green Globe",
       "status": "Status",
-      "lexicons": "Skema data"
+      "lexicons": "Skema data",
+      "privacyPolicy": "Kebijakan Privasi"
     }
   },
   "browseGrid": {
@@ -397,7 +403,8 @@
     "posts": "Postingan",
     "filesAndPhotos": "Berkas & foto",
     "photos": "Foto",
-    "files": "Berkas"
+    "files": "Berkas",
+    "taina": "Tainá"
   },
   "accountAttachments": {
     "title": "Lampiran",
@@ -688,11 +695,11 @@
   },
   "groupInvitations": {
     "members": {
-      "inputPlaceholder": "Alamat email",
-      "inputAria": "Alamat email anggota",
+      "inputPlaceholder": "Email atau handle Bluesky",
+      "inputAria": "Email atau handle Bluesky anggota",
       "invite": "Undang",
-      "ownerHelp": "Masukkan alamat email untuk mengirim undangan.",
-      "adminHelp": "Admin dapat mengundang anggota biasa melalui email. Minta pemilik mengundang administrator lain.",
+      "ownerHelp": "Masukkan email untuk mengirim undangan, atau handle Bluesky untuk langsung menambahkan seseorang.",
+      "adminHelp": "Tambahkan anggota biasa lewat handle Bluesky, atau undang mereka lewat email. Minta pemilik menambahkan administrator lain.",
       "locked": "Hanya pemilik dan admin yang dapat mengundang atau menghapus anggota.",
       "ownerDescription": "Undang orang dan atur siapa yang dapat membuat perubahan untuk organisasi ini.",
       "adminDescription": "Undang atau hapus anggota biasa. Hanya pemilik yang dapat mengubah peran.",
@@ -703,6 +710,9 @@
       "canceled": "Undangan untuk {email} dihapus.",
       "cancelError": "Kami tidak dapat menghapus undangan itu. Coba lagi.",
       "invalidEmail": "Masukkan alamat email yang valid.",
+      "invalidIdentifier": "Masukkan alamat email atau handle Bluesky.",
+      "added": "{name} ditambahkan ke organisasi.",
+      "addError": "Kami tidak dapat menambahkan anggota itu. Periksa handle dan coba lagi.",
       "roleMember": "anggota",
       "roleAdmin": "administrator",
       "pendingStatus": "Diundang sebagai {role}. Menunggu mereka menerima."
@@ -913,9 +923,11 @@
   "adminModeration": {
     "ariaLabel": "Tampilan moderasi",
     "tabs": {
+      "taina": "Agen Tainá",
       "grants": "Pemohon hibah",
       "bioblitz": "BioBlitz",
-      "testAccounts": "Akun uji coba"
+      "testAccounts": "Akun uji coba",
+      "endorsers": "Pendukung"
     },
     "unnamed": "Akun tanpa nama",
     "awardHint": "Buka profil untuk memberikan lencana.",
@@ -928,7 +940,33 @@
       "title": "Pendaftar BioBlitz",
       "description": "Akun yang mendaftar BioBlitz. Buka profil untuk memberikan lencana pemenang.",
       "empty": "Belum ada yang mendaftar BioBlitz."
+    },
+    "page": {
+      "title": "Admin",
+      "subtitle": "Tinjau pelamar hibah dan acara, kelola akun yang ditandai, dan awasi agen Tainá."
     }
+  },
+  "adminTaina": {
+    "title": "Agen Tainá",
+    "description": "Semua orang yang menjalankan asisten lapangan Tainá — bot mereka, kapan terakhir dipakai, dan berapa yang sudah dihabiskan. Pesan yang Anda kirim disampaikan oleh Tainá mereka, dengan suaranya sendiri.",
+    "empty": "Belum ada yang menghubungkan Tainá.",
+    "unavailable": "Runtime Tainá tidak dapat dijangkau saat ini, jadi daftarnya tidak bisa dimuat. Coba lagi sebentar lagi.",
+    "unnamed": "Akun tanpa nama",
+    "statusActive": "Aktif",
+    "statusPending": "Menunggu aktivasi",
+    "lastUsed": "Terakhir dipakai {when}",
+    "neverUsed": "Belum pernah dipakai",
+    "credits": "{used} terpakai",
+    "creditsAllowance": "Jatah kredit: {allowance}",
+    "message": "Pesan",
+    "messagePlaceholder": "Apa yang harus Tainá sampaikan kepada mereka?",
+    "messageHint": "Disampaikan lewat bot mereka dengan suara Tainá — penerima melihatnya sebagai pesan dari asistennya sendiri.",
+    "send": "Kirim",
+    "sending": "Mengirim…",
+    "sent": "Terkirim ke obrolan mereka.",
+    "sendFailed": "Pesan tidak dapat dikirim. Silakan coba lagi.",
+    "notActivated": "Pemiliknya belum mengaktifkan bot ini, jadi belum bisa menerima pesan.",
+    "cancel": "Batal"
   },
   "follow": {
     "follow": "Ikuti",
@@ -991,5 +1029,129 @@
       "hypercerts": "Klaim dampak (aktivitas, kontribusi, kontributor, hak), koleksi, tanda terima pendanaan, lampiran, cakupan kerja, dan tipe bersama."
     },
     "sectionsAria": "Bagian skema"
+  },
+  "taina": {
+    "meta": {
+      "title": "Tainá — GainForest",
+      "description": "Hubungkan bot Telegram milik Anda dan ubah apa yang Anda lihat di alam menjadi observasi keanekaragaman hayati yang dapat diverifikasi."
+    },
+    "hero": {
+      "eyebrow": "Asisten lapangan AI",
+      "title": "Kenali Tainá",
+      "description": "Tainá adalah teman lapangan Anda di Telegram. Kirim foto atau catatan tentang tumbuhan, hewan, atau jamur — Tainá mengenali spesiesnya dan mencatat observasi di akun GainForest Anda.",
+      "step1Title": "Hubungkan bot Anda sendiri",
+      "step1Description": "Buat bot Telegram pribadi dengan @BotFather lalu tautkan di sini. Hanya Anda yang bisa berbicara dengannya.",
+      "step2Title": "Kirim foto atau catatan",
+      "step2Description": "Kirimkan ke bot Anda apa pun yang Anda lihat di lapangan. Tainá mengenali spesiesnya dan menanyakan detail yang penting.",
+      "step3Title": "Observasi tercatat",
+      "step3Description": "Setiap penampakan yang dikonfirmasi menjadi observasi keanekaragaman hayati yang tersimpan di akun Anda dan tampil di profil Anda."
+    },
+    "signIn": {
+      "title": "Masuk untuk memulai",
+      "description": "Tainá mencatat observasi di akun GainForest Anda, jadi masuklah sebelum menghubungkan bot Anda.",
+      "button": "Masuk"
+    },
+    "setup": {
+      "title": "Hubungkan bot Tainá Anda",
+      "description": "Buat bot Telegram untuk Tainá dan tempel tokennya di bawah. Bot ini pribadi — hanya bekerja untuk Anda.",
+      "howTitle": "Cara membuat bot Anda (sekitar 2 menit)",
+      "howStep1": "Buka <botfather>@BotFather</botfather> di Telegram.",
+      "howStep2": "Kirim <code>/newbot</code> dan ikuti petunjuknya.",
+      "howStep3": "Salin token yang diberikan (bentuknya seperti 123456789:ABC…).",
+      "howStep4": "Tempel di bawah — bot ini hanya digunakan oleh Anda.",
+      "tokenLabel": "Token bot",
+      "focusLabel": "Apa yang sedang Anda dokumentasikan?",
+      "focusOptional": "opsional",
+      "focusPlaceholder": "mis. burung & penyerbuk, Hutan Atlantik",
+      "submit": "Hubungkan Tainá",
+      "submitting": "Menghubungkan…"
+    },
+    "errors": {
+      "invalidToken": "Itu tidak tampak seperti token bot. Salin dari @BotFather (bentuknya seperti 123456789:ABC…).",
+      "genericError": "Kami tidak dapat menghubungkan bot Anda. Silakan coba lagi.",
+      "runtimeUnreachable": "Tainá tidak dapat dijangkau saat ini. Coba lagi sebentar lagi."
+    },
+    "activation": {
+      "title": "Aktifkan bot Anda",
+      "description": "Bot Anda sudah terhubung tetapi masih privat. Buka di Telegram dan kirim kode sekali pakai ini agar hanya Anda yang bisa berbicara dengannya.",
+      "open": "Buka Tainá & aktifkan",
+      "hint": "Tombol ini mengirimkan kodenya untuk Anda — atau kirim kodenya langsung ke bot."
+    },
+    "linked": {
+      "title": "Bot Tainá Anda",
+      "justLinkedTitle": "Tainá sudah aktif",
+      "justLinkedNote": "Bot Anda sudah tertaut dan siap.",
+      "badge": "Tertaut",
+      "description": "Anda menjalankan <bot></bot>. Buka di Telegram untuk mencatat apa yang Anda lihat, atau tinjau semuanya di dasbor Anda.",
+      "openBot": "Buka {bot} di Telegram",
+      "dashboard": "Buka dasbor Tainá Anda"
+    },
+    "dashboard": {
+      "loadError": "Kami tidak dapat memuat dasbor Tainá Anda. Silakan coba lagi.",
+      "notLinkedTitle": "Belum ada bot yang terhubung",
+      "notLinkedDescription": "Anda belum menghubungkan bot Telegram. Siapkan satu dan Tainá akan mulai mencatat observasi Anda di sini.",
+      "setUp": "Siapkan Tainá",
+      "activationTitle": "Aktifkan bot Anda",
+      "activationDescription": "<bot></bot> sudah terhubung tetapi masih privat. Buka di Telegram dan kirim kode sekali pakai ini agar hanya Anda yang bisa berbicara dengannya.",
+      "activationOpen": "Buka Tainá & aktifkan",
+      "botCardTitle": "Bot Anda",
+      "focus": "Fokus",
+      "connectedOn": "Terhubung {date}",
+      "openInTelegram": "Buka di Telegram",
+      "apiKeyTitle": "Kunci API",
+      "apiKeyDescription": "Kunci agen AI GainForest yang dibuat untuk Tainá. Kunci ini juga tampil di Pengaturan → Kunci agen AI, ditandai sebagai milik Tainá. Jaga kerahasiaannya.",
+      "active": "Aktif",
+      "revoked": "Dicabut",
+      "reveal": "Tampilkan",
+      "hide": "Sembunyikan",
+      "copy": "Salin",
+      "copied": "Tersalin",
+      "regenerate": "Buat ulang",
+      "regenerating": "Membuat ulang…",
+      "revoke": "Cabut",
+      "revoking": "Mencabut…",
+      "revokeConfirm": "Cabut kunci ini? Tainá akan berhenti mencatat observasi sampai Anda membuat kunci baru.",
+      "generate": "Buat kunci baru",
+      "generating": "Membuat…",
+      "keyActionFailed": "Gagal — silakan coba lagi.",
+      "chatTitle": "Obrolan observasi",
+      "chatActive": "Aktif",
+      "chatWaiting": "Menunggu",
+      "chatEmpty": "Belum ada pesan. Buka bot Anda di Telegram lalu jelaskan atau foto sesuatu yang Anda lihat — percakapan Anda dengan Tainá tampil di sini secara langsung.",
+      "restart": "Mulai ulang sesi",
+      "restarting": "Memulai ulang…",
+      "restartConfirm": "Mulai percakapan baru dengan Tainá? Ia akan melupakan riwayat obrolan ini — observasi yang sudah tercatat tidak terpengaruh.",
+      "restartFailed": "Mulai ulang gagal — silakan coba lagi.",
+      "creditsTitle": "Pemakaian kredit",
+      "creditsSummary": "{used} terpakai · {left} tersisa",
+      "resetAgent": "Atur ulang agen saya",
+      "resetting": "Mengatur ulang…",
+      "resetConfirm": "Atur ulang agen Tainá Anda? Ini memutuskan bot Anda, menghapus riwayat obrolan dan profil Anda di sini, serta mencabut kuncinya. Observasi yang sudah tercatat tidak terpengaruh. Anda bisa menyiapkan Tainá lagi kapan saja.",
+      "resetFailed": "Pengaturan ulang gagal — silakan coba lagi.",
+      "profileTitle": "Profil Anda",
+      "profileDescription": "Profil Markdown singkat yang disimpan bersama agen Anda agar Tainá tahu siapa Anda. Profil ini memengaruhi cara ia berbicara dengan Anda dan koneksi yang bisa ia sarankan.",
+      "profilePromptTitle": "Siapkan profil Anda",
+      "profilePromptIntro": "Salin prompt ini ke ChatGPT atau Claude untuk menyusun profil USER.md, lalu kirim Markdown hasilnya ke agen Anda di Telegram — atau tempel di bawah.",
+      "profilePromptBody": "Buat profil koneksi dua halaman yang tidak memuat hal sensitif, yang membantu orang atau agen menemukan alasan baik untuk berbicara dengan saya, berkolaborasi, bertukar catatan, mengajak saya ke suatu kegiatan, atau memperkenalkan saya kepada seseorang yang tak terduga.\n\nJangan jadikan ini resume, biografi, tipe kepribadian, atau catatan definitif. Buat hangat, spesifik, sedikit imajinatif, dan berguna untuk serendipitas.\n\nGali rasa ingin tahu saya yang berulang, pertanyaan yang sedang hidup, selera, proyek, nilai-nilai dalam praktik, topik percakapan, kemungkinan tawaran/permintaan, serta jenis orang, komunitas, kolaborasi, atau peluang yang mungkin cocok dengan saya. Sertakan pekerjaan, tetapi jangan jadikan pekerjaan satu-satunya bingkai.\n\nTetap membumi: bedakan bukti dari dugaan, dan ungkapkan hal yang belum pasti sebagai kemungkinan atau pertanyaan. Jangan menyimpulkan fakta sensitif atau pribadi. Sertakan apa yang tidak boleh diasumsikan, dan di mana konteks tambahan akan membantu.",
+      "profileLabel": "Profil Anda untuk USER.md",
+      "profilePlaceholder": "Tempel profil Markdown di sini. Jangan sertakan rahasia atau apa pun yang tidak ingin Anda simpan bersama agen Anda.",
+      "profileCounter": "Ini menjadi USER.md di ruang kerja agen Anda. {count}/{max} karakter.",
+      "profileSave": "Simpan profil",
+      "profileSaving": "Menyimpan…",
+      "profileSaved": "Tersimpan — Tainá akan memakainya mulai balasan berikutnya.",
+      "profileSaveFailed": "Kami tidak dapat menyimpan profil Anda. Silakan coba lagi."
+    }
+  },
+  "adminEndorsers": {
+    "title": "Pendukung",
+    "description": "Organisasi yang lencananya kami dengarkan. Dukungan mereka muncul di seluruh aplikasi sebagai “Dipercaya oleh” dan menampilkan proyek yang mereka dukung.",
+    "inputLabel": "Handle organisasi atau id akun",
+    "inputPlaceholder": "handle.certified.one atau did:plc:…",
+    "addButton": "Tambah pendukung",
+    "addError": "Tidak dapat menambahkan pendukung.",
+    "removeError": "Tidak dapat menghapus pendukung.",
+    "removeLabel": "Hapus {name}",
+    "builtinChip": "Bawaan",
+    "propagationHint": "Pendukung baru perlu beberapa menit untuk muncul di seluruh aplikasi."
   }
 }

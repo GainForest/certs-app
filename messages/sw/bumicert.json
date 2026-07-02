@@ -340,6 +340,17 @@
       "firstSiteBoundary": "Mpaka wa kwanza wa tovuti",
       "firstSiteBoundaryMap": "Ramani ya mpaka wa kwanza wa tovuti",
       "contributors": "Wachangiaji"
+    },
+    "headerTabs": {
+      "overview": "Muhtasari",
+      "siteBoundaries": "Mipaka ya tovuti",
+      "reviews": "Maoni",
+      "donations": "Michango",
+      "timeline": "Ratiba",
+      "share": "Shiriki",
+      "copied": "Imenakiliwa!",
+      "donate": "Changia",
+      "goToOverview": "Nenda kwenye kichupo cha muhtasari"
     }
   },
   "create": {

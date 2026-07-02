@@ -109,6 +109,9 @@ export default async function AccountLayout({
               accountKind={account.kind}
               includeSettings={canManage}
               showOrgData={canManage}
+              // Tainá is a personal Telegram assistant, so its dashboard tab
+              // only appears to the signed-in owner of a personal profile.
+              includeTaina={account.kind === "user" && session.isLoggedIn && session.did === account.did}
             />
           </>
         }

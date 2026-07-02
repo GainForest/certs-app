@@ -59,7 +59,7 @@ export function GroupObservationsDatasetModal({
   target: ManageTarget;
   observations: OccurrenceRecord[];
   datasets: ObservationDatasetGroup[];
-  /** When set, the dataset is nested under this project (added to its items[]). */
+  /** When set, the dataset is also referenced by this project. */
   projectUri?: string | null;
   projectName?: string | null;
   onDone: (summary: GroupObservationsDoneSummary) => void;
@@ -223,7 +223,7 @@ export function GroupObservationsDatasetModal({
                 placeholder={t("namePlaceholder")}
                 disabled={isPending}
                 autoFocus
-                maxLength={80}
+                maxLength={256}
               />
             </div>
             <div className="space-y-1.5">
@@ -237,7 +237,7 @@ export function GroupObservationsDatasetModal({
                 placeholder={t("descriptionPlaceholder")}
                 disabled={isPending}
                 rows={3}
-                maxLength={300}
+                maxLength={2048}
               />
             </div>
           </div>
