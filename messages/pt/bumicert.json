@@ -340,6 +340,17 @@
       "firstSiteBoundary": "Primeiro limite do local",
       "firstSiteBoundaryMap": "Mapa do primeiro limite do local",
       "contributors": "Colaboradores"
+    },
+    "headerTabs": {
+      "overview": "Visão geral",
+      "siteBoundaries": "Limites do local",
+      "reviews": "Avaliações",
+      "donations": "Doações",
+      "timeline": "Linha do tempo",
+      "share": "Compartilhar",
+      "copied": "Copiado!",
+      "donate": "Doar",
+      "goToOverview": "Ir para a aba de visão geral"
     }
   },
   "create": {

@@ -340,6 +340,17 @@
       "firstSiteBoundary": "Primer límite del sitio",
       "firstSiteBoundaryMap": "Mapa del primer límite del sitio",
       "contributors": "Colaboradores"
+    },
+    "headerTabs": {
+      "overview": "Resumen",
+      "siteBoundaries": "Límites del sitio",
+      "reviews": "Reseñas",
+      "donations": "Donaciones",
+      "timeline": "Cronología",
+      "share": "Compartir",
+      "copied": "¡Copiado!",
+      "donate": "Donar",
+      "goToOverview": "Ir a la pestaña de resumen"
     }
   },
   "create": {

@@ -340,6 +340,17 @@
       "firstSiteBoundary": "Batas situs pertama",
       "firstSiteBoundaryMap": "Peta batas situs pertama",
       "contributors": "Kontributor"
+    },
+    "headerTabs": {
+      "overview": "Ringkasan",
+      "siteBoundaries": "Batas Situs",
+      "reviews": "Ulasan",
+      "donations": "Donasi",
+      "timeline": "Linimasa",
+      "share": "Bagikan",
+      "copied": "Tersalin!",
+      "donate": "Donasi",
+      "goToOverview": "Buka tab ringkasan"
     }
   },
   "create": {

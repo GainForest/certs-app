@@ -62,7 +62,7 @@ import type { AuthSession } from "../../../_lib/auth";
 import { fetchUserCgsGroups } from "../../../_lib/manage-server";
 import { getAccountRouteData, readAccountRouteParams, type AccountKind } from "../../../account/_lib/account-route";
 import { Separator } from "@/components/ui/separator";
-import { BumicertHeaderTitleBridge } from "./_components/BumicertHeaderTitleBridge";
+import { BumicertDetailHeader } from "./_components/BumicertDetailHeader";
 import { BumicertShareButton } from "./_components/BumicertShareButton";
 import { BumicertObservationsGallery } from "./_components/BumicertObservationsGallery";
 import { BumicertDeleteAction } from "./_components/BumicertDeleteAction";
@@ -406,7 +406,7 @@ export async function BumicertDetailBody({
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <BumicertHeaderTitleBridge
+      <BumicertDetailHeader
         summary={{
           title: record.title,
           donateHref: donationsHref,
@@ -675,7 +675,7 @@ export async function ProjectDetailView({
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <BumicertHeaderTitleBridge
+      <BumicertDetailHeader
         summary={{
           title: record.title,
           donateHref: donationsHref,
