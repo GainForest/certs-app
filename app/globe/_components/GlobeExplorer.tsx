@@ -49,6 +49,7 @@ import {
   toFeatures,
 } from "../_lib/data";
 import { fetchGlobalLayers, fetchOrganizationLayers } from "../_lib/layers";
+import { fetchOrganizationTrees } from "../_lib/trees";
 import type {
   GlobeLayer,
   GlobeOrganization,
@@ -213,6 +214,32 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
     });
     return () => controller.abort();
   }, [project, bumpBounds]);
+
+  // ── Measured trees of the focused organization ─────────────────────────
+  const [treesState, setTreesState] = useState<{
+    status: "idle" | "loading" | "ready";
+    data: GeoJSON.FeatureCollection | null;
+  }>({ status: "idle", data: null });
+  const [treesVisible, setTreesVisible] = useState(true);
+
+  useEffect(() => {
+    setTreesState({ status: "idle", data: null });
+    setTreesVisible(true);
+    if (!focusDid) return;
+    const controller = new AbortController();
+    setTreesState({ status: "loading", data: null });
+    fetchOrganizationTrees(focusDid, controller.signal)
+      .then((data) => {
+        if (!controller.signal.aborted) setTreesState({ status: "ready", data });
+      })
+      .catch((error) => {
+        if ((error as Error).name !== "AbortError") {
+          console.warn("[globe] trees failed", error);
+          setTreesState({ status: "ready", data: null });
+        }
+      });
+    return () => controller.abort();
+  }, [focusDid]);
 
   // ── Data layers ──────────────────────────────────────────────────────────
   const [globalLayers, setGlobalLayers] = useState<GlobeLayer[] | null>(null);
@@ -418,6 +445,7 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
         onSelectOrganization={(did) => selectOrganization(did)}
         sitesGeojson={featureCollection(focusedState.features)}
         highlightGeojson={featureCollection(highlightFeatures)}
+        treesGeojson={treesVisible ? treesState.data : null}
         bounds={mapBounds}
         boundsKey={`${focusDid ?? "none"}:${selectedSiteUri ?? "all"}:${boundsNonce}`}
         boundsPadding={
@@ -486,6 +514,10 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
                 showOrgLayers={Boolean(focusDid)}
                 enabledLayerIds={enabledLayerIds}
                 onToggleLayer={toggleLayer}
+                treesCount={treesState.data?.features.length ?? 0}
+                treesLoading={treesState.status === "loading"}
+                treesVisible={treesVisible}
+                onToggleTrees={() => setTreesVisible((value) => !value)}
               />
             </motion.div>
           ) : null}
@@ -975,6 +1007,10 @@ function LayersPanel({
   showOrgLayers,
   enabledLayerIds,
   onToggleLayer,
+  treesCount,
+  treesLoading,
+  treesVisible,
+  onToggleTrees,
 }: {
   landcoverVisible: boolean;
   onToggleLandcover: () => void;
@@ -985,8 +1021,13 @@ function LayersPanel({
   showOrgLayers: boolean;
   enabledLayerIds: Set<string>;
   onToggleLayer: (layerId: string) => void;
+  treesCount: number;
+  treesLoading: boolean;
+  treesVisible: boolean;
+  onToggleTrees: () => void;
 }) {
   const t = useTranslations("marketplace.globe");
+  const hasTreesRow = showOrgLayers && (treesLoading || treesCount > 0);
 
   return (
     <div className="flex max-h-[min(56vh,520px)] flex-col overflow-y-auto overscroll-contain p-4">
@@ -1010,14 +1051,30 @@ function LayersPanel({
           <h3 className="mb-1 text-xs font-semibold capitalize text-muted-foreground">
             {t("layers.projectCategory")}
           </h3>
+          {hasTreesRow ? (
+            <div className="mb-2 rounded-xl border border-border bg-background/60">
+              {treesLoading ? (
+                <div className="p-2">
+                  <Skeleton className="h-8 w-full rounded-lg" />
+                </div>
+              ) : (
+                <LayerToggleRow
+                  label={t("layers.measuredTrees")}
+                  description={t("layers.measuredTreesCount", { count: treesCount })}
+                  checked={treesVisible}
+                  onToggle={onToggleTrees}
+                />
+              )}
+            </div>
+          ) : null}
           {orgLayersLoading ? (
             <div className="flex flex-col gap-2">
               <Skeleton className="h-10 w-full rounded-xl" />
               <Skeleton className="h-10 w-full rounded-xl" />
             </div>
-          ) : orgLayers.length === 0 ? (
+          ) : orgLayers.length === 0 && !hasTreesRow ? (
             <p className="text-xs text-muted-foreground">{t("layers.noProjectLayers")}</p>
-          ) : (
+          ) : orgLayers.length === 0 ? null : (
             <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-background/60">
               {orgLayers.map((layer) => (
                 <LayerToggleRow

@@ -1672,6 +1672,8 @@
       "title": "Chunguza tabaka",
       "landcover": "Uoto wa ardhi",
       "landcoverSource": "ESA WorldCover 2021",
+      "measuredTrees": "Miti iliyopimwa",
+      "measuredTreesCount": "{count, plural, one {mti #} other {miti #}}",
       "projectCategory": "Tabaka za mradi",
       "noProjectLayers": "Shirika hili bado halina tabaka za ziada za ramani.",
       "landcoverClasses": {

@@ -1672,6 +1672,8 @@
       "title": "Explorar capas",
       "landcover": "Cobertura del suelo",
       "landcoverSource": "ESA WorldCover 2021",
+      "measuredTrees": "Árboles medidos",
+      "measuredTreesCount": "{count, plural, one {# árbol} other {# árboles}}",
       "projectCategory": "Capas del proyecto",
       "noProjectLayers": "Esta organización aún no tiene capas de mapa adicionales.",
       "landcoverClasses": {

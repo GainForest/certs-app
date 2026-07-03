@@ -1672,6 +1672,8 @@
       "title": "Jelajahi lapisan",
       "landcover": "Tutupan lahan",
       "landcoverSource": "ESA WorldCover 2021",
+      "measuredTrees": "Pohon terukur",
+      "measuredTreesCount": "{count, plural, other {# pohon}}",
       "projectCategory": "Lapisan proyek",
       "noProjectLayers": "Organisasi ini belum memiliki lapisan peta tambahan.",
       "landcoverClasses": {

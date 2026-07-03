@@ -31,6 +31,7 @@ import {
   globeMapStyle,
 } from "../_lib/config";
 import { resolveLayerUrl } from "../_lib/layers";
+import { treeDbh, treeHeight, treeSpeciesName } from "../_lib/trees";
 import {
   DEFAULT_BADGE_ID,
   MA_EARTH_BADGE_ID,
@@ -51,6 +52,10 @@ const HIGHLIGHT_SOURCE = "highlightedSite";
 const HIGHLIGHT_LAYER = "highlightedSiteOutline";
 const LANDCOVER_SOURCE = "landCoverSource";
 const LANDCOVER_LAYER = "landCoverLayer";
+const TREES_SOURCE = "trees";
+const TREES_CLUSTER_LAYER = "clusteredTrees";
+const TREES_CLUSTER_COUNT_LAYER = "clusteredTreesCountText";
+const TREES_POINT_LAYER = "unclusteredTrees";
 
 export type GlobeMapPadding = { top: number; bottom: number; left: number; right: number };
 
@@ -61,6 +66,8 @@ type GlobeMapProps = {
   sitesGeojson?: GeoJSON.FeatureCollection | null;
   /** Yellow outline for the actively selected site. */
   highlightGeojson?: GeoJSON.FeatureCollection | null;
+  /** Measured/planted trees of the focused organization (clustered pins). */
+  treesGeojson?: GeoJSON.FeatureCollection | null;
   /** When set (and whenever `boundsKey` changes), the camera fits here. */
   bounds?: LngLatBounds | null;
   boundsKey?: string | null;
@@ -74,6 +81,23 @@ type GlobeMapProps = {
   onLoaded?: () => void;
   className?: string;
 };
+
+/** Tree hover card: species + height/DBH, built via DOM (XSS-safe). */
+function treePopupContent(properties: Record<string, unknown> | null): HTMLElement {
+  const root = document.createElement("div");
+  const title = document.createElement("p");
+  title.className = "globe-popup-name";
+  title.textContent = treeSpeciesName(properties) ?? "—";
+  root.appendChild(title);
+  const metrics = [treeHeight(properties), treeDbh(properties)].filter(Boolean);
+  if (metrics.length > 0) {
+    const sub = document.createElement("p");
+    sub.className = "globe-popup-country";
+    sub.textContent = metrics.join(" · ");
+    root.appendChild(sub);
+  }
+  return root;
+}
 
 /** Marker hover card: org name + country, built via DOM (XSS-safe). */
 function popupContent(name: string, country: string | null): HTMLElement {
@@ -248,6 +272,7 @@ export function GlobeMap({
   onSelectOrganization,
   sitesGeojson,
   highlightGeojson,
+  treesGeojson,
   bounds,
   boundsKey,
   boundsPadding,
@@ -417,6 +442,106 @@ export function GlobeMap({
         paint: { "line-color": "#FFEA00", "line-width": 3 },
       });
 
+      // Measured trees (port of Green Globe's measured-trees source + layers):
+      // pink clusters with counts; individual trees as small dots that grow
+      // and recolour on hover.
+      map.addSource(TREES_SOURCE, {
+        type: "geojson",
+        data: EMPTY_FEATURE_COLLECTION,
+        cluster: true,
+        clusterMaxZoom: 15,
+        clusterRadius: 50,
+      });
+      map.addLayer({
+        id: TREES_CLUSTER_LAYER,
+        type: "circle",
+        source: TREES_SOURCE,
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
+          "circle-opacity": 0.5,
+          "circle-color": "#ff77c1",
+          "circle-stroke-color": "#ff77c1",
+          "circle-stroke-opacity": 1,
+        },
+      });
+      map.addLayer({
+        id: TREES_CLUSTER_COUNT_LAYER,
+        type: "symbol",
+        source: TREES_SOURCE,
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": "{point_count_abbreviated}",
+          "text-font": ["Open Sans Semibold"],
+          "text-size": 12,
+        },
+      });
+      map.addLayer({
+        id: TREES_POINT_LAYER,
+        type: "circle",
+        source: TREES_SOURCE,
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-color": [
+            "case",
+            ["boolean", ["feature-state", "hover"], false],
+            "#0883fe",
+            "#ff77c1",
+          ],
+          "circle-radius": ["case", ["boolean", ["feature-state", "hover"], false], 8, 4],
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "#000000",
+        },
+      });
+
+      // Tree interactions: hover card on single trees, click a cluster to
+      // zoom into it (mirrors Green Globe's behaviour).
+      let hoveredTreeId: number | string | null = null;
+      const clearTreeHover = () => {
+        if (hoveredTreeId !== null) {
+          map.setFeatureState({ source: TREES_SOURCE, id: hoveredTreeId }, { hover: false });
+          hoveredTreeId = null;
+        }
+      };
+      map.on("mousemove", TREES_POINT_LAYER, (event: MapLayerMouseEvent) => {
+        const feature = event.features?.[0];
+        if (!feature || feature.geometry.type !== "Point") return;
+        map.getCanvas().style.cursor = "pointer";
+        if (feature.id !== hoveredTreeId) {
+          clearTreeHover();
+          if (feature.id !== undefined) {
+            hoveredTreeId = feature.id;
+            map.setFeatureState({ source: TREES_SOURCE, id: feature.id }, { hover: true });
+          }
+        }
+        popup
+          .setLngLat(feature.geometry.coordinates.slice(0, 2) as [number, number])
+          .setDOMContent(treePopupContent(feature.properties ?? null))
+          .addTo(map);
+      });
+      map.on("mouseleave", TREES_POINT_LAYER, () => {
+        map.getCanvas().style.cursor = "";
+        clearTreeHover();
+        popup.remove();
+      });
+      map.on("mouseenter", TREES_CLUSTER_LAYER, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", TREES_CLUSTER_LAYER, () => {
+        map.getCanvas().style.cursor = "";
+      });
+      map.on("click", TREES_CLUSTER_LAYER, (event: MapLayerMouseEvent) => {
+        const feature = event.features?.[0];
+        const clusterId = feature?.properties?.cluster_id;
+        const source = map.getSource(TREES_SOURCE) as GeoJSONSource | undefined;
+        if (!source || typeof clusterId !== "number" || feature?.geometry.type !== "Point") return;
+        const center = feature.geometry.coordinates.slice(0, 2) as [number, number];
+        source
+          .getClusterExpansionZoom(clusterId)
+          .then((zoom) => map.easeTo({ center, zoom }))
+          .catch(() => undefined);
+      });
+
       // Organization markers: each org's own logo, cropped into a small
       // circular badge. Orgs without a resolvable avatar fall back to a
       // GainForest mark (or a Ma Earth mark for badge holders) at the same
@@ -525,6 +650,15 @@ export function GlobeMap({
       highlightGeojson ?? EMPTY_FEATURE_COLLECTION,
     );
   }, [highlightGeojson, mapLoaded]);
+
+  // Measured trees of the focused organization.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+    (map.getSource(TREES_SOURCE) as GeoJSONSource | undefined)?.setData(
+      treesGeojson ?? EMPTY_FEATURE_COLLECTION,
+    );
+  }, [treesGeojson, mapLoaded]);
 
   // Camera.
   useEffect(() => {

@@ -1672,6 +1672,8 @@
       "title": "Explore layers",
       "landcover": "Land cover",
       "landcoverSource": "ESA WorldCover 2021",
+      "measuredTrees": "Measured trees",
+      "measuredTreesCount": "{count, plural, one {# tree} other {# trees}}",
       "projectCategory": "Project layers",
       "noProjectLayers": "This organization has no extra map layers yet.",
       "landcoverClasses": {
