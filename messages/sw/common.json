@@ -683,6 +683,9 @@
       "removingAward": "Inaondoa utoaji wa beji…"
     }
   },
+  "accountAbout": {
+    "title": "Kuhusu"
+  },
   "accountDataCouncil": {
     "title": "Baraza la Data",
     "description": "Watu walio na beji hii husaidia kusimamia data na ushahidi wa pamoja wa shirika.",

@@ -176,18 +176,33 @@ export function TimelinePanel({
       <div className="rounded-2xl border border-border/50 bg-background p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 id="timeline-heading" className="text-2xl tracking-tight text-foreground">
+            <h2
+              id="timeline-heading"
+              className={cn(
+                "text-foreground",
+                // Match the org profile's other section headings (About, Data
+                // Council) so the digest reads coherently; keep the plain style
+                // on the per-activity cert/project timelines.
+                summaryScope === "organization"
+                  ? "font-instrument text-2xl italic leading-none"
+                  : "text-2xl tracking-tight",
+              )}
+            >
               {timelineT(summaryScope === "organization" ? "orgTitle" : "linkedTitle")}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {timelineT(summaryScope === "organization" ? "orgItemCount" : "linkedItemCount", { count: entries.length })}
-              {linkedWindow ? ` · ${timelineT("linked", { window: linkedWindow })}` : ""}
+              {linkedWindow
+                ? summaryScope === "organization"
+                  ? ` · ${linkedWindow}`
+                  : ` · ${timelineT("linked", { window: linkedWindow })}`
+                : ""}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {timelineT(summaryScope === "organization" ? "orgDescription" : "linkedDescription")}
             </p>
           </div>
-          {linkedWindow ? (
+          {linkedWindow && summaryScope !== "organization" ? (
             <p className="text-xs text-muted-foreground">
               {timelineT("linkedWindow", { window: linkedWindow })}
             </p>

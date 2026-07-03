@@ -683,6 +683,9 @@
       "removingAward": "Menghapus penetapan lencana…"
     }
   },
+  "accountAbout": {
+    "title": "Tentang"
+  },
   "accountDataCouncil": {
     "title": "Dewan Data",
     "description": "Orang dengan badge ini membantu mengelola data dan bukti bersama milik organisasi.",

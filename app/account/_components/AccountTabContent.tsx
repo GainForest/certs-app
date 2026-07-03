@@ -219,20 +219,24 @@ export async function AccountHomeTabContent({ account }: { account: AccountRoute
   const hasAbout = account.kind === "organization"
     ? organizationAbout.length > 0
     : Boolean(account.detail?.richBody?.length || account.detail?.blurb);
+  const aboutT = await getTranslations("common.accountAbout");
 
   return (
     <>
       {account.kind === "organization" ? <AccountOverviewFolders account={account} /> : null}
       {hasAbout ? (
-        <section className="py-1 md:py-2 org-animate org-fade-in-up org-delay-1">
+        <section className="mt-8 org-animate org-fade-in-up org-delay-1">
+          <h2 className="font-instrument text-2xl italic leading-none text-foreground">{aboutT("title")}</h2>
           {account.kind === "organization" ? (
-            <p className="mt-5 max-w-3xl whitespace-pre-line text-base leading-7 text-foreground/85 md:text-lg md:leading-8">
+            <p className="mt-4 max-w-3xl whitespace-pre-line text-base leading-7 text-foreground/85 md:text-lg md:leading-8">
               {organizationAbout}
             </p>
           ) : account.detail?.richBody?.length ? (
-            <RichText blocks={account.detail.richBody} />
+            <div className="mt-4">
+              <RichText blocks={account.detail.richBody} />
+            </div>
           ) : (
-            <p className="mt-5 max-w-3xl text-base leading-7 text-foreground/85 md:text-lg md:leading-8">
+            <p className="mt-4 max-w-3xl text-base leading-7 text-foreground/85 md:text-lg md:leading-8">
               {account.detail?.blurb}
             </p>
           )}
