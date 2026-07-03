@@ -683,6 +683,9 @@
       "removingAward": "Removendo atribuição de distintivo…"
     }
   },
+  "accountAbout": {
+    "title": "Sobre"
+  },
   "accountDataCouncil": {
     "title": "Conselho de Dados",
     "description": "Pessoas com este distintivo ajudam a cuidar dos dados e evidências compartilhados da organização.",

@@ -683,6 +683,9 @@
       "removingAward": "Removing badge assignment…"
     }
   },
+  "accountAbout": {
+    "title": "About"
+  },
   "accountDataCouncil": {
     "title": "Data Council",
     "description": "People with this badge help steward the organization’s shared data and evidence.",
