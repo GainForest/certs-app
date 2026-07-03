@@ -13,13 +13,14 @@ import {
 } from "../_lib/indexer";
 import { accountHref } from "../_lib/urls";
 
-// The three built-in brands ship with a bundled logo. `endorser` is the
-// certified handle of the org behind each badge, so the emblem can link to that
-// endorser's own account page. Admin-added endorsers have no bundled logo —
-// they render from their own certified profile (avatar + name) instead.
+// GainForest is the only built-in brand that ships with a bundled logo.
+// `endorser` is the certified handle of the org behind the badge, so the emblem
+// can link to that endorser's own account page. Admin-added endorsers have no
+// bundled logo — they render from their own certified profile (avatar + name)
+// instead. (Ma Earth is intentionally not a "Trusted by" brand: an org's Ma
+// Earth participation is shown per-round on its Overview tab instead.)
 const BADGE_META: Record<TrustedOrganizationBadge, { label: string; src: string; endorser: string }> = {
   gainforest: { label: "GainForest", src: "/assets/media/images/gainforest-logo.svg", endorser: "gainforest.certified.one" },
-  maearth: { label: "Ma Earth", src: "/assets/media/images/badges/ma-earth-logo.webp", endorser: "ma-earth-tqzc.certified.one" },
 };
 
 type EndorserCard = { avatarUrl: string | null; handle: string | null; displayName: string | null };

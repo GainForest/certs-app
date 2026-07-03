@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { BinocularsIcon, BotIcon, SendIcon, SproutIcon } from "lucide-react";
 import { fetchAuthSession } from "../_lib/auth-server";
+import { TainaPageSkeleton } from "../_components/PageLoadingSkeletons";
 import { TainaSetupClient } from "./_components/TainaSetupClient";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function TainaPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<TainaPageSkeleton />}>
       <TainaContent />
     </Suspense>
   );
@@ -69,6 +70,10 @@ async function TainaContent() {
           <p className="mt-4 max-w-lg text-base leading-7 text-foreground/80 md:text-lg md:leading-8">
             {t("hero.description")}
           </p>
+
+          <div className="mt-5 max-w-lg rounded-2xl bg-muted px-4 py-3 text-sm leading-6 text-muted-foreground">
+            {t("hero.storageNote")}
+          </div>
 
           <ol className="mt-8 space-y-5">
             {steps.map((step, index) => (

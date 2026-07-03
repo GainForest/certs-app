@@ -1195,7 +1195,7 @@ const FUNDING_CONFIG_QUERY = `
 `;
 
 export type BumicertBadgeFilter = "gainforest" | "maearth" | "maearth-round-1" | "maearth-round-2" | "maearth-round-3";
-export type TrustedOrganizationBadge = "gainforest" | "maearth";
+export type TrustedOrganizationBadge = "gainforest";
 
 const FEATURED_BADGES: Array<{ key: BumicertBadgeFilter; title: string }> = [
   { key: "gainforest", title: "GainForest" },
@@ -1620,9 +1620,14 @@ export async function fetchTrustedByEndorsements(
   if (includes("gainforest")) {
     endorsements.push({ key: "gainforest", builtin: "gainforest", label: "GainForest", endorserDid: null, endorserHandle: null });
   }
-  if (includes("maearth") || includes("maearth-round-1") || includes("maearth-round-2")) {
-    endorsements.push({ key: "maearth", builtin: "maearth", label: "Ma Earth", endorserDid: null, endorserHandle: null });
-  }
+  // "Trusted by" is driven entirely by the admin-managed endorsers list: the
+  // built-in GainForest entry above plus the dynamic endorsers below. Ma Earth
+  // is NOT an endorser — its umbrella "came through Ma Earth" badge is
+  // participation, not an endorsement — so it isn't in that list and never
+  // shows here. An org's Ma Earth rounds are surfaced explicitly in the
+  // "Ma Earth" section on its Overview tab instead (AccountMaEarthRoundsSection).
+  // The maearth badge index itself stays populated (globe roster, round section,
+  // and the Explore "Ma Earth" filter all still read it).
   // Dynamic endorsers (incl. Biome Trust), in the order the moderation repo lists them.
   for (const endorser of index.endorsers) {
     if (index.byBadge[endorser.key]?.dids.includes(did)) {

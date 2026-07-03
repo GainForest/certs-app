@@ -17,32 +17,7 @@
       "headingUnderlined": "Bersertifikat",
       "headingRest": "dampak untuk pelindung alam",
       "description": "Unggah observasi dari lapangan dan sertifikasi kerja yang telah kamu lakukan. Foto, spesies, dan lokasimu menjadi catatan permanen dan terverifikasi atas dampak lingkungan nyata.",
-      "cta": "Jelajahi proyek",
-      "proofPoints": {
-        "communityLed": "Dipimpin komunitas",
-        "photoVerified": "Diverifikasi foto",
-        "geolocated": "Bergeolokasi"
-      }
-    },
-    "features": {
-      "eyebrow": "Tentang kami",
-      "items": {
-        "verified": {
-          "number": "01",
-          "title": "Dampak lingkungan terverifikasi",
-          "description": "Setiap catatan didukung foto, data geolokasi, dan verifikasi komunitas."
-        },
-        "direct": {
-          "number": "02",
-          "title": "Pendanaan langsung ke komunitas",
-          "description": "Dukungan Anda langsung menuju para pengelola yang melakukan restorasi di lapangan."
-        },
-        "transparent": {
-          "number": "03",
-          "title": "Terdesentralisasi dan transparan",
-          "description": "Karya Anda, terverifikasi. Bukti pemulihan yang tidak dapat diubah yang membangun reputasi Anda di mata donor dan komunitas."
-        }
-      }
+      "cta": "Jelajahi proyek"
     },
     "paths": {
       "title": "Pilih jalan Anda",
@@ -67,14 +42,14 @@
       }
     },
     "certificate": {
-      "eyebrow": "Catatan",
+      "eyebrow": "Sertifikat",
       "titleLine1": "Apa sebenarnya",
-      "titleLine2": "catatan itu?",
+      "titleLine2": "sertifikat itu?",
       "faqItems": {
         "digitalCertificate": {
           "id": "1",
-          "question": "Catatan digital untuk dampak",
-          "answer": "Sebuah catatan merekam tindakan lingkungan tertentu dan memberinya identitas permanen yang dapat diverifikasi di jaringan terbuka dan terdesentralisasi (teknologi yang sama yang menggerakkan Bluesky)."
+          "question": "Sertifikat digital untuk dampak",
+          "answer": "sertifikat mencatat tindakan lingkungan tertentu dan memberinya identitas permanen yang dapat diverifikasi di jaringan terbuka dan terdesentralisasi."
         },
         "evidence": {
           "id": "2",
@@ -84,12 +59,12 @@
         "communities": {
           "id": "3",
           "question": "Jalur langsung ke komunitas",
-          "answer": "Setiap catatan menyebut orang-orang yang melakukan restorasi. Komunitas di lapangan tetap diakui atas kerjanya — tanpa perantara, tanpa biaya yang tidak jelas."
+          "answer": "Saat Anda mendanai sertifikat, dana Anda sampai ke orang-orang yang melakukan restorasi. Tanpa perantara yang mengambil biaya atau overhead yang kabur."
         },
         "story": {
           "id": "4",
           "question": "Klaim Anda atas cerita ini",
-          "answer": "Sebuah catatan adalah bukti keterlibatanmu dalam momen itu: pohon yang ditanam, terumbu yang dipulihkan, ekosistem yang dihidupkan kembali. Milikmu untuk dibagikan, dirujuk, dan membangun reputasi."
+          "answer": "Memiliki sertifikat berarti Anda menjadi bagian dari momen itu: pohon yang ditanam, terumbu yang dipulihkan, ekosistem yang dihidupkan kembali. Anda dapat membagikan, menyimpan, atau menghadiahkannya."
         }
       },
       "previewTitle": "Reforestasi Gunung Halimun",
@@ -155,7 +130,8 @@
         "portable": "Portabel antar aplikasi",
         "owned": "Dimiliki komunitas",
         "shared": "Bukti dampak bersama"
-      }
+      },
+      "storageNote": "Saat pengelola alam mengunggah observasi, catatannya disimpan di akun GainForest mereka — atau di akun organisasi yang mereka kelola — sehingga jelas di mana data berada."
     }
   }
 }

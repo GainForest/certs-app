@@ -7,6 +7,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { AccountGalleryClient } from "./AccountGalleryClient";
 import type { GalleryProjectOption } from "./AccountGalleryUploader";
 import { RichText } from "../../_components/RichText";
+import { InlineCardGridSkeleton } from "../../_components/PageLoadingSkeletons";
 import { RecordExplorer } from "../../_components/RecordExplorer";
 import { AccountBumicertsGrid } from "./AccountBumicertsGrid";
 import { AccountProjectsGrid } from "./AccountProjectsGrid";
@@ -369,11 +370,19 @@ export async function AccountDonationsTabContent({ account, did }: { account: Ac
 export async function AccountObservationsTabContent({ account, did }: { account: AccountRouteData; did: string }) {
   const access = await resolveAccountManageAccess(account.urlIdentifier).catch(() => null);
   if (access?.status === "allowed") {
-    return <ObservationsSection target={access.target} />;
+    const storageNoteT = await getTranslations("common.accountObservations.storageNote");
+    return (
+      <ObservationsSection
+        target={access.target}
+        storageNote={storageNoteT(account.kind === "organization" ? "organization" : "user", {
+          accountName: account.displayName,
+        })}
+      />
+    );
   }
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<InlineCardGridSkeleton />}>
       <RecordExplorer kind="occurrence" ownerDid={did} showHero={false} hideOccurrenceFilters defaultOccurrenceMedia="all" />
     </Suspense>
   );
