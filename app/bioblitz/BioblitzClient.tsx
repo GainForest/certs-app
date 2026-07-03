@@ -147,15 +147,15 @@ export function BioblitzClient() {
 
   return (
     <>
-    <section className="relative -mt-14 flex min-h-[100dvh] flex-col overflow-hidden lg:h-[100dvh]">
+    <section className="relative -mt-14 flex min-h-[100dvh] shrink-0 flex-col overflow-hidden lg:min-h-[100dvh]">
       <BackgroundWash />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pb-4 pt-[calc(3.5rem+0.75rem)] sm:px-6 lg:min-h-0">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pb-4 pt-[calc(3.5rem+0.75rem)] sm:px-6">
         <HeroBand round={round} status={status} />
 
         <ProofNote />
 
-        <div className="grid flex-1 gap-4 lg:min-h-0 lg:grid-cols-[minmax(0,5fr)_1px_minmax(0,7fr)]">
+        <div className="grid flex-1 gap-4 lg:h-[calc(100dvh-17rem)] lg:flex-none lg:min-h-0 lg:grid-cols-[minmax(0,5fr)_1px_minmax(0,7fr)]">
           <div className="flex flex-col gap-4 lg:min-h-0">
             <Prizes />
             <Separator />
