@@ -19,26 +19,6 @@
       "description": "Unggah observasi dari lapangan dan sertifikasi kerja yang telah kamu lakukan. Foto, spesies, dan lokasimu menjadi catatan permanen dan terverifikasi atas dampak lingkungan nyata.",
       "cta": "Jelajahi proyek"
     },
-    "features": {
-      "eyebrow": "Tentang kami",
-      "items": {
-        "verified": {
-          "number": "01",
-          "title": "Dampak lingkungan terverifikasi",
-          "description": "Setiap catatan didukung foto, data geolokasi, dan verifikasi komunitas."
-        },
-        "direct": {
-          "number": "02",
-          "title": "Pendanaan langsung ke komunitas",
-          "description": "Dukungan Anda langsung menuju para pengelola yang melakukan restorasi di lapangan."
-        },
-        "transparent": {
-          "number": "03",
-          "title": "Terdesentralisasi dan transparan",
-          "description": "Karya Anda, terverifikasi. Bukti pemulihan yang tidak dapat diubah yang membangun reputasi Anda di mata donor dan komunitas."
-        }
-      }
-    },
     "paths": {
       "title": "Pilih jalan Anda",
       "description": "Baik Anda ingin mendanai dampak atau menampilkan karya Anda, ada tempat untuk Anda.",

@@ -19,26 +19,6 @@
       "description": "Pakia uchunguzi kutoka uwandani na uthibitishe kazi uliyoifanya. Picha, spishi, na maeneo yako huwa rekodi za kudumu na zinazoweza kuthibitishwa za athari halisi ya mazingira.",
       "cta": "Gundua miradi"
     },
-    "features": {
-      "eyebrow": "Kuhusu sisi",
-      "items": {
-        "verified": {
-          "number": "01",
-          "title": "Athari ya mazingira iliyothibitishwa",
-          "description": "Kila rekodi inaungwa mkono na picha, data ya eneo na uthibitisho wa jamii."
-        },
-        "direct": {
-          "number": "02",
-          "title": "Ufadhili wa moja kwa moja kwa jamii",
-          "description": "Msaada wako huenda moja kwa moja kwa wale wanaofanya kazi ya urejeshaji ardhini."
-        },
-        "transparent": {
-          "number": "03",
-          "title": "Iliyogatuliwa na wazi",
-          "description": "Kazi yako, imethibitishwa. Ushahidi usiobadilika wa urejeshaji unaojenga sifa yako kwa wafadhili na jamii."
-        }
-      }
-    },
     "paths": {
       "title": "Chagua njia yako",
       "description": "Iwe uko hapa kufadhili athari au kuonyesha kazi yako, kuna nafasi kwa ajili yako.",

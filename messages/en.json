@@ -19,26 +19,6 @@
       "description": "Upload observations from the field and certify the work you've done. Your photos, species, and locations become permanent, verifiable records of real environmental impact.",
       "cta": "Explore Projects"
     },
-    "features": {
-      "eyebrow": "About Us",
-      "items": {
-        "verified": {
-          "number": "01",
-          "title": "Verified environmental impact",
-          "description": "Every record is backed by photos, geolocation data, and community verification."
-        },
-        "direct": {
-          "number": "02",
-          "title": "Direct community funding",
-          "description": "Your support goes straight to the stewards doing on-ground restoration work."
-        },
-        "transparent": {
-          "number": "03",
-          "title": "Decentralized & transparent",
-          "description": "Your work, verified. Unchangeable proof of restoration that builds your reputation with donors and communities."
-        }
-      }
-    },
     "paths": {
       "title": "Choose Your Path",
       "description": "Whether you're here to fund impact or showcase your work, there's a place for you.",

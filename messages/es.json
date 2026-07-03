@@ -19,26 +19,6 @@
       "description": "Sube observaciones desde el terreno y certifica el trabajo que has hecho. Tus fotos, especies y ubicaciones se convierten en registros permanentes y verificables de impacto ambiental real.",
       "cta": "Explorar proyectos"
     },
-    "features": {
-      "eyebrow": "Sobre nosotros",
-      "items": {
-        "verified": {
-          "number": "01",
-          "title": "Impacto ambiental verificado",
-          "description": "Cada registro está respaldado por fotos, datos de geolocalización y verificación comunitaria."
-        },
-        "direct": {
-          "number": "02",
-          "title": "Financiamiento directo a comunidades",
-          "description": "Tu apoyo llega directamente a quienes realizan la restauración en el territorio."
-        },
-        "transparent": {
-          "number": "03",
-          "title": "Descentralizado y transparente",
-          "description": "Tu trabajo, verificado. Prueba inmutable de restauración que fortalece tu reputación ante donantes y comunidades."
-        }
-      }
-    },
     "paths": {
       "title": "Elige tu camino",
       "description": "Ya sea que vengas a financiar impacto o a mostrar tu trabajo, hay un lugar para ti.",
