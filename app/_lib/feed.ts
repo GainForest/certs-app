@@ -73,10 +73,12 @@ export interface ActivityFeedItem {
   amount: number | null;
   /** For donations: the currency code (USD/USDC). */
   currency: string | null;
-  /** Observations only, set on a sampled row of a server-collapsed burst: the
-   *  total number of sightings in that burst (counted for free by the burst
-   *  scan). The client's summary card uses it as the headline count; absent on
-   *  fully loaded runs, where the row count itself is exact. */
+  /** Observations only, set on the sampled rows of a server-collapsed burst:
+   *  how many sightings the burst holds from the collapse point down (counted
+   *  for free by the burst scan; includes the sampled rows themselves). Rows
+   *  of the same run emitted raw on earlier pages are NOT included — the
+   *  client adds those, so the summary card's headline is the full burst.
+   *  Absent on fully loaded runs, where the row count itself is exact. */
   burstCount?: number;
 }
 
@@ -702,16 +704,19 @@ function scanNodeId(n: ScanNode): string {
  * ends: either another account's sighting, or a record at/below `floorTime`
  * (the newest non-sighting item already in the pool). Returns the last sighting
  * of the run, whose (createdAt, id) becomes the jump cursor so the next page
- * begins right after the whole burst, plus `count` — how many sightings the run
- * contains (a lower bound when the hop budget runs out) — gathered while
- * walking anyway, so the summary card's headline number costs nothing extra.
+ * begins right after the whole burst, plus `count` — how many not-yet-emitted
+ * sightings the run contains (a lower bound when the hop budget runs out) —
+ * gathered while walking anyway, so the summary card's headline number costs
+ * nothing extra. Only nodes strictly older than the page cursor are counted:
+ * run rows already emitted raw on previous pages are the client's to add.
  */
 async function scanBurstEnd(
   burstActor: string,
-  before: string | null,
+  before: FeedCursor | null,
   floorTime: number,
 ): Promise<{ createdAt: string; id: string; count: number } | null> {
-  let upper = before;
+  let upper = before?.ts ?? null;
+  const beforeTime = before ? timeValue(before.ts) : null;
   let lastBurst: { createdAt: string; id: string; count: number } | null = null;
   let lastBurstTime: number | null = null;
   let runCount = 0;
@@ -741,7 +746,12 @@ async function scanBurstEnd(
       // A long quiet gap between two of the actor's sightings ends the burst:
       // only things uploaded close together collapse into one summary.
       if (lastBurstTime !== null && lastBurstTime - t > BURST_MAX_GAP_MS) return lastBurst;
-      runCount += 1;
+      // Count only rows strictly older than the cursor (same compound order as
+      // isStrictlyOlder); boundary rows re-fetched by the lte bound were
+      // already emitted on the previous page.
+      const strictlyOlder =
+        beforeTime === null || t < beforeTime || (t === beforeTime && before !== null && id < before.id);
+      if (strictlyOlder) runCount += 1;
       lastBurst = { createdAt: n.createdAt, id, count: runCount };
       lastBurstTime = t;
     }
@@ -762,7 +772,7 @@ async function buildBurstSkipPage(
   ordered: ActivityFeedItem[],
   firstObsIdx: number,
   burstActor: string,
-  before: string | null,
+  before: FeedCursor | null,
 ): Promise<ActivityFeedPage | null> {
   // The newest non-sighting item already in the pool can also end the run.
   const newestNonObs = ordered.find((it) => it.kind !== "observation");
@@ -907,7 +917,7 @@ async function buildFeedPageUncached(
     const firstObsIdx = ordered.findIndex((it) => it.kind === "observation");
     const burstActor = firstObsIdx >= 0 && firstObsIdx < PAGE_SIZE ? ordered[firstObsIdx].actorDid : null;
     if (burstActor && occurrenceNodes.every((n) => n.did === burstActor)) {
-      const skipPage = await buildBurstSkipPage(ordered, firstObsIdx, burstActor, before);
+      const skipPage = await buildBurstSkipPage(ordered, firstObsIdx, burstActor, cursor);
       if (skipPage) {
         await enrichDonations(skipPage.items, certUriById);
         return skipPage;
