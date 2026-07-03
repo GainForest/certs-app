@@ -146,13 +146,15 @@ export function BioblitzClient() {
 
   return (
     <>
-    <section className="relative -mt-14 flex min-h-[100dvh] flex-col overflow-hidden lg:h-[100dvh]">
+    <section className="relative -mt-14 flex min-h-[100dvh] shrink-0 flex-col overflow-hidden lg:min-h-[100dvh]">
       <BackgroundWash />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pb-4 pt-[calc(3.5rem+0.75rem)] sm:px-6 lg:min-h-0">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pb-4 pt-[calc(3.5rem+0.75rem)] sm:px-6">
         <HeroBand round={round} status={status} />
 
-        <div className="grid flex-1 gap-4 lg:min-h-0 lg:grid-cols-[minmax(0,5fr)_1px_minmax(0,7fr)]">
+        <ProofNote />
+
+        <div className="grid flex-1 gap-4 lg:h-[calc(100dvh-17rem)] lg:flex-none lg:min-h-0 lg:grid-cols-[minmax(0,5fr)_1px_minmax(0,7fr)]">
           <div className="flex flex-col gap-4 lg:min-h-0">
             <Prizes />
             <Separator />
@@ -408,6 +410,22 @@ function HowItWorks() {
           ))}
         </ol>
       </Card>
+    </FadeIn>
+  );
+}
+
+// ── Data-as-proof wide card ───────────────────────────────────────────────────
+
+function ProofNote() {
+  const t = useTranslations("marketplace.bioblitz.how.proof");
+  return (
+    <FadeIn delay={0.05}>
+      <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
+        <h2 className="text-base font-semibold text-foreground sm:text-lg">{t("title")}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("intro")}</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("uses")}</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("outro")}</p>
+      </div>
     </FadeIn>
   );
 }
