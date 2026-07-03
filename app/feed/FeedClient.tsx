@@ -697,10 +697,13 @@ function ObservationBatchCard({
   const likeTotal = items.reduce((sum, it) => sum + interactions.getEngagement(it.id).likeCount, 0);
 
   // Headline count = the size of THIS burst, not the account's all-time total.
-  // Server-collapsed runs carry the scanned run size on their sampled rows
-  // (`burstCount`); fully loaded runs are exactly the rows on screen. Either
-  // way it's free — no extra query.
-  const count = items.reduce((max, it) => Math.max(max, it.burstCount ?? 0), items.length);
+  // Server-collapsed runs stamp `burstCount` on their sampled rows: the run
+  // size from the collapse point down. Rows of the same run that were emitted
+  // raw on earlier pages (a run can start mid-page) sit above the sample in
+  // this batch without a stamp, so add them. Fully loaded runs have no stamp
+  // and are exactly the rows on screen. Either way it's free — no extra query.
+  const stamped = items.reduce((max, it) => Math.max(max, it.burstCount ?? 0), 0);
+  const count = stamped > 0 ? items.filter((it) => it.burstCount == null).length + stamped : items.length;
 
   const withImages = items.filter((it) => hasImage(it));
   const thumbs = withImages.slice(0, MAX_THUMBS);
