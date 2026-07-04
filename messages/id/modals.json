@@ -154,7 +154,11 @@
     "creating": "Membuka proses masuk yang aman…",
     "connectExisting": "Hubungkan dompet yang sudah ada",
     "defaultLabel": "Dompet donasi",
-    "error": "Tidak dapat membuat dompet. Silakan coba lagi."
+    "error": "Tidak dapat membuat dompet. Silakan coba lagi.",
+    "handleHint": "Saat masuk dengan Bluesky, gunakan <handle></handle> — akun yang sama dengan yang Anda pakai di sini.",
+    "copyHandle": "Salin nama pengguna Anda",
+    "copy": "Salin",
+    "copied": "Tersalin"
   },
   "wallet": {
     "add": {

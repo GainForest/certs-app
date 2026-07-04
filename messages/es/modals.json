@@ -154,7 +154,11 @@
     "creating": "Abriendo inicio de sesión seguro…",
     "connectExisting": "Conectar una billetera existente",
     "defaultLabel": "Billetera de donaciones",
-    "error": "No se pudo crear la billetera. Inténtalo de nuevo."
+    "error": "No se pudo crear la billetera. Inténtalo de nuevo.",
+    "handleHint": "En el inicio de sesión de Bluesky, usa <handle></handle>, la misma cuenta que usas aquí.",
+    "copyHandle": "Copiar tu nombre de usuario",
+    "copy": "Copiar",
+    "copied": "Copiado"
   },
   "wallet": {
     "add": {

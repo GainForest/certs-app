@@ -40,11 +40,34 @@ import {
 import { useWalletAttestation } from "@/hooks/useWalletAttestation";
 import {
   CheckCircle2Icon,
+  CheckIcon,
+  CopyIcon,
   WalletIcon,
   ArrowRightIcon,
   Loader2Icon,
   SparklesIcon,
 } from "lucide-react";
+import type { AuthSession } from "@/app/_lib/auth";
+
+/** The signed-in viewer's handle, fetched once — shown as a hint so the user
+ *  knows exactly which Bluesky account to type into WaaP's sign-in. */
+function useViewerHandle(): string | null {
+  const [handle, setHandle] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/session")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json: { session?: AuthSession } | null) => {
+        const session = json?.session;
+        if (!cancelled && session?.isLoggedIn && session.handle) setHandle(session.handle);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return handle;
+}
 
 export interface AddWalletModalProps {
   /** The account DID the wallet links to. */
@@ -85,6 +108,19 @@ export function AddWalletModal({
   const [name, setName] = useState(existingName ?? "");
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const viewerHandle = useViewerHandle();
+  const [handleCopied, setHandleCopied] = useState(false);
+
+  const copyHandle = async () => {
+    if (!viewerHandle) return;
+    try {
+      await navigator.clipboard.writeText(viewerHandle);
+      setHandleCopied(true);
+      setTimeout(() => setHandleCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable — the handle is still visible to copy manually.
+    }
+  };
   // Wallets created through WaaP sign & link automatically — track that the
   // connection came from the create flow, and that we only auto-trigger once.
   const [viaWaaP, setViaWaaP] = useState(false);
@@ -178,6 +214,24 @@ export function AddWalletModal({
               <p className="text-xs text-muted-foreground">{t("createHint")}</p>
             </div>
             {createError ? <p className="text-sm text-destructive text-center">{createError}</p> : null}
+            {viewerHandle ? (
+              <div className="flex w-full items-center gap-2 rounded-md bg-muted px-3 py-2">
+                <p className="min-w-0 flex-1 text-xs text-muted-foreground">
+                  {t.rich("handleHint", {
+                    handle: () => <span className="font-mono font-medium text-foreground break-all">{viewerHandle}</span>,
+                  })}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void copyHandle()}
+                  className="flex shrink-0 items-center gap-1 rounded-md border border-input px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={t("copyHandle")}
+                >
+                  {handleCopied ? <CheckIcon className="size-3 text-primary" aria-hidden /> : <CopyIcon className="size-3" aria-hidden />}
+                  {handleCopied ? t("copied") : t("copy")}
+                </button>
+              </div>
+            ) : null}
             <Button className="w-full" onClick={() => void handleCreateWallet()} disabled={isCreating}>
               {isCreating ? <Loader2Icon className="size-3.5 animate-spin" /> : <SparklesIcon className="size-3.5" />}
               {isCreating ? t("creating") : t("createButton")}

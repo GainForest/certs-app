@@ -154,7 +154,11 @@
     "creating": "Inafungua kuingia salama…",
     "connectExisting": "Unganisha pochi uliyonayo",
     "defaultLabel": "Pochi ya michango",
-    "error": "Imeshindwa kutengeneza pochi. Tafadhali jaribu tena."
+    "error": "Imeshindwa kutengeneza pochi. Tafadhali jaribu tena.",
+    "handleHint": "Unapoingia kwa Bluesky, tumia <handle></handle> — akaunti ile ile unayotumia hapa.",
+    "copyHandle": "Nakili jina lako la mtumiaji",
+    "copy": "Nakili",
+    "copied": "Imenakiliwa"
   },
   "wallet": {
     "add": {

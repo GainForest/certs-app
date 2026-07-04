@@ -154,7 +154,11 @@
     "creating": "Opening secure sign-in…",
     "connectExisting": "Connect an existing wallet",
     "defaultLabel": "Donation wallet",
-    "error": "Could not create the wallet. Please try again."
+    "error": "Could not create the wallet. Please try again.",
+    "handleHint": "In the Bluesky sign-in, use <handle></handle> — the same account you use here.",
+    "copyHandle": "Copy your username",
+    "copy": "Copy",
+    "copied": "Copied"
   },
   "wallet": {
     "add": {
