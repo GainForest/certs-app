@@ -66,6 +66,32 @@ export function getWaaPProvider(options: InitWaaPOptions = WAAP_INIT_OPTIONS): W
   return sharedProvider;
 }
 
+/** Starts loading the WaaP iframe ahead of time. The SDK's iframe handshake
+ *  (`pingIframe`) posts a single message with a 10s timeout — if the user
+ *  clicks "create" before the iframe finished loading, that message is lost
+ *  against a not-yet-navigated window (console shows a postMessage target-
+ *  origin error) and the login can hang. Calling this when the wallet modal
+ *  mounts gives the iframe a head start so the handshake lands. */
+export function prewarmWaaP(): void {
+  if (typeof window === "undefined") return;
+  try {
+    getWaaPProvider();
+  } catch {
+    // Non-fatal — the connect flow will retry initialisation on click.
+  }
+}
+
+/** Force-hides WaaP's full-screen overlay (z-index 2147483647). Used as a
+ *  safety net after errors/cancels so a wedged WaaP UI can never leave the
+ *  whole page unclickable. */
+export function forceHideWaaPUi(): void {
+  if (typeof document === "undefined") return;
+  const container = document.getElementById("waap-wallet-iframe-container");
+  if (container && container.style.display !== "none") {
+    container.style.display = "none";
+  }
+}
+
 /** Runs `callback` when the WaaP card is dismissed while no login completed.
  *  Returns an unsubscribe function. */
 export function onWaaPDismissed(callback: () => void): () => void {

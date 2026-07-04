@@ -27,7 +27,7 @@ import { useAccount, useConnect, useSwitchChain, useDisconnect } from "wagmi";
 import { base } from "wagmi/chains";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useTranslations } from "next-intl";
-import { getWaaPConnector, onWaaPDismissed } from "@/lib/waap/connector";
+import { forceHideWaaPUi, getWaaPConnector, onWaaPDismissed, prewarmWaaP } from "@/lib/waap/connector";
 import { useModal } from "@/components/ui/modal/context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,6 +125,13 @@ export function AddWalletModal({
   const autoLinkStartedRef = useRef(false);
   const creationDoneRef = useRef(false);
 
+  // Load the WaaP iframe as soon as the modal opens — its handshake message
+  // is fired once without retry, so it must already be loaded when the user
+  // clicks "continue" (see prewarmWaaP for the gory details).
+  useEffect(() => {
+    prewarmWaaP();
+  }, []);
+
   const handleCreateWallet = async () => {
     if (isCreating) return;
     setIsCreating(true);
@@ -133,13 +140,18 @@ export function AddWalletModal({
     // WaaP's login() promise never settles when its card is dismissed — watch
     // the dismissal ourselves so this modal never gets stuck disabled.
     const unsubscribe = onWaaPDismissed(() => {
-      if (!creationDoneRef.current) setIsCreating(false);
+      if (!creationDoneRef.current) {
+        setIsCreating(false);
+        forceHideWaaPUi();
+      }
     });
     try {
       await connectAsync({ connector: getWaaPConnector(), chainId: base.id });
       setViaWaaP(true);
     } catch {
       setCreateError(t("error"));
+      // Never leave WaaP's full-screen overlay wedged over the page.
+      forceHideWaaPUi();
     } finally {
       creationDoneRef.current = true;
       unsubscribe();
