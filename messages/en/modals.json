@@ -154,7 +154,7 @@
     "connectExisting": "Connect an existing wallet",
     "defaultLabel": "Donation wallet",
     "error": "Could not create the wallet. Please try again.",
-    "handleHint": "In the Bluesky sign-in, use <handle></handle> — the same account you use here.",
+    "handleHint": "Choose “See all methods” → Bluesky, then sign in with <handle></handle> — the same account you use here.",
     "copyHandle": "Copy your username",
     "copy": "Copy",
     "copied": "Copied",

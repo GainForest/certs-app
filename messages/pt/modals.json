@@ -154,7 +154,7 @@
     "connectExisting": "Conectar uma carteira existente",
     "defaultLabel": "Carteira de doações",
     "error": "Não foi possível criar a carteira. Tente novamente.",
-    "handleHint": "No login do Bluesky, use <handle></handle> — a mesma conta que você usa aqui.",
+    "handleHint": "Escolha “See all methods” → Bluesky e entre com <handle></handle> — a mesma conta que você usa aqui.",
     "copyHandle": "Copiar seu nome de usuário",
     "copy": "Copiar",
     "copied": "Copiado",

@@ -28,13 +28,21 @@ import {
   type WaaPEthereumProviderInterface,
 } from "@human.tech/waap-sdk";
 
-/** Login options shown by the WaaP modal. Bluesky first — every steward
- *  already has that identity — with email and Google as fallbacks. */
+/** Login options shown by the WaaP modal.
+ *
+ *  Bluesky ordering is a deliberate workaround for a WaaP iframe bug: the
+ *  TOP-LEVEL social buttons launch the OAuth popup directly, which for
+ *  Bluesky produces `handle=undefined` and a blank page (Bluesky OAuth needs
+ *  the handle to resolve the user's PDS). The "See all methods" sheet is the
+ *  only path with the proper "Sign in with Bluesky" handle prompt — and only
+ *  the first two socials render top-level. Listing google + discord first
+ *  pushes Bluesky into the sheet, where it works. Do not reorder until
+ *  human.tech fixes the top-level Bluesky button. */
 const WAAP_INIT_OPTIONS: InitWaaPOptions = {
   useStaging: false,
   config: {
     authenticationMethods: ["social", "email"],
-    allowedSocials: ["bluesky", "google"],
+    allowedSocials: ["google", "discord", "bluesky"],
     styles: { darkMode: false },
     showSecured: true,
   },

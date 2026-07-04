@@ -329,7 +329,7 @@ export function AddWalletModal({
               />
             </div>
 
-            {error && <p className="text-sm text-destructive">Could not link this wallet. Please try again.</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Button
               onClick={() => linkWallet(name.trim() || undefined)}
