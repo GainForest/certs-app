@@ -161,14 +161,20 @@ export function AddWalletModal({
 
   // Auto-attestation: once a WaaP-created wallet is connected on Base, sign &
   // link it without another button press. Runs once; a rejected signature
-  // falls back to the regular "Try Again" button.
+  // falls back to the regular "Try Again" button. The short delay lets WaaP's
+  // login card finish closing first — firing the sign request immediately can
+  // race the card's pending hide event, which would hide the signing prompt
+  // the moment it appears.
   useEffect(() => {
     if (!viaWaaP || autoLinkStartedRef.current) return;
     if (!isConnected || !isCorrectNetwork || !address || status !== "idle") return;
     autoLinkStartedRef.current = true;
     const label = name.trim() || t("defaultLabel");
     setName(label);
-    void linkWallet(label);
+    const timer = setTimeout(() => {
+      void linkWallet(label);
+    }, 800);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viaWaaP, isConnected, isCorrectNetwork, address, status]);
 

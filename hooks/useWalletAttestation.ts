@@ -22,6 +22,28 @@ const EIP712_TYPES = {
 
 type LinkStatus = "idle" | "signing" | "writing" | "success" | "error";
 
+/** True when the error (or anything in its cause chain) is a genuine
+ *  user rejection (EIP-1193 code 4001 / viem UserRejectedRequestError). */
+function isUserRejection(err: unknown): boolean {
+  let current: unknown = err;
+  for (let depth = 0; current && depth < 6; depth++) {
+    const candidate = current as { code?: unknown; name?: unknown; cause?: unknown };
+    if (candidate.code === 4001 || candidate.name === "UserRejectedRequestError") return true;
+    current = candidate.cause;
+  }
+  return false;
+}
+
+/** Best human-readable message from a wallet/provider error. */
+function extractErrorMessage(err: unknown): string | null {
+  if (!err) return null;
+  const candidate = err as { shortMessage?: unknown; message?: unknown; error?: unknown };
+  if (typeof candidate.shortMessage === "string" && candidate.shortMessage) return candidate.shortMessage;
+  if (typeof candidate.message === "string" && candidate.message) return candidate.message.split("\n")[0];
+  if (typeof candidate.error === "string" && candidate.error) return candidate.error;
+  return null;
+}
+
 type UseWalletAttestationResult = {
   /** Current status of the linking flow */
   status: LinkStatus;
@@ -88,9 +110,16 @@ export function useWalletAttestation(donorDid: string, options?: { repo?: string
         primaryType: "AttestLink",
         message,
       });
-    } catch {
+    } catch (err) {
+      // Don't mislabel infrastructure failures as user rejections — surface
+      // the wallet's actual error so the problem is diagnosable.
+      console.error("[useWalletAttestation] signTypedData failed", err);
       setStatus("error");
-      setError("Signing was rejected in your wallet.");
+      setError(
+        isUserRejection(err)
+          ? "Signing was rejected in your wallet."
+          : extractErrorMessage(err) ?? "Failed to link wallet",
+      );
       return;
     }
 

@@ -74,6 +74,24 @@ export function getWaaPProvider(options: InitWaaPOptions = WAAP_INIT_OPTIONS): W
   return sharedProvider;
 }
 
+/** The provider that actually holds the session's keys.
+ *
+ *  After a login, the WaaP SDK rebinds `window.waap` to whichever provider
+ *  now owns the wallet — its own iframe for social/email logins, or the
+ *  EXTERNAL wallet's provider (injected extension / WalletConnect) when the
+ *  user signed in WITH a wallet. The original `initWaaP()` instance keeps
+ *  routing every request into the iframe, which holds no key for wallet-based
+ *  logins and rejects sign requests without ever showing any UI. All RPC
+ *  requests must therefore go through `window.waap`, not the init instance.
+ *  (Before any login `window.waap` IS the init instance, so this is always
+ *  safe.) */
+function getLiveWaaPProvider(options: InitWaaPOptions = WAAP_INIT_OPTIONS): WaaPEthereumProviderInterface {
+  const base = getWaaPProvider(options);
+  if (typeof window === "undefined") return base;
+  const live = (window as { waap?: WaaPEthereumProviderInterface }).waap;
+  return live ?? base;
+}
+
 /** Starts loading the WaaP iframe ahead of time. The SDK's iframe handshake
  *  (`pingIframe`) posts a single message with a 10s timeout — if the user
  *  clicks "create" before the iframe finished loading, that message is lost
@@ -121,9 +139,12 @@ export function onWaaPDismissed(callback: () => void): () => void {
 
 function waapConnector(options: InitWaaPOptions) {
   const ensureProvider = (): WaaPEthereumProviderInterface => getWaaPProvider(options);
+  // Requests must hit the live provider (see getLiveWaaPProvider) so signing
+  // works when the user logged into WaaP with an external wallet.
+  const liveProvider = (): WaaPEthereumProviderInterface => getLiveWaaPProvider(options);
 
   const getAccounts = async (): Promise<`0x${string}`[]> => {
-    const waap = ensureProvider();
+    const waap = liveProvider();
     const accounts = await waap
       .request({ method: WAAP_METHOD.eth_accounts })
       .catch(() => []);
@@ -131,7 +152,7 @@ function waapConnector(options: InitWaaPOptions) {
   };
 
   const getChainId = async (): Promise<number> => {
-    const waap = ensureProvider();
+    const waap = liveProvider();
     const chainId = await waap.request({ method: WAAP_METHOD.eth_chainId });
     return Number(chainId);
   };
@@ -152,7 +173,7 @@ function waapConnector(options: InitWaaPOptions) {
     const switchChain = async ({ chainId }: { chainId: number }) => {
       const chain = config.chains.find((candidate) => candidate.id === chainId);
       if (!chain) throw new SwitchChainError(new ChainNotConfiguredError());
-      const waap = ensureProvider();
+      const waap = liveProvider();
       try {
         await waap.request({
           method: WAAP_METHOD.wallet_switchEthereumChain,
@@ -221,7 +242,9 @@ function waapConnector(options: InitWaaPOptions) {
       getChainId,
 
       async getProvider() {
-        return ensureProvider();
+        // wagmi calls provider.request(...) for signing — hand back the live
+        // provider so sign requests reach the wallet that owns the keys.
+        return liveProvider();
       },
 
       async isAuthorized() {
