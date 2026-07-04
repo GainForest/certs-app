@@ -706,7 +706,10 @@
   "maEarthRounds": {
     "title": "Ma Earth",
     "description": "Terpilih untuk mengikuti putaran pendanaan komunitas Ma Earth ini.",
-    "round": "Putaran {round}"
+    "round": "Putaran {round}",
+    "donate": "Donasi di Ma Earth",
+    "donateDescription": "Organisasi ini sedang menggalang dana melalui kampanye Ma Earth.",
+    "raised": "{amount} terkumpul sejauh ini dari {donors, plural, other {# pendukung}}"
   },
   "groupInvitations": {
     "members": {

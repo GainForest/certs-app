@@ -706,7 +706,10 @@
   "maEarthRounds": {
     "title": "Ma Earth",
     "description": "Selecionada para participar destas rodadas de financiamento comunitário da Ma Earth.",
-    "round": "Rodada {round}"
+    "round": "Rodada {round}",
+    "donate": "Doar na Ma Earth",
+    "donateDescription": "Esta organização está arrecadando fundos por meio de uma campanha da Ma Earth.",
+    "raised": "{amount} arrecadados até agora de {donors, plural, one {# apoiador} other {# apoiadores}}"
   },
   "groupInvitations": {
     "members": {

@@ -706,7 +706,10 @@
   "maEarthRounds": {
     "title": "Ma Earth",
     "description": "Imechaguliwa kushiriki katika raundi hizi za ufadhili wa jamii wa Ma Earth.",
-    "round": "Raundi {round}"
+    "round": "Raundi {round}",
+    "donate": "Changia kwenye Ma Earth",
+    "donateDescription": "Shirika hili linakusanya fedha kupitia kampeni ya Ma Earth.",
+    "raised": "{amount} zimekusanywa hadi sasa kutoka kwa {donors, plural, one {mchangiaji #} other {wachangiaji #}}"
   },
   "groupInvitations": {
     "members": {
