@@ -13,13 +13,15 @@ import { usePreferredDidIdentifier } from "@/app/_components/PreferredLinks";
 import { SocialGlyph } from "@/app/_components/SocialIcon";
 import { blockExplorerUrl, localBumicertHref } from "@/app/_lib/urls";
 import {
-  BASE_CHAIN_NAME,
-  BASE_RPC_URL,
+  BLOCK_EXPLORER_URL,
   CHAIN_ID,
+  CHAIN_NAME,
   DECIMALS,
   EIP3009_DOMAIN_NAME,
   EIP3009_DOMAIN_VERSION,
   EIP3009_TYPES_FOR_WALLET,
+  PAYMENT_NETWORK,
+  RPC_URL,
   toUsdcUnits,
   USDC_CONTRACT,
 } from "@/lib/facilitator/usdc";
@@ -101,7 +103,7 @@ function getEthereum(): EthereumProvider | null {
   return window.ethereum ?? null;
 }
 
-async function ensureBaseNetwork(ethereum: EthereumProvider) {
+async function ensureEthereumNetwork(ethereum: EthereumProvider) {
   const hexChainId = `0x${CHAIN_ID.toString(16)}`;
   try {
     await ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hexChainId }] });
@@ -113,10 +115,10 @@ async function ensureBaseNetwork(ethereum: EthereumProvider) {
       params: [
         {
           chainId: hexChainId,
-          chainName: BASE_CHAIN_NAME,
+          chainName: CHAIN_NAME,
           nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-          rpcUrls: [BASE_RPC_URL],
-          blockExplorerUrls: ["https://basescan.org"],
+          rpcUrls: [RPC_URL],
+          blockExplorerUrls: [BLOCK_EXPLORER_URL],
         },
       ],
     });
@@ -167,7 +169,7 @@ function createPaymentSignatureHeader(params: {
   const payload = {
     x402Version: 2,
     scheme: "exact",
-    networkId: "eip155:8453",
+    networkId: `eip155:${CHAIN_ID}`,
     payload: {
       signature: params.signature,
       authorization: {
@@ -369,7 +371,7 @@ function WalletModal({
       const accounts = await ethereum.request<string[]>({ method: "eth_requestAccounts" });
       const senderWallet = accounts[0];
       if (!senderWallet) throw new Error("Wallet connection failed.");
-      await ensureBaseNetwork(ethereum);
+      await ensureEthereumNetwork(ethereum);
       const recipient = await fetchRecipient(bumicert.organizationDid);
       if (!recipient.hasAttestation) {
         throw new Error(`${bumicert.organizationName} cannot receive donations yet.`);
@@ -616,7 +618,7 @@ function SuccessModal({
 }) {
   const { hide, clear } = useModal();
   const [copied, setCopied] = useState(false);
-  const txHref = blockExplorerUrl(transactionHash, "base");
+  const txHref = blockExplorerUrl(transactionHash, PAYMENT_NETWORK);
   const organizationIdentifier = usePreferredDidIdentifier(bumicert.organizationDid);
   const sharePath = localBumicertHref(organizationIdentifier, bumicert.rkey);
   const shareUrl = absoluteLocalUrl(sharePath);

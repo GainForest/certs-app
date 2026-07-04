@@ -150,6 +150,7 @@ export function localProjectHref(didOrHandle: string, rkey: string): string {
 /** Block-explorer transaction URLs by payment network. Mirrors the
  *  bumicerts dashboard's BLOCK_EXPLORERS map. */
 const BLOCK_EXPLORERS: Record<string, (tx: string) => string> = {
+  ethereum: (tx) => `https://etherscan.io/tx/${tx}`,
   base: (tx) => `https://basescan.org/tx/${tx}`,
   celo: (tx) => `https://celoscan.io/tx/${tx}`,
 };

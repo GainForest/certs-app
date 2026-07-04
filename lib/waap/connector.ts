@@ -278,7 +278,7 @@ type WaaPConnectorFn = ReturnType<typeof waapConnector>;
 let singleton: WaaPConnectorFn | null = null;
 
 /** The shared WaaP connector factory. Pass to wagmi's `connect(...)`:
- *  `connectAsync({ connector: getWaaPConnector(), chainId: base.id })`. */
+ *  `connectAsync({ connector: getWaaPConnector(), chainId: mainnet.id })`. */
 export function getWaaPConnector(): WaaPConnectorFn {
   if (!singleton) singleton = waapConnector(WAAP_INIT_OPTIONS);
   return singleton;

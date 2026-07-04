@@ -92,7 +92,7 @@ export function parsePaymentSignature(header: string): PaymentSignaturePayload {
   return {
     x402Version: typeof parsedJson.x402Version === "number" ? parsedJson.x402Version : 2,
     scheme: typeof parsedJson.scheme === "string" ? parsedJson.scheme : "exact",
-    networkId: typeof parsedJson.networkId === "string" ? parsedJson.networkId : "eip155:8453",
+    networkId: typeof parsedJson.networkId === "string" ? parsedJson.networkId : `eip155:${CHAIN_ID}`,
     payload: { signature, authorization },
   };
 }

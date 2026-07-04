@@ -16,7 +16,7 @@
  *     extension needed) or connect an existing one (RainbowKit). The handle
  *     hint is shown BEFORE the WaaP card opens — WaaP only launches on an
  *     explicit click, never automatically over this modal.
- *   • Wrong network        → connected address shown, Switch to Base CTA
+ *   • Wrong network        → connected address shown, Switch to Ethereum CTA
  *   • Ready to sign        → label field + Sign & Link button; wallets created
  *     through WaaP sign & link automatically (auto-attestation)
  *   • Success              → confirmation message
@@ -24,7 +24,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAccount, useConnect, useSwitchChain, useDisconnect } from "wagmi";
-import { base } from "wagmi/chains";
+import { mainnet } from "wagmi/chains";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useTranslations } from "next-intl";
 import { forceHideWaaPUi, getWaaPConnector, onWaaPDismissed, prewarmWaaP } from "@/lib/waap/connector";
@@ -100,7 +100,7 @@ export function AddWalletModal({
   const { openConnectModal } = useConnectModal();
   const { status, error, attestationUri, linkWallet, reset } = useWalletAttestation(did, repo ? { repo } : undefined);
 
-  const isCorrectNetwork = chainId === base.id;
+  const isCorrectNetwork = chainId === mainnet.id;
   const isSuccess = status === "success";
 
   const [name, setName] = useState(existingName ?? "");
@@ -146,7 +146,7 @@ export function AddWalletModal({
       }
     });
     try {
-      await connectAsync({ connector: getWaaPConnector(), chainId: base.id });
+      await connectAsync({ connector: getWaaPConnector(), chainId: mainnet.id });
       setViaWaaP(true);
     } catch {
       setCreateError(t("error"));
@@ -159,7 +159,7 @@ export function AddWalletModal({
     }
   };
 
-  // Auto-attestation: once a WaaP-created wallet is connected on Base, sign &
+  // Auto-attestation: once a WaaP-created wallet is connected on Ethereum, sign &
   // link it without another button press. Runs once; a rejected signature
   // falls back to the regular "Try Again" button. The short delay lets WaaP's
   // login card finish closing first — firing the sign request immediately can
@@ -277,14 +277,14 @@ export function AddWalletModal({
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              GainForest requires Base network. Switch to continue.
+              GainForest requires Ethereum network. Switch to continue.
             </p>
             <Button
-              onClick={() => switchChain({ chainId: base.id })}
+              onClick={() => switchChain({ chainId: mainnet.id })}
               disabled={isSwitching}
               className="w-full"
             >
-              {isSwitching ? "Switching…" : "Switch to Base"}
+              {isSwitching ? "Switching…" : "Switch to Ethereum"}
             </Button>
           </div>
         )}
@@ -298,7 +298,7 @@ export function AddWalletModal({
                 <span className="text-sm font-mono text-foreground">
                   {address?.slice(0, 6)}…{address?.slice(-4)}
                 </span>
-                <span className="text-xs text-muted-foreground">Base</span>
+                <span className="text-xs text-muted-foreground">Ethereum</span>
               </div>
               <div className="flex items-center gap-2">
                 {openConnectModal && (
