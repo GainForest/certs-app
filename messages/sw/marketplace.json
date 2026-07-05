@@ -952,7 +952,15 @@
       "bumicertCount": "{count, plural, one {# cheti} other {# vyeti}}",
       "projectPlace": "Eneo la mradi",
       "showDetails": "Onyesha maelezo",
-      "loading": "Inapakia miradi"
+      "loading": "Inapakia miradi",
+      "donate": "Changia",
+      "acceptsDonations": "Hupokea michango",
+      "openForSupport": "Iko wazi kwa msaada",
+      "donationSummary": "{amount} kutoka kwa {donors, plural, one {mchangiaji #} other {wachangiaji #}}",
+      "donationSummaryShort": "{amount} · {donors, plural, one {mchangiaji #} other {wachangiaji #}}",
+      "donationWays": "Njia {count}",
+      "maEarth": "Ma Earth",
+      "round": "Raundi {round}"
     },
     "actions": {
       "clearAll": "Futa yote"

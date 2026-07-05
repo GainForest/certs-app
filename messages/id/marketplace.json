@@ -952,7 +952,15 @@
       "bumicertCount": "{count, plural, one {# sertifikat} other {# sertifikat}}",
       "projectPlace": "Tempat proyek",
       "showDetails": "Tampilkan detail",
-      "loading": "Memuat proyek"
+      "loading": "Memuat proyek",
+      "donate": "Donasi",
+      "acceptsDonations": "Menerima donasi",
+      "openForSupport": "Terbuka untuk dukungan",
+      "donationSummary": "{amount} dari {donors, plural, other {# pendukung}}",
+      "donationSummaryShort": "{amount} · {donors, plural, other {# pendukung}}",
+      "donationWays": "{count} cara",
+      "maEarth": "Ma Earth",
+      "round": "Putaran {round}"
     },
     "actions": {
       "clearAll": "Hapus semua"

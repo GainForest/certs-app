@@ -36,7 +36,7 @@ import {
   type ProjectRecord,
 } from "../_lib/indexer";
 import { isPdsBlobUrl } from "../_lib/pds";
-import { countryName } from "../_lib/format";
+import { countryName, formatCompactUsd } from "../_lib/format";
 import { useStableQueryView } from "../_lib/use-stable-query-view";
 
 const PROJECTS_PAGE_SIZE = 48;
@@ -56,6 +56,14 @@ type BadgeFilterOption = {
   key: BumicertBadgeFilter;
   label: string;
   logoSrc: string;
+};
+
+type ProjectDonationSummary = {
+  acceptsDonations: boolean;
+  totalUsd: number;
+  donorCount: number;
+  gainforest: { totalUsd: number; donorCount: number } | null;
+  maEarth: { totalUsd: number; donorCount: number; donateUrl: string; rounds: number[] } | null;
 };
 
 export function ProjectsExploreClient({ records: initialRecords = [] }: { records?: ProjectRecord[] }) {
@@ -92,9 +100,11 @@ export function ProjectsExploreClient({ records: initialRecords = [] }: { record
   const [autoLoadMore, setAutoLoadMore] = useState(false);
   const [openFilters, setOpenFilters] = useState(false);
   const [drawer, setDrawer] = useState<ProjectRecord | null>(null);
+  const [donationSummaries, setDonationSummaries] = useState<Record<string, ProjectDonationSummary>>({});
   const filtersMenuRef = useRef<HTMLDivElement | null>(null);
   const requestSeqRef = useRef(0);
   const countSeqRef = useRef(0);
+  const donationRequestKeyRef = useRef("");
 
   const [query, setQuery] = useQueryState(
     "q",
@@ -219,6 +229,38 @@ export function ProjectsExploreClient({ records: initialRecords = [] }: { record
     [cardLimit, view, visibleRecords],
   );
   const hasMoreCardsToShow = view !== "map" && renderedRecords.length < visibleRecords.length;
+
+  useEffect(() => {
+    const candidates = renderedRecords.slice(0, 60).filter((record) => record.bumicertUris.length > 0);
+    if (candidates.length === 0) return;
+    const key = candidates.map((record) => `${record.atUri}:${record.bumicertUris.join("|")}`).join(";");
+    if (donationRequestKeyRef.current === key) return;
+    donationRequestKeyRef.current = key;
+
+    const controller = new AbortController();
+    fetch("/api/projects/donation-summaries", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        items: candidates.map((record) => ({
+          key: record.atUri,
+          did: record.did,
+          atUri: record.atUri,
+          bumicertUris: record.bumicertUris,
+        })),
+      }),
+      signal: controller.signal,
+    })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data: { summaries?: Record<string, ProjectDonationSummary> } | null) => {
+        if (!data?.summaries || controller.signal.aborted) return;
+        setDonationSummaries((current) => ({ ...current, ...data.summaries }));
+      })
+      .catch((error) => {
+        if ((error as Error).name !== "AbortError") console.warn("[projects] donation summaries failed", error);
+      });
+    return () => controller.abort();
+  }, [renderedRecords]);
 
   const updateFilters = useCallback((nextFilters: ProjectIndexFilter[]) => {
     void setFiltersParam(serializeFilterParam(nextFilters));
@@ -426,9 +468,9 @@ export function ProjectsExploreClient({ records: initialRecords = [] }: { record
           {view === "map" ? (
             <RecordMap records={visibleRecords} kind="project" onOpen={openMapRecord} />
           ) : view === "list" ? (
-            <ProjectList records={renderedRecords} loading={loading} onOpen={openRecord} />
+            <ProjectList records={renderedRecords} loading={loading} onOpen={openRecord} donationSummaries={donationSummaries} />
           ) : (
-            <ProjectGrid records={renderedRecords} loading={loading} onOpen={openRecord} onFilterOwner={setOwnerDid} />
+            <ProjectGrid records={renderedRecords} loading={loading} onOpen={openRecord} onFilterOwner={setOwnerDid} donationSummaries={donationSummaries} />
           )}
         </div>
 
@@ -504,11 +546,13 @@ const ProjectGrid = memo(function ProjectGrid({
   loading,
   onOpen,
   onFilterOwner,
+  donationSummaries = {},
 }: {
   records: ProjectRecord[];
   loading: boolean;
   onOpen: (record: ProjectRecord) => void;
   onFilterOwner?: (did: string) => void;
+  donationSummaries?: Record<string, ProjectDonationSummary>;
 }) {
   const t = useTranslations("marketplace.projects");
   if (loading && records.length === 0) return <ProjectGridSkeleton />;
@@ -536,7 +580,7 @@ const ProjectGrid = memo(function ProjectGrid({
   return (
     <div className="mt-5 grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] items-stretch gap-6 lg:gap-8">
       {records.map((record, index) => (
-        <ProjectCard key={record.id} record={record} priority={index < 6} index={index} onOpen={onOpen} onFilterOwner={onFilterOwner} />
+        <ProjectCard key={record.id} record={record} priority={index < 6} index={index} onOpen={onOpen} onFilterOwner={onFilterOwner} donationSummary={donationSummaries[record.atUri]} />
       ))}
     </div>
   );
@@ -546,13 +590,15 @@ const ProjectList = memo(function ProjectList({
   records,
   loading,
   onOpen,
+  donationSummaries = {},
 }: {
   records: ProjectRecord[];
   loading: boolean;
   onOpen: (record: ProjectRecord) => void;
+  donationSummaries?: Record<string, ProjectDonationSummary>;
 }) {
   if (loading && records.length === 0) return <ProjectGridSkeleton />;
-  if (records.length === 0) return <ProjectGrid records={records} loading={loading} onOpen={onOpen} />;
+  if (records.length === 0) return <ProjectGrid records={records} loading={loading} onOpen={onOpen} donationSummaries={donationSummaries} />;
 
   return (
     <div className="mt-4">
@@ -560,7 +606,7 @@ const ProjectList = memo(function ProjectList({
       <ul role="list" className="border-t border-border">
         {records.map((record, index) => (
           <li key={record.id} className="relative animate-in after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border last:after:hidden sm:after:inset-x-3" style={{ animationDelay: `${Math.min(index, 10) * 35}ms` }}>
-            <ProjectListItem record={record} onOpen={onOpen} priority={index < 8} />
+            <ProjectListItem record={record} onOpen={onOpen} priority={index < 8} donationSummary={donationSummaries[record.atUri]} />
           </li>
         ))}
       </ul>
@@ -596,12 +642,14 @@ function ProjectCard({
   index,
   onOpen,
   onFilterOwner,
+  donationSummary,
 }: {
   record: ProjectRecord;
   priority: boolean;
   index: number;
   onOpen: (record: ProjectRecord) => void;
   onFilterOwner?: (did: string) => void;
+  donationSummary?: ProjectDonationSummary;
 }) {
   const t = useTranslations("marketplace.projects.card");
   const ownerFilterT = useTranslations("marketplace.ownerFilter");
@@ -610,6 +658,7 @@ function ProjectCard({
   const ownerName = record.creatorName ?? t("projectSteward");
   const canFilterOwner = Boolean(onFilterOwner) && Boolean(record.did);
   const place = countryName(record.country);
+  const maEarthRounds = donationSummary?.maEarth?.rounds ?? [];
 
   return (
     <button type="button" onClick={() => onOpen(record)} className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 animate-in" style={{ animationDelay: `${Math.min(index, 10) * 35}ms` }}>
@@ -631,6 +680,15 @@ function ProjectCard({
             <FolderKanbanIcon className="h-12 w-12" />
           </div>
         )}
+        {maEarthRounds.length > 0 ? (
+          <span className="absolute right-3 top-3 z-10 rounded-full bg-foreground px-3 py-1 text-xs font-semibold text-background shadow-lg">
+            {t("round", { round: maEarthRounds[maEarthRounds.length - 1]! })}
+          </span>
+        ) : donationSummary?.acceptsDonations || record.acceptsDonations ? (
+          <span className="absolute right-3 top-3 z-10 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-lg">
+            {t("donate")}
+          </span>
+        ) : null}
         <span
           {...(canFilterOwner
             ? {
@@ -688,8 +746,44 @@ function ProjectCard({
           </div>
         ) : null}
 
+        <ProjectDonationMini summary={donationSummary} acceptsDonations={record.acceptsDonations === true} />
       </div>
     </button>
+  );
+}
+
+function ProjectDonationMini({ summary, acceptsDonations }: { summary?: ProjectDonationSummary; acceptsDonations: boolean }) {
+  const t = useTranslations("marketplace.projects.card");
+  if (!summary && !acceptsDonations) return null;
+  const totalUsd = summary?.totalUsd ?? 0;
+  const donorCount = summary?.donorCount ?? 0;
+  const hasAmount = totalUsd > 0;
+  const sourceCount = [summary?.gainforest, summary?.maEarth].filter(Boolean).length;
+  const progress = hasAmount ? Math.min(88, Math.max(14, totalUsd / 4)) : 18;
+
+  return (
+    <div className="mt-4 rounded-2xl border border-primary/15 bg-primary/[0.035] p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-primary">{t("acceptsDonations")}</p>
+          <p className="mt-1 truncate text-sm font-semibold text-foreground">
+            {hasAmount ? t("donationSummary", { amount: formatCompactUsd(totalUsd), donors: donorCount }) : t("openForSupport")}
+          </p>
+        </div>
+        {sourceCount > 1 ? (
+          <span className="shrink-0 rounded-full bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-border">
+            {t("donationWays", { count: sourceCount })}
+          </span>
+        ) : summary?.maEarth ? (
+          <span className="shrink-0 rounded-full bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-border">
+            {t("maEarth")}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-primary/12" aria-hidden>
+        <div className="h-full rounded-full bg-primary/70" style={{ width: `${progress}%` }} />
+      </div>
+    </div>
   );
 }
 

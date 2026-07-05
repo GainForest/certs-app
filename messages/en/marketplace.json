@@ -952,7 +952,15 @@
       "bumicertCount": "{count, plural, one {# Cert} other {# Certs}}",
       "projectPlace": "Project place",
       "showDetails": "Show details",
-      "loading": "Loading projects"
+      "loading": "Loading projects",
+      "donate": "Donate",
+      "acceptsDonations": "Accepts donations",
+      "openForSupport": "Open for support",
+      "donationSummary": "{amount} from {donors, plural, one {# supporter} other {# supporters}}",
+      "donationSummaryShort": "{amount} · {donors, plural, one {# supporter} other {# supporters}}",
+      "donationWays": "{count} ways",
+      "maEarth": "Ma Earth",
+      "round": "Round {round}"
     },
     "actions": {
       "clearAll": "Clear all"
