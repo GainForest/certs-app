@@ -259,7 +259,7 @@ function validateAttachmentDraft(args: {
     throw new AttachmentMutationInputError("invalid-activity");
   }
 
-  if (args.draft.contents.length === 0 && !note) {
+  if (args.draft.contents.length === 0 && !note && !textBody) {
     throw new AttachmentMutationInputError("empty-content");
   }
 
