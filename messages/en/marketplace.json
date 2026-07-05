@@ -161,10 +161,11 @@
       "colJoined": "Joined"
     },
     "filters": {
-      "description": "Show organizations by source, observations, category, or country."
+      "description": "Show organizations by source, donations, observations, category, or country."
     },
     "quickFilters": {
-      "observations": "Has observations"
+      "observations": "Has observations",
+      "donations": "Accepts donations"
     },
     "facets": {
       "category": "Category",
@@ -928,11 +929,12 @@
     "filters": {
       "allProjects": "All Projects",
       "allFilters": "Sort and Filter",
-      "description": "Show projects by source badge, images, or a project place.",
+      "description": "Show projects by source badge, donations, images, or a project place.",
       "updateHint": "Filters update as you choose.",
       "images": "Shows images",
       "locations": "Has a place",
-      "timeline": "Has a timeline"
+      "timeline": "Has a timeline",
+      "donations": "Accepts donations"
     },
     "empty": {
       "eyebrow": "No Results",

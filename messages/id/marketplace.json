@@ -161,10 +161,11 @@
       "colJoined": "Bergabung"
     },
     "filters": {
-      "description": "Tampilkan organisasi berdasarkan sumber, observasi, kategori, atau negara."
+      "description": "Tampilkan organisasi berdasarkan sumber, donasi, observasi, kategori, atau negara."
     },
     "quickFilters": {
-      "observations": "Memiliki observasi"
+      "observations": "Memiliki observasi",
+      "donations": "Menerima donasi"
     },
     "facets": {
       "category": "Kategori",
@@ -928,11 +929,12 @@
     "filters": {
       "allProjects": "Semua proyek",
       "allFilters": "Urutkan dan filter",
-      "description": "Tampilkan proyek berdasarkan lencana sumber, gambar, atau tempat proyek.",
+      "description": "Tampilkan proyek berdasarkan lencana sumber, donasi, gambar, atau tempat proyek.",
       "updateHint": "Filter diperbarui saat Anda memilih.",
       "images": "Menampilkan gambar",
       "locations": "Memiliki tempat",
-      "timeline": "Punya linimasa"
+      "timeline": "Punya linimasa",
+      "donations": "Menerima donasi"
     },
     "empty": {
       "eyebrow": "Tidak ada hasil",

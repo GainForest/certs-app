@@ -161,10 +161,11 @@
       "colJoined": "Alijiunga"
     },
     "filters": {
-      "description": "Onyesha mashirika kwa chanzo, uchunguzi, kategoria, au nchi."
+      "description": "Onyesha mashirika kwa chanzo, michango, uchunguzi, kategoria, au nchi."
     },
     "quickFilters": {
-      "observations": "Ina uchunguzi"
+      "observations": "Ina uchunguzi",
+      "donations": "Hupokea michango"
     },
     "facets": {
       "category": "Kategoria",
@@ -928,11 +929,12 @@
     "filters": {
       "allProjects": "Miradi yote",
       "allFilters": "Panga na chuja",
-      "description": "Onyesha miradi kwa beji ya chanzo, picha, au eneo la mradi.",
+      "description": "Onyesha miradi kwa beji ya chanzo, michango, picha, au eneo la mradi.",
       "updateHint": "Vichujio husasishwa unapochagua.",
       "images": "Huonyesha picha",
       "locations": "Ina eneo",
-      "timeline": "Ina ratiba"
+      "timeline": "Ina ratiba",
+      "donations": "Hupokea michango"
     },
     "empty": {
       "eyebrow": "Hakuna matokeo",

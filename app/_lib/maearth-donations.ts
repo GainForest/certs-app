@@ -1,17 +1,10 @@
 import "server-only";
-import maEarthDonations from "./data/maearth-donations.json";
-
-// Snapshot of maearth.com's public fundraising campaigns, keyed by the
-// organization DID Ma Earth embeds on each of its org pages. Regenerate with
-// `node scripts/generate-maearth-donation-links.mjs` (see that script for the
-// scrape details).
-const DONATION_ENTRIES: Record<string, { orgSlug: string; donateUrl: string }> =
-  (maEarthDonations as { entries: Record<string, { orgSlug: string; donateUrl: string }> }).entries;
+import { maEarthDonationUrlForDid } from "./maearth-donation-data";
 
 /** The organization's live donation (campaign) page on maearth.com, or null
  *  when Ma Earth has no fundraising campaign for it. */
 export function maEarthDonationUrl(did: string): string | null {
-  return DONATION_ENTRIES[did]?.donateUrl ?? null;
+  return maEarthDonationUrlForDid(did);
 }
 
 export type MaEarthDonationSummary = {

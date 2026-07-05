@@ -161,10 +161,11 @@
       "colJoined": "Entrou"
     },
     "filters": {
-      "description": "Mostre organizações por origem, observações, categoria ou país."
+      "description": "Mostre organizações por origem, doações, observações, categoria ou país."
     },
     "quickFilters": {
-      "observations": "Tem observações"
+      "observations": "Tem observações",
+      "donations": "Aceita doações"
     },
     "facets": {
       "category": "Categoria",
@@ -928,11 +929,12 @@
     "filters": {
       "allProjects": "Todos os projetos",
       "allFilters": "Ordenar e filtrar",
-      "description": "Mostre projetos por selo de origem, imagens ou um local de projeto.",
+      "description": "Mostre projetos por selo de origem, doações, imagens ou um local de projeto.",
       "updateHint": "Os filtros são atualizados conforme você escolhe.",
       "images": "Mostra imagens",
       "locations": "Tem um local",
-      "timeline": "Tem linha do tempo"
+      "timeline": "Tem linha do tempo",
+      "donations": "Aceita doações"
     },
     "empty": {
       "eyebrow": "Sem resultados",

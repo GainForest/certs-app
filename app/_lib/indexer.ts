@@ -21,6 +21,7 @@ import { blobUrl, resolveBlobUrl, resolvePdsHost, normaliseRef } from "./pds";
 import { fetchEndorserRecords } from "./endorsers";
 import { asNumber, formatNumber, formatDate, formatDateTime, formatCountry } from "./format";
 import { normalizeKnownWorkScopeKey } from "./work-scope-labels";
+import { hasMaEarthDonationUrl } from "./maearth-donation-data";
 
 // ── Generic GraphQL helper ────────────────────────────────────────────────
 
@@ -2481,6 +2482,41 @@ async function fetchFundingConfigPage(
   };
 }
 
+type DonationEligibilityIndex = {
+  dids: Set<string>;
+  activityUris: Set<string>;
+};
+
+async function fetchDonationEligibilityIndex(signal?: AbortSignal): Promise<DonationEligibilityIndex> {
+  return publicExploreCache(
+    "donation-eligibility-index",
+    {},
+    async () => {
+      const dids = new Set<string>();
+      const activityUris = new Set<string>();
+      let cursor: string | null = null;
+      let hasMore = true;
+      while (hasMore) {
+        const page = await fetchFundingConfigPage(INDEXER_MAX_PAGE, cursor);
+        for (const config of page.records) {
+          dids.add(config.did);
+          activityUris.add(activityUriForDidRkey(config.did, config.rkey));
+        }
+        cursor = page.cursor;
+        hasMore = page.hasMore && Boolean(page.cursor);
+      }
+      return { dids, activityUris };
+    },
+    signal,
+  );
+}
+
+function recordAcceptsDonations(record: { did: string; atUri?: string; bumicertUris?: string[] }, index: DonationEligibilityIndex): boolean {
+  if (hasMaEarthDonationUrl(record.did)) return true;
+  if (!record.bumicertUris && index.dids.has(record.did)) return true;
+  return (record.bumicertUris ?? [record.atUri].filter((uri): uri is string => Boolean(uri))).some((uri) => index.activityUris.has(uri));
+}
+
 async function fetchActivityByUriRecord(uri: string, signal?: AbortSignal): Promise<BumicertRecord | null> {
   const data = await indexerQuery<{ orgHypercertsClaimActivityByUri?: RawActivity | null }>(
     ACTIVITY_BY_URI_QUERY,
@@ -2842,6 +2878,8 @@ export type ProjectRecord = {
   /** Work-scope / focus tags inherited from the project's single Cert. Only
    *  populated when the project was fetched with `withScopeTags`. */
   scopeTags?: string[];
+  /** True when the project can receive donations through a linked button or external donation page. */
+  acceptsDonations?: boolean;
   /** At-a-glance evidence counts for card display. Only populated when fetched
    *  with `withScopeTags`. */
   evidence?: ProjectEvidenceCounts;
@@ -2933,7 +2971,7 @@ const PROJECT_COLLECTION_BY_DID_QUERY = `
   }
 `;
 
-export type ProjectIndexFilter = "images" | "locations" | "timeline";
+export type ProjectIndexFilter = "images" | "locations" | "timeline" | "donations";
 
 type ProjectQueryOptions = {
   query?: string;
@@ -3216,6 +3254,10 @@ function projectFilterWhere(filters: ProjectIndexFilter[] | undefined): ProjectW
   return Object.keys(where).length > 0 ? where : undefined;
 }
 
+function projectRequiresDonationFilter(options?: ProjectQueryOptions): boolean {
+  return options?.filters?.includes("donations") ?? false;
+}
+
 function projectSearchWhere(query: string | undefined): ProjectWhere[] {
   const q = query?.trim();
   if (!q) return [{}];
@@ -3319,32 +3361,53 @@ async function fetchProjectsFromCollections(
   const badgeIndex = options?.featuredBadgesOnly ? await fetchFeaturedBadgeIndex(signal) : undefined;
   const variants = projectWhereVariants(options, badgeIndex);
   if (variants.length === 0) return { records: [], cursor: null, hasMore: false };
+  const donationIndex = projectRequiresDonationFilter(options) ? await fetchDonationEligibilityIndex(signal) : null;
+  const filterDonatable = (records: ProjectRecord[]) => donationIndex
+    ? records.filter((record) => recordAcceptsDonations(record, donationIndex)).map((record) => ({ ...record, acceptsDonations: true }))
+    : records;
+
   if (variants.length === 1) {
-    return collectPaged(
-      (first, cursor, nextSignal) => fetchProjectPage(first, cursor, nextSignal, variants[0], options?.sort, options?.withScopeTags),
-      target,
-      after,
-      signal,
-      onProgress,
-    );
+    if (!donationIndex) {
+      return collectPaged(
+        (first, cursor, nextSignal) => fetchProjectPage(first, cursor, nextSignal, variants[0], options?.sort, options?.withScopeTags),
+        target,
+        after,
+        signal,
+        onProgress,
+      );
+    }
+
+    const records: ProjectRecord[] = [];
+    let cursor = after;
+    let hasMore = true;
+    while (records.length < target && hasMore) {
+      if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+      const page = await fetchProjectPage(INDEXER_MAX_PAGE, cursor, signal, variants[0], options?.sort, options?.withScopeTags);
+      records.push(...filterDonatable(page.records));
+      onProgress?.(uniqueProjects(records, options?.sort));
+      cursor = page.cursor;
+      hasMore = page.hasMore && Boolean(page.cursor);
+    }
+    return { records: uniqueProjects(records, options?.sort).slice(0, target), cursor, hasMore };
   }
 
   const previous = parseMultiCursor(after, variants.length);
+  const pageTarget = donationIndex ? INDEXER_MAX_PAGE : target;
   const pages = await Promise.all(
     variants.map((where, index) => {
       if (!previous.more[index]) return Promise.resolve({ records: [], cursor: null, hasMore: false } satisfies Page<ProjectRecord>);
       return collectPaged(
         (first, cursor, nextSignal) => fetchProjectPage(first, cursor, nextSignal, where, options?.sort, options?.withScopeTags),
-        target,
+        pageTarget,
         previous.cursors[index] ?? null,
         signal,
       );
     }),
   );
-  const records = uniqueProjects(pages.flatMap((page) => page.records), options?.sort);
+  const records = uniqueProjects(filterDonatable(pages.flatMap((page) => page.records)), options?.sort);
   onProgress?.(records);
   return {
-    records,
+    records: donationIndex ? records.slice(0, target) : records,
     cursor: encodeMultiCursor({ cursors: pages.map((page) => page.cursor), more: pages.map((page) => page.hasMore) }),
     hasMore: pages.some((page) => page.hasMore),
   };
@@ -3359,6 +3422,7 @@ async function fetchProjectTotalCountUncached(signal?: AbortSignal, options?: Pr
   const variants = projectWhereVariants(options, badgeIndex);
   if (variants.length === 0) return 0;
   const hidden = await hiddenDidsForScope(Boolean(options?.creatorDid?.trim()), signal);
+  const donationIndex = projectRequiresDonationFilter(options) ? await fetchDonationEligibilityIndex(signal) : null;
 
   const seen = new Set<string>();
   for (const where of variants) {
@@ -3366,6 +3430,16 @@ async function fetchProjectTotalCountUncached(signal?: AbortSignal, options?: Pr
     let hasMore = true;
     while (hasMore) {
       if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+      if (donationIndex) {
+        const page = await fetchProjectPage(INDEXER_MAX_PAGE, cursor, signal, where, options?.sort, false);
+        for (const record of page.records) {
+          if (hidden.has(record.did) || !recordAcceptsDonations(record, donationIndex)) continue;
+          seen.add(record.atUri);
+        }
+        cursor = page.cursor;
+        hasMore = page.hasMore && Boolean(page.cursor);
+        continue;
+      }
       const page = await fetchProjectCountPage(INDEXER_MAX_PAGE, cursor, signal, where, options?.sort);
       for (const record of page.records) {
         if (hidden.has(record.did)) continue;
@@ -3525,6 +3599,8 @@ export type SiteRecord = {
   bumicertCount: number | null;
   /** Number of nature sightings shared by this organization, when loaded. */
   observationCount: number | null;
+  /** True when the organization can receive donations through a linked button or external donation page. */
+  acceptsDonations: boolean | null;
 };
 
 const ORG_COUNT_BATCH_SIZE = 50;
@@ -3583,7 +3659,7 @@ export function fetchObservationCountsByDid(dids: string[], signal?: AbortSignal
   );
 }
 
-export type SiteIndexQuickFilter = "locations" | "bumicerts" | "observations";
+export type SiteIndexQuickFilter = "locations" | "bumicerts" | "observations" | "donations";
 export type SiteQueryOptions = {
   query?: string;
   country?: string | null;
@@ -3621,6 +3697,7 @@ function siteMatchesOptions(record: SiteRecord, options?: SiteQueryOptions): boo
   if (quick.includes("locations") && !record.locationUri) return false;
   if (quick.includes("bumicerts") && (record.bumicertCount ?? 0) <= 0) return false;
   if (quick.includes("observations") && (record.observationCount ?? 0) <= 0) return false;
+  if (quick.includes("donations") && record.acceptsDonations !== true) return false;
   return true;
 }
 
@@ -3813,6 +3890,7 @@ function mapCertOrg(n: RawCertOrg, profile: CertProfileInfo | undefined): SiteRe
     logoRef: profile?.avatarRef ?? null,
     bumicertCount: null,
     observationCount: null,
+    acceptsDonations: null,
   };
 }
 
@@ -3822,6 +3900,7 @@ async function hydrateCertOrgs(
   includeBumicertCounts = false,
   includeObservationCounts = false,
   includeImages = true,
+  includeDonationStatus = false,
 ): Promise<SiteRecord[]> {
   const missingProfileDids = nodes
     .filter((n) => !profileName(n.certifiedProfileData) && !profileAvatarRef(n.certifiedProfileData))
@@ -3843,6 +3922,9 @@ async function hydrateCertOrgs(
     : null;
   const observationCountsPromise = includeObservationCounts
     ? fetchObservationCountsByDid(dids, signal).catch(() => new Map<string, number>())
+    : null;
+  const donationIndexPromise = includeDonationStatus
+    ? fetchDonationEligibilityIndex(signal).catch(() => null)
     : null;
 
   const profiles = await profilesPromise;
@@ -3871,6 +3953,13 @@ async function hydrateCertOrgs(
   if (observationCountsPromise) {
     const counts = await observationCountsPromise;
     records = records.map((record) => ({ ...record, observationCount: counts.get(record.did) ?? 0 }));
+  }
+  if (donationIndexPromise) {
+    const donationIndex = await donationIndexPromise;
+    records = records.map((record) => ({
+      ...record,
+      acceptsDonations: donationIndex ? recordAcceptsDonations(record, donationIndex) : hasMaEarthDonationUrl(record.did),
+    }));
   }
   return records;
 }
@@ -3903,6 +3992,7 @@ async function fetchCertOrgPage(
   includeBumicertCounts = false,
   includeObservationCounts = false,
   includeImages = true,
+  includeDonationStatus = false,
 ): Promise<Page<SiteRecord>> {
   const { sortBy, sortDirection } = certifiedOrgSort(sort);
   const data = await indexerQuery<{
@@ -3912,7 +4002,7 @@ async function fetchCertOrgPage(
   const nodes = (conn?.edges ?? [])
     .map((e) => e?.node)
     .filter((n): n is RawCertOrg => Boolean(n?.did));
-  const records = (await hydrateCertOrgs(nodes, signal, includeBumicertCounts, includeObservationCounts, includeImages))
+  const records = (await hydrateCertOrgs(nodes, signal, includeBumicertCounts, includeObservationCounts, includeImages, includeDonationStatus))
     .filter((record) => !isLikelyTestRecordName(record.name));
   return {
     records,
@@ -4090,6 +4180,7 @@ export async function fetchSiteTotalCount(signal?: AbortSignal, options?: SiteQu
 async function fetchSiteTotalCountUncached(signal?: AbortSignal, options?: SiteQueryOptions): Promise<number> {
   const includeBumicertCounts = options?.quickFilters?.includes("bumicerts") ?? false;
   const includeObservationCounts = options?.quickFilters?.includes("observations") ?? false;
+  const includeDonationStatus = options?.quickFilters?.includes("donations") ?? false;
   const badgeIndex = options?.featuredBadgesOnly ? await fetchFeaturedBadgeIndex(signal) : undefined;
   const variants = siteWhereVariants(options, badgeIndex);
   if (variants.length === 0) return 0;
@@ -4100,7 +4191,7 @@ async function fetchSiteTotalCountUncached(signal?: AbortSignal, options?: SiteQ
     let hasMore = true;
     while (hasMore) {
       if (signal?.aborted) throw new DOMException("aborted", "AbortError");
-      const page = await fetchCertOrgPage(INDEXER_MAX_PAGE, cursor, signal, where, options?.sort, includeBumicertCounts, includeObservationCounts, false);
+      const page = await fetchCertOrgPage(INDEXER_MAX_PAGE, cursor, signal, where, options?.sort, includeBumicertCounts, includeObservationCounts, false, includeDonationStatus);
       for (const record of page.records) {
         if (siteMatchesOptions(record, options)) seen.set(record.id, record);
       }
@@ -4158,12 +4249,14 @@ async function fetchSitesUncached(
 
   const includeBumicertCounts = options?.quickFilters?.includes("bumicerts") ?? false;
   const includeObservationCounts = options?.quickFilters?.includes("observations") ?? false;
+  const includeDonationStatus = options?.quickFilters?.includes("donations") ?? false;
   const hasClientSideFilters = Boolean(
     options?.query?.trim() ||
     options?.country ||
     options?.orgType ||
     includeBumicertCounts ||
-    includeObservationCounts,
+    includeObservationCounts ||
+    includeDonationStatus,
   );
   const collectAllForNameSort = options?.sort === "az" || options?.sort === "za";
   const badgeIndex = options?.featuredBadgesOnly ? await fetchFeaturedBadgeIndex(signal) : undefined;
@@ -4188,7 +4281,7 @@ async function fetchSitesUncached(
       const first = collectAllForNameSort || hasClientSideFilters
         ? INDEXER_MAX_PAGE
         : Math.min(INDEXER_MAX_PAGE, Math.max(1, target - matchedCount));
-      const page = await fetchCertOrgPage(first, cursor, signal, where, options?.sort, includeBumicertCounts, includeObservationCounts);
+      const page = await fetchCertOrgPage(first, cursor, signal, where, options?.sort, includeBumicertCounts, includeObservationCounts, true, includeDonationStatus);
       records.push(...page.records);
       cursor = page.cursor;
       const advanced = Boolean(cursor) && cursor !== previousCursor;

@@ -42,7 +42,7 @@ import { useStableQueryView } from "../_lib/use-stable-query-view";
 const PROJECTS_PAGE_SIZE = 48;
 const INITIAL_CARD_LIMIT = 96;
 const CARD_BATCH_SIZE = 96;
-const FILTER_KEYS: ProjectIndexFilter[] = ["images", "locations", "timeline"];
+const FILTER_KEYS: ProjectIndexFilter[] = ["images", "locations", "timeline", "donations"];
 const BADGE_FILTER_KEYS: BumicertBadgeFilter[] = ["gainforest", "maearth"];
 const SORT_MODES: ExplorerSortMode[] = ["newest", "oldest", "az", "za"];
 type ViewMode = "cards" | "list" | "map";
@@ -65,6 +65,7 @@ export function ProjectsExploreClient({ records: initialRecords = [] }: { record
     { key: "images", label: t("filters.images"), predicate: (record) => Boolean(record.imageUrl) },
     { key: "locations", label: t("filters.locations"), predicate: (record) => Boolean(record.locationUri) },
     { key: "timeline", label: t("filters.timeline"), predicate: (record) => (record.evidence?.timeline ?? 0) > 0 },
+    { key: "donations", label: t("filters.donations"), predicate: (record) => record.acceptsDonations === true },
   ], [t]);
   const badgeFilterOptions = useMemo<BadgeFilterOption[]>(() => [
     { key: "gainforest", label: exploreT("filters.badges.gainforest"), logoSrc: "/assets/media/images/gainforest-logo.svg" },
