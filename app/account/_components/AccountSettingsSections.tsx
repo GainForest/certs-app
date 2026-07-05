@@ -683,7 +683,7 @@ function formatKeyDate(iso: string): string {
   }
 }
 
-function AgentKeysSection() {
+export function AgentKeysSection() {
   const t = useTranslations("common.settings.agentKeys");
   const [keys, setKeys] = useState<AgentKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);

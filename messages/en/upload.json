@@ -990,7 +990,7 @@
   },
   "settings": {
     "organizationTitle": "Organization settings",
-    "organizationDescription": "Manage members and control who can make changes for this organization.",
+    "organizationDescription": "Connect AI agents and manage tools for this organization.",
     "personalTitle": "Settings",
     "personalDescription": "Manage account links, security, and export tools.",
     "dataCouncil": {
@@ -1018,7 +1018,10 @@
         "save": "Could not save Data Council changes."
       },
       "addLabel": "Add to data council"
-    }
+    },
+    "membersMoved": "Members, roles, and the Data Council live in the Members tab.",
+    "openMembers": "Open Members",
+    "orgAgentKeysHint": "Keys are personal: a key you create here belongs to your account and lets your AI agent work on this organization through your membership. If you leave the organization, your keys lose that access."
   },
   "dashboardClient": {
     "actions": {

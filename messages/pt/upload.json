@@ -990,7 +990,7 @@
   },
   "settings": {
     "organizationTitle": "Configurações da organização",
-    "organizationDescription": "Gerencie membros e controle quem pode fazer alterações nesta organização.",
+    "organizationDescription": "Conecte agentes de IA e gerencie as ferramentas desta organização.",
     "personalTitle": "Configurações",
     "personalDescription": "Gerencie links da conta, segurança e ferramentas de exportação.",
     "dataCouncil": {
@@ -1018,7 +1018,10 @@
         "save": "Não foi possível salvar as alterações do Conselho de Dados."
       },
       "addLabel": "Adicionar ao Conselho de Dados"
-    }
+    },
+    "membersMoved": "Membros, funções e o Conselho de Dados ficam na aba Membros.",
+    "openMembers": "Abrir Membros",
+    "orgAgentKeysHint": "As chaves são pessoais: uma chave criada aqui pertence à sua conta e permite que seu agente de IA trabalhe nesta organização por meio da sua participação. Se você sair da organização, suas chaves perdem esse acesso."
   },
   "dashboardClient": {
     "actions": {

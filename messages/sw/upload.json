@@ -990,7 +990,7 @@
   },
   "settings": {
     "organizationTitle": "Mipangilio ya shirika",
-    "organizationDescription": "Dhibiti wanachama na udhibiti nani anaweza kufanya mabadiliko katika shirika hili.",
+    "organizationDescription": "Unganisha mawakala wa AI na simamia zana za shirika hili.",
     "personalTitle": "Mipangilio",
     "personalDescription": "Dhibiti viungo vya akaunti, usalama na zana za kuhamisha data.",
     "dataCouncil": {
@@ -1018,7 +1018,10 @@
         "save": "Haikuweza kuhifadhi mabadiliko ya Baraza la Data."
       },
       "addLabel": "Ongeza kwenye Baraza la Data"
-    }
+    },
+    "membersMoved": "Wanachama, majukumu na Baraza la Data vipo kwenye kichupo cha Wanachama.",
+    "openMembers": "Fungua Wanachama",
+    "orgAgentKeysHint": "Funguo ni za binafsi: funguo unayotengeneza hapa ni ya akaunti yako na inamruhusu wakala wako wa AI kufanya kazi katika shirika hili kupitia uanachama wako. Ukiondoka kwenye shirika, funguo zako zinapoteza ufikiaji huo."
   },
   "dashboardClient": {
     "actions": {
