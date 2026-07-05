@@ -4,6 +4,7 @@ import idLanding from "./id.json";
 import ptLanding from "./pt.json";
 import swLanding from "./sw.json";
 import enBumicert from "./en/bumicert.json";
+import enCart from "./en/cart.json";
 import enCommon from "./en/common.json";
 import enMarketplace from "./en/marketplace.json";
 import enModals from "./en/modals.json";
@@ -11,6 +12,7 @@ import enUpload from "./en/upload.json";
 import enLegacy from "./en/legacy.json";
 import enPrivacy from "./en/privacy.json";
 import esBumicert from "./es/bumicert.json";
+import esCart from "./es/cart.json";
 import esCommon from "./es/common.json";
 import esMarketplace from "./es/marketplace.json";
 import esModals from "./es/modals.json";
@@ -18,6 +20,7 @@ import esUpload from "./es/upload.json";
 import esLegacy from "./es/legacy.json";
 import esPrivacy from "./es/privacy.json";
 import idBumicert from "./id/bumicert.json";
+import idCart from "./id/cart.json";
 import idCommon from "./id/common.json";
 import idMarketplace from "./id/marketplace.json";
 import idModals from "./id/modals.json";
@@ -25,6 +28,7 @@ import idUpload from "./id/upload.json";
 import idLegacy from "./id/legacy.json";
 import idPrivacy from "./id/privacy.json";
 import ptBumicert from "./pt/bumicert.json";
+import ptCart from "./pt/cart.json";
 import ptCommon from "./pt/common.json";
 import ptMarketplace from "./pt/marketplace.json";
 import ptModals from "./pt/modals.json";
@@ -32,6 +36,7 @@ import ptUpload from "./pt/upload.json";
 import ptLegacy from "./pt/legacy.json";
 import ptPrivacy from "./pt/privacy.json";
 import swBumicert from "./sw/bumicert.json";
+import swCart from "./sw/cart.json";
 import swCommon from "./sw/common.json";
 import swMarketplace from "./sw/marketplace.json";
 import swModals from "./sw/modals.json";
@@ -46,6 +51,7 @@ export const messagesByLocale = {
     common: enCommon,
     marketplace: enMarketplace,
     bumicert: enBumicert,
+    cart: enCart,
     upload: enUpload,
     modals: enModals,
     legacy: enLegacy,
@@ -56,6 +62,7 @@ export const messagesByLocale = {
     common: esCommon,
     marketplace: esMarketplace,
     bumicert: esBumicert,
+    cart: esCart,
     upload: esUpload,
     modals: esModals,
     legacy: esLegacy,
@@ -66,6 +73,7 @@ export const messagesByLocale = {
     common: ptCommon,
     marketplace: ptMarketplace,
     bumicert: ptBumicert,
+    cart: ptCart,
     upload: ptUpload,
     modals: ptModals,
     legacy: ptLegacy,
@@ -76,6 +84,7 @@ export const messagesByLocale = {
     common: swCommon,
     marketplace: swMarketplace,
     bumicert: swBumicert,
+    cart: swCart,
     upload: swUpload,
     modals: swModals,
     legacy: swLegacy,
@@ -86,6 +95,7 @@ export const messagesByLocale = {
     common: idCommon,
     marketplace: idMarketplace,
     bumicert: idBumicert,
+    cart: idCart,
     upload: idUpload,
     modals: idModals,
     legacy: idLegacy,

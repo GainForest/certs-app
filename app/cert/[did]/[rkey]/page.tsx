@@ -1559,9 +1559,9 @@ function SidebarDonations({
             rkey: record.rkey,
             title: record.title,
             organizationName: owner.displayName,
+            image: record.imageUrl ?? null,
           }}
           fundingConfig={fundingConfig}
-          authSession={authSession}
           disabled={false}
           label={hasReceipts ? "Donate again" : "Donate"}
         />
@@ -2177,9 +2177,9 @@ function DonationsPanel({
                       rkey: record.rkey,
                       title: record.title,
                       organizationName: owner.displayName,
+                      image: record.imageUrl ?? null,
                     }}
                     fundingConfig={fundingConfig}
-                    authSession={authSession}
                     disabled={donationStatus.kind !== "open"}
                     label={donationStatus.kind === "open" && receipts.length > 0 ? "Donate again" : "Donate"}
                   />
