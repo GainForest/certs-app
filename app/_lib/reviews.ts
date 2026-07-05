@@ -245,11 +245,44 @@ export async function fetchReviewsForSubject(subjectUri: string, signal?: AbortS
   return { evaluations, comments };
 }
 
+/**
+ * Reviews aggregated across several subject URIs that represent the same
+ * thing to the reader — e.g. a project page, where the like + comment bar
+ * writes against the project (collection) URI while evaluations target the
+ * Cert URI. Deduped by record URI, merged into one chronology.
+ */
+export async function fetchReviewsForSubjects(subjectUris: string[], signal?: AbortSignal): Promise<BumicertReviews> {
+  const unique = [...new Set(subjectUris.filter(Boolean))];
+  if (unique.length === 0) return { evaluations: [], comments: [] };
+  if (unique.length === 1) return fetchReviewsForSubject(unique[0], signal);
+
+  const results = await Promise.all(unique.map((uri) => fetchReviewsForSubject(uri, signal)));
+  const evaluations = new Map<string, BumicertEvaluation>();
+  const comments = new Map<string, ReviewComment>();
+  for (const result of results) {
+    for (const evaluation of result.evaluations) evaluations.set(evaluation.uri, evaluation);
+    for (const comment of result.comments) comments.set(comment.uri, comment);
+  }
+
+  const mergedEvaluations = [...evaluations.values()].sort((a, b) =>
+    (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
+  );
+  const mergedComments = [...comments.values()].sort((a, b) =>
+    (a.createdAt ?? "").localeCompare(b.createdAt ?? ""),
+  );
+  return { evaluations: mergedEvaluations, comments: mergedComments };
+}
+
 export type ReviewCounts = { evaluations: number; comments: number };
 
 /** Cheap counts for badges/chips. Counts replies too — they are voices, not metadata. */
 export async function fetchReviewCounts(subjectUri: string, signal?: AbortSignal): Promise<ReviewCounts> {
-  const { evaluations, comments } = await fetchReviewsForSubject(subjectUri, signal);
+  return fetchReviewCountsForSubjects([subjectUri], signal);
+}
+
+/** Counts across several subject URIs (see `fetchReviewsForSubjects`). */
+export async function fetchReviewCountsForSubjects(subjectUris: string[], signal?: AbortSignal): Promise<ReviewCounts> {
+  const { evaluations, comments } = await fetchReviewsForSubjects(subjectUris, signal);
   let commentCount = 0;
   for (const comment of comments) commentCount += 1 + comment.replies.length;
   return { evaluations: evaluations.length, comments: commentCount };

@@ -34,7 +34,7 @@ import { fetchReceipts, type DonorRef, type FundingReceipt } from "../../../_lib
 import { formatCompact, formatCompactUsd, formatCountry, formatDate, formatDateTime, formatNumber, formatRelative } from "../../../_lib/format";
 import { fetchMaEarthDonationSummary, maEarthDonationUrl } from "../../../_lib/maearth-donations";
 import { formatWorkScopeTag, type WorkScopeLabels } from "../../../_lib/work-scope-labels";
-import { fetchReviewCounts, fetchReviewsForSubject, type BumicertReviews, type ReviewComment, type ReviewCounts } from "../../../_lib/reviews";
+import { fetchReviewCounts, fetchReviewCountsForSubjects, fetchReviewsForSubject, fetchReviewsForSubjects, type BumicertReviews, type ReviewComment, type ReviewCounts } from "../../../_lib/reviews";
 import {
   attachProjectTitlesToGalleries,
   fetchAccountMaEarthRounds,
@@ -602,6 +602,11 @@ export async function ProjectDetailView({
   const description = detail?.blurb ?? record.shortDescription;
   const ownerProfileHref = `/account/${encodeURIComponent(owner.urlIdentifier)}`;
 
+  // Reviews live on the Cert URI, but the project page's like + comment bar
+  // writes against the project (collection) URI — aggregate both so comments
+  // posted anywhere on the project show up under Reviews.
+  const reviewSubjectUris = [...new Set([record.atUri, ...(engagementSubjectUri ? [engagementSubjectUri] : [])])];
+
   const [certManageAccess, receiptsResult, observations, observationSummary, reviewCounts, projectGalleries, reviews, attachmentsResult, timelineAccess] = await Promise.all([
     resolveCertManageAccess(record.did, owner.kind, authSession),
     fetchReceipts().then(
@@ -610,9 +615,9 @@ export async function ProjectDetailView({
     ),
     fetchImageOccurrencesByDid(record.did, 24).catch(() => [] as OccurrenceRecord[]),
     fetchObservationSummaryByDid(record.did).catch(() => null),
-    fetchReviewCounts(record.atUri).catch(() => null),
+    fetchReviewCountsForSubjects(reviewSubjectUris).catch(() => null),
     fetchGalleriesForBumicertProject(record.did, record.atUri).catch(() => [] as ProjectImageGallery[]),
-    fetchReviewsForSubject(record.atUri).catch(() => ({ evaluations: [], comments: [] })),
+    fetchReviewsForSubjects(reviewSubjectUris).catch(() => ({ evaluations: [], comments: [] })),
     fetchTimelineAttachmentsByDid(record.did).then(
       (items) => ({ ok: true as const, items }),
       () => ({ ok: false as const, items: [] as TimelineAttachmentItem[] }),
