@@ -27,6 +27,7 @@ import { PreferredAccountLink } from "../../../_components/PreferredLinks";
 import { ProjectGalleryViewer } from "../../../_components/ProjectGalleryViewer";
 import { RichText } from "../../../_components/RichText";
 import { RecordEngagement } from "../../../_components/RecordEngagement";
+import { FollowButton } from "../../../_components/FollowButton";
 import { SocialGlyph } from "../../../_components/SocialIcon";
 import { StatsTileGrid, type StatsTileItem } from "../../../_components/StatsTile";
 import { fetchReceipts, type DonorRef, type FundingReceipt } from "../../../_lib/dashboard";
@@ -768,6 +769,7 @@ export async function ProjectDetailView({
               </span>
             </Link>
             <span className="ml-auto flex items-center gap-2">
+              <FollowButton targetDid={record.did} name={owner.displayName} size="default" />
               {editHref && editLabel && canManageDonations ? (
                 <Link
                   href={editHref}
@@ -780,35 +782,44 @@ export async function ProjectDetailView({
               <BumicertShareButton />
             </span>
           </div>
-          {record.imageUrl ? (
-            <div className="relative mt-6 aspect-[16/10] w-full overflow-hidden rounded-2xl border border-border bg-muted sm:aspect-[16/7]">
-              <Image
-                src={record.imageUrl}
-                alt={record.title}
-                fill
-                priority
-                sizes="(min-width: 1024px) 1100px, 100vw"
-                unoptimized={!isPdsBlobUrl(record.imageUrl)}
-                className="object-cover"
-              />
-            </div>
-          ) : null}
-          {/* Like + comment this project — same records + counts as the feed. */}
-          {engagementSubjectUri ? (
+          {/* Like + comment this project — same records + counts as the feed.
+              On overview the bar lives under the media in the content column. */}
+          {engagementSubjectUri && activeTab !== "overview" ? (
             <div className="mt-5 border-t border-border-soft pt-3">
               <RecordEngagement subjectUri={engagementSubjectUri} />
             </div>
           ) : null}
         </header>
         ) : null}
-        <section id="support" className={`mx-auto grid max-w-6xl scroll-mt-24 grid-cols-1 gap-x-10 gap-y-8 px-6 pb-8 lg:px-8 ${activeTab === "updates" ? "pt-3" : "pt-8"} ${showOverviewSidebar ? "lg:grid-cols-[minmax(0,1fr)_320px]" : ""}`}>
+        <section id="support" className={`mx-auto grid max-w-6xl scroll-mt-24 grid-cols-1 gap-x-10 gap-y-8 px-6 pb-8 lg:px-8 ${activeTab === "updates" ? "pt-3" : activeTab === "overview" ? "pt-6" : "pt-8"} ${showOverviewSidebar ? "lg:grid-cols-[minmax(0,1fr)_320px]" : ""}`}>
           <div className="min-w-0">
             {activeTab === "overview" ? (
               <>
+                {/* Cover media sits inside the content column so the donation
+                    sidebar aligns next to it instead of below a full-width banner. */}
+                {record.imageUrl ? (
+                  <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-border bg-muted">
+                    <Image
+                      src={record.imageUrl}
+                      alt={record.title}
+                      fill
+                      priority
+                      sizes="(min-width: 1024px) 720px, 100vw"
+                      unoptimized={!isPdsBlobUrl(record.imageUrl)}
+                      className="object-cover"
+                    />
+                  </div>
+                ) : null}
+                {/* Like + comment this project — same records + counts as the feed. */}
+                {engagementSubjectUri ? (
+                  <div className="mt-4 border-b border-border-soft pb-3">
+                    <RecordEngagement subjectUri={engagementSubjectUri} />
+                  </div>
+                ) : null}
                 {/* Mobile: the sidebar renders below the content, so surface the
                     donation card up top where visitors actually see it. */}
                 {showSupport ? (
-                  <div className="mt-2 lg:hidden">
+                  <div className="mt-5 lg:hidden">
                     <SupportCard
                       record={record}
                       owner={owner}
