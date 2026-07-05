@@ -1,4 +1,4 @@
-import { cachedAsync } from "./async-cache";
+import { cachedAsync, invalidateCachedAsyncByPrefix } from "./async-cache";
 
 export const PUBLIC_EXPLORE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -20,6 +20,14 @@ export function publicExploreCache<T>(
 
 function publicExploreCacheKey(scope: string, params: unknown): string {
   return `public-explore:v1:${scope}:${stableStringify(params)}`;
+}
+
+/** Drop the whole public-explore cache (all scopes) in this server instance.
+ *  Called after mutations that change what the explore pages should show —
+ *  e.g. publishing an organization awards it a featured badge, and the badge
+ *  index plus every page/count derived from it must rebuild. */
+export function invalidatePublicExploreCache(): number {
+  return invalidateCachedAsyncByPrefix("public-explore:");
 }
 
 function stableStringify(value: unknown): string {

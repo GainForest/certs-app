@@ -2463,10 +2463,31 @@ async function fetchDonationEligibilityIndex(signal?: AbortSignal): Promise<Dona
   );
 }
 
+/** Where a record can receive donations: `gainforest` = a native funding
+ *  config (linked wallet), `maearth` = a live Ma Earth campaign page. */
+export type DonationSources = { gainforest: boolean; maearth: boolean };
+
+function recordDonationSources(record: { did: string; atUri?: string; bumicertUris?: string[] }, index: DonationEligibilityIndex): DonationSources {
+  const maearth = hasMaEarthDonationUrl(record.did);
+  const gainforest = (!record.bumicertUris && index.dids.has(record.did)) ||
+    (record.bumicertUris ?? [record.atUri].filter((uri): uri is string => Boolean(uri))).some((uri) => index.activityUris.has(uri));
+  return { gainforest, maearth };
+}
+
 function recordAcceptsDonations(record: { did: string; atUri?: string; bumicertUris?: string[] }, index: DonationEligibilityIndex): boolean {
-  if (hasMaEarthDonationUrl(record.did)) return true;
-  if (!record.bumicertUris && index.dids.has(record.did)) return true;
-  return (record.bumicertUris ?? [record.atUri].filter((uri): uri is string => Boolean(uri))).some((uri) => index.activityUris.has(uri));
+  const sources = recordDonationSources(record, index);
+  return sources.gainforest || sources.maearth;
+}
+
+const DONATION_FILTER_KEYS = ["donations", "donations-gainforest", "donations-maearth"] as const;
+
+/** AND semantics for the source-specific chips; the legacy `donations` key
+ *  (old shared links) means "either source". */
+function donationSourcesMatchFilters(sources: DonationSources, filters: readonly string[] | undefined): boolean {
+  if (filters?.includes("donations-gainforest") && !sources.gainforest) return false;
+  if (filters?.includes("donations-maearth") && !sources.maearth) return false;
+  if (filters?.includes("donations") && !sources.gainforest && !sources.maearth) return false;
+  return true;
 }
 
 async function fetchActivityByUriRecord(uri: string, signal?: AbortSignal): Promise<BumicertRecord | null> {
@@ -2823,6 +2844,8 @@ export type ProjectRecord = {
   scopeTags?: string[];
   /** True when the project can receive donations through a linked button or external donation page. */
   acceptsDonations?: boolean;
+  /** Per-source donation eligibility (native GainForest wallet vs Ma Earth campaign). */
+  donationSources?: DonationSources;
   /** At-a-glance evidence counts for card display. Only populated when fetched
    *  with `withScopeTags`. */
   evidence?: ProjectEvidenceCounts;
@@ -2914,7 +2937,7 @@ const PROJECT_COLLECTION_BY_DID_QUERY = `
   }
 `;
 
-export type ProjectIndexFilter = "images" | "locations" | "timeline" | "donations";
+export type ProjectIndexFilter = "images" | "locations" | "timeline" | "donations" | "donations-gainforest" | "donations-maearth";
 
 type ProjectQueryOptions = {
   query?: string;
@@ -3198,7 +3221,7 @@ function projectFilterWhere(filters: ProjectIndexFilter[] | undefined): ProjectW
 }
 
 function projectRequiresDonationFilter(options?: ProjectQueryOptions): boolean {
-  return options?.filters?.includes("donations") ?? false;
+  return options?.filters?.some((filter) => (DONATION_FILTER_KEYS as readonly string[]).includes(filter)) ?? false;
 }
 
 function projectSearchWhere(query: string | undefined): ProjectWhere[] {
@@ -3306,7 +3329,11 @@ async function fetchProjectsFromCollections(
   if (variants.length === 0) return { records: [], cursor: null, hasMore: false };
   const donationIndex = projectRequiresDonationFilter(options) ? await fetchDonationEligibilityIndex(signal) : null;
   const filterDonatable = (records: ProjectRecord[]) => donationIndex
-    ? records.filter((record) => recordAcceptsDonations(record, donationIndex)).map((record) => ({ ...record, acceptsDonations: true }))
+    ? records.flatMap((record) => {
+        const sources = recordDonationSources(record, donationIndex);
+        if (!donationSourcesMatchFilters(sources, options?.filters)) return [];
+        return [{ ...record, acceptsDonations: sources.gainforest || sources.maearth, donationSources: sources }];
+      })
     : records;
 
   if (variants.length === 1) {
@@ -3382,7 +3409,8 @@ async function fetchProjectTotalCountUncached(signal?: AbortSignal, options?: Pr
       if (donationIndex) {
         const page = await fetchProjectPage(INDEXER_MAX_PAGE, cursor, signal, where, options?.sort, false);
         for (const record of page.records) {
-          if (hidden.has(record.did) || !recordAcceptsDonations(record, donationIndex)) continue;
+          if (hidden.has(record.did)) continue;
+          if (!donationSourcesMatchFilters(recordDonationSources(record, donationIndex), options?.filters)) continue;
           seen.add(record.atUri);
         }
         cursor = page.cursor;
@@ -3550,6 +3578,8 @@ export type SiteRecord = {
   observationCount: number | null;
   /** True when the organization can receive donations through a linked button or external donation page. */
   acceptsDonations: boolean | null;
+  /** Per-source donation eligibility (native GainForest wallet vs Ma Earth campaign), when loaded. */
+  donationSources: DonationSources | null;
 };
 
 const ORG_COUNT_BATCH_SIZE = 50;
@@ -3608,7 +3638,7 @@ function fetchObservationCountsByDid(dids: string[], signal?: AbortSignal): Prom
   );
 }
 
-type SiteIndexQuickFilter = "locations" | "bumicerts" | "observations" | "donations";
+type SiteIndexQuickFilter = "locations" | "bumicerts" | "observations" | "donations" | "donations-gainforest" | "donations-maearth";
 export type SiteQueryOptions = {
   query?: string;
   country?: string | null;
@@ -3647,6 +3677,8 @@ function siteMatchesOptions(record: SiteRecord, options?: SiteQueryOptions): boo
   if (quick.includes("bumicerts") && (record.bumicertCount ?? 0) <= 0) return false;
   if (quick.includes("observations") && (record.observationCount ?? 0) <= 0) return false;
   if (quick.includes("donations") && record.acceptsDonations !== true) return false;
+  if (quick.includes("donations-gainforest") && record.donationSources?.gainforest !== true) return false;
+  if (quick.includes("donations-maearth") && record.donationSources?.maearth !== true) return false;
   return true;
 }
 
@@ -3840,6 +3872,7 @@ function mapCertOrg(n: RawCertOrg, profile: CertProfileInfo | undefined): SiteRe
     bumicertCount: null,
     observationCount: null,
     acceptsDonations: null,
+    donationSources: null,
   };
 }
 
@@ -3905,10 +3938,12 @@ async function hydrateCertOrgs(
   }
   if (donationIndexPromise) {
     const donationIndex = await donationIndexPromise;
-    records = records.map((record) => ({
-      ...record,
-      acceptsDonations: donationIndex ? recordAcceptsDonations(record, donationIndex) : hasMaEarthDonationUrl(record.did),
-    }));
+    records = records.map((record) => {
+      const sources: DonationSources = donationIndex
+        ? recordDonationSources(record, donationIndex)
+        : { gainforest: false, maearth: hasMaEarthDonationUrl(record.did) };
+      return { ...record, acceptsDonations: sources.gainforest || sources.maearth, donationSources: sources };
+    });
   }
   return records;
 }
@@ -4129,7 +4164,7 @@ export async function fetchSiteTotalCount(signal?: AbortSignal, options?: SiteQu
 async function fetchSiteTotalCountUncached(signal?: AbortSignal, options?: SiteQueryOptions): Promise<number> {
   const includeBumicertCounts = options?.quickFilters?.includes("bumicerts") ?? false;
   const includeObservationCounts = options?.quickFilters?.includes("observations") ?? false;
-  const includeDonationStatus = options?.quickFilters?.includes("donations") ?? false;
+  const includeDonationStatus = options?.quickFilters?.some((filter) => (DONATION_FILTER_KEYS as readonly string[]).includes(filter)) ?? false;
   const badgeIndex = options?.featuredBadgesOnly ? await fetchFeaturedBadgeIndex(signal) : undefined;
   const variants = siteWhereVariants(options, badgeIndex);
   if (variants.length === 0) return 0;
@@ -4198,7 +4233,7 @@ async function fetchSitesUncached(
 
   const includeBumicertCounts = options?.quickFilters?.includes("bumicerts") ?? false;
   const includeObservationCounts = options?.quickFilters?.includes("observations") ?? false;
-  const includeDonationStatus = options?.quickFilters?.includes("donations") ?? false;
+  const includeDonationStatus = options?.quickFilters?.some((filter) => (DONATION_FILTER_KEYS as readonly string[]).includes(filter)) ?? false;
   const hasClientSideFilters = Boolean(
     options?.query?.trim() ||
     options?.country ||

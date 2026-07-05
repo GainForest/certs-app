@@ -165,7 +165,9 @@
     },
     "quickFilters": {
       "observations": "Memiliki observasi",
-      "donations": "Menerima donasi"
+      "donations": "Menerima donasi",
+      "donationsGainforest": "Donasi GainForest",
+      "donationsMaearth": "Donasi Ma Earth"
     },
     "facets": {
       "category": "Kategori",
@@ -934,7 +936,9 @@
       "images": "Menampilkan gambar",
       "locations": "Memiliki tempat",
       "timeline": "Punya linimasa",
-      "donations": "Menerima donasi"
+      "donations": "Menerima donasi",
+      "donationsGainforest": "Donasi GainForest",
+      "donationsMaearth": "Donasi Ma Earth"
     },
     "empty": {
       "eyebrow": "Tidak ada hasil",
@@ -1513,6 +1517,17 @@
     "emptyHero": {
       "description": "Proyek menyatukan kerja dampak Anda — orang, tempat, periode waktu, serta foto atau catatan pendukung — dalam satu halaman yang dapat diikuti dan didanai oleh pendukung.",
       "cta": "Buat proyek"
+    },
+    "publish": {
+      "title": "Tampilkan karya Anda di halaman jelajah",
+      "description": "Menerbitkan membuat akun ini dan semua proyeknya terlihat oleh semua orang yang menjelajahi GainForest.",
+      "action": "Terbitkan",
+      "publishing": "Menerbitkan…",
+      "publishedTitle": "Diterbitkan di halaman jelajah",
+      "publishedHint": "Akun ini dan proyek-proyeknya terlihat oleh semua orang yang menjelajahi GainForest.",
+      "justPublishedHint": "Selesai! Mungkin perlu beberapa menit untuk muncul di halaman jelajah.",
+      "memberBlocked": "Hanya pemilik dan admin organisasi yang dapat menerbitkan.",
+      "error": "Penerbitan tidak berhasil. Silakan coba lagi nanti."
     }
   },
   "manageBumicerts": {

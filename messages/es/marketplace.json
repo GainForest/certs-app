@@ -165,7 +165,9 @@
     },
     "quickFilters": {
       "observations": "Tiene observaciones",
-      "donations": "Acepta donaciones"
+      "donations": "Acepta donaciones",
+      "donationsGainforest": "Donaciones GainForest",
+      "donationsMaearth": "Donaciones Ma Earth"
     },
     "facets": {
       "category": "Categoría",
@@ -934,7 +936,9 @@
       "images": "Muestra imágenes",
       "locations": "Tiene un lugar",
       "timeline": "Tiene una cronología",
-      "donations": "Acepta donaciones"
+      "donations": "Acepta donaciones",
+      "donationsGainforest": "Donaciones GainForest",
+      "donationsMaearth": "Donaciones Ma Earth"
     },
     "empty": {
       "eyebrow": "Sin resultados",
@@ -1513,6 +1517,17 @@
     "emptyHero": {
       "description": "Los proyectos reúnen tu trabajo de impacto —personas, lugares, periodos de tiempo y fotos o notas de apoyo— en una sola página que los financiadores pueden seguir y apoyar.",
       "cta": "Crear un proyecto"
+    },
+    "publish": {
+      "title": "Muestra tu trabajo en las páginas de exploración",
+      "description": "Publicar hace que esta cuenta y todos sus proyectos sean visibles para cualquiera que explore GainForest.",
+      "action": "Publicar",
+      "publishing": "Publicando…",
+      "publishedTitle": "Publicado en las páginas de exploración",
+      "publishedHint": "Esta cuenta y sus proyectos son visibles para cualquiera que explore GainForest.",
+      "justPublishedHint": "¡Listo! Puede tardar unos minutos en aparecer en las páginas de exploración.",
+      "memberBlocked": "Solo los propietarios y administradores de la organización pueden publicar.",
+      "error": "No se pudo publicar. Inténtalo de nuevo más tarde."
     }
   },
   "manageBumicerts": {

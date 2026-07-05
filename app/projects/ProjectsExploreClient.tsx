@@ -42,7 +42,9 @@ import { useStableQueryView } from "../_lib/use-stable-query-view";
 const PROJECTS_PAGE_SIZE = 48;
 const INITIAL_CARD_LIMIT = 96;
 const CARD_BATCH_SIZE = 96;
-const FILTER_KEYS: ProjectIndexFilter[] = ["images", "locations", "timeline", "donations"];
+// "donations" stays parseable so old shared links keep working (it means
+// "either donation source"), but the UI only offers the two source chips.
+const FILTER_KEYS: ProjectIndexFilter[] = ["images", "locations", "timeline", "donations", "donations-gainforest", "donations-maearth"];
 const BADGE_FILTER_KEYS: BumicertBadgeFilter[] = ["gainforest", "maearth"];
 const SORT_MODES: ExplorerSortMode[] = ["newest", "oldest", "az", "za"];
 type ViewMode = "cards" | "list" | "map";
@@ -69,11 +71,14 @@ type ProjectDonationSummary = {
 export function ProjectsExploreClient({ records: initialRecords = [] }: { records?: ProjectRecord[] }) {
   const t = useTranslations("marketplace.projects");
   const exploreT = useTranslations("marketplace.explore");
-  const filterChips = useMemo<Array<{ key: ProjectIndexFilter; label: string; predicate: (record: ProjectRecord) => boolean }>>(() => [
+  const filterChips = useMemo<Array<{ key: ProjectIndexFilter; label: string; predicate: (record: ProjectRecord) => boolean; hidden?: boolean }>>(() => [
     { key: "images", label: t("filters.images"), predicate: (record) => Boolean(record.imageUrl) },
     { key: "locations", label: t("filters.locations"), predicate: (record) => Boolean(record.locationUri) },
     { key: "timeline", label: t("filters.timeline"), predicate: (record) => (record.evidence?.timeline ?? 0) > 0 },
-    { key: "donations", label: t("filters.donations"), predicate: (record) => record.acceptsDonations === true },
+    { key: "donations-gainforest", label: t("filters.donationsGainforest"), predicate: (record) => record.donationSources?.gainforest === true },
+    { key: "donations-maearth", label: t("filters.donationsMaearth"), predicate: (record) => record.donationSources?.maearth === true },
+    // Legacy key from old shared links; not offered as a chip anymore.
+    { key: "donations", label: t("filters.donations"), predicate: (record) => record.acceptsDonations === true, hidden: true },
   ], [t]);
   const badgeFilterOptions = useMemo<BadgeFilterOption[]>(() => [
     { key: "gainforest", label: exploreT("filters.badges.gainforest"), logoSrc: "/assets/media/images/gainforest-logo.svg" },
@@ -440,7 +445,7 @@ export function ProjectsExploreClient({ records: initialRecords = [] }: { record
                         onClick={() => toggleBadgeFilter(badge.key)}
                       />
                     ))}
-                    {filterChips.map((chip) => (
+                    {filterChips.filter((chip) => !chip.hidden).map((chip) => (
                       <Button key={chip.key} type="button" aria-pressed={filters.includes(chip.key)} onClick={() => toggleFilter(chip.key)} variant={filters.includes(chip.key) ? "default" : "outline"} size="sm" className="h-10 text-sm">
                         {chip.label}
                       </Button>
