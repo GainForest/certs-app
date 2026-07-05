@@ -733,12 +733,14 @@ async function walkAudioRecords(opts: {
       const page = await fetchAudioPage(Math.min(INDEXER_MAX_PAGE, Math.max(opts.target, 24)), cursor, opts.signal, where);
       cursor = page.cursor;
       hasNextPage = page.hasNextPage;
-      const mapped = await mapAudioRecords(page.nodes.slice(0, opts.target - collected.length), opts.signal);
+      // Map the whole fetched page — the cursor already points past all of it,
+      // so slicing to the target would permanently skip the remainder.
+      const mapped = await mapAudioRecords(page.nodes, opts.signal);
       collected.push(...mapped);
-      opts.onProgress?.(collected.slice(0, opts.target));
+      opts.onProgress?.([...collected]);
       if (!hasNextPage || !cursor) break;
     }
-    return { records: collected.slice(0, opts.target), cursor, hasMore: hasNextPage && Boolean(cursor) };
+    return { records: collected, cursor, hasMore: hasNextPage && Boolean(cursor) };
   };
 
   if (variants.length === 1) return walkOne(variants[0]!, opts.after);
@@ -937,16 +939,13 @@ async function walkOccurrencesUncached(opts: OccurrenceWalkOptions): Promise<Occ
 
       const matches = res.nodes.filter((n) => matchesFilter(n, media));
       if (matches.length > 0) {
-        const needed = target - collected.length;
-        const pageMatches = matches.slice(0, needed);
+        // Keep EVERY match from this page: the cursor has already advanced past
+        // the whole raw page, so any match we drop now would be skipped forever
+        // on the next paginated call. `target` is a minimum, not a cap.
         const startIndex = collected.length;
-        const mapped = pageMatches.map(mapOccurrence);
-
-        for (const record of mapped) {
-          if (collected.length >= target) break;
-          collected.push(record);
-        }
-        opts.onProgress?.(collected.slice(0, target));
+        const mapped = matches.map(mapOccurrence);
+        collected.push(...mapped);
+        opts.onProgress?.([...collected]);
 
         if (opts.resolveMedia !== false) {
           const resolved = await resolveImages(
@@ -963,7 +962,7 @@ async function walkOccurrencesUncached(opts: OccurrenceWalkOptions): Promise<Occ
           for (let index = 0; index < resolved.length && startIndex + index < collected.length; index += 1) {
             collected[startIndex + index] = resolved[index]!;
           }
-          opts.onProgress?.(collected.slice(0, target));
+          opts.onProgress?.([...collected]);
         }
       }
 
@@ -971,7 +970,7 @@ async function walkOccurrencesUncached(opts: OccurrenceWalkOptions): Promise<Occ
     }
 
     return {
-      records: collected.slice(0, target),
+      records: collected,
       cursor,
       hasMore: hasNextPage && Boolean(cursor),
     };
@@ -2515,7 +2514,10 @@ async function fetchDonationEnabledBumicerts(
         })
       : page.records).filter((config) => !hidden.has(config.did));
 
-    for (let index = 0; index < eligibleConfigs.length && records.length < target; index += batchSize) {
+    // Resolve the ENTIRE fetched config page, even past `target`: the cursor
+    // has already advanced beyond all of it, so any eligible activity we skip
+    // now would never be seen by a later paginated call.
+    for (let index = 0; index < eligibleConfigs.length; index += batchSize) {
       if (signal?.aborted) throw new DOMException("aborted", "AbortError");
       const batch = eligibleConfigs.slice(index, index + batchSize);
       const activities = await Promise.all(
@@ -2526,7 +2528,6 @@ async function fetchDonationEnabledBumicerts(
       for (const activity of activities) {
         if (!activity || !activityMatchesOptions(activity, options)) continue;
         records.push(activity);
-        if (records.length >= target) break;
       }
     }
     if (!page.cursor) break;
@@ -4849,13 +4850,14 @@ export async function fetchOccurrencesByDid(
   onProgress?: (records: OccurrenceRecord[]) => void,
 ): Promise<Page<OccurrenceRecord>> {
   const where = { did: { eq: did } };
-  const pageSize = INDEXER_MAX_PAGE;
   const collected: OccurrenceRecord[] = [];
   let cursor: string | null = after;
   let hasNextPage = true;
   for (let page = 0; page < 20; page++) {
     if (signal?.aborted) throw new DOMException("aborted", "AbortError");
-    const res = await fetchOccurrencePage(pageSize, cursor, signal, where);
+    // Only request what is still needed so the returned cursor never points
+    // past records we would then drop (which would skip them on the next call).
+    const res = await fetchOccurrencePage(Math.min(INDEXER_MAX_PAGE, target - collected.length), cursor, signal, where);
     cursor = res.cursor;
     hasNextPage = res.hasNextPage;
     let mapped = res.nodes.map(mapOccurrence);
@@ -4938,7 +4940,9 @@ export async function fetchOccurrencesBySiteRef(
 
   for (let page = 0; page < 50; page++) {
     if (signal?.aborted) throw new DOMException("aborted", "AbortError");
-    const res = await fetchOccurrencePage(INDEXER_MAX_PAGE, cursor, signal, where);
+    // Only request what is still needed so the returned cursor never points
+    // past records we would then drop.
+    const res = await fetchOccurrencePage(Math.min(INDEXER_MAX_PAGE, target - collected.length), cursor, signal, where);
     cursor = res.cursor;
     hasNextPage = res.hasNextPage;
 
