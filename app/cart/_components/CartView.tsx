@@ -153,14 +153,19 @@ export function CartView() {
               <dd className="font-semibold text-foreground">${subtotalUsd.toFixed(2)}</dd>
             </div>
           </dl>
-          <p className="mt-3 text-xs leading-5 text-muted-foreground">{t("feesNote")}</p>
+          <div className="mt-3 flex items-center justify-between border-t border-border-soft pt-3">
+            <span className="text-sm font-semibold text-foreground">{t("total")}</span>
+            <span className="text-2xl font-semibold tracking-tight text-foreground">${subtotalUsd.toFixed(2)}</span>
+          </div>
           <Button
-            className="mt-4 w-full"
+            size="lg"
+            className="mt-4 h-12 w-full"
             disabled={!canCheckout}
             onClick={() => router.push("/checkout")}
           >
             {t("checkout")}
           </Button>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">{t("feesNote")}</p>
           {!allValid ? <p className="mt-2 text-xs text-destructive">{t("fixAmounts")}</p> : null}
         </aside>
       </div>

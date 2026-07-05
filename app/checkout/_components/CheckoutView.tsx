@@ -21,6 +21,7 @@ import {
   CompassIcon,
   CopyIcon,
   HeartHandshakeIcon,
+  LeafIcon,
   Loader2Icon,
   Share2Icon,
   ShoppingCartIcon,
@@ -479,6 +480,11 @@ export function CheckoutView({ authSession }: { authSession: AuthSession }) {
       </Link>
       <h1 className="mt-3 text-3xl font-semibold text-foreground">{t("title")}</h1>
 
+      <div className="mt-4 flex items-center gap-2.5 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
+        <LeafIcon className="size-4 shrink-0 text-primary" aria-hidden />
+        <p className="text-sm font-medium text-foreground">{t("encouragement")}</p>
+      </div>
+
       <div className="mt-6 flex flex-col gap-4">
         {/* ── Donor identity ──────────────────────────────────────────────── */}
         <section className="rounded-3xl border border-border-soft bg-surface p-5">
@@ -525,12 +531,19 @@ export function CheckoutView({ authSession }: { authSession: AuthSession }) {
           <section className="rounded-3xl border border-border-soft bg-surface p-5">
             <h2 className="text-sm font-semibold text-foreground">{t("tipTitle")}</h2>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">{t("tipDescription")}</p>
-            <div className="mt-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t("tipSliderLabel")}</span>
-                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-sm font-semibold text-primary">
+            <div className="relative mt-12">
+              {/* Value bubble tracks the slider thumb, MaEarth-style. */}
+              <div
+                className="pointer-events-none absolute -top-10 -translate-x-1/2"
+                style={{
+                  left: `calc(${(tipPercent / MAX_TIP_PERCENT) * 100}% + ${(0.5 - tipPercent / MAX_TIP_PERCENT) * 16}px)`,
+                }}
+                aria-hidden
+              >
+                <span className="block whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1 text-xs font-semibold text-background">
                   {tipPercent}% (${tipUsd.toFixed(2)})
                 </span>
+                <span className="mx-auto block size-0 border-x-[5px] border-t-[5px] border-x-transparent border-t-foreground" />
               </div>
               <input
                 type="range"
@@ -540,7 +553,7 @@ export function CheckoutView({ authSession }: { authSession: AuthSession }) {
                 value={tipPercent}
                 disabled={paying}
                 onChange={(event) => setTipPercent(Number(event.target.value))}
-                className="mt-3 w-full accent-primary"
+                className="w-full accent-primary"
                 aria-label={t("tipSliderLabel")}
               />
               <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
@@ -548,6 +561,31 @@ export function CheckoutView({ authSession }: { authSession: AuthSession }) {
                 <span>{MAX_TIP_PERCENT}%</span>
               </div>
             </div>
+
+            {/* Gentle nudge when the slider sits at zero — never blocking. */}
+            {tipPercent === 0 ? (
+              <div className="mt-4 rounded-2xl bg-muted px-4 py-5 text-center">
+                <p className="text-sm font-semibold text-foreground">{t("tipNudgeTitle")}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{t("tipNudgeBody")}</p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  {[5, 10, 15].map((percent) => (
+                    <button
+                      key={percent}
+                      type="button"
+                      disabled={paying}
+                      onClick={() => setTipPercent(percent)}
+                      className="rounded-full border border-border bg-background px-4 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-foreground disabled:pointer-events-none disabled:opacity-50"
+                      aria-label={t("tipNudgeSet", { percent })}
+                    >
+                      {percent}%
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {t("yourTip")} <span className="font-semibold text-foreground">${tipUsd.toFixed(2)}</span>
+                </p>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -623,7 +661,7 @@ export function CheckoutView({ authSession }: { authSession: AuthSession }) {
             ) : null}
             <div className="mt-2 flex items-center justify-between">
               <span className="text-sm font-semibold text-foreground">{t("total")}</span>
-              <span className="text-xl font-semibold text-foreground">${totalUsd.toFixed(2)}</span>
+              <span className="text-2xl font-semibold tracking-tight text-foreground">${totalUsd.toFixed(2)}</span>
             </div>
           </div>
 
@@ -640,7 +678,8 @@ export function CheckoutView({ authSession }: { authSession: AuthSession }) {
           ) : null}
 
           <Button
-            className="mt-4 w-full"
+            size="lg"
+            className="mt-4 h-12 w-full"
             disabled={
               paying ||
               !wallet ||
@@ -664,6 +703,9 @@ export function CheckoutView({ authSession }: { authSession: AuthSession }) {
             )}
           </Button>
           {paying ? <p className="mt-2 text-center text-xs text-muted-foreground">{t("doNotClose")}</p> : null}
+          {!paying ? (
+            <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">{t("footerNote")}</p>
+          ) : null}
         </section>
       </div>
     </div>
