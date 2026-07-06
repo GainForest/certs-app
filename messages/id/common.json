@@ -1556,7 +1556,13 @@
       "equipmentExists": "Sudah ada di daftar peralatan Anda sebagai {name}",
       "equipmentSaved": "Disimpan ke daftar peralatan Anda sebagai {name}",
       "equipmentSignInSkip": "Masuk untuk menyimpan perangkat ini ke daftar peralatan Anda — dilewati.",
-      "equipmentFailed": "Tidak dapat menyimpan perangkat ke daftar peralatan Anda."
+      "equipmentFailed": "Tidak dapat menyimpan perangkat ke daftar peralatan Anda.",
+      "notesDeviceId": "ID perangkat: {id}",
+      "notesFirmware": "Firmware: {firmware}",
+      "notesSettings": "Pengaturan: {settings}",
+      "notesBattery": "Baterai saat penyiapan: {battery}",
+      "notesLastSetup": "Penyiapan terakhir: {date}",
+      "equipmentUpdated": "{name} diperbarui di daftar peralatan Anda dengan detail penyiapan baru"
     }
   }
 }

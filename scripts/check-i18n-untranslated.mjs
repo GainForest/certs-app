@@ -46,6 +46,7 @@ const allowedExactValues = new Set([
   "AudioMoth",
   "AudioMoth — GainForest",
   "Firmware",
+  "Firmware: {firmware}",
   "UTC",
   "Hz",
   "kHz",

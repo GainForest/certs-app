@@ -67,8 +67,8 @@ import {
   looksLikeAudioMothFirmware,
   type FlashProgress,
 } from "@/app/_lib/audiomoth/flash";
-import { createEquipment, listEquipment } from "@/app/_lib/equipment";
-import { loadAppliedConfig, saveAppliedConfig } from "@/app/_lib/audiomoth/setup-store";
+import { createEquipment, listEquipment, updateEquipment } from "@/app/_lib/equipment";
+import { loadAppliedConfig, mergeSetupNotes, saveAppliedConfig, SETUP_NOTES_HEADER } from "@/app/_lib/audiomoth/setup-store";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -611,7 +611,8 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
       return;
     }
 
-    /* Step 4 — equipment: register the unit in the user's equipment list */
+    /* Step 4 — equipment: register the unit in the user's equipment list,
+       stamping the record's notes with everything we know about this setup */
 
     setStep("equipment", { status: "active", detail: t("autoSetup.equipmentChecking") });
 
@@ -619,11 +620,44 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
       if (!sessionDid) {
         setStep("equipment", { status: "skipped", detail: t("autoSetup.equipmentSignInSkip") });
       } else {
+        let battery: string | null = null;
+        try {
+          battery = await withRetries(() => workingDevice.getBatteryState());
+        } catch {
+          /* battery is nice-to-have for the notes */
+        }
+
+        const now = new Date();
+        const setupTimestamp = `${now.toISOString().slice(0, 10)} ${now.toISOString().slice(11, 16)} UTC`;
+        const firmwareLabel = `${workingInfo.firmwareDescription} ${workingInfo.firmwareVersion.join(".")}`;
+
+        const notesBlock = [
+          SETUP_NOTES_HEADER,
+          t("autoSetup.notesDeviceId", { id: workingInfo.id }),
+          t("autoSetup.notesFirmware", { firmware: firmwareLabel }),
+          t("autoSetup.notesSettings", { settings: t("autoSetup.settingsDone") }),
+          ...(battery ? [t("autoSetup.notesBattery", { battery })] : []),
+          t("autoSetup.notesLastSetup", { date: setupTimestamp }),
+        ].join("\n");
+
         const items = await listEquipment(sessionDid);
         const deviceId = workingInfo.id;
         const existing = items.find((item) => item.assetId.trim().toUpperCase() === deviceId.toUpperCase());
+
         if (existing) {
-          setStep("equipment", { status: "done", detail: t("autoSetup.equipmentExists", { name: existing.name }) });
+          /* Refresh the setup block in the notes, keeping handwritten notes intact */
+          await updateEquipment(existing, {
+            assetId: existing.assetId,
+            name: existing.name,
+            category: existing.category,
+            status: existing.status,
+            currentOwner: existing.currentOwner,
+            projectSite: existing.projectSite,
+            geo: existing.geo,
+            acquiredAt: existing.acquiredAt,
+            notes: mergeSetupNotes(existing.notes, notesBlock),
+          });
+          setStep("equipment", { status: "done", detail: t("autoSetup.equipmentUpdated", { name: existing.name }) });
         } else {
           const name = `AudioMoth ${deviceId.slice(-4)}`;
           await createEquipment({
@@ -631,7 +665,8 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
             name,
             category: "audiomoth",
             status: "storage",
-            acquiredAt: new Date().toISOString().slice(0, 10),
+            acquiredAt: now.toISOString().slice(0, 10),
+            notes: notesBlock,
           });
           setStep("equipment", { status: "done", detail: t("autoSetup.equipmentSaved", { name }) });
         }

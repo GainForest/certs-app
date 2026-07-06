@@ -1556,7 +1556,13 @@
       "equipmentExists": "Tayari iko kwenye orodha yako ya vifaa kama {name}",
       "equipmentSaved": "Imehifadhiwa kwenye orodha yako ya vifaa kama {name}",
       "equipmentSignInSkip": "Ingia kwenye akaunti ili kuhifadhi kifaa hiki kwenye orodha yako ya vifaa — imerukwa.",
-      "equipmentFailed": "Imeshindikana kuhifadhi kifaa kwenye orodha yako ya vifaa."
+      "equipmentFailed": "Imeshindikana kuhifadhi kifaa kwenye orodha yako ya vifaa.",
+      "notesDeviceId": "Kitambulisho cha kifaa: {id}",
+      "notesFirmware": "Firmware: {firmware}",
+      "notesSettings": "Mipangilio: {settings}",
+      "notesBattery": "Betri wakati wa usanidi: {battery}",
+      "notesLastSetup": "Usanidi wa mwisho: {date}",
+      "equipmentUpdated": "{name} imesasishwa kwenye orodha yako ya vifaa na maelezo mapya ya usanidi"
     }
   }
 }

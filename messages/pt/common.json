@@ -1556,7 +1556,13 @@
       "equipmentExists": "Já está na sua lista de equipamentos como {name}",
       "equipmentSaved": "Salvo na sua lista de equipamentos como {name}",
       "equipmentSignInSkip": "Entre na sua conta para salvar este dispositivo na sua lista de equipamentos — etapa pulada.",
-      "equipmentFailed": "Não foi possível salvar o dispositivo na sua lista de equipamentos."
+      "equipmentFailed": "Não foi possível salvar o dispositivo na sua lista de equipamentos.",
+      "notesDeviceId": "ID do dispositivo: {id}",
+      "notesFirmware": "Firmware: {firmware}",
+      "notesSettings": "Configurações: {settings}",
+      "notesBattery": "Bateria na configuração: {battery}",
+      "notesLastSetup": "Última configuração: {date}",
+      "equipmentUpdated": "{name} foi atualizado na sua lista de equipamentos com os novos detalhes de configuração"
     }
   }
 }

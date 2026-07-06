@@ -1556,7 +1556,13 @@
       "equipmentExists": "Ya está en tu lista de equipos como {name}",
       "equipmentSaved": "Guardado en tu lista de equipos como {name}",
       "equipmentSignInSkip": "Inicia sesión para guardar este dispositivo en tu lista de equipos; se omitió.",
-      "equipmentFailed": "No se pudo guardar el dispositivo en tu lista de equipos."
+      "equipmentFailed": "No se pudo guardar el dispositivo en tu lista de equipos.",
+      "notesDeviceId": "ID del dispositivo: {id}",
+      "notesFirmware": "Firmware: {firmware}",
+      "notesSettings": "Ajustes: {settings}",
+      "notesBattery": "Batería durante la configuración: {battery}",
+      "notesLastSetup": "Última configuración: {date}",
+      "equipmentUpdated": "Se actualizó {name} en tu lista de equipos con los nuevos detalles de configuración"
     }
   }
 }

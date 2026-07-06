@@ -37,6 +37,24 @@ export function saveAppliedConfig(
   }
 }
 
+/**
+ * Marker line opening the auto-generated setup block inside an equipment
+ * record's notes. Brand/product label, deliberately identical in every
+ * locale so an existing block can be found and replaced later.
+ */
+export const SETUP_NOTES_HEADER = "— GainForest AudioMoth —";
+
+/**
+ * Replace (or append) the auto-generated setup block in an equipment
+ * record's notes, leaving any handwritten notes untouched. The block starts
+ * at the marker header and runs to the next blank line or the end.
+ */
+export function mergeSetupNotes(existingNotes: string | undefined, block: string): string {
+  const pattern = new RegExp(`(?:^|\\n+)${SETUP_NOTES_HEADER}[\\s\\S]*?(?=\\n\\n|$)`);
+  const handwritten = (existingNotes ?? "").replace(pattern, "").trim();
+  return handwritten ? `${handwritten}\n\n${block}` : block;
+}
+
 export function loadAppliedConfig(deviceId: string): AppliedConfigEntry | null {
   try {
     const raw = window.localStorage.getItem(storageKey(deviceId));

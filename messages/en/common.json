@@ -1556,7 +1556,13 @@
       "equipmentExists": "Already in your equipment list as {name}",
       "equipmentSaved": "Saved to your equipment list as {name}",
       "equipmentSignInSkip": "Sign in to save this device to your equipment list — skipped.",
-      "equipmentFailed": "Couldn't save the device to your equipment list."
+      "equipmentFailed": "Couldn't save the device to your equipment list.",
+      "notesDeviceId": "Device ID: {id}",
+      "notesFirmware": "Firmware: {firmware}",
+      "notesSettings": "Settings: {settings}",
+      "notesBattery": "Battery at setup: {battery}",
+      "notesLastSetup": "Last setup: {date}",
+      "equipmentUpdated": "Updated {name} in your equipment list with the new setup details"
     }
   }
 }
