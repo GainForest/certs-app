@@ -277,7 +277,7 @@ export function ManageProjectsClient({ target }: { target: ManageTarget }) {
                     className="min-w-0 flex-1 truncate border-0 bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                   />
                 </div>
-                <Button type="button" onClick={openNew} disabled={!createPermission.allowed} title={createPermission.reason ?? undefined} className="shrink-0">
+                <Button type="button" onClick={openNew} disabled={!createPermission.allowed} title={createPermission.reason ?? undefined} className="shrink-0" data-taina="add-project">
                   <CirclePlusIcon />
                   Add project
                 </Button>
@@ -481,6 +481,7 @@ function ProjectCard({
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.35, delay: Math.min(index, 10) * 0.025, ease: [0.25, 0.1, 0.25, 1] }}
       aria-label={t("viewProjectFor", { title: project.title })}
+      data-taina="open-project"
       className={cn(
         "group flex cursor-pointer gap-3 rounded-2xl bg-card/45 px-1 py-3 transition-colors duration-300 hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/45 sm:gap-4 sm:px-2 sm:py-4",
       )}
@@ -530,6 +531,7 @@ function ProjectCard({
             disabled={disabled}
             title={disabledReason ?? undefined}
             aria-label={t("editProjectFor", { title: project.title })}
+            data-taina="edit-project"
           >
             <SquarePenIcon className="size-3.5" />
             {t("editProject")}
@@ -1068,7 +1070,7 @@ function ProjectEditor({
       ) : null}
 
       <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
-        <Button type="button" variant="destructive" size="lg" onClick={() => void handleDeleteProject()} disabled={saving || !deletePermission.allowed} title={deletePermission.reason ?? undefined}>
+        <Button type="button" variant="destructive" size="lg" onClick={() => void handleDeleteProject()} disabled={saving || !deletePermission.allowed} title={deletePermission.reason ?? undefined} data-taina="delete-project">
           <Trash2Icon className="size-4" />
           {t("delete")}
         </Button>
@@ -2012,7 +2014,7 @@ function EmptyState({ hasQuery, onCreate }: { hasQuery: boolean; onCreate: () =>
         {hasQuery ? "Try another search term or clear the search field." : "Create your first project page with a name, summary, story, and optional photo."}
       </p>
       {!hasQuery ? (
-        <Button type="button" variant="outline" size="sm" onClick={onCreate} className="mt-5">
+        <Button type="button" variant="outline" size="sm" onClick={onCreate} className="mt-5" data-taina="add-project">
           <CirclePlusIcon />
           Add project
         </Button>

@@ -139,6 +139,7 @@ export function RegisterButton({ round, status }: { round: BioblitzRound; status
         type="button"
         onClick={() => void register()}
         disabled={busy || session.status === "loading"}
+        data-taina="bioblitz-register"
         className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-dark disabled:opacity-70"
       >
         {busy ? (

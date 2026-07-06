@@ -399,6 +399,7 @@ function AddObservationsCard({ sessionDid }: { sessionDid: string }) {
         <span className="mx-auto flex w-fit">
           <AddObservationsButton
             sessionDid={sessionDid}
+            dataTaina="add-observations"
             className={cn(
               buttonVariants({ variant: "outline", size: "icon" }),
               "bg-background hover:bg-primary hover:text-primary-foreground",
@@ -452,6 +453,7 @@ function AddObservationsCard({ sessionDid }: { sessionDid: string }) {
       {/*CTA*/}
       <AddObservationsButton
         sessionDid={sessionDid}
+        dataTaina="add-observations"
         className={cn(
           buttonVariants({ variant: "outline", size: "sm" }),
           "relative z-2 w-full bg-background hover:bg-primary hover:text-primary-foreground",

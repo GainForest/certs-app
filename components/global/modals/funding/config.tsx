@@ -317,6 +317,7 @@ export function FundingConfigModal({
               <button
                 type="button"
                 onClick={() => handleAddWallet()}
+                data-taina="add-donation-wallet"
                 className="flex items-center justify-center gap-1.5 h-9 w-full rounded-md bg-primary text-sm font-medium text-primary-foreground shadow-xs hover:opacity-90 transition-opacity"
               >
                 <SparklesIcon className="size-3.5" />
