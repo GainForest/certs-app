@@ -19,7 +19,11 @@
     "endTour": "Akhiri tur",
     "openImage": "Lihat tangkapan layar ukuran penuh",
     "cantFind": "Saya tidak menemukannya di halaman ini sekarang — tapi begini caranya:",
-    "tourHint": "Saya akan menunjuk di layar Anda. Klik bagian yang disorot untuk melanjutkan."
+    "tourHint": "Saya akan menunjuk di layar Anda. Klik bagian yang disorot untuk melanjutkan.",
+    "minimizeLabel": "Perkecil Tainá",
+    "restoreLabel": "Buka Tainá",
+    "needProjectFirst": "Donasi diatur pada sebuah proyek, dan kamu belum punya proyek — buat proyek pertamamu dulu, lalu kembali ke sini.",
+    "createProjectFirst": "Tunjukkan cara membuat proyek"
   },
   "guides": {
     "wallet": {

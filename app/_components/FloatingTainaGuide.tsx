@@ -44,6 +44,7 @@ const PANEL_GAP = 12;
 const VIEWPORT_PADDING = 12;
 const DRAG_THRESHOLD_PX = 4;
 const STORAGE_KEY = "gainforest.floatingTaina.position.v1";
+const MINIMIZED_STORAGE_KEY = "gainforest.floatingTaina.minimized.v1";
 // Active tour survives full page loads (locale redirects, hard navigations)
 // via sessionStorage — the widget rehydrates it on mount.
 const TOUR_STORAGE_KEY = "gainforest.floatingTaina.tour.v1";
@@ -159,6 +160,12 @@ export function FloatingTainaGuide() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [minimized, setMinimized] = useState(false);
+  // Whether the signed-in user owns at least one project. `null` = unknown
+  // (signed out, not yet checked, or the check failed) — in that case we
+  // don't second-guess the user. Refreshed every time a project-dependent
+  // guide (e.g. donation setup) is opened.
+  const [hasProjects, setHasProjects] = useState<boolean | null>(null);
 
   // ── Live tour state ─────────────────────────────────────────────────
   const [tour, setTour] = useState<TourState | null>(() => {
@@ -217,6 +224,11 @@ export function FloatingTainaGuide() {
       // ignore storage errors
     }
     setPosition(clampToViewport(saved ?? defaultPosition()));
+    try {
+      setMinimized(window.localStorage.getItem(MINIMIZED_STORAGE_KEY) === "1");
+    } catch {
+      // ignore storage errors
+    }
     setMounted(true);
   }, []);
 
@@ -271,15 +283,50 @@ export function FloatingTainaGuide() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // Persist the minimized preference.
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      if (minimized) window.localStorage.setItem(MINIMIZED_STORAGE_KEY, "1");
+      else window.localStorage.removeItem(MINIMIZED_STORAGE_KEY);
+    } catch {
+      // ignore storage errors
+    }
+  }, [minimized, mounted]);
+
   // Allow in-page CTAs to open Tainá without importing this component.
   useEffect(() => {
     const onOpen = () => {
+      setMinimized(false);
       setOpen(true);
       setWaveActive(true);
     };
     window.addEventListener("taina:open", onOpen);
     return () => window.removeEventListener("taina:open", onOpen);
   }, []);
+
+  // Guides that require a project (donation setup) check whether the user
+  // actually has one, so Tainá can say "create a project first" instead of
+  // pointing at a project that doesn't exist. Refreshed on every open so a
+  // freshly created project is picked up.
+  useEffect(() => {
+    if (view.kind !== "guide") return;
+    if (!getTainaGuide(view.guideId)?.requiresProject) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/manage/projects");
+        if (!res.ok) return; // signed out or error — leave it unknown
+        const data = (await res.json()) as unknown;
+        if (!cancelled && Array.isArray(data)) setHasProjects(data.length > 0);
+      } catch {
+        // leave it unknown
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [view]);
 
   // ── Drag handling ───────────────────────────────────────────────────
   const onPointerDown = useCallback(
@@ -631,6 +678,36 @@ export function FloatingTainaGuide() {
   const panelPos = open ? computePanelPosition(position) : { x: 0, y: 0 };
   const bubblePos = tour && spotRect ? computeBubblePosition(spotRect) : null;
   const guideView = view.kind === "guide" ? getTainaGuide(view.guideId) : undefined;
+  // Confirmed "no projects yet" for a guide that needs one → tell the user
+  // to create a project first instead of showing an impossible tour.
+  const guideNeedsProject = Boolean(guideView?.requiresProject) && hasProjects === false;
+
+  // A running tour always takes precedence over the minimized state (it can
+  // be rehydrated from sessionStorage after a hard navigation).
+  if (minimized && !tour) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setMinimized(false);
+          setWaveActive(true);
+        }}
+        aria-label={t("restoreLabel")}
+        title={t("restoreLabel")}
+        className="fixed bottom-6 right-0 z-[70] flex items-center rounded-l-full border border-r-0 border-border bg-background/95 py-1 pl-2 pr-1.5 shadow-[0_2px_10px_-3px_rgba(40,50,30,0.3)] backdrop-blur-sm transition-transform hover:-translate-x-0.5"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/assets/media/images/app-icon.png"
+          alt=""
+          width={24}
+          height={24}
+          className="drop-shadow-md"
+          draggable={false}
+        />
+      </button>
+    );
+  }
 
   return (
     <>
@@ -743,6 +820,18 @@ export function FloatingTainaGuide() {
             </div>
             <button
               type="button"
+              onClick={() => {
+                setOpen(false);
+                setMinimized(true);
+              }}
+              className="grid h-7 w-7 place-items-center rounded-full text-foreground/55 hover:bg-foreground/5 hover:text-foreground"
+              aria-label={t("minimizeLabel")}
+              title={t("minimizeLabel")}
+            >
+              –
+            </button>
+            <button
+              type="button"
               onClick={() => setOpen(false)}
               className="grid h-7 w-7 place-items-center rounded-full text-foreground/55 hover:bg-foreground/5 hover:text-foreground"
               aria-label={t("close")}
@@ -798,7 +887,19 @@ export function FloatingTainaGuide() {
             ) : guideView ? (
               <>
                 <p className="text-foreground/70">{guidesT(`${guideView.id}.intro`)}</p>
-                {guideView.tour.length > 0 ? (
+                {guideNeedsProject ? (
+                  <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2">
+                    <p className="text-foreground/80">{t("needProjectFirst")}</p>
+                    <button
+                      type="button"
+                      onClick={() => setView({ kind: "guide", guideId: "createProject" })}
+                      className="mt-2 w-full rounded-xl bg-primary px-3 py-2 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                    >
+                      ✨ {t("createProjectFirst")}
+                    </button>
+                  </div>
+                ) : null}
+                {guideView.tour.length > 0 && !guideNeedsProject ? (
                   <button
                     type="button"
                     onClick={() => startTour(guideView.id)}
@@ -894,12 +995,13 @@ export function FloatingTainaGuide() {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
         onKeyDown={(e) => {
+          if ((e.target as HTMLElement).closest("[data-no-drag]")) return;
           if ((e.key === "Enter" || e.key === " ") && !tour) {
             e.preventDefault();
             setOpen((v) => !v);
           }
         }}
-        className={`fixed select-none ${tour ? "transition-all duration-500 ease-out" : ""} ${
+        className={`group fixed select-none ${tour ? "transition-all duration-500 ease-out" : ""} ${
           dragging ? "cursor-grabbing" : tour ? "cursor-default" : "cursor-grab"
         }`}
         style={{
@@ -940,6 +1042,24 @@ export function FloatingTainaGuide() {
           style={{ width: SPRITE_W, height: SPRITE_H, imageRendering: "pixelated" }}
           className="absolute inset-0"
         />
+        {/* Minimize — revealed on hover/focus (desktop); the panel header has
+            the same control for touch users. */}
+        {!tour && !dragging ? (
+          <button
+            type="button"
+            data-no-drag
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+              setMinimized(true);
+            }}
+            aria-label={t("minimizeLabel")}
+            title={t("minimizeLabel")}
+            className="absolute -right-1 -top-1 z-10 hidden h-5 w-5 place-items-center rounded-full border border-border bg-background text-[12px] leading-none text-foreground/60 shadow-sm hover:text-foreground focus-visible:grid group-hover:grid"
+          >
+            –
+          </button>
+        ) : null}
         {!open && !tour ? (
           <div
             aria-hidden

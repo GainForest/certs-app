@@ -19,7 +19,11 @@
     "endTour": "Encerrar tour",
     "openImage": "Ver captura em tamanho real",
     "cantFind": "Não estou encontrando isso nesta página agora — mas é assim que se faz:",
-    "tourHint": "Vou apontar na sua tela. Clique na área destacada para continuar."
+    "tourHint": "Vou apontar na sua tela. Clique na área destacada para continuar.",
+    "minimizeLabel": "Minimizar a Tainá",
+    "restoreLabel": "Abrir a Tainá",
+    "needProjectFirst": "As doações são configuradas em um projeto e você ainda não tem nenhum — crie seu primeiro projeto e depois volte aqui.",
+    "createProjectFirst": "Mostre-me como criar um projeto"
   },
   "guides": {
     "wallet": {

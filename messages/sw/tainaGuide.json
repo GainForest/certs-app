@@ -19,7 +19,11 @@
     "endTour": "Maliza ziara",
     "openImage": "Ona picha kwa ukubwa kamili",
     "cantFind": "Siwezi kuipata kwenye ukurasa huu sasa hivi — lakini hivi ndivyo unavyofanya:",
-    "tourHint": "Nitaonyesha kwenye skrini yako. Bofya sehemu iliyoangaziwa ili kuendelea."
+    "tourHint": "Nitaonyesha kwenye skrini yako. Bofya sehemu iliyoangaziwa ili kuendelea.",
+    "minimizeLabel": "Punguza Tainá",
+    "restoreLabel": "Fungua Tainá",
+    "needProjectFirst": "Michango huwekwa kwenye mradi, na bado huna mradi — anza kwa kuunda mradi wako wa kwanza, kisha urudi hapa.",
+    "createProjectFirst": "Nionyeshe jinsi ya kuunda mradi"
   },
   "guides": {
     "wallet": {

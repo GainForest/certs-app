@@ -47,6 +47,13 @@ export interface TainaGuide {
   id: string;
   steps: TainaGuideStep[];
   tour: TainaTourStep[];
+  /**
+   * The guide only makes sense once the user owns at least one project
+   * (e.g. donation setup happens on a project page). The widget checks
+   * /api/manage/projects and, when the signed-in user has none, points
+   * them to the createProject guide first.
+   */
+  requiresProject?: boolean;
 }
 
 const img = (name: string) => `/taina-guides/${name}.webp`;
@@ -54,6 +61,7 @@ const img = (name: string) => `/taina-guides/${name}.webp`;
 export const TAINA_GUIDES: TainaGuide[] = [
   {
     id: "wallet",
+    requiresProject: true,
     steps: [
       { id: "open", image: img("edit-my-projects") },
       { id: "enable", image: img("wallet-project-support") },
@@ -148,7 +156,7 @@ export function getTainaGuide(id: string): TainaGuide | undefined {
 export function buildGuideKnowledge(): string {
   return [
     "### Receive donations (set up a wallet)",
-    "My Projects → open your project → 'Enable Donations' in the Support card → 'Add a donation wallet' → continue with Bluesky or email (a secure wallet is created automatically; no crypto needed) or connect an existing crypto wallet. Wallets can also be managed under Settings → Linked Wallets.",
+    "Donations are set up on a project, so the user needs at least one project first — if they don't have one yet, tell them to create a project before enabling donations. Then: My Projects → open your project → 'Enable Donations' in the Support card → 'Add a donation wallet' → continue with Bluesky or email (a secure wallet is created automatically; no crypto needed) or connect an existing crypto wallet. Wallets can also be managed under Settings → Linked Wallets.",
     "### Create a project",
     "Sidebar 'Create a Project' (or My Projects → 'Add project') → wizard: name + one-line summary → focus areas → dates (ongoing is fine) → story → people & groups + places → photo → review → Create project.",
     "### Edit a project",
