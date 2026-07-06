@@ -6,6 +6,7 @@ import type { CgsRole } from "@/app/(manage)/manage/_lib/cgs";
 import { EditableAccountHeader } from "@/app/(manage)/manage/_components/EditableAccountHeader";
 import { fetchHiddenAccountDids, fetchRecognitionBadgesForDid } from "@/app/_lib/indexer";
 import { fetchEndorsementsGivenCount } from "@/app/_lib/endorsements-given";
+import { hasAnyEquipment } from "@/app/_lib/equipment-server";
 import { RECOGNITION_BADGE_KEYS, type RecognitionBadgeKey } from "@/app/_lib/recognition-badges";
 import { getGainForestModeratorAccess } from "@/app/internal/badges/_lib/access";
 import { AccountChrome } from "../_components/AccountChrome";
@@ -82,6 +83,14 @@ export default async function AccountLayout({
   const showEndorsementsGiven = account.kind === "organization"
     ? (await fetchEndorsementsGivenCount(account.did).catch(() => 0)) > 0
     : false;
+  // The Equipment tab: organizations aggregate the whole team's gear, so —
+  // like Members — it only shows to people who belong to the organization.
+  // Personal profiles list the person's own public gear: always visible to
+  // the owner, and to visitors once at least one unit is registered.
+  const isOwner = session.isLoggedIn && session.did === account.did;
+  const showEquipment = account.kind === "organization"
+    ? canManage
+    : isOwner || (await hasAnyEquipment(account.did).catch(() => false));
 
   return (
     <main className="w-full">
@@ -120,8 +129,9 @@ export default async function AccountLayout({
               // (session DID === account DID) is the whole gate: it can only
               // ever match a personal repo, and some personal accounts carry
               // an organization record, so don't also require kind === "user".
-              includeTaina={session.isLoggedIn && session.did === account.did}
+              includeTaina={isOwner}
               showEndorsementsGiven={showEndorsementsGiven}
+              showEquipment={showEquipment}
             />
           </>
         }

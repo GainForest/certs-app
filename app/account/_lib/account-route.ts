@@ -163,6 +163,10 @@ export function accountMembersPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/members`;
 }
 
+export function accountEquipmentPath(didOrHandle: string): string {
+  return `${accountPath(didOrHandle)}/equipment`;
+}
+
 export function accountTainaPath(didOrHandle: string): string {
   return `${accountPath(didOrHandle)}/taina`;
 }
