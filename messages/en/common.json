@@ -1424,7 +1424,8 @@
       "setupOk": "GainForest setup",
       "setupMissing": "Not set up yet",
       "setupReasonFirmware": "Firmware not up to date",
-      "setupReasonSettings": "Recording settings differ from the GainForest setup"
+      "setupReasonSettings": "Recording settings differ from the GainForest setup",
+      "setupReasonSettingsUnknown": "Recording settings haven't been applied from this computer yet"
     },
     "device": {
       "setTimeButton": "Set time from this computer",

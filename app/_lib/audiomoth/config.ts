@@ -211,24 +211,22 @@ export function gainforestSetupConfig(): AudioMothConfig {
 }
 
 /**
- * Compare a configuration packet read back from a device (GET_APP_PACKET)
- * with the packet the GainForest setup would write. The leading 4 bytes are
- * the configuration timestamp and are ignored.
+ * Whether an applied configuration is equivalent to the one-click GainForest
+ * setup, judged by the packet bytes it produces for the given firmware (the
+ * leading 4 timestamp bytes are ignored). The device's configuration cannot
+ * be read back over USB, so callers compare the configuration they last
+ * wrote to the device.
  */
 export function matchesGainForestSetup(
-  storedPacket: Uint8Array,
+  appliedConfig: AudioMothConfig,
   firmwareVersion: [number, number, number],
   firmwareDescription: string,
 ): boolean {
-  const { packet: expected, verifyLength } = buildConfigPacket(
-    gainforestSetupConfig(),
-    firmwareVersion,
-    firmwareDescription,
-    new Date(),
-  );
-  const compareLength = verifyLength(storedPacket.length);
-  for (let i = 4; i < compareLength; i += 1) {
-    if (expected[i] !== (storedPacket[i] ?? 0)) return false;
+  const sendTime = new Date();
+  const applied = buildConfigPacket(appliedConfig, firmwareVersion, firmwareDescription, sendTime).packet;
+  const expected = buildConfigPacket(gainforestSetupConfig(), firmwareVersion, firmwareDescription, sendTime).packet;
+  for (let i = 4; i < expected.length; i += 1) {
+    if (expected[i] !== applied[i]) return false;
   }
   return true;
 }

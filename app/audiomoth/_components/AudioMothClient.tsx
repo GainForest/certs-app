@@ -68,6 +68,7 @@ import {
   type FlashProgress,
 } from "@/app/_lib/audiomoth/flash";
 import { createEquipment, listEquipment } from "@/app/_lib/equipment";
+import { loadAppliedConfig, saveAppliedConfig } from "@/app/_lib/audiomoth/setup-store";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -150,8 +151,13 @@ interface SetupCheck {
 /**
  * Compare the connected device against the one-click GainForest setup:
  * newest official firmware + the GainForest recording configuration.
+ *
+ * The device cannot report its configuration back over USB, so the settings
+ * verdict comes from the configuration last written to this unit from this
+ * browser (see setup-store). No record → the settings were never applied
+ * here, which counts as not set up.
  */
-async function evaluateGainForestSetup(device: AudioMothDevice, info: DeviceInfo): Promise<SetupCheck> {
+async function evaluateGainForestSetup(info: DeviceInfo): Promise<SetupCheck> {
   let firmwareOk: boolean | null = null;
   try {
     const response = await fetch("/api/audiomoth/firmware");
@@ -168,18 +174,13 @@ async function evaluateGainForestSetup(device: AudioMothDevice, info: DeviceInfo
     /* release roster unreachable — leave firmware verdict open */
   }
 
-  let settingsOk: boolean | null = null;
-  try {
-    const stored = await withRetries(() => device.getPacket());
-    settingsOk = matchesGainForestSetup(stored, info.firmwareVersion, info.firmwareDescription);
-  } catch {
-    /* device did not answer — leave settings verdict open */
-  }
+  const applied = loadAppliedConfig(info.id);
+  const settingsOk = applied
+    ? matchesGainForestSetup(applied.config, info.firmwareVersion, info.firmwareDescription)
+    : null;
 
-  /* Any confirmed mismatch → not ready; confirmed matching settings (with no
-     firmware complaint) → ready; otherwise we could not tell. */
   const status: SetupCheck["status"] =
-    firmwareOk === false || settingsOk === false ? "not-ready" : settingsOk === true ? "ready" : "unknown";
+    firmwareOk === false || settingsOk !== true ? "not-ready" : "ready";
 
   return { status, firmwareOk, settingsOk };
 }
@@ -442,7 +443,7 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
     setSetupCheck({ status: "checking", firmwareOk: null, settingsOk: null });
 
     (async () => {
-      const result = await evaluateGainForestSetup(device, info);
+      const result = await evaluateGainForestSetup(info);
       if (!cancelled) setSetupCheck(result);
     })();
 
@@ -601,6 +602,8 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
       for (let i = 0; i < compareLength; i += 1) {
         if (packet[i] !== echo[i]) throw new Error("echo mismatch");
       }
+
+      saveAppliedConfig(workingInfo.id, gainforestSetupConfig(), workingInfo.firmwareVersion);
 
       setStep("settings", { status: "done", detail: t("autoSetup.settingsDone") });
     } catch {
@@ -797,7 +800,11 @@ function ConnectionCard({
             <p className="mt-0.5 text-xs text-muted-foreground">
               {[
                 setupCheck.firmwareOk === false ? t("setupReasonFirmware") : null,
-                setupCheck.settingsOk === false ? t("setupReasonSettings") : null,
+                setupCheck.settingsOk === false
+                  ? t("setupReasonSettings")
+                  : setupCheck.settingsOk === null
+                    ? t("setupReasonSettingsUnknown")
+                    : null,
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -1129,6 +1136,20 @@ function ConfigureTab({
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<"ok" | "error" | null>(null);
 
+  /* Pre-fill the form with the configuration last written to this unit from
+     this browser (the device itself cannot report its settings back). */
+  const loadedDeviceIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!info || loadedDeviceIdRef.current === info.id) return;
+    loadedDeviceIdRef.current = info.id;
+    const applied = loadAppliedConfig(info.id);
+    if (applied) {
+      setConfig(applied.config);
+      setTimeZoneMode(applied.config.timeZoneOffsetMinutes === 0 ? "utc" : "local");
+      setResult(null);
+    }
+  }, [info]);
+
   const update = useCallback((patch: Partial<AudioMothConfig>) => {
     setConfig((current) => ({ ...current, ...patch }));
     setResult(null);
@@ -1173,6 +1194,8 @@ function ConfigureTab({
       for (let i = 0; i < compareLength; i += 1) {
         if (packet[i] !== echo[i]) throw new Error("echo mismatch");
       }
+
+      saveAppliedConfig(info.id, { ...config, timeZoneOffsetMinutes }, info.firmwareVersion);
 
       setResult("ok");
       onConfigured();

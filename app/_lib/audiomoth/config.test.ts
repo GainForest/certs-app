@@ -269,25 +269,21 @@ describe("GainForest setup detection", () => {
     expect(config.timePeriods).toEqual([{ startMins: 0, endMins: MINUTES_IN_DAY }]);
   });
 
-  it("recognises a device configured by the one-click setup, ignoring the timestamp", () => {
-    const { packet } = buildConfigPacket(gainforestSetupConfig(), version, OFFICIAL, new Date("2026-01-01T00:00:00Z"));
-    const stored = new Uint8Array(packet);
-    /* GET_APP_PACKET returns a different timestamp in the first four bytes */
-    stored[0] = 0xaa;
-    stored[1] = 0xbb;
-    stored[2] = 0xcc;
-    stored[3] = 0xdd;
-    expect(matchesGainForestSetup(stored, version, OFFICIAL)).toBe(true);
+  it("recognises the one-click configuration as the GainForest setup", () => {
+    expect(matchesGainForestSetup(gainforestSetupConfig(), version, OFFICIAL)).toBe(true);
   });
 
-  it("flags a device with different settings", () => {
-    const { packet } = buildConfigPacket(
-      { ...gainforestSetupConfig(), requireAcousticConfig: false },
-      version,
-      OFFICIAL,
-      new Date("2026-01-01T00:00:00Z"),
-    );
-    expect(matchesGainForestSetup(packet, version, OFFICIAL)).toBe(false);
+  it("treats packet-equivalent configurations as matching", () => {
+    /* A different field that does not change the packet bytes still matches —
+       e.g. filter cutoffs are ignored while the filter type is "none". */
+    expect(matchesGainForestSetup({ ...gainforestSetupConfig(), lowerFilterHz: 1234 }, version, OFFICIAL)).toBe(true);
+  });
+
+  it("flags configurations with different settings", () => {
+    expect(matchesGainForestSetup({ ...gainforestSetupConfig(), requireAcousticConfig: false }, version, OFFICIAL)).toBe(false);
+    expect(matchesGainForestSetup({ ...gainforestSetupConfig(), recordDuration: 55 }, version, OFFICIAL)).toBe(false);
+    expect(matchesGainForestSetup({ ...gainforestSetupConfig(), sleepDuration: 5 }, version, OFFICIAL)).toBe(false);
+    expect(matchesGainForestSetup({ ...gainforestSetupConfig(), timeZoneOffsetMinutes: 120 }, version, OFFICIAL)).toBe(false);
   });
 });
 

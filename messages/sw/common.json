@@ -1424,7 +1424,8 @@
       "setupOk": "Usanidi wa GainForest",
       "setupMissing": "Bado haijasanidiwa",
       "setupReasonFirmware": "Firmware si mpya zaidi",
-      "setupReasonSettings": "Mipangilio ya kurekodi inatofautiana na usanidi wa GainForest"
+      "setupReasonSettings": "Mipangilio ya kurekodi inatofautiana na usanidi wa GainForest",
+      "setupReasonSettingsUnknown": "Mipangilio ya kurekodi bado haijatumika kutoka kompyuta hii"
     },
     "device": {
       "setTimeButton": "Weka saa kutoka kompyuta hii",

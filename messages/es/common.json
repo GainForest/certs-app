@@ -1424,7 +1424,8 @@
       "setupOk": "Configuración GainForest",
       "setupMissing": "Aún sin configurar",
       "setupReasonFirmware": "El firmware no está actualizado",
-      "setupReasonSettings": "Los ajustes de grabación difieren de la configuración GainForest"
+      "setupReasonSettings": "Los ajustes de grabación difieren de la configuración GainForest",
+      "setupReasonSettingsUnknown": "Los ajustes de grabación aún no se han aplicado desde esta computadora"
     },
     "device": {
       "setTimeButton": "Ajustar hora desde esta computadora",
