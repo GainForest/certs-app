@@ -1425,7 +1425,9 @@
       "setupMissing": "Belum disiapkan",
       "setupReasonFirmware": "Firmware belum yang terbaru",
       "setupReasonSettings": "Pengaturan perekaman berbeda dari penyiapan GainForest",
-      "setupReasonSettingsUnknown": "Pengaturan perekaman belum diterapkan dari komputer ini"
+      "setupReasonSettingsUnknown": "Pengaturan perekaman belum diterapkan dari komputer ini",
+      "viewEquipmentButton": "Lihat di daftar peralatan",
+      "saveEquipmentButton": "Simpan ke daftar peralatan"
     },
     "device": {
       "setTimeButton": "Atur waktu dari komputer ini",

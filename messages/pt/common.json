@@ -1425,7 +1425,9 @@
       "setupMissing": "Ainda não configurado",
       "setupReasonFirmware": "O firmware não está atualizado",
       "setupReasonSettings": "As configurações de gravação diferem da configuração GainForest",
-      "setupReasonSettingsUnknown": "As configurações de gravação ainda não foram aplicadas a partir deste computador"
+      "setupReasonSettingsUnknown": "As configurações de gravação ainda não foram aplicadas a partir deste computador",
+      "viewEquipmentButton": "Ver na lista de equipamentos",
+      "saveEquipmentButton": "Salvar na lista de equipamentos"
     },
     "device": {
       "setTimeButton": "Acertar hora a partir deste computador",

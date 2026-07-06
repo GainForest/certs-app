@@ -1425,7 +1425,9 @@
       "setupMissing": "Bado haijasanidiwa",
       "setupReasonFirmware": "Firmware si mpya zaidi",
       "setupReasonSettings": "Mipangilio ya kurekodi inatofautiana na usanidi wa GainForest",
-      "setupReasonSettingsUnknown": "Mipangilio ya kurekodi bado haijatumika kutoka kompyuta hii"
+      "setupReasonSettingsUnknown": "Mipangilio ya kurekodi bado haijatumika kutoka kompyuta hii",
+      "viewEquipmentButton": "Ona kwenye orodha ya vifaa",
+      "saveEquipmentButton": "Hifadhi kwenye orodha ya vifaa"
     },
     "device": {
       "setTimeButton": "Weka saa kutoka kompyuta hii",

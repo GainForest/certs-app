@@ -1425,7 +1425,9 @@
       "setupMissing": "Not set up yet",
       "setupReasonFirmware": "Firmware not up to date",
       "setupReasonSettings": "Recording settings differ from the GainForest setup",
-      "setupReasonSettingsUnknown": "Recording settings haven't been applied from this computer yet"
+      "setupReasonSettingsUnknown": "Recording settings haven't been applied from this computer yet",
+      "viewEquipmentButton": "View in equipment list",
+      "saveEquipmentButton": "Save to equipment list"
     },
     "device": {
       "setTimeButton": "Set time from this computer",

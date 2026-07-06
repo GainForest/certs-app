@@ -67,8 +67,10 @@ import {
   looksLikeAudioMothFirmware,
   type FlashProgress,
 } from "@/app/_lib/audiomoth/flash";
-import { createEquipment, listEquipment, updateEquipment } from "@/app/_lib/equipment";
+import Link from "next/link";
+import { createEquipment, listEquipment, updateEquipment, type EquipmentItem } from "@/app/_lib/equipment";
 import { loadAppliedConfig, mergeSetupNotes, saveAppliedConfig, SETUP_NOTES_HEADER } from "@/app/_lib/audiomoth/setup-store";
+import { accountEquipmentPath } from "@/app/account/_lib/account-route";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -147,6 +149,12 @@ interface SetupCheck {
   firmwareOk: boolean | null;
   settingsOk: boolean | null;
 }
+
+type EquipmentStatus =
+  | { status: "unknown" }
+  | { status: "checking" }
+  | { status: "registered"; item: EquipmentItem }
+  | { status: "unregistered" };
 
 /**
  * Compare the connected device against the one-click GainForest setup:
@@ -293,6 +301,8 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
   const [connecting, setConnecting] = useState(false);
   const [wizard, setWizard] = useState<WizardState | null>(null);
   const [setupCheck, setSetupCheck] = useState<SetupCheck | null>(null);
+  const [equipmentStatus, setEquipmentStatus] = useState<EquipmentStatus>({ status: "unknown" });
+  const [savingEquipment, setSavingEquipment] = useState(false);
   const [recheckCounter, setRecheckCounter] = useState(0);
 
   const requestSetupRecheck = useCallback(() => setRecheckCounter((value) => value + 1), []);
@@ -451,6 +461,89 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
       cancelled = true;
     };
   }, [device, info, recheckCounter]);
+
+  /* ---------------- equipment registration ---------------- */
+
+  useEffect(() => {
+    if (!info || !sessionDid) {
+      setEquipmentStatus({ status: "unknown" });
+      return;
+    }
+    if (wizardActiveRef.current) return;
+
+    let cancelled = false;
+    setEquipmentStatus({ status: "checking" });
+
+    (async () => {
+      try {
+        const items = await listEquipment(sessionDid);
+        if (cancelled) return;
+        const existing = items.find((item) => item.assetId.trim().toUpperCase() === info.id.toUpperCase());
+        setEquipmentStatus(existing ? { status: "registered", item: existing } : { status: "unregistered" });
+      } catch {
+        if (!cancelled) setEquipmentStatus({ status: "unknown" });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [info, sessionDid, recheckCounter]);
+
+  /** Compose the auto-generated notes block written into equipment records. */
+  const composeNotesBlock = useCallback(
+    (deviceInfo: DeviceInfo, battery: string | null, setupDate: Date | null) => {
+      const firmwareLabel = `${deviceInfo.firmwareDescription} ${deviceInfo.firmwareVersion.join(".")}`;
+      const applied = setupDate === null ? loadAppliedConfig(deviceInfo.id) : null;
+      const appliedIsGainForest =
+        applied !== null &&
+        matchesGainForestSetup(applied.config, deviceInfo.firmwareVersion, deviceInfo.firmwareDescription);
+      const lastSetup = setupDate ?? (applied ? new Date(applied.appliedAt) : null);
+      const includeSettings = setupDate !== null || appliedIsGainForest;
+
+      const lines = [
+        SETUP_NOTES_HEADER,
+        t("autoSetup.notesDeviceId", { id: deviceInfo.id }),
+        t("autoSetup.notesFirmware", { firmware: firmwareLabel }),
+      ];
+      if (includeSettings) lines.push(t("autoSetup.notesSettings", { settings: t("autoSetup.settingsDone") }));
+      if (battery) lines.push(t("autoSetup.notesBattery", { battery }));
+      if (lastSetup && !Number.isNaN(lastSetup.valueOf())) {
+        const iso = lastSetup.toISOString();
+        lines.push(t("autoSetup.notesLastSetup", { date: `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC` }));
+      }
+      return lines.join("\n");
+    },
+    [t],
+  );
+
+  /** Manually register the connected device in the user's equipment list. */
+  const saveToEquipment = useCallback(async () => {
+    if (!device || !info || !sessionDid) return;
+    setSavingEquipment(true);
+    try {
+      let battery: string | null = null;
+      try {
+        battery = await withRetries(() => device.getBatteryState());
+      } catch {
+        /* battery is nice-to-have */
+      }
+      const name = `AudioMoth ${info.id.slice(-4)}`;
+      await createEquipment({
+        assetId: info.id,
+        name,
+        category: "audiomoth",
+        status: "storage",
+        acquiredAt: new Date().toISOString().slice(0, 10),
+        notes: composeNotesBlock(info, battery, null),
+      });
+      requestSetupRecheck();
+    } catch {
+      /* the status chip simply stays on "save" — the user can retry */
+    } finally {
+      setSavingEquipment(false);
+    }
+  }, [composeNotesBlock, device, info, requestSetupRecheck, sessionDid]);
 
   /* ---------------- auto-setup wizard ---------------- */
 
@@ -628,17 +721,7 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
         }
 
         const now = new Date();
-        const setupTimestamp = `${now.toISOString().slice(0, 10)} ${now.toISOString().slice(11, 16)} UTC`;
-        const firmwareLabel = `${workingInfo.firmwareDescription} ${workingInfo.firmwareVersion.join(".")}`;
-
-        const notesBlock = [
-          SETUP_NOTES_HEADER,
-          t("autoSetup.notesDeviceId", { id: workingInfo.id }),
-          t("autoSetup.notesFirmware", { firmware: firmwareLabel }),
-          t("autoSetup.notesSettings", { settings: t("autoSetup.settingsDone") }),
-          ...(battery ? [t("autoSetup.notesBattery", { battery })] : []),
-          t("autoSetup.notesLastSetup", { date: setupTimestamp }),
-        ].join("\n");
+        const notesBlock = composeNotesBlock(workingInfo, battery, now);
 
         const items = await listEquipment(sessionDid);
         const deviceId = workingInfo.id;
@@ -677,7 +760,7 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
     }
 
     finish(false);
-  }, [adoptDevice, device, info, requestSetupRecheck, sessionDid, t]);
+  }, [adoptDevice, composeNotesBlock, device, info, requestSetupRecheck, sessionDid, t]);
 
   const closeWizard = useCallback(() => {
     setWizard((current) => (current?.running ? current : null));
@@ -718,8 +801,12 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
               reading={reading}
               connecting={connecting}
               setupCheck={setupCheck}
+              equipmentStatus={equipmentStatus}
+              savingEquipment={savingEquipment}
+              sessionDid={sessionDid}
               onRequestDevice={requestDevice}
               onAutoSetup={runAutoSetup}
+              onSaveEquipment={saveToEquipment}
             />
           )}
 
@@ -786,16 +873,24 @@ function ConnectionCard({
   reading,
   connecting,
   setupCheck,
+  equipmentStatus,
+  savingEquipment,
+  sessionDid,
   onRequestDevice,
   onAutoSetup,
+  onSaveEquipment,
 }: {
   device: AudioMothDevice | null;
   info: DeviceInfo | null;
   reading: LiveReading | null;
   connecting: boolean;
   setupCheck: SetupCheck | null;
+  equipmentStatus: EquipmentStatus;
+  savingEquipment: boolean;
+  sessionDid: string | null;
   onRequestDevice: () => void;
   onAutoSetup: () => void;
+  onSaveEquipment: () => void;
 }) {
   const t = useTranslations("common.audiomoth.connection");
 
@@ -860,6 +955,20 @@ function ConnectionCard({
           <WandSparklesIcon className="size-4" />
           {t("autoSetupButton")}
         </Button>
+        {equipmentStatus.status === "registered" && sessionDid && (
+          <Button variant="outline" asChild>
+            <Link href={accountEquipmentPath(sessionDid)}>
+              <ArchiveIcon className="size-4" />
+              {t("viewEquipmentButton")}
+            </Link>
+          </Button>
+        )}
+        {equipmentStatus.status === "unregistered" && (
+          <Button variant="outline" onClick={onSaveEquipment} disabled={savingEquipment}>
+            {savingEquipment ? <Loader2Icon className="size-4 animate-spin" /> : <ArchiveIcon className="size-4" />}
+            {t("saveEquipmentButton")}
+          </Button>
+        )}
       </div>
     </Card>
   );
