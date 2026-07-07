@@ -1679,7 +1679,9 @@
       "statusSaving": "Saving…",
       "notConfigured": "Recording storage is not set up yet. Please contact the team.",
       "uploadFailed": "The upload could not be completed. Please try again.",
-      "deploymentFallback": "Created automatically when uploading SD card recordings."
+      "deploymentFallback": "Created automatically when uploading SD card recordings.",
+      "discovering": "Looking for recordings… {count} files found",
+      "readFailed": "The SD card could not be read. Remove and re-insert it, then try again — or drag the folder onto this page instead."
     },
     "recordings": {
       "title": "Recordings",

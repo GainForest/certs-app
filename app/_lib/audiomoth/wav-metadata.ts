@@ -154,7 +154,8 @@ export function extractGain(comment: string | null): string | null {
 }
 
 export function extractBatteryState(comment: string | null): string | null {
-  const match = comment?.match(/battery state was\s+([<>]?\s?\d+(?:\.\d+)?V)/i);
+  // Older firmware writes "battery state was 4.1V", 1.12+ writes "battery was 4.9V".
+  const match = comment?.match(/battery(?: state)? was\s+([<>]?\s?\d+(?:\.\d+)?V)/i);
   return match ? match[1]!.replace(/\s+/, "") : null;
 }
 

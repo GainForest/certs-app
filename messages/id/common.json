@@ -1679,7 +1679,9 @@
       "statusSaving": "Menyimpan…",
       "notConfigured": "Penyimpanan rekaman belum disiapkan. Silakan hubungi tim.",
       "uploadFailed": "Unggahan tidak dapat diselesaikan. Silakan coba lagi.",
-      "deploymentFallback": "Dibuat otomatis saat mengunggah rekaman kartu SD."
+      "deploymentFallback": "Dibuat otomatis saat mengunggah rekaman kartu SD.",
+      "discovering": "Mencari rekaman… {count} berkas ditemukan",
+      "readFailed": "Kartu SD tidak dapat dibaca. Cabut dan masukkan kembali, lalu coba lagi — atau seret folder ke halaman ini."
     },
     "recordings": {
       "title": "Rekaman",

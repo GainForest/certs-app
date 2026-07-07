@@ -17,6 +17,10 @@ const COMMENT =
 const COMMENT_TZ =
   "Recorded at 09:30:00 14/04/2025 (UTC-02:30) by AudioMoth 2495F30155D8D1AC at low gain while battery state was <2.5V and temperature was -1.2C.";
 
+/** Verbatim from AudioMoth-Firmware-Basic 1.12.1 (real SD card). */
+const COMMENT_112 =
+  "Recorded at 00:15:00 07/07/2026 (UTC) during deployment E93D4ACE9052B8D0 at medium gain while battery was 4.9V and temperature was 32.5C.";
+
 /** Build a tiny AudioMoth-style WAV: fmt + LIST INFO(ICMT, IART) + data. */
 function buildTestWav(options: {
   sampleRate?: number;
@@ -137,5 +141,15 @@ describe("AudioMoth comment extraction", () => {
     expect(extractBatteryState(COMMENT_TZ)).toBe("<2.5V");
     expect(extractTemperature(COMMENT)).toBe("23.3C");
     expect(extractTemperature(COMMENT_TZ)).toBe("-1.2C");
+  });
+
+  it("parses the firmware 1.12 comment format (real card)", () => {
+    expect(extractDeploymentId(COMMENT_112)).toBe("e93d4ace9052b8d0");
+    expect(extractRecordedAt(COMMENT_112)?.toISOString()).toBe("2026-07-07T00:15:00.000Z");
+    expect(extractGain(COMMENT_112)).toBe("medium");
+    expect(extractBatteryState(COMMENT_112)).toBe("4.9V");
+    expect(extractTemperature(COMMENT_112)).toBe("32.5C");
+    // 1.12 comments name the device only in IART, not in the comment body.
+    expect(extractDeviceId(COMMENT_112, "AudioMoth 24AE4B0168643890")).toBe("24AE4B0168643890");
   });
 });

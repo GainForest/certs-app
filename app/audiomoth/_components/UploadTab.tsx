@@ -106,27 +106,41 @@ function isWavName(name: string): boolean {
   return /\.wav$/i.test(name) && !name.startsWith("._") && !name.startsWith(".");
 }
 
-/** Recursively collect files from a drag-and-dropped directory entry. */
-async function collectDroppedFiles(items: DataTransferItemList): Promise<File[]> {
+/** Hidden/system entries (SD cards carry .Spotlight-V100, .Trashes, …). */
+function isHiddenName(name: string | undefined): boolean {
+  return !!name && name.startsWith(".");
+}
+
+/**
+ * Recursively collect files from a drag-and-dropped directory entry.
+ * Hidden/system folders are skipped and unreadable entries are ignored —
+ * FAT-formatted SD cards are full of both.
+ */
+async function collectDroppedFiles(items: DataTransferItemList, onProgress?: (count: number) => void): Promise<File[]> {
   const out: File[] = [];
 
   async function walkEntry(entry: unknown): Promise<void> {
     const e = entry as {
+      name?: string;
       isFile?: boolean;
       isDirectory?: boolean;
       file?: (cb: (f: File) => void, err: (e: unknown) => void) => void;
       createReader?: () => { readEntries: (cb: (entries: unknown[]) => void, err: (e: unknown) => void) => void };
     };
+    if (isHiddenName(e?.name)) return;
     if (e?.isFile && e.file) {
       const file = await new Promise<File | null>((resolve) => e.file!(resolve, () => resolve(null)));
-      if (file) out.push(file);
+      if (file) {
+        out.push(file);
+        if (out.length % 50 === 0) onProgress?.(out.length);
+      }
     } else if (e?.isDirectory && e.createReader) {
       const reader = e.createReader();
       // readEntries returns batches; keep reading until empty
       for (;;) {
         const batch = await new Promise<unknown[]>((resolve) => reader.readEntries(resolve, () => resolve([])));
         if (batch.length === 0) break;
-        for (const child of batch) await walkEntry(child);
+        for (const child of batch) await walkEntry(child).catch(() => undefined);
       }
     }
   }
@@ -137,7 +151,8 @@ async function collectDroppedFiles(items: DataTransferItemList): Promise<File[]>
     const entry = (item as unknown as { webkitGetAsEntry?: () => unknown }).webkitGetAsEntry?.();
     if (entry) entries.push(entry);
   }
-  for (const entry of entries) await walkEntry(entry);
+  for (const entry of entries) await walkEntry(entry).catch(() => undefined);
+  onProgress?.(out.length);
   return out;
 }
 
@@ -151,6 +166,8 @@ export function UploadTab({ sessionDid }: { sessionDid: string | null }) {
   const [stage, setStage] = useState<Stage>("pick");
   const [recordings, setRecordings] = useState<ScannedRecording[]>([]);
   const [scanProgress, setScanProgress] = useState({ done: 0, total: 0 });
+  /** Files discovered so far while still walking the card (null = parsing). */
+  const [discovered, setDiscovered] = useState<number | null>(null);
   const [events, setEvents] = useState<DeploymentEventItem[] | null>(null);
   const [manualEventUri, setManualEventUri] = useState<string>("none");
   const [makePreviews, setMakePreviews] = useState(true);
@@ -179,6 +196,7 @@ export function UploadTab({ sessionDid }: { sessionDid: string | null }) {
 
   const scanFiles = useCallback(async (files: File[]) => {
     const wavs = files.filter((f) => isWavName(f.name)).sort((a, b) => a.name.localeCompare(b.name));
+    setDiscovered(null);
     setGlobalError(null);
     setRecordings([]);
     setUploadedBytes(0);
@@ -216,38 +234,77 @@ export function UploadTab({ sessionDid }: { sessionDid: string | null }) {
       folderInputRef.current?.click();
       return;
     }
+    let dir: unknown;
     try {
-      const dir = await picker.call(window);
+      dir = await picker.call(window);
+    } catch {
+      return; // user dismissed the picker
+    }
+    // Immediate feedback — big cards take a while to enumerate.
+    setGlobalError(null);
+    setStage("scanning");
+    setDiscovered(0);
+    try {
       const files: File[] = [];
-      async function walk(handle: unknown): Promise<void> {
+      const walk = async (handle: unknown): Promise<void> => {
         const h = handle as {
           kind: string;
+          name?: string;
           values?: () => AsyncIterable<unknown>;
           getFile?: () => Promise<File>;
         };
+        if (isHiddenName(h.name)) return;
         if (h.kind === "file" && h.getFile) {
-          files.push(await h.getFile());
+          try {
+            files.push(await h.getFile());
+          } catch {
+            return; // unreadable entry — skip
+          }
+          if (files.length % 50 === 0) setDiscovered(files.length);
         } else if (h.kind === "directory" && h.values) {
-          for await (const child of h.values()) await walk(child);
+          try {
+            for await (const child of h.values()) await walk(child);
+          } catch {
+            /* system folders on SD cards can refuse iteration — skip them */
+          }
         }
-      }
+      };
       await walk(dir);
+      setDiscovered(files.length);
       await scanFiles(files);
-    } catch {
-      /* user dismissed the picker */
+    } catch (err) {
+      console.error("[audiomoth-upload] reading the folder failed", err);
+      setGlobalError(t("readFailed"));
+      setDiscovered(null);
+      setStage("pick");
     }
-  }, [scanFiles]);
+  }, [scanFiles, t]);
 
   const onDrop = useCallback(
     async (event: React.DragEvent) => {
       event.preventDefault();
       setDragging(false);
-      const dropped = event.dataTransfer.items?.length
-        ? await collectDroppedFiles(event.dataTransfer.items)
-        : Array.from(event.dataTransfer.files);
-      if (dropped.length > 0) await scanFiles(dropped);
+      const items = event.dataTransfer.items;
+      const plainFiles = Array.from(event.dataTransfer.files);
+      setGlobalError(null);
+      setStage("scanning");
+      setDiscovered(0);
+      try {
+        const dropped = items?.length ? await collectDroppedFiles(items, setDiscovered) : plainFiles;
+        if (dropped.length > 0) {
+          await scanFiles(dropped);
+        } else {
+          setDiscovered(null);
+          setStage("pick");
+        }
+      } catch (err) {
+        console.error("[audiomoth-upload] reading the dropped folder failed", err);
+        setGlobalError(t("readFailed"));
+        setDiscovered(null);
+        setStage("pick");
+      }
     },
-    [scanFiles],
+    [scanFiles, t],
   );
 
   /* ---------------- grouping + matching ---------------- */
@@ -603,6 +660,9 @@ export function UploadTab({ sessionDid }: { sessionDid: string | null }) {
                 </Button>
               </div>
             </div>
+            {globalError ? (
+              <p className="mt-3 rounded-xl bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">{globalError}</p>
+            ) : null}
           </motion.div>
         )}
 
@@ -618,15 +678,19 @@ export function UploadTab({ sessionDid }: { sessionDid: string | null }) {
             <div>
               <p className="text-base font-medium text-foreground">{t("scanning")}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {t("scanningCount", { done: scanProgress.done, total: scanProgress.total })}
+                {discovered !== null
+                  ? t("discovering", { count: discovered })
+                  : t("scanningCount", { done: scanProgress.done, total: scanProgress.total })}
               </p>
             </div>
-            <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-[width]"
-                style={{ width: `${scanProgress.total ? (scanProgress.done / scanProgress.total) * 100 : 0}%` }}
-              />
-            </div>
+            {discovered === null ? (
+              <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-[width]"
+                  style={{ width: `${scanProgress.total ? (scanProgress.done / scanProgress.total) * 100 : 0}%` }}
+                />
+              </div>
+            ) : null}
           </motion.div>
         )}
 
@@ -642,6 +706,7 @@ export function UploadTab({ sessionDid }: { sessionDid: string | null }) {
             {stats.count === 0 ? (
               <div className="rounded-3xl border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
                 <h3 className="text-base font-medium text-foreground">{t("noWavTitle")}</h3>
+                {globalError ? <p className="mx-auto mt-2 max-w-[420px] text-sm text-destructive">{globalError}</p> : null}
                 <p className="mx-auto mt-1.5 max-w-[420px] text-sm text-muted-foreground">{t("noWavBody")}</p>
                 <Button variant="outline" size="sm" className="mt-4" onClick={reset}>
                   {t("back")}
