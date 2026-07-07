@@ -1692,7 +1692,12 @@
       "pauseAria": "Pause {name}",
       "previewUnavailable": "No preview available for this recording",
       "downloadAria": "Download original of {name}",
-      "showMore": "Show {count} more"
+      "showMore": "Show {count} more",
+      "groupCount": "{count, plural, one {# recording} other {# recordings}}",
+      "otherGroup": "Other recordings",
+      "viewDeployment": "View deployment",
+      "accountEmptyTitle": "No recordings yet",
+      "accountEmptyBody": "Recordings uploaded from an AudioMoth SD card will show up here, grouped by deployment."
     }
   }
 }

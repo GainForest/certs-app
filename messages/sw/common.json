@@ -1692,7 +1692,12 @@
       "pauseAria": "Simamisha {name}",
       "previewUnavailable": "Hakuna kionjo cha rekodi hii",
       "downloadAria": "Pakua nakala halisi ya {name}",
-      "showMore": "Onyesha {count} zaidi"
+      "showMore": "Onyesha {count} zaidi",
+      "groupCount": "{count, plural, one {rekodi #} other {rekodi #}}",
+      "otherGroup": "Rekodi nyingine",
+      "viewDeployment": "Tazama uwekaji",
+      "accountEmptyTitle": "Bado hakuna rekodi",
+      "accountEmptyBody": "Rekodi zilizopakiwa kutoka kadi ya SD ya AudioMoth zitaonekana hapa, zikiwa zimepangwa kwa uwekaji."
     }
   }
 }

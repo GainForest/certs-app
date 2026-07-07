@@ -1692,7 +1692,12 @@
       "pauseAria": "Pausar {name}",
       "previewUnavailable": "No hay vista previa disponible para esta grabación",
       "downloadAria": "Descargar original de {name}",
-      "showMore": "Mostrar {count} más"
+      "showMore": "Mostrar {count} más",
+      "groupCount": "{count, plural, one {# grabación} other {# grabaciones}}",
+      "otherGroup": "Otras grabaciones",
+      "viewDeployment": "Ver despliegue",
+      "accountEmptyTitle": "Aún no hay grabaciones",
+      "accountEmptyBody": "Las grabaciones subidas desde una tarjeta SD de AudioMoth aparecerán aquí, agrupadas por despliegue."
     }
   }
 }

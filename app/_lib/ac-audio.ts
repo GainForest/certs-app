@@ -146,6 +146,8 @@ export type AcAudioListItem = {
   spectrogramCid: string | null;
   /** URL of the archival original, when present. */
   accessUri: string | null;
+  /** AT-URI of the ac.deployment this recording belongs to, when present. */
+  deploymentRef: string | null;
   createdAt: string;
 };
 
@@ -186,14 +188,14 @@ function parseAcAudioListItem(
     previewMimeType: preview?.mimeType ?? null,
     spectrogramCid: spectrogram?.cid ?? null,
     accessUri: typeof v.accessUri === "string" ? v.accessUri : null,
+    deploymentRef: typeof v.deploymentRef === "string" ? v.deploymentRef : null,
     createdAt: typeof v.createdAt === "string" ? v.createdAt : new Date(0).toISOString(),
   };
 }
 
-/** All ac.audio records linked to a deployment, oldest first (chronological). */
-export async function listRecordingsForDeployment(
+async function listAcAudioItems(
   did: string,
-  deploymentUri: string,
+  keep: (value: Record<string, unknown>) => boolean,
   signal?: AbortSignal,
 ): Promise<AcAudioListItem[]> {
   const host = await resolvePdsHost(did, signal);
@@ -217,7 +219,7 @@ export async function listRecordingsForDeployment(
       cursor?: unknown;
     };
     for (const r of data.records ?? []) {
-      if (!isRecord(r.value) || r.value.deploymentRef !== deploymentUri) continue;
+      if (!isRecord(r.value) || !keep(r.value)) continue;
       const item = parseAcAudioListItem(did, r);
       if (item) items.push(item);
     }
@@ -226,6 +228,20 @@ export async function listRecordingsForDeployment(
 
   items.sort((a, b) => (a.recordedAt ?? a.createdAt).localeCompare(b.recordedAt ?? b.createdAt));
   return items;
+}
+
+/** Every ac.audio record in a repo, oldest first. */
+export async function listAllRecordings(did: string, signal?: AbortSignal): Promise<AcAudioListItem[]> {
+  return listAcAudioItems(did, () => true, signal);
+}
+
+/** All ac.audio records linked to a deployment, oldest first (chronological). */
+export async function listRecordingsForDeployment(
+  did: string,
+  deploymentUri: string,
+  signal?: AbortSignal,
+): Promise<AcAudioListItem[]> {
+  return listAcAudioItems(did, (value) => value.deploymentRef === deploymentUri, signal);
 }
 
 

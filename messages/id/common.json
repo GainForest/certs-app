@@ -1692,7 +1692,12 @@
       "pauseAria": "Jeda {name}",
       "previewUnavailable": "Tidak ada pratinjau untuk rekaman ini",
       "downloadAria": "Unduh asli {name}",
-      "showMore": "Tampilkan {count} lagi"
+      "showMore": "Tampilkan {count} lagi",
+      "groupCount": "{count, plural, other {# rekaman}}",
+      "otherGroup": "Rekaman lainnya",
+      "viewDeployment": "Lihat penempatan",
+      "accountEmptyTitle": "Belum ada rekaman",
+      "accountEmptyBody": "Rekaman yang diunggah dari kartu SD AudioMoth akan muncul di sini, dikelompokkan per penempatan."
     }
   }
 }
