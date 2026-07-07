@@ -19,7 +19,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./globe.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { countryFlag, formatCountry } from "../../_lib/format";
+import { formatCountry } from "../../_lib/format";
 import { resolveDidProfile } from "../../_lib/did-profile";
 import {
   EMPTY_FEATURE_COLLECTION,
@@ -116,7 +116,8 @@ function popupContent(name: string, country: string | null): HTMLElement {
   if (country) {
     const sub = document.createElement("p");
     sub.className = "globe-popup-country";
-    sub.textContent = `${countryFlag(country)} ${formatCountry(country)}`.trim();
+    // formatCountry already includes the flag — do not prepend countryFlag too.
+    sub.textContent = formatCountry(country);
     root.appendChild(sub);
   }
   return root;

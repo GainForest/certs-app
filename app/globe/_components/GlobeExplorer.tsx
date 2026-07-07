@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { countryFlag, formatCountry } from "../../_lib/format";
+import { countryFlag, countryName, formatCountry } from "../../_lib/format";
 import { resolveCertifiedLocationCoords } from "../../_lib/coords";
 import { TrustedByBadges } from "../../_components/TrustedByBadges";
 import { GlobeMap } from "./GlobeMap";
@@ -1102,7 +1102,8 @@ function GlobalPanel({
                       </span>
                       {org.country ? (
                         <span className="block truncate text-[11px] text-muted-foreground">
-                          {formatCountry(org.country)}
+                          {/* Name only — the row's avatar circle is already the flag. */}
+                          {countryName(org.country)}
                         </span>
                       ) : null}
                     </span>
@@ -1196,7 +1197,8 @@ function FocusPanel({
               </Link>
             ) : selectedOrg?.country ? (
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {countryFlag(selectedOrg.country)} {formatCountry(selectedOrg.country)}
+                {/* formatCountry already includes the flag. */}
+                {formatCountry(selectedOrg.country)}
               </p>
             ) : null}
           </div>
