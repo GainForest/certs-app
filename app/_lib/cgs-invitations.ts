@@ -168,6 +168,29 @@ export async function listPendingGroupInvitationsForEmail(email: string): Promis
   return normalizeInvitations(rows);
 }
 
+/**
+ * Emails of members who joined the group by accepting an email invitation,
+ * keyed by member DID. PRIVATE data: callers must only expose this to
+ * verified members of the same organization.
+ */
+export async function listAcceptedGroupInvitationEmailsForRepo(repo: string): Promise<Map<string, string>> {
+  const rows = await supabaseSelect<RawInvitation>(invitationQuery([
+    `repo=eq.${supabaseFilterValue(repo)}`,
+    "status=eq.accepted",
+    "accepted_by_did=not.is.null",
+    "order=accepted_at.desc",
+    "limit=200",
+  ].join("&")));
+
+  const emails = new Map<string, string>();
+  for (const invitation of normalizeInvitations(rows)) {
+    const did = invitation.acceptedByDid;
+    const email = invitation.acceptedByEmail ?? invitation.email;
+    if (did && email && !emails.has(did)) emails.set(did, email);
+  }
+  return emails;
+}
+
 export async function listPendingGroupInvitationsForRepo(repo: string): Promise<GroupInvitation[]> {
   const rows = await supabaseSelect<RawInvitation>(invitationQuery([
     `repo=eq.${supabaseFilterValue(repo)}`,
