@@ -20,12 +20,14 @@ import {
   DownloadIcon,
   FingerprintIcon,
   Loader2Icon,
+  MapPinIcon,
   MinusIcon,
   PlugZapIcon,
   SlidersHorizontalIcon,
   TriangleAlertIcon,
   UsbIcon,
   WandSparklesIcon,
+  WrenchIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -68,13 +70,15 @@ import {
   type FlashProgress,
 } from "@/app/_lib/audiomoth/flash";
 import Link from "next/link";
-import { createEquipment, listEquipment, updateEquipment, type EquipmentItem } from "@/app/_lib/equipment";
+import { createEquipment, equipmentDetailPath, listEquipment, updateEquipment, type EquipmentItem } from "@/app/_lib/equipment";
 import { loadAppliedConfig, mergeSetupNotes, saveAppliedConfig, SETUP_NOTES_HEADER } from "@/app/_lib/audiomoth/setup-store";
-import { accountEquipmentPath } from "@/app/account/_lib/account-route";
+import { DeploymentsTab } from "./DeploymentsTab";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
 /* ------------------------------------------------------------------ */
+
+type MainTabId = "setup" | "deployments";
 
 type TabId = "device" | "configure" | "firmware";
 
@@ -297,6 +301,7 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
   const [device, setDevice] = useState<AudioMothDevice | null>(null);
   const [info, setInfo] = useState<DeviceInfo | null>(null);
   const [reading, setReading] = useState<LiveReading | null>(null);
+  const [mainTab, setMainTab] = useState<MainTabId>("setup");
   const [tab, setTab] = useState<TabId>("firmware");
   const [connecting, setConnecting] = useState(false);
   const [wizard, setWizard] = useState<WizardState | null>(null);
@@ -774,6 +779,11 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
     { id: "configure", label: t("tabs.configure"), Icon: SlidersHorizontalIcon },
   ];
 
+  const mainTabs: Array<{ id: MainTabId; label: string; Icon: typeof ClockIcon }> = [
+    { id: "setup", label: t("mainTabs.setup"), Icon: WrenchIcon },
+    { id: "deployments", label: t("mainTabs.deployments"), Icon: MapPinIcon },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
@@ -786,13 +796,34 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
         <p className="max-w-2xl text-sm text-muted-foreground">{t("subtitle")}</p>
       </header>
 
-      {supported === false && (
+      {/* Setup (this device over USB) vs Deployment (field events) */}
+      <nav className="flex gap-1 self-start rounded-full border border-border bg-card/70 p-1" aria-label={t("title")}>
+        {mainTabs.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setMainTab(id)}
+            className={cn(
+              "flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+              mainTab === id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-current={mainTab === id ? "page" : undefined}
+          >
+            <Icon className="size-4" />
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {mainTab === "deployments" && <DeploymentsTab sessionDid={sessionDid} />}
+
+      {mainTab === "setup" && supported === false && (
         <Card>
           <p className="text-sm text-muted-foreground">{t("unsupportedBrowser")}</p>
         </Card>
       )}
 
-      {supported && (
+      {mainTab === "setup" && supported && (
         <>
           {!wizard && (
             <ConnectionCard
@@ -803,7 +834,6 @@ export function AudioMothClient({ sessionDid }: { sessionDid: string | null }) {
               setupCheck={setupCheck}
               equipmentStatus={equipmentStatus}
               savingEquipment={savingEquipment}
-              sessionDid={sessionDid}
               onRequestDevice={requestDevice}
               onAutoSetup={runAutoSetup}
               onSaveEquipment={saveToEquipment}
@@ -875,7 +905,6 @@ function ConnectionCard({
   setupCheck,
   equipmentStatus,
   savingEquipment,
-  sessionDid,
   onRequestDevice,
   onAutoSetup,
   onSaveEquipment,
@@ -887,7 +916,6 @@ function ConnectionCard({
   setupCheck: SetupCheck | null;
   equipmentStatus: EquipmentStatus;
   savingEquipment: boolean;
-  sessionDid: string | null;
   onRequestDevice: () => void;
   onAutoSetup: () => void;
   onSaveEquipment: () => void;
@@ -960,11 +988,11 @@ function ConnectionCard({
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-primary/10 pt-3">
         {notReadyReason && <p className="min-w-0 flex-1 basis-48 text-xs text-muted-foreground">{notReadyReason}</p>}
         <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
-          {equipmentStatus.status === "registered" && sessionDid && (
+          {equipmentStatus.status === "registered" && (
             <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
-              <Link href={accountEquipmentPath(sessionDid)}>
+              <Link href={equipmentDetailPath(equipmentStatus.item.did, equipmentStatus.item.rkey)}>
                 <ArchiveIcon className="size-3.5" />
-                {t("viewEquipmentButton")}
+                {t("viewEquipmentPageButton")}
               </Link>
             </Button>
           )}

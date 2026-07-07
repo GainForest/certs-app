@@ -494,6 +494,14 @@
       "coordinatesRange": "Coordinates are out of range.",
       "saveFailed": "The unit could not be saved. Please try again.",
       "deleteFailed": "The unit could not be deleted. Please try again."
+    },
+    "detail": {
+      "metadataTitle": "{name} — Equipment",
+      "back": "Back to equipment",
+      "coordinates": "Coordinates",
+      "acquired": "Acquired",
+      "registeredBy": "Registered by",
+      "viewAllEquipment": "View all equipment"
     }
   },
   "accountAttachments": {
@@ -1427,7 +1435,8 @@
       "setupReasonSettings": "Recording settings differ from the GainForest setup",
       "setupReasonSettingsUnknown": "Recording settings haven't been applied from this computer yet",
       "viewEquipmentButton": "View in equipment list",
-      "saveEquipmentButton": "Save to equipment list"
+      "saveEquipmentButton": "Save to equipment list",
+      "viewEquipmentPageButton": "View equipment page"
     },
     "device": {
       "setTimeButton": "Set time from this computer",
@@ -1565,6 +1574,53 @@
       "notesBattery": "Battery at setup: {battery}",
       "notesLastSetup": "Last setup: {date}",
       "equipmentUpdated": "Updated {name} in your equipment list with the new setup details"
+    },
+    "mainTabs": {
+      "setup": "Setup",
+      "deployments": "Deployment"
+    },
+    "deployments": {
+      "intro": "Deployments record where and when an AudioMoth was placed in the field. Each one plays an acoustic chime that sets the recorder's clock, location and deployment ID.",
+      "createButton": "Create deployment",
+      "signInTitle": "Sign in to see your deployments",
+      "signInBody": "Your deployments are saved to your account. Sign in to create and manage them.",
+      "loadErrorTitle": "Deployments could not be loaded",
+      "loadError": "Something went wrong while loading your deployments. Please try again.",
+      "emptyTitle": "No deployments yet",
+      "emptyBody": "Create your first deployment to set up an AudioMoth in the field with the acoustic chime.",
+      "untitled": "Unnamed deployment",
+      "copyId": "Copy deployment ID",
+      "delete": "Delete deployment",
+      "confirmDelete": "Confirm delete",
+      "cancel": "Cancel",
+      "deleteFailed": "The deployment could not be deleted. Please try again.",
+      "createTitle": "Create deployment",
+      "createIntro": "Name the site, choose the location, then play the chime with this device's speaker held against the AudioMoth's microphone.",
+      "siteNameLabel": "Site name (optional)",
+      "siteNamePlaceholder": "River trail, plot 3…",
+      "deploymentIdLabel": "Deployment ID",
+      "newId": "Generate a new ID",
+      "latitudeLabel": "Latitude",
+      "longitudeLabel": "Longitude",
+      "useLocation": "Use my current location",
+      "locationUnavailable": "Your location could not be determined. Enter the coordinates by hand.",
+      "equipmentLabel": "AudioMoth (optional)",
+      "equipmentNone": "No linked unit",
+      "equipmentEmpty": "You haven't registered any AudioMoths in your equipment list yet.",
+      "equipmentHint": "Pick the registered AudioMoth you are deploying to link it to this event.",
+      "viewSelectedEquipment": "View this unit's equipment page",
+      "invalidId": "The deployment ID must be 16 characters (0–9, a–f).",
+      "invalidCoordinates": "Enter valid coordinates first.",
+      "createFailed": "The deployment could not be saved. Please try again.",
+      "playFailed": "The chime could not be played. Please try again.",
+      "playing": "Playing the chime — hold the speaker against the AudioMoth…",
+      "chimeHint": "Set the AudioMoth's switch to CUSTOM and hold this device's speaker against it while the chime plays.",
+      "playAndSave": "Play chime & save",
+      "doneTitle": "Deployment saved",
+      "doneBody": "The chime was played and the deployment was saved to your account. Play it again if the AudioMoth didn't catch it.",
+      "playAgain": "Play chime again",
+      "done": "Done",
+      "close": "Close"
     }
   }
 }

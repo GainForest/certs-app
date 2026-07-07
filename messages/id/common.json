@@ -494,6 +494,14 @@
       "coordinatesRange": "Koordinat di luar jangkauan.",
       "saveFailed": "Unit tidak dapat disimpan. Silakan coba lagi.",
       "deleteFailed": "Unit tidak dapat dihapus. Silakan coba lagi."
+    },
+    "detail": {
+      "metadataTitle": "{name} — Peralatan",
+      "back": "Kembali ke peralatan",
+      "coordinates": "Koordinat",
+      "acquired": "Diperoleh",
+      "registeredBy": "Didaftarkan oleh",
+      "viewAllEquipment": "Lihat semua peralatan"
     }
   },
   "accountAttachments": {
@@ -1427,7 +1435,8 @@
       "setupReasonSettings": "Pengaturan perekaman berbeda dari penyiapan GainForest",
       "setupReasonSettingsUnknown": "Pengaturan perekaman belum diterapkan dari komputer ini",
       "viewEquipmentButton": "Lihat di daftar peralatan",
-      "saveEquipmentButton": "Simpan ke daftar peralatan"
+      "saveEquipmentButton": "Simpan ke daftar peralatan",
+      "viewEquipmentPageButton": "Lihat halaman peralatan"
     },
     "device": {
       "setTimeButton": "Atur waktu dari komputer ini",
@@ -1565,6 +1574,53 @@
       "notesBattery": "Baterai saat penyiapan: {battery}",
       "notesLastSetup": "Penyiapan terakhir: {date}",
       "equipmentUpdated": "{name} diperbarui di daftar peralatan Anda dengan detail penyiapan baru"
+    },
+    "mainTabs": {
+      "setup": "Penyiapan",
+      "deployments": "Penempatan"
+    },
+    "deployments": {
+      "intro": "Penempatan mencatat di mana dan kapan sebuah AudioMoth dipasang di lapangan. Masing-masing memutar nada akustik yang mengatur jam, lokasi, dan ID penempatan perekam.",
+      "createButton": "Buat penempatan",
+      "signInTitle": "Masuk untuk melihat penempatan Anda",
+      "signInBody": "Penempatan Anda disimpan di akun Anda. Masuk untuk membuat dan mengelolanya.",
+      "loadErrorTitle": "Penempatan tidak dapat dimuat",
+      "loadError": "Terjadi kesalahan saat memuat penempatan Anda. Silakan coba lagi.",
+      "emptyTitle": "Belum ada penempatan",
+      "emptyBody": "Buat penempatan pertama Anda untuk menyiapkan AudioMoth di lapangan dengan nada akustik.",
+      "untitled": "Penempatan tanpa nama",
+      "copyId": "Salin ID penempatan",
+      "delete": "Hapus penempatan",
+      "confirmDelete": "Konfirmasi hapus",
+      "cancel": "Batal",
+      "deleteFailed": "Penempatan tidak dapat dihapus. Silakan coba lagi.",
+      "createTitle": "Buat penempatan",
+      "createIntro": "Beri nama lokasi, pilih koordinatnya, lalu putar nada dengan speaker perangkat ini ditempelkan ke mikrofon AudioMoth.",
+      "siteNameLabel": "Nama lokasi (opsional)",
+      "siteNamePlaceholder": "Jalur sungai, petak 3…",
+      "deploymentIdLabel": "ID penempatan",
+      "newId": "Buat ID baru",
+      "latitudeLabel": "Lintang",
+      "longitudeLabel": "Bujur",
+      "useLocation": "Gunakan lokasi saya saat ini",
+      "locationUnavailable": "Lokasi Anda tidak dapat ditentukan. Masukkan koordinat secara manual.",
+      "equipmentLabel": "AudioMoth (opsional)",
+      "equipmentNone": "Tidak ada unit tertaut",
+      "equipmentEmpty": "Anda belum mendaftarkan AudioMoth apa pun di daftar peralatan Anda.",
+      "equipmentHint": "Pilih AudioMoth terdaftar yang sedang Anda tempatkan untuk menautkannya ke peristiwa ini.",
+      "viewSelectedEquipment": "Lihat halaman unit ini",
+      "invalidId": "ID penempatan harus 16 karakter (0–9, a–f).",
+      "invalidCoordinates": "Masukkan koordinat yang valid terlebih dahulu.",
+      "createFailed": "Penempatan tidak dapat disimpan. Silakan coba lagi.",
+      "playFailed": "Nada tidak dapat diputar. Silakan coba lagi.",
+      "playing": "Memutar nada — tempelkan speaker ke AudioMoth…",
+      "chimeHint": "Atur sakelar AudioMoth ke CUSTOM dan tempelkan speaker perangkat ini padanya selama nada diputar.",
+      "playAndSave": "Putar nada & simpan",
+      "doneTitle": "Penempatan tersimpan",
+      "doneBody": "Nada telah diputar dan penempatan disimpan ke akun Anda. Putar lagi jika AudioMoth belum menangkapnya.",
+      "playAgain": "Putar nada lagi",
+      "done": "Selesai",
+      "close": "Tutup"
     }
   }
 }

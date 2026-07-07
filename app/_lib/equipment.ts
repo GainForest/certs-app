@@ -202,6 +202,38 @@ function rkeyFromUri(uri: string): string {
   return uri.split("/").pop() ?? "";
 }
 
+/** Local path of an equipment unit's own page. */
+export function equipmentDetailPath(did: string, rkey: string): string {
+  return `/equipment/${encodeURIComponent(did)}/${encodeURIComponent(rkey)}`;
+}
+
+/** Read one equipment record straight from its owner's PDS (public). */
+export async function getEquipment(
+  did: string,
+  rkey: string,
+  signal?: AbortSignal,
+): Promise<EquipmentItem | null> {
+  const host = await resolvePdsHost(did, signal);
+  if (!host) return null;
+  const params = new URLSearchParams({
+    repo: did,
+    collection: EQUIPMENT_COLLECTION,
+    rkey,
+  });
+  const res = await fetch(
+    `https://${host}/xrpc/com.atproto.repo.getRecord?${params.toString()}`,
+    { signal, cache: "no-store" },
+  );
+  if (!res.ok) return null;
+  const data = (await res.json().catch(() => null)) as
+    | { uri?: unknown; cid?: unknown; value?: unknown }
+    | null;
+  if (!data || typeof data.uri !== "string" || typeof data.cid !== "string") return null;
+  const parsed = parseEquipmentRecord(data.value);
+  if (!parsed) return null;
+  return { ...parsed, uri: data.uri, cid: data.cid, rkey: rkeyFromUri(data.uri), did };
+}
+
 /** List every equipment record in a repo, paging the PDS until exhausted. */
 export async function listEquipment(
   did: string,

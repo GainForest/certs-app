@@ -494,6 +494,14 @@
       "coordinatesRange": "Viwianishi viko nje ya mipaka.",
       "saveFailed": "Kifaa hakikuweza kuhifadhiwa. Tafadhali jaribu tena.",
       "deleteFailed": "Kifaa hakikuweza kufutwa. Tafadhali jaribu tena."
+    },
+    "detail": {
+      "metadataTitle": "{name} — Vifaa",
+      "back": "Rudi kwenye vifaa",
+      "coordinates": "Kuratibu",
+      "acquired": "Kilipatikana",
+      "registeredBy": "Kimesajiliwa na",
+      "viewAllEquipment": "Ona vifaa vyote"
     }
   },
   "accountAttachments": {
@@ -1427,7 +1435,8 @@
       "setupReasonSettings": "Mipangilio ya kurekodi inatofautiana na usanidi wa GainForest",
       "setupReasonSettingsUnknown": "Mipangilio ya kurekodi bado haijatumika kutoka kompyuta hii",
       "viewEquipmentButton": "Ona kwenye orodha ya vifaa",
-      "saveEquipmentButton": "Hifadhi kwenye orodha ya vifaa"
+      "saveEquipmentButton": "Hifadhi kwenye orodha ya vifaa",
+      "viewEquipmentPageButton": "Ona ukurasa wa kifaa"
     },
     "device": {
       "setTimeButton": "Weka saa kutoka kompyuta hii",
@@ -1565,6 +1574,53 @@
       "notesBattery": "Betri wakati wa usanidi: {battery}",
       "notesLastSetup": "Usanidi wa mwisho: {date}",
       "equipmentUpdated": "{name} imesasishwa kwenye orodha yako ya vifaa na maelezo mapya ya usanidi"
+    },
+    "mainTabs": {
+      "setup": "Usanidi",
+      "deployments": "Usambazaji"
+    },
+    "deployments": {
+      "intro": "Usambazaji hurekodi mahali na wakati AudioMoth ilipowekwa uwandani. Kila mmoja hucheza mlio wa akustika unaoweka saa, mahali na kitambulisho cha usambazaji cha kinasa sauti.",
+      "createButton": "Unda usambazaji",
+      "signInTitle": "Ingia ili kuona usambazaji wako",
+      "signInBody": "Usambazaji wako huhifadhiwa kwenye akaunti yako. Ingia ili kuunda na kuusimamia.",
+      "loadErrorTitle": "Usambazaji haukuweza kupakiwa",
+      "loadError": "Hitilafu ilitokea wakati wa kupakia usambazaji wako. Tafadhali jaribu tena.",
+      "emptyTitle": "Hakuna usambazaji bado",
+      "emptyBody": "Unda usambazaji wako wa kwanza ili kusanidi AudioMoth uwandani kwa mlio wa akustika.",
+      "untitled": "Usambazaji usio na jina",
+      "copyId": "Nakili kitambulisho cha usambazaji",
+      "delete": "Futa usambazaji",
+      "confirmDelete": "Thibitisha kufuta",
+      "cancel": "Ghairi",
+      "deleteFailed": "Usambazaji haukuweza kufutwa. Tafadhali jaribu tena.",
+      "createTitle": "Unda usambazaji",
+      "createIntro": "Taja eneo, chagua mahali, kisha cheza mlio huku spika ya kifaa hiki ikishikiliwa karibu na kipaza sauti cha AudioMoth.",
+      "siteNameLabel": "Jina la eneo (hiari)",
+      "siteNamePlaceholder": "Njia ya mto, shamba 3…",
+      "deploymentIdLabel": "Kitambulisho cha usambazaji",
+      "newId": "Tengeneza kitambulisho kipya",
+      "latitudeLabel": "Latitudo",
+      "longitudeLabel": "Longitudo",
+      "useLocation": "Tumia mahali nilipo sasa",
+      "locationUnavailable": "Mahali pako hapakuweza kubainika. Andika kuratibu mwenyewe.",
+      "equipmentLabel": "AudioMoth (hiari)",
+      "equipmentNone": "Hakuna kifaa kilichounganishwa",
+      "equipmentEmpty": "Bado hujasajili AudioMoth yoyote kwenye orodha yako ya vifaa.",
+      "equipmentHint": "Chagua AudioMoth iliyosajiliwa unayoisambaza ili kuiunganisha na tukio hili.",
+      "viewSelectedEquipment": "Ona ukurasa wa kifaa hiki",
+      "invalidId": "Kitambulisho cha usambazaji lazima kiwe na herufi 16 (0–9, a–f).",
+      "invalidCoordinates": "Weka kuratibu sahihi kwanza.",
+      "createFailed": "Usambazaji haukuweza kuhifadhiwa. Tafadhali jaribu tena.",
+      "playFailed": "Mlio haukuweza kuchezwa. Tafadhali jaribu tena.",
+      "playing": "Mlio unachezwa — shikilia spika karibu na AudioMoth…",
+      "chimeHint": "Weka swichi ya AudioMoth kwenye CUSTOM na ushikilie spika ya kifaa hiki karibu nayo wakati mlio unachezwa.",
+      "playAndSave": "Cheza mlio na uhifadhi",
+      "doneTitle": "Usambazaji umehifadhiwa",
+      "doneBody": "Mlio ulichezwa na usambazaji umehifadhiwa kwenye akaunti yako. Ucheze tena ikiwa AudioMoth haikuupokea.",
+      "playAgain": "Cheza mlio tena",
+      "done": "Imekamilika",
+      "close": "Funga"
     }
   }
 }
