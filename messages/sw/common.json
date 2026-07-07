@@ -1162,6 +1162,7 @@
       "feed": "Vipengele vya kijamii vilivyotoholewa kutoka Bluesky hadi maliasili ya pamoja ya GainForest — machapisho (na maoni ya majibu) na kupenda, ili mlisho uweze kuchapishwa, kutolewa maoni na kupendwa.",
       "dwc": "Rekodi za kujitokeza kwa bioanuwai zinazolingana na kiwango cha Simple Darwin Core cha TDWG. Matukio ya kujitokeza hurejelea tukio moja la pamoja; vipimo hurejelea tukio la kujitokeza.",
       "ac": "Rekodi za media na ufuatiliaji wa sauti tulivu zinazolingana na Audiovisual Core ya TDWG. Sauti na media mbalimbali huunganishwa na tukio la kujitokeza la Darwin Core kama ushahidi.",
+      "organization": "Rekodi za data za ramani za mashirika — tabaka za ramani zilizochapishwa (ortomosaiki za droni, tabaka za GeoJSON) na maeneo yanayofuatiliwa yenye majina yanayokusanya picha zinazorudiwa kuwa mfululizo wa mabadiliko kwa muda.",
       "certified": "Vipengele vya utambulisho kutoka mfumo wa Hypercerts — wasifu wa watendaji, mashirika, wafuasi, beji na maeneo.",
       "hypercerts": "Madai ya athari (shughuli, mchango, mchangiaji, haki), makusanyo, risiti za ufadhili, viambatisho, wigo wa kazi na aina za pamoja."
     },

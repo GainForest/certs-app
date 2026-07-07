@@ -7,22 +7,29 @@
  * groups repeat flights of the same area into a "time series" so the UI can
  * offer a time slider instead of a pile of indistinguishable toggles.
  *
- * Detection is purely geometric + temporal, from data already on the layer
- * records:
- *   - `bounds`      — the image footprint ("minLng,minLat,maxLng,maxLat")
- *   - `capturedAt`  — the capture day (dataDate / capturedAt / timeLabel, or
- *                     a date embedded in the name/description)
+ * Two sources, in order of preference:
  *
- * Two drone images belong to the same series when their footprints overlap
- * substantially — intersection area ≥ half of the smaller footprint — which
- * distinguishes repeat flights (near-identical or contained footprints) from
- * adjacent plots surveyed in one campaign (small edge overlaps). Overlap
- * groups are then only promoted to a series when they span at least two
- * distinct capture days; same-day overlaps are complementary coverage, not
- * change over time.
+ * 1. Author-declared groups: layers whose `groupRef` points at an
+ *    `app.gainforest.organization.layerGroup` record (a named monitored
+ *    area). Members with ≥ 2 distinct `capturedAt` days become a series named
+ *    after the group; members sharing a day are products of the same survey
+ *    (e.g. orthomosaic + tree delineations) and share one slider stop.
+ *
+ * 2. Geometric inference for legacy ungrouped records, from data already on
+ *    the layer:
+ *      - `bounds`      — the image footprint ("minLng,minLat,maxLng,maxLat")
+ *      - `capturedAt`  — the capture day (dataDate / capturedAt / timeLabel,
+ *                        or a date embedded in the name/description)
+ *    Two drone images belong to the same series when their footprints overlap
+ *    substantially — intersection area ≥ half of the smaller footprint —
+ *    which distinguishes repeat flights (near-identical or contained
+ *    footprints) from adjacent plots surveyed in one campaign (small edge
+ *    overlaps). Overlap groups are only promoted when they span at least two
+ *    distinct capture days; same-day overlaps are complementary coverage, not
+ *    change over time.
  */
 
-import type { GlobeLayer, LngLatBounds } from "./globe-types";
+import type { GlobeLayer, GlobeLayerGroup, LngLatBounds } from "./globe-types";
 
 /** Layer types that render drone/aerial imagery (matches the roster API). */
 const DRONE_LAYER_TYPES = new Set<GlobeLayer["type"]>(["raster_tif", "tms_tile"]);
@@ -66,7 +73,8 @@ export function overlapRatio(a: LngLatBounds, b: LngLatBounds): number {
   return (width * height) / smaller;
 }
 
-function unionBounds(all: LngLatBounds[]): LngLatBounds {
+function unionBounds(all: LngLatBounds[]): LngLatBounds | null {
+  if (all.length === 0) return null;
   return all.reduce((acc, bounds) => [
     Math.min(acc[0], bounds[0]),
     Math.min(acc[1], bounds[1]),
@@ -103,17 +111,81 @@ function seriesName(layers: GlobeLayer[]): string {
   return prefix.length >= 3 ? prefix : cleaned[0]!;
 }
 
-/** Group an organization's drone layers into time series (repeat flights over
- *  the same area on different days). Layers without a footprint or capture
- *  day never group. Series are returned oldest-area-first (by first capture). */
-export function buildDroneTimeSeries(layers: GlobeLayer[]): DroneTimeSeries[] {
+/** Turn one set of dated layers into a series (steps = distinct days). */
+function toSeries(
+  id: string,
+  name: string,
+  members: Array<GlobeLayer & { capturedAt: string }>,
+  extraBounds: LngLatBounds | null,
+): DroneTimeSeries | null {
+  const days = new Set(members.map((layer) => layer.capturedAt));
+  if (members.length < 2 || days.size < 2) return null;
+
+  const memberBounds = members
+    .map((layer) => layer.bounds)
+    .filter((bounds): bounds is LngLatBounds => Array.isArray(bounds));
+  if (extraBounds) memberBounds.push(extraBounds);
+  const bounds = unionBounds(memberBounds);
+  // Without any footprint the camera cannot fly and overlap cannot be shown
+  // meaningfully — leave such layers to the normal toggle flow.
+  if (!bounds) return null;
+
+  const sorted = [...members].sort(
+    (a, b) => a.capturedAt.localeCompare(b.capturedAt) || a.id.localeCompare(b.id),
+  );
+  return {
+    id,
+    name,
+    bounds,
+    layers: sorted,
+    steps: [...days].sort().map((date) => ({
+      date,
+      layerIds: sorted.filter((layer) => layer.capturedAt === date).map((layer) => layer.id),
+    })),
+  };
+}
+
+function hasCaptureDay(layer: GlobeLayer): layer is GlobeLayer & { capturedAt: string } {
+  return typeof layer.capturedAt === "string";
+}
+
+/** Group an organization's layers into time series: author-declared layer
+ *  groups first, then geometric inference over the remaining (legacy) drone
+ *  layers. Series are returned sorted by name. */
+export function buildDroneTimeSeries(
+  layers: GlobeLayer[],
+  groups: GlobeLayerGroup[] = [],
+): DroneTimeSeries[] {
+  const series: DroneTimeSeries[] = [];
+
+  // ── 1. Declared groups (any layer type may ride the timeline) ─────────
+  const groupsByUri = new Map(groups.map((group) => [group.uri, group]));
+  const claimed = new Set<string>();
+  for (const group of groups) {
+    const members = layers.filter(
+      (layer): layer is GlobeLayer & { capturedAt: string } =>
+        layer.groupRef === group.uri && hasCaptureDay(layer),
+    );
+    const built = toSeries(group.uri, group.name, members, group.bounds);
+    if (built) {
+      series.push(built);
+      for (const layer of built.layers) claimed.add(layer.id);
+    }
+  }
+
+  // ── 2. Geometric fallback for layers without a resolvable group ────────
+  // Layers whose author placed them in a known group stay out of the
+  // heuristic even when that group did not become a series — declared intent
+  // wins over inference.
   const flights = layers.filter(
     (layer): layer is GlobeLayer & { bounds: LngLatBounds; capturedAt: string } =>
       DRONE_LAYER_TYPES.has(layer.type) &&
       Array.isArray(layer.bounds) &&
-      typeof layer.capturedAt === "string",
+      hasCaptureDay(layer) &&
+      !claimed.has(layer.id) &&
+      !(layer.groupRef && groupsByUri.has(layer.groupRef)),
   );
-  if (flights.length < 2) return [];
+  if (flights.length < 2) return series.sort((a, b) => a.name.localeCompare(b.name));
 
   // Union-find over pairwise footprint overlap.
   const parent = flights.map((_, index) => index);
@@ -132,36 +204,22 @@ export function buildDroneTimeSeries(layers: GlobeLayer[]): DroneTimeSeries[] {
     }
   }
 
-  const groups = new Map<number, typeof flights>();
+  const clusters = new Map<number, typeof flights>();
   flights.forEach((flight, index) => {
     const root = find(index);
-    const group = groups.get(root) ?? [];
-    group.push(flight);
-    groups.set(root, group);
+    const cluster = clusters.get(root) ?? [];
+    cluster.push(flight);
+    clusters.set(root, cluster);
   });
 
-  const series: DroneTimeSeries[] = [];
-  for (const group of groups.values()) {
-    const days = new Set(group.map((flight) => flight.capturedAt));
-    if (group.length < 2 || days.size < 2) continue;
-
-    const sorted = [...group].sort(
-      (a, b) => a.capturedAt.localeCompare(b.capturedAt) || a.id.localeCompare(b.id),
+  for (const cluster of clusters.values()) {
+    const built = toSeries(
+      `time-series:${cluster.map((flight) => flight.id).sort().join("+")}`,
+      seriesName(cluster),
+      cluster,
+      null,
     );
-    const steps: DroneTimeSeriesStep[] = [...days]
-      .sort()
-      .map((date) => ({
-        date,
-        layerIds: sorted.filter((flight) => flight.capturedAt === date).map((flight) => flight.id),
-      }));
-
-    series.push({
-      id: `time-series:${sorted.map((flight) => flight.id).join("+")}`,
-      name: seriesName(sorted),
-      bounds: unionBounds(sorted.map((flight) => flight.bounds)),
-      layers: sorted,
-      steps,
-    });
+    if (built) series.push(built);
   }
 
   return series.sort((a, b) => a.name.localeCompare(b.name));

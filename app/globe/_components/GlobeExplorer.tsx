@@ -61,11 +61,16 @@ import {
   pointBounds,
   toFeatures,
 } from "../_lib/data";
-import { fetchGlobalLayers, fetchOrganizationLayers } from "../_lib/layers";
+import {
+  fetchGlobalLayers,
+  fetchOrganizationLayerGroups,
+  fetchOrganizationLayers,
+} from "../_lib/layers";
 import { buildDroneTimeSeries, type DroneTimeSeries } from "../_lib/time-series";
 import { fetchOrganizationTrees, type TreeDetail } from "../_lib/trees";
 import type {
   GlobeLayer,
+  GlobeLayerGroup,
   GlobeOrganization,
   GlobeSite,
   LngLatBounds,
@@ -302,6 +307,7 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
   // ── Data layers ──────────────────────────────────────────────────────────
   const [globalLayers, setGlobalLayers] = useState<GlobeLayer[] | null>(null);
   const [orgLayers, setOrgLayers] = useState<GlobeLayer[]>([]);
+  const [orgLayerGroups, setOrgLayerGroups] = useState<GlobeLayerGroup[]>([]);
   const [orgLayersLoading, setOrgLayersLoading] = useState(false);
   const [enabledLayerIds, setEnabledLayerIds] = useState<Set<string>>(new Set());
   const [landcoverVisible, setLandcoverVisible] = useState(false);
@@ -326,14 +332,21 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
 
   useEffect(() => {
     setOrgLayers([]);
+    setOrgLayerGroups([]);
     setActiveSeriesId(null);
     setSeriesPlaying(false);
     if (!focusDid) return;
     const controller = new AbortController();
     setOrgLayersLoading(true);
-    fetchOrganizationLayers(focusDid, controller.signal)
-      .then((layers) => {
+    Promise.all([
+      fetchOrganizationLayers(focusDid, controller.signal),
+      // Declared monitored areas — tolerated as empty on failure so a broken
+      // group listing never hides the layers themselves.
+      fetchOrganizationLayerGroups(focusDid, controller.signal).catch(() => []),
+    ])
+      .then(([layers, groups]) => {
         setOrgLayers(layers);
+        setOrgLayerGroups(groups);
         // Layers flagged as default for this org start visible.
         const defaults = layers.filter((layer) => layer.isDefault).map((layer) => layer.id);
         if (defaults.length > 0) {
@@ -350,7 +363,10 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
   // ── Drone time series (repeat flights over the same area) ──────────────
   // Overlapping drone imagery is grouped into per-area series; enabling one
   // swaps the individual layer toggles for a time slider on the map.
-  const droneSeries = useMemo(() => buildDroneTimeSeries(orgLayers), [orgLayers]);
+  const droneSeries = useMemo(
+    () => buildDroneTimeSeries(orgLayers, orgLayerGroups),
+    [orgLayers, orgLayerGroups],
+  );
   const seriesLayerIds = useMemo(
     () => new Set(droneSeries.flatMap((series) => series.layers.map((layer) => layer.id))),
     [droneSeries],

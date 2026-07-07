@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GlobeLayer, LngLatBounds } from "./globe-types";
+import type { GlobeLayer, GlobeLayerGroup, LngLatBounds } from "./globe-types";
 import { buildDroneTimeSeries, overlapRatio } from "./time-series";
 
 function flight(
@@ -7,6 +7,7 @@ function flight(
   capturedAt: string | null,
   bounds: LngLatBounds | null,
   type: GlobeLayer["type"] = "raster_tif",
+  groupRef: string | null = null,
 ): GlobeLayer {
   return {
     id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -17,7 +18,12 @@ function flight(
     category: "test",
     bounds,
     capturedAt,
+    groupRef,
   };
+}
+
+function area(uri: string, name: string, bounds: LngLatBounds | null = null): GlobeLayerGroup {
+  return { uri, name, description: "", bounds };
 }
 
 // Real footprints published by Oceanus Conservation (PH mangrove sites).
@@ -102,5 +108,62 @@ describe("buildDroneTimeSeries", () => {
     expect(series!.layers.map((layer) => layer.id)).toEqual([
       TUMANAN_1.id, TUMANAN_2.id, TUMANAN_3.id,
     ]);
+  });
+});
+
+describe("buildDroneTimeSeries — declared layer groups", () => {
+  const GROUP_URI = "at://did:plc:test/app.gainforest.organization.layerGroup/tumanan";
+
+  it("builds a series from groupRef members, named after the group", () => {
+    const a = flight("Flight A", "2025-04-09", TUMANAN_1.bounds!, "raster_tif", GROUP_URI);
+    const b = flight("Flight B", "2025-08-16", TUMANAN_2.bounds!, "raster_tif", GROUP_URI);
+    const [series] = buildDroneTimeSeries([a, b], [area(GROUP_URI, "Tumanan Mangroves")]);
+    expect(series!.id).toBe(GROUP_URI);
+    expect(series!.name).toBe("Tumanan Mangroves");
+    expect(series!.steps.map((step) => step.date)).toEqual(["2025-04-09", "2025-08-16"]);
+  });
+
+  it("lets vector products of the same survey share the raster's slider stop", () => {
+    const ortho = flight("Ortho", "2025-04-09", TUMANAN_1.bounds!, "raster_tif", GROUP_URI);
+    const lines = flight("Delineations", "2025-04-09", TUMANAN_1.bounds!, "geojson_line", GROUP_URI);
+    const later = flight("Ortho 2", "2025-08-16", TUMANAN_2.bounds!, "raster_tif", GROUP_URI);
+    const [series] = buildDroneTimeSeries([ortho, lines, later], [area(GROUP_URI, "Tumanan")]);
+    expect(series!.steps[0]!.layerIds.sort()).toEqual([lines.id, ortho.id].sort());
+    expect(series!.steps[1]!.layerIds).toEqual([later.id]);
+  });
+
+  it("declared grouping beats geometric inference — overlapping members of two groups never merge", () => {
+    const otherUri = "at://did:plc:test/app.gainforest.organization.layerGroup/other";
+    // Same footprint, different declared areas: the heuristic would merge them.
+    const a1 = flight("A1", "2025-01-01", TUMANAN_1.bounds!, "raster_tif", GROUP_URI);
+    const a2 = flight("A2", "2025-02-01", TUMANAN_1.bounds!, "raster_tif", GROUP_URI);
+    const b1 = flight("B1", "2025-01-15", TUMANAN_1.bounds!, "raster_tif", otherUri);
+    const b2 = flight("B2", "2025-02-15", TUMANAN_1.bounds!, "raster_tif", otherUri);
+    const series = buildDroneTimeSeries(
+      [a1, a2, b1, b2],
+      [area(GROUP_URI, "Area A"), area(otherUri, "Area B")],
+    );
+    expect(series.map((entry) => entry.name).sort()).toEqual(["Area A", "Area B"]);
+    expect(series.every((entry) => entry.layers.length === 2)).toBe(true);
+  });
+
+  it("keeps single-day declared groups out of both the series list and the heuristic", () => {
+    const a = flight("Same day A", "2025-04-09", TUMANAN_1.bounds!, "raster_tif", GROUP_URI);
+    const b = flight("Same day B", "2025-04-09", TUMANAN_2.bounds!, "raster_tif", GROUP_URI);
+    expect(buildDroneTimeSeries([a, b], [area(GROUP_URI, "Tumanan")])).toEqual([]);
+  });
+
+  it("falls back to the group's own bounds when members carry none", () => {
+    const a = flight("No bounds A", "2025-04-09", null, "raster_tif", GROUP_URI);
+    const b = flight("No bounds B", "2025-08-16", null, "raster_tif", GROUP_URI);
+    const [series] = buildDroneTimeSeries([a, b], [area(GROUP_URI, "Tumanan", TUMANAN_1.bounds!)]);
+    expect(series!.bounds).toEqual(TUMANAN_1.bounds);
+  });
+
+  it("still infers geometrically for layers without a resolvable group", () => {
+    const dangling = { ...CAGUYAO_SMALL, groupRef: "at://did:plc:test/app.gainforest.organization.layerGroup/gone" };
+    const series = buildDroneTimeSeries([dangling, CAGUYAO_BIG], []);
+    expect(series).toHaveLength(1);
+    expect(series[0]!.name).toBe("Caguyao");
   });
 });

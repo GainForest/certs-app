@@ -10,9 +10,16 @@
 
 import { resolvePdsHost } from "../../_lib/pds";
 import { GLOBE_DATA_BUCKET } from "./config";
-import type { GlobeLayer, GlobeLayerType, GlobeLegendEntry, LngLatBounds } from "./globe-types";
+import type {
+  GlobeLayer,
+  GlobeLayerGroup,
+  GlobeLayerType,
+  GlobeLegendEntry,
+  LngLatBounds,
+} from "./globe-types";
 
 const LAYER_COLLECTION = "app.gainforest.organization.layer";
+const LAYER_GROUP_COLLECTION = "app.gainforest.organization.layerGroup";
 
 const VALID_LAYER_TYPES = new Set<GlobeLayerType>([
   "geojson_points",
@@ -70,6 +77,7 @@ type RawLayer = {
   dataDate?: unknown;
   capturedAt?: unknown;
   timeLabel?: unknown;
+  groupRef?: unknown;
 };
 
 /** Normalize any recognizable date to "YYYY-MM-DD". Accepts ISO days/datetimes
@@ -152,6 +160,7 @@ function normalizeLayer(raw: RawLayer, fallbackCategory: string): GlobeLayer | n
     isDefault: typeof raw.isDefault === "boolean" ? raw.isDefault : undefined,
     bounds: parseBounds(raw.bounds),
     capturedAt: parseCaptureDay(raw),
+    groupRef: typeof raw.groupRef === "string" && raw.groupRef.startsWith("at://") ? raw.groupRef : null,
   };
 }
 
@@ -165,38 +174,76 @@ export async function fetchGlobalLayers(signal?: AbortSignal): Promise<GlobeLaye
     .filter((layer): layer is GlobeLayer => layer !== null);
 }
 
-/** Per-organization data layers from `app.gainforest.organization.layer`
- *  records in the org's repo (public XRPC listRecords, CORS-open). */
-export async function fetchOrganizationLayers(
+/** List every record of one collection in an org's repo (public XRPC
+ *  listRecords, CORS-open), paged. */
+async function listOrgRecords<T>(
   did: string,
+  collection: string,
   signal?: AbortSignal,
-): Promise<GlobeLayer[]> {
+): Promise<Array<{ uri: string; value: T }>> {
   const host = await resolvePdsHost(did, signal);
   if (!host) return [];
 
-  const layers: GlobeLayer[] = [];
+  const records: Array<{ uri: string; value: T }> = [];
   let cursor: string | undefined;
   for (let page = 0; page < 10; page++) {
-    const params = new URLSearchParams({
-      repo: did,
-      collection: LAYER_COLLECTION,
-      limit: "100",
-    });
+    const params = new URLSearchParams({ repo: did, collection, limit: "100" });
     if (cursor) params.set("cursor", cursor);
     const res = await fetch(`https://${host}/xrpc/com.atproto.repo.listRecords?${params}`, {
       signal,
     });
     if (!res.ok) break;
     const json = (await res.json()) as {
-      records?: Array<{ value?: RawLayer }>;
+      records?: Array<{ uri?: string; value?: T }>;
       cursor?: string;
     };
     for (const record of json.records ?? []) {
-      const layer = record.value ? normalizeLayer(record.value, "project") : null;
-      if (layer) layers.push(layer);
+      if (typeof record.uri === "string" && record.value) {
+        records.push({ uri: record.uri, value: record.value });
+      }
     }
     if (!json.cursor || (json.records ?? []).length === 0) break;
     cursor = json.cursor;
   }
-  return layers;
+  return records;
+}
+
+/** Per-organization data layers from `app.gainforest.organization.layer`
+ *  records in the org's repo. */
+export async function fetchOrganizationLayers(
+  did: string,
+  signal?: AbortSignal,
+): Promise<GlobeLayer[]> {
+  const records = await listOrgRecords<RawLayer>(did, LAYER_COLLECTION, signal);
+  return records
+    .map((record) => normalizeLayer(record.value, "project"))
+    .filter((layer): layer is GlobeLayer => layer !== null);
+}
+
+type RawLayerGroup = {
+  name?: unknown;
+  description?: unknown;
+  bounds?: unknown;
+};
+
+/** Per-organization monitored areas (`app.gainforest.organization.layerGroup`).
+ *  Layers point at these via `groupRef`; the group record itself carries only
+ *  identity + display metadata. */
+export async function fetchOrganizationLayerGroups(
+  did: string,
+  signal?: AbortSignal,
+): Promise<GlobeLayerGroup[]> {
+  const records = await listOrgRecords<RawLayerGroup>(did, LAYER_GROUP_COLLECTION, signal);
+  const groups: GlobeLayerGroup[] = [];
+  for (const { uri, value } of records) {
+    const name = typeof value.name === "string" ? value.name.trim() : "";
+    if (!name) continue;
+    groups.push({
+      uri,
+      name,
+      description: typeof value.description === "string" ? value.description : "",
+      bounds: parseBounds(value.bounds) ?? null,
+    });
+  }
+  return groups;
 }

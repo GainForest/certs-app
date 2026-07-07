@@ -81,8 +81,8 @@ type GlobeMapProps = {
   landcoverVisible?: boolean;
   /** Currently visible data layers (global + project-specific). */
   activeLayers?: GlobeLayer[];
-  /** Per-layer raster opacity override (0–1) — drives the drone time slider
-   *  by crossfading between overlapping flights without re-adding layers. */
+  /** Per-layer opacity override (0–1) — drives the drone time slider by
+   *  crossfading between overlapping captures without re-adding layers. */
   layerOpacities?: Record<string, number>;
   /** Fired once the base style + runtime layers are ready. */
   onLoaded?: () => void;
@@ -248,11 +248,23 @@ function dynamicLayerSpec(layer: GlobeLayer): LayerSpecification | null {
   }
 }
 
-/** Apply a raster opacity (with a short crossfade) if the layer is raster. */
-function applyRasterOpacity(map: maplibregl.Map, layerId: string, opacity: number): void {
-  if (map.getLayer(layerId)?.type !== "raster") return;
-  map.setPaintProperty(layerId, "raster-opacity-transition", { duration: 250 });
-  map.setPaintProperty(layerId, "raster-opacity", opacity);
+/** Paint properties that fade each dynamic-layer type in/out — lets the drone
+ *  time slider crossfade any product of a survey (raster orthomosaics and
+ *  vector delineations alike). */
+const OPACITY_PROPS: Record<string, string[]> = {
+  raster: ["raster-opacity"],
+  line: ["line-opacity"],
+  fill: ["fill-opacity"],
+  circle: ["circle-opacity", "circle-stroke-opacity"],
+};
+
+/** Apply an opacity override (with a short crossfade) to a dynamic layer. */
+function applyLayerOpacity(map: maplibregl.Map, layerId: string, opacity: number): void {
+  const type = map.getLayer(layerId)?.type;
+  for (const prop of (type && OPACITY_PROPS[type]) ?? []) {
+    map.setPaintProperty(layerId, `${prop}-transition`, { duration: 250 });
+    map.setPaintProperty(layerId, prop, opacity);
+  }
 }
 
 async function addDynamicLayer(
@@ -298,7 +310,7 @@ async function addDynamicLayer(
     // Keep site boundaries + markers above data layers.
     const beforeId = map.getLayer(SITES_FILL_LAYER) ? SITES_FILL_LAYER : undefined;
     map.addLayer(spec, beforeId);
-    if (typeof initialOpacity === "number") applyRasterOpacity(map, layer.id, initialOpacity);
+    if (typeof initialOpacity === "number") applyLayerOpacity(map, layer.id, initialOpacity);
   }
 }
 
@@ -920,7 +932,7 @@ export function GlobeMap({
     const map = mapRef.current;
     if (!map || !mapLoaded || !layerOpacities) return;
     for (const [layerId, opacity] of Object.entries(layerOpacities)) {
-      applyRasterOpacity(map, layerId, opacity);
+      applyLayerOpacity(map, layerId, opacity);
     }
   }, [layerOpacities, mapLoaded]);
 

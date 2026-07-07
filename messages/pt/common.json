@@ -1162,6 +1162,7 @@
       "feed": "Primitivas sociais adaptadas do Bluesky para o comum do GainForest: publicações (e comentários de resposta) e curtidas, para que o feed permita publicar, comentar e reagir.",
       "dwc": "Registros de ocorrência de biodiversidade alinhados ao padrão Simple Darwin Core da TDWG. As ocorrências referenciam um evento compartilhado; as medições referenciam uma ocorrência.",
       "ac": "Registros de mídia e de monitoramento acústico passivo alinhados ao Audiovisual Core da TDWG. Áudio e mídia ligam-se a uma ocorrência de Darwin Core como evidência.",
+      "organization": "Registros de dados de mapa de organizações — camadas publicadas (ortomosaicos de drone, sobreposições GeoJSON) e as áreas monitoradas nomeadas que agrupam capturas repetidas em séries de mudança ao longo do tempo.",
       "certified": "Primitivas de identidade do ecossistema Hypercerts: perfis de ator, organizações, seguidores, selos e localizações.",
       "hypercerts": "Declarações de impacto (atividade, contribuição, contribuinte, direitos), coleções, recibos de financiamento, anexos, escopo de trabalho e tipos compartilhados."
     },

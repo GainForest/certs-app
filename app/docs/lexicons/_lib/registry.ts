@@ -58,6 +58,15 @@ const SECTIONS: Section[] = [
     prefix: "app.gainforest.ac",
   },
   {
+    id: "organization",
+    title: "Organization",
+    prefix: "app.gainforest.organization",
+    // Only the reviewed map-data pair is surfaced; the other organization
+    // schemas on disk are drafts and stay unlisted until they get the same
+    // usage-driven cleanup.
+    ids: ["app.gainforest.organization.layer", "app.gainforest.organization.layerGroup"],
+  },
+  {
     id: "certified",
     title: "Certified",
     prefix: "app.certified",

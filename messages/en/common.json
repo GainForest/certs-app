@@ -1162,6 +1162,7 @@
       "feed": "Social primitives ported from Bluesky into the GainForest commons — posts (and reply comments) and likes, so the feed can be posted to, commented on, and liked.",
       "dwc": "Biodiversity occurrence records aligned with the TDWG Simple Darwin Core standard. Occurrences reference a shared event; measurements reference an occurrence.",
       "ac": "Media and passive-acoustic-monitoring records aligned with TDWG Audiovisual Core. Audio and multimedia link to a Darwin Core occurrence as evidence.",
+      "organization": "Organization map-data records — published map layers (drone orthomosaics, GeoJSON overlays) and the named monitored areas that group repeat captures into change-over-time series.",
       "certified": "Identity primitives from the Hypercerts ecosystem — actor profiles, organizations, follows, badges, and locations.",
       "hypercerts": "Impact claims (activity, contribution, contributor, rights), collections, funding receipts, attachments, work scope, and shared types."
     },

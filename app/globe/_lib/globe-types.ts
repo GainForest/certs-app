@@ -57,6 +57,20 @@ export type GlobeLayer = {
    *  declares one (drone flights do). Lets repeat flights over the same area
    *  be grouped into a time series. */
   capturedAt?: string | null;
+  /** AT-URI of the layerGroup this layer belongs to (author-declared
+   *  grouping — preferred over geometric inference when present). */
+  groupRef?: string | null;
+};
+
+/** A named monitored area (`app.gainforest.organization.layerGroup`).
+ *  Membership lives on the layers via `groupRef`; the group itself is just
+ *  the identity + display metadata. */
+export type GlobeLayerGroup = {
+  /** AT-URI of the group record — what member layers point at. */
+  uri: string;
+  name: string;
+  description: string;
+  bounds: LngLatBounds | null;
 };
 
 /** A project site (certified location) resolved for map display. */
