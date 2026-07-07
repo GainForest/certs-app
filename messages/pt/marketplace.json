@@ -1732,6 +1732,19 @@
       "flyTo": "Aproximar de {name}",
       "hide": "Ocultar {name}"
     },
+    "timeline": {
+      "seriesFlights": "{count, plural, one {# voo de drone} other {# voos de drone}} sobre a mesma área",
+      "seriesHint": "A mesma área foi sobrevoada em datas diferentes — ative a linha do tempo para ver como muda.",
+      "toggle": "Ver {name} ao longo do tempo",
+      "title": "Mudança ao longo do tempo",
+      "close": "Ocultar o controle de tempo",
+      "play": "Reproduzir a linha do tempo",
+      "pause": "Pausar a linha do tempo",
+      "previous": "Captura anterior",
+      "next": "Próxima captura",
+      "slider": "Data da captura",
+      "step": "{current} de {total}"
+    },
     "tree": {
       "title": "Árvore",
       "close": "Fechar",

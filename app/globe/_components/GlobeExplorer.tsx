@@ -16,7 +16,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { parseAsString, useQueryState } from "nuqs";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -24,15 +24,20 @@ import {
   ArrowUpRightIcon,
   Building2Icon,
   ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   DroneIcon,
   EarthIcon,
   FolderKanbanIcon,
+  HistoryIcon,
   LayersIcon,
   LeafIcon,
   LocateFixedIcon,
   MapPinnedIcon,
   MoveHorizontalIcon,
   MoveVerticalIcon,
+  PauseIcon,
+  PlayIcon,
   SearchIcon,
   TreePineIcon,
   XIcon,
@@ -57,6 +62,7 @@ import {
   toFeatures,
 } from "../_lib/data";
 import { fetchGlobalLayers, fetchOrganizationLayers } from "../_lib/layers";
+import { buildDroneTimeSeries, type DroneTimeSeries } from "../_lib/time-series";
 import { fetchOrganizationTrees, type TreeDetail } from "../_lib/trees";
 import type {
   GlobeLayer,
@@ -300,6 +306,10 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
   const [enabledLayerIds, setEnabledLayerIds] = useState<Set<string>>(new Set());
   const [landcoverVisible, setLandcoverVisible] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
+  // Drone time-series slider: which series is active, current stop, autoplay.
+  const [activeSeriesId, setActiveSeriesId] = useState<string | null>(null);
+  const [seriesStep, setSeriesStep] = useState(0);
+  const [seriesPlaying, setSeriesPlaying] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -316,6 +326,8 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
 
   useEffect(() => {
     setOrgLayers([]);
+    setActiveSeriesId(null);
+    setSeriesPlaying(false);
     if (!focusDid) return;
     const controller = new AbortController();
     setOrgLayersLoading(true);
@@ -334,6 +346,38 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
       .finally(() => setOrgLayersLoading(false));
     return () => controller.abort();
   }, [focusDid]);
+
+  // ── Drone time series (repeat flights over the same area) ──────────────
+  // Overlapping drone imagery is grouped into per-area series; enabling one
+  // swaps the individual layer toggles for a time slider on the map.
+  const droneSeries = useMemo(() => buildDroneTimeSeries(orgLayers), [orgLayers]);
+  const seriesLayerIds = useMemo(
+    () => new Set(droneSeries.flatMap((series) => series.layers.map((layer) => layer.id))),
+    [droneSeries],
+  );
+  const activeSeries = useMemo(
+    () => droneSeries.find((series) => series.id === activeSeriesId) ?? null,
+    [droneSeries, activeSeriesId],
+  );
+
+  // Series members never participate in the plain per-layer toggles — the
+  // slider owns them. Strip any that slipped in (e.g. record defaults).
+  useEffect(() => {
+    if (seriesLayerIds.size === 0) return;
+    setEnabledLayerIds((current) => {
+      const next = new Set([...current].filter((id) => !seriesLayerIds.has(id)));
+      return next.size === current.size ? current : next;
+    });
+  }, [seriesLayerIds]);
+
+  // Auto-advance while playing (loops).
+  useEffect(() => {
+    if (!seriesPlaying || !activeSeries) return;
+    const timer = setInterval(() => {
+      setSeriesStep((step) => (step + 1) % activeSeries.steps.length);
+    }, 1800);
+    return () => clearInterval(timer);
+  }, [seriesPlaying, activeSeries]);
 
   const [mapBounds, setMapBounds] = useState<LngLatBounds | null>(null);
 
@@ -372,6 +416,50 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
     [flyToLayer],
   );
 
+  const flyToSeries = useCallback((series: DroneTimeSeries) => {
+    setMapBounds(series.bounds);
+    setLayerFlightNonce((nonce) => nonce + 1);
+  }, []);
+
+  /** Turn a drone time series on (starting at its latest capture) or off. */
+  const toggleSeries = useCallback(
+    (series: DroneTimeSeries) => {
+      setSeriesPlaying(false);
+      if (activeSeriesId === series.id) {
+        setActiveSeriesId(null);
+        return;
+      }
+      setActiveSeriesId(series.id);
+      setSeriesStep(series.steps.length - 1);
+      flyToSeries(series);
+    },
+    [activeSeriesId, flyToSeries],
+  );
+
+  /** Jump straight to one capture date (activates the series if needed). */
+  const selectSeriesStep = useCallback(
+    (series: DroneTimeSeries, step: number) => {
+      setSeriesPlaying(false);
+      setSeriesStep(step);
+      if (activeSeriesId !== series.id) {
+        setActiveSeriesId(series.id);
+        flyToSeries(series);
+      }
+    },
+    [activeSeriesId, flyToSeries],
+  );
+
+  const toggleSeriesPlayback = useCallback(() => {
+    if (!activeSeries) return;
+    if (seriesPlaying) {
+      setSeriesPlaying(false);
+      return;
+    }
+    // Restart from the oldest capture when play is pressed at the end.
+    setSeriesStep((step) => (step >= activeSeries.steps.length - 1 ? 0 : step));
+    setSeriesPlaying(true);
+  }, [activeSeries, seriesPlaying]);
+
   const categorizedGlobalLayers = useMemo(() => {
     const categories = new Map<string, GlobeLayer[]>();
     for (const layer of globalLayers ?? []) {
@@ -382,9 +470,33 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
     return [...categories.entries()];
   }, [globalLayers]);
 
+  // Individually toggled layers (series members excluded — the slider owns
+  // them), plus every member of the active series so steps swap instantly.
+  const looseLayers = useMemo(
+    () =>
+      [...(globalLayers ?? []), ...orgLayers].filter(
+        (layer) => enabledLayerIds.has(layer.id) && !seriesLayerIds.has(layer.id),
+      ),
+    [globalLayers, orgLayers, enabledLayerIds, seriesLayerIds],
+  );
   const activeLayers = useMemo(
-    () => [...(globalLayers ?? []), ...orgLayers].filter((layer) => enabledLayerIds.has(layer.id)),
-    [globalLayers, orgLayers, enabledLayerIds],
+    () => (activeSeries ? [...looseLayers, ...activeSeries.layers] : looseLayers),
+    [looseLayers, activeSeries],
+  );
+  // Only the current capture date is opaque; the rest stay mounted at 0 so
+  // dragging the slider crossfades instead of refetching tiles.
+  const layerOpacities = useMemo(() => {
+    if (!activeSeries) return undefined;
+    const visible = new Set(activeSeries.steps[seriesStep]?.layerIds ?? []);
+    return Object.fromEntries(
+      activeSeries.layers.map((layer) => [layer.id, visible.has(layer.id) ? 1 : 0]),
+    );
+  }, [activeSeries, seriesStep]);
+  // Series members are pulled out of the flat per-layer toggle list — they
+  // render as one grouped time-series card instead.
+  const nonSeriesOrgLayers = useMemo(
+    () => orgLayers.filter((layer) => !seriesLayerIds.has(layer.id)),
+    [orgLayers, seriesLayerIds],
   );
   const activeLegends = useMemo(
     () => activeLayers.filter((layer) => (layer.legend?.length ?? 0) > 0),
@@ -577,6 +689,7 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
         spin={mode === "global" && !focusDid}
         landcoverVisible={landcoverVisible}
         activeLayers={activeLayers}
+        layerOpacities={layerOpacities}
         onLoaded={() => setMapReady(true)}
       />
 
@@ -641,12 +754,18 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
                 onToggleLandcover={() => setLandcoverVisible((value) => !value)}
                 categorizedGlobalLayers={categorizedGlobalLayers}
                 globalLayersLoading={globalLayers === null}
-                orgLayers={orgLayers}
+                orgLayers={nonSeriesOrgLayers}
                 orgLayersLoading={orgLayersLoading}
                 showOrgLayers={Boolean(focusDid)}
                 enabledLayerIds={enabledLayerIds}
                 onToggleLayer={toggleLayer}
                 onLocateLayer={locateLayer}
+                droneSeries={droneSeries}
+                activeSeriesId={activeSeriesId}
+                activeSeriesStep={seriesStep}
+                onToggleSeries={toggleSeries}
+                onSelectSeriesStep={selectSeriesStep}
+                onLocateSeries={flyToSeries}
                 treesCount={visibleTrees?.features.length ?? 0}
                 treesLoading={treesState.status === "loading"}
                 treesVisible={treesVisible}
@@ -733,11 +852,30 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
         </section>
       </div>
 
+      {/* ── Drone time slider (active series) ── */}
+      <AnimatePresence>
+        {activeSeries ? (
+          <TimeSliderCard
+            key={activeSeries.id}
+            series={activeSeries}
+            step={seriesStep}
+            playing={seriesPlaying}
+            onStepChange={(step) => {
+              setSeriesPlaying(false);
+              setSeriesStep(step);
+            }}
+            onTogglePlay={toggleSeriesPlayback}
+            onLocate={() => flyToSeries(activeSeries)}
+            onClose={() => toggleSeries(activeSeries)}
+          />
+        ) : null}
+      </AnimatePresence>
+
       {/* ── Visible layers summary + active layer legends ── */}
-      {activeLayers.length > 0 || landcoverVisible ? (
+      {looseLayers.length > 0 || landcoverVisible || activeLegends.length > 0 ? (
         <div className="pointer-events-none absolute bottom-24 left-3 z-10 flex max-w-[min(320px,calc(100vw-6rem))] flex-col gap-2 md:bottom-8 md:left-4 md:max-w-[min(360px,calc(100vw-1.5rem))]">
-          {activeLayers.length > 0 ? (
-            <ActiveLayersCard layers={activeLayers} onLocate={flyToLayer} onHide={toggleLayer} />
+          {looseLayers.length > 0 ? (
+            <ActiveLayersCard layers={looseLayers} onLocate={flyToLayer} onHide={toggleLayer} />
           ) : null}
           {landcoverVisible ? <LandcoverLegend /> : null}
           {activeLegends.map((layer) => (
@@ -1247,6 +1385,23 @@ function SiteRow({
 
 // ── Layers panel ───────────────────────────────────────────────────────────
 
+/** "2025-04-09" → local Date (avoids the UTC-midnight off-by-one). */
+function parseDay(date: string): Date {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1);
+}
+
+function useDayFormatter(): (date: string) => string {
+  const locale = useLocale();
+  return useCallback(
+    (date: string) =>
+      new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric" }).format(
+        parseDay(date),
+      ),
+    [locale],
+  );
+}
+
 function LayersPanel({
   landcoverVisible,
   onToggleLandcover,
@@ -1258,6 +1413,12 @@ function LayersPanel({
   enabledLayerIds,
   onToggleLayer,
   onLocateLayer,
+  droneSeries,
+  activeSeriesId,
+  activeSeriesStep,
+  onToggleSeries,
+  onSelectSeriesStep,
+  onLocateSeries,
   treesCount,
   treesLoading,
   treesVisible,
@@ -1273,6 +1434,12 @@ function LayersPanel({
   enabledLayerIds: Set<string>;
   onToggleLayer: (layer: GlobeLayer) => void;
   onLocateLayer: (layer: GlobeLayer) => void;
+  droneSeries: DroneTimeSeries[];
+  activeSeriesId: string | null;
+  activeSeriesStep: number;
+  onToggleSeries: (series: DroneTimeSeries) => void;
+  onSelectSeriesStep: (series: DroneTimeSeries, step: number) => void;
+  onLocateSeries: (series: DroneTimeSeries) => void;
   treesCount: number;
   treesLoading: boolean;
   treesVisible: boolean;
@@ -1324,21 +1491,36 @@ function LayersPanel({
               <Skeleton className="h-10 w-full rounded-xl" />
               <Skeleton className="h-10 w-full rounded-xl" />
             </div>
-          ) : orgLayers.length === 0 && !hasTreesRow ? (
+          ) : orgLayers.length === 0 && droneSeries.length === 0 && !hasTreesRow ? (
             <p className="text-xs text-muted-foreground">{t("layers.noProjectLayers")}</p>
-          ) : orgLayers.length === 0 ? null : (
-            <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-background/60">
-              {orgLayers.map((layer) => (
-                <LayerToggleRow
-                  key={layer.id}
-                  label={layer.name}
-                  description={layer.description || undefined}
-                  checked={enabledLayerIds.has(layer.id)}
-                  onToggle={() => onToggleLayer(layer)}
-                  onLocate={layer.bounds ? () => onLocateLayer(layer) : undefined}
+          ) : (
+            <>
+              {droneSeries.map((series) => (
+                <TimeSeriesCard
+                  key={series.id}
+                  series={series}
+                  active={series.id === activeSeriesId}
+                  activeStep={activeSeriesStep}
+                  onToggle={() => onToggleSeries(series)}
+                  onLocate={() => onLocateSeries(series)}
+                  onSelectStep={(step) => onSelectSeriesStep(series, step)}
                 />
               ))}
-            </div>
+              {orgLayers.length > 0 ? (
+                <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-background/60">
+                  {orgLayers.map((layer) => (
+                    <LayerToggleRow
+                      key={layer.id}
+                      label={layer.name}
+                      description={layer.description || undefined}
+                      checked={enabledLayerIds.has(layer.id)}
+                      onToggle={() => onToggleLayer(layer)}
+                      onLocate={layer.bounds ? () => onLocateLayer(layer) : undefined}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </>
           )}
         </div>
       ) : null}
@@ -1428,6 +1610,217 @@ function LayerToggleRow({
         />
       </button>
     </label>
+  );
+}
+
+// ── Drone time series (repeat flights over the same area) ─────────────────
+
+/** Layers-panel card for one detected series: one switch for the whole
+ *  timeline plus a chip per capture date, replacing the pile of
+ *  indistinguishable per-flight toggles. */
+function TimeSeriesCard({
+  series,
+  active,
+  activeStep,
+  onToggle,
+  onLocate,
+  onSelectStep,
+}: {
+  series: DroneTimeSeries;
+  active: boolean;
+  /** Current slider stop — only meaningful while `active`. */
+  activeStep: number;
+  onToggle: () => void;
+  onLocate: () => void;
+  onSelectStep: (step: number) => void;
+}) {
+  const t = useTranslations("marketplace.globe");
+  const formatDay = useDayFormatter();
+
+  return (
+    <div
+      data-testid="globe-time-series-card"
+      className={cn(
+        "mb-2 rounded-xl border bg-background/60 transition-colors",
+        active ? "border-primary/50" : "border-border",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2 px-3.5 pt-2.5">
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-1.5 text-sm text-foreground">
+            <HistoryIcon className="size-3.5 shrink-0 text-primary" />
+            <span className="truncate font-medium">{series.name}</span>
+          </span>
+          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+            {t("timeline.seriesFlights", { count: series.layers.length })}
+          </span>
+        </span>
+        <button
+          type="button"
+          onClick={onLocate}
+          aria-label={t("layers.flyTo", { name: series.name })}
+          title={t("layers.flyTo", { name: series.name })}
+          className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+        >
+          <LocateFixedIcon className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={active}
+          aria-label={t("timeline.toggle", { name: series.name })}
+          onClick={onToggle}
+          className={cn(
+            "relative h-5 w-9 shrink-0 rounded-full border transition-colors",
+            active ? "border-primary bg-primary" : "border-border bg-muted",
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-1/2 size-3.5 -translate-y-1/2 rounded-full bg-background shadow transition-[left]",
+              active ? "left-[calc(100%-1.05rem)]" : "left-0.5",
+            )}
+          />
+        </button>
+      </div>
+      <p className="px-3.5 pt-1 text-[11px] leading-4 text-muted-foreground">
+        {t("timeline.seriesHint")}
+      </p>
+      <div className="flex flex-wrap gap-1 px-3.5 py-2.5">
+        {series.steps.map((step, index) => (
+          <button
+            key={step.date}
+            type="button"
+            onClick={() => onSelectStep(index)}
+            aria-pressed={active && index === activeStep}
+            className={cn(
+              "rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors",
+              active && index === activeStep
+                ? "border-primary/50 bg-primary/10 text-primary"
+                : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary",
+            )}
+          >
+            {formatDay(step.date)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Floating time slider (bottom center) while a drone series is active —
+ *  scrub, step, or auto-play through the captures of the same area. */
+function TimeSliderCard({
+  series,
+  step,
+  playing,
+  onStepChange,
+  onTogglePlay,
+  onLocate,
+  onClose,
+}: {
+  series: DroneTimeSeries;
+  step: number;
+  playing: boolean;
+  onStepChange: (step: number) => void;
+  onTogglePlay: () => void;
+  onLocate: () => void;
+  onClose: () => void;
+}) {
+  const t = useTranslations("marketplace.globe");
+  const formatDay = useDayFormatter();
+  const lastStep = series.steps.length - 1;
+  const current = series.steps[Math.min(step, lastStep)]!;
+
+  return (
+    <div className="pointer-events-none absolute inset-x-3 bottom-[6.75rem] z-20 flex justify-center md:bottom-8">
+      <motion.section
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 14 }}
+        transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
+        aria-label={t("timeline.title")}
+        data-testid="globe-time-slider"
+        className="pointer-events-auto w-full max-w-[460px] rounded-2xl border border-border bg-background/90 p-3.5 shadow-xl backdrop-blur-xl"
+      >
+        <div className="flex items-center gap-2">
+          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+            <HistoryIcon className="size-4 shrink-0 text-primary" />
+            <span className="truncate text-sm font-semibold text-foreground">{series.name}</span>
+          </span>
+          <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+            {formatDay(current.date)}
+          </span>
+          <button
+            type="button"
+            onClick={onLocate}
+            aria-label={t("layers.flyTo", { name: series.name })}
+            title={t("layers.flyTo", { name: series.name })}
+            className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <LocateFixedIcon className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t("timeline.close")}
+            title={t("timeline.close")}
+            className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <XIcon className="size-3.5" />
+          </button>
+        </div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onTogglePlay}
+            aria-label={playing ? t("timeline.pause") : t("timeline.play")}
+            title={playing ? t("timeline.pause") : t("timeline.play")}
+            className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary-dark"
+          >
+            {playing ? <PauseIcon className="size-3.5" /> : <PlayIcon className="size-3.5" />}
+          </button>
+          <button
+            type="button"
+            onClick={() => onStepChange(Math.max(0, step - 1))}
+            disabled={step <= 0}
+            aria-label={t("timeline.previous")}
+            title={t("timeline.previous")}
+            className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:pointer-events-none disabled:opacity-40"
+          >
+            <ChevronLeftIcon className="size-4" />
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={lastStep}
+            step={1}
+            value={Math.min(step, lastStep)}
+            onChange={(event) => onStepChange(Number(event.target.value))}
+            aria-label={t("timeline.slider")}
+            aria-valuetext={formatDay(current.date)}
+            className="h-1.5 min-w-0 flex-1 cursor-pointer accent-primary"
+          />
+          <button
+            type="button"
+            onClick={() => onStepChange(Math.min(lastStep, step + 1))}
+            disabled={step >= lastStep}
+            aria-label={t("timeline.next")}
+            title={t("timeline.next")}
+            className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:pointer-events-none disabled:opacity-40"
+          >
+            <ChevronRightIcon className="size-4" />
+          </button>
+        </div>
+
+        <div className="mt-1.5 flex items-center justify-between pl-[4.75rem] pr-9 text-[10px] text-muted-foreground">
+          <span>{formatDay(series.steps[0]!.date)}</span>
+          <span>{t("timeline.step", { current: Math.min(step, lastStep) + 1, total: series.steps.length })}</span>
+          <span>{formatDay(series.steps[lastStep]!.date)}</span>
+        </div>
+      </motion.section>
+    </div>
   );
 }
 

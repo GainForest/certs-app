@@ -1732,6 +1732,19 @@
       "flyTo": "Perbesar ke {name}",
       "hide": "Sembunyikan {name}"
     },
+    "timeline": {
+      "seriesFlights": "{count, plural, other {# penerbangan drone}} di area yang sama",
+      "seriesHint": "Area yang sama dipotret pada tanggal berbeda — aktifkan garis waktu untuk melihat perubahannya.",
+      "toggle": "Lihat {name} dari waktu ke waktu",
+      "title": "Perubahan dari waktu ke waktu",
+      "close": "Sembunyikan penggeser waktu",
+      "play": "Putar garis waktu",
+      "pause": "Jeda garis waktu",
+      "previous": "Citra sebelumnya",
+      "next": "Citra berikutnya",
+      "slider": "Tanggal pengambilan",
+      "step": "{current} dari {total}"
+    },
     "tree": {
       "title": "Pohon",
       "close": "Tutup",

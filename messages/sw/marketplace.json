@@ -1732,6 +1732,19 @@
       "flyTo": "Kuza hadi {name}",
       "hide": "Ficha {name}"
     },
+    "timeline": {
+      "seriesFlights": "{count, plural, one {Safari # ya droni} other {Safari # za droni}} juu ya eneo lilelile",
+      "seriesHint": "Eneo lilelile lilipigwa picha kwa tarehe tofauti — washa kitelezi cha muda kuona linavyobadilika.",
+      "toggle": "Ona {name} kwa muda",
+      "title": "Mabadiliko kwa muda",
+      "close": "Ficha kitelezi cha muda",
+      "play": "Cheza ratiba ya muda",
+      "pause": "Simamisha ratiba ya muda",
+      "previous": "Picha ya awali",
+      "next": "Picha inayofuata",
+      "slider": "Tarehe ya kupiga picha",
+      "step": "{current} kati ya {total}"
+    },
     "tree": {
       "title": "Mti",
       "close": "Funga",

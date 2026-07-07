@@ -81,6 +81,9 @@ type GlobeMapProps = {
   landcoverVisible?: boolean;
   /** Currently visible data layers (global + project-specific). */
   activeLayers?: GlobeLayer[];
+  /** Per-layer raster opacity override (0–1) — drives the drone time slider
+   *  by crossfading between overlapping flights without re-adding layers. */
+  layerOpacities?: Record<string, number>;
   /** Fired once the base style + runtime layers are ready. */
   onLoaded?: () => void;
   className?: string;
@@ -245,7 +248,18 @@ function dynamicLayerSpec(layer: GlobeLayer): LayerSpecification | null {
   }
 }
 
-async function addDynamicLayer(map: maplibregl.Map, layer: GlobeLayer): Promise<void> {
+/** Apply a raster opacity (with a short crossfade) if the layer is raster. */
+function applyRasterOpacity(map: maplibregl.Map, layerId: string, opacity: number): void {
+  if (map.getLayer(layerId)?.type !== "raster") return;
+  map.setPaintProperty(layerId, "raster-opacity-transition", { duration: 250 });
+  map.setPaintProperty(layerId, "raster-opacity", opacity);
+}
+
+async function addDynamicLayer(
+  map: maplibregl.Map,
+  layer: GlobeLayer,
+  initialOpacity?: number,
+): Promise<void> {
   if (map.getLayer(layer.id)) return;
 
   if (!map.getSource(layer.id)) {
@@ -284,6 +298,7 @@ async function addDynamicLayer(map: maplibregl.Map, layer: GlobeLayer): Promise<
     // Keep site boundaries + markers above data layers.
     const beforeId = map.getLayer(SITES_FILL_LAYER) ? SITES_FILL_LAYER : undefined;
     map.addLayer(spec, beforeId);
+    if (typeof initialOpacity === "number") applyRasterOpacity(map, layer.id, initialOpacity);
   }
 }
 
@@ -308,6 +323,7 @@ export function GlobeMap({
   spin = false,
   landcoverVisible = false,
   activeLayers = [],
+  layerOpacities,
   onLoaded,
   className,
 }: GlobeMapProps) {
@@ -321,6 +337,9 @@ export function GlobeMap({
   selectTreeRef.current = onSelectTree;
   const loadedRef = useRef(onLoaded);
   const addedLayerIdsRef = useRef(new Set<string>());
+  // Latest per-layer opacity overrides — read when async layer adds resolve.
+  const layerOpacitiesRef = useRef<Record<string, number> | undefined>(layerOpacities);
+  layerOpacitiesRef.current = layerOpacities;
   const organizationsRef = useRef(organizations);
   // User-gesture tracking: background badge work yields to interaction.
   const pointerDownRef = useRef(false);
@@ -888,13 +907,22 @@ export function GlobeMap({
     for (const layer of wanted.values()) {
       if (!added.has(layer.id)) {
         added.add(layer.id);
-        void addDynamicLayer(map, layer).catch((error) => {
+        void addDynamicLayer(map, layer, layerOpacitiesRef.current?.[layer.id]).catch((error) => {
           console.warn("[globe] failed to add data layer", layer.name, error);
           added.delete(layer.id);
         });
       }
     }
   }, [activeLayers, mapLoaded]);
+
+  // Per-layer opacity overrides (drone time slider crossfade).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !layerOpacities) return;
+    for (const [layerId, opacity] of Object.entries(layerOpacities)) {
+      applyRasterOpacity(map, layerId, opacity);
+    }
+  }, [layerOpacities, mapLoaded]);
 
   return (
     <div

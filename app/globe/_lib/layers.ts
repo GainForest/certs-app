@@ -67,7 +67,38 @@ type RawLayer = {
   isDefault?: unknown;
   legend?: unknown;
   bounds?: unknown;
+  dataDate?: unknown;
+  capturedAt?: unknown;
+  timeLabel?: unknown;
 };
+
+/** Normalize any recognizable date to "YYYY-MM-DD". Accepts ISO days/datetimes
+ *  and the "DD-MM-YYYY" form used in legacy layer descriptions. */
+function extractDay(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const iso = value.match(/(\d{4})-(\d{2})-(\d{2})/);
+  const dmy = iso ? null : value.match(/(\d{2})-(\d{2})-(\d{4})/);
+  const [year, month, day] = iso
+    ? [Number(iso[1]), Number(iso[2]), Number(iso[3])]
+    : dmy
+      ? [Number(dmy[3]), Number(dmy[2]), Number(dmy[1])]
+      : [NaN, NaN, NaN];
+  if (!Number.isFinite(year) || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/** Capture day of a layer record: explicit fields first, then dates embedded
+ *  in the name ("Tumanan (2025-04-09)") or description ("Drone image from
+ *  09-04-2025") for records published before the dedicated fields existed. */
+function parseCaptureDay(raw: RawLayer): string | null {
+  return (
+    extractDay(raw.dataDate) ??
+    extractDay(raw.capturedAt) ??
+    extractDay(raw.timeLabel) ??
+    extractDay(raw.name) ??
+    extractDay(raw.description)
+  );
+}
 
 /** Parse a record's `bounds` string ("minLng,minLat,maxLng,maxLat"). */
 function parseBounds(raw: unknown): LngLatBounds | undefined {
@@ -120,6 +151,7 @@ function normalizeLayer(raw: RawLayer, fallbackCategory: string): GlobeLayer | n
     legend: parseLegend(raw.legend),
     isDefault: typeof raw.isDefault === "boolean" ? raw.isDefault : undefined,
     bounds: parseBounds(raw.bounds),
+    capturedAt: parseCaptureDay(raw),
   };
 }
 

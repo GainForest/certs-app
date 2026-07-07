@@ -53,6 +53,10 @@ export type GlobeLayer = {
   /** Geographic footprint declared on the record — lets the camera fly to
    *  exactly what a toggle just made visible. */
   bounds?: LngLatBounds | null;
+  /** Capture day ("YYYY-MM-DD") of the underlying data, when the record
+   *  declares one (drone flights do). Lets repeat flights over the same area
+   *  be grouped into a time series. */
+  capturedAt?: string | null;
 };
 
 /** A project site (certified location) resolved for map display. */

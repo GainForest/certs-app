@@ -1732,6 +1732,19 @@
       "flyTo": "Zoom to {name}",
       "hide": "Hide {name}"
     },
+    "timeline": {
+      "seriesFlights": "{count, plural, one {# drone flight} other {# drone flights}} over the same area",
+      "seriesHint": "The same area was flown on different dates — turn on the timeline to watch it change.",
+      "toggle": "Show {name} over time",
+      "title": "Change over time",
+      "close": "Hide the time slider",
+      "play": "Play the timeline",
+      "pause": "Pause the timeline",
+      "previous": "Earlier capture",
+      "next": "Later capture",
+      "slider": "Capture date",
+      "step": "{current} of {total}"
+    },
     "tree": {
       "title": "Tree",
       "close": "Close",

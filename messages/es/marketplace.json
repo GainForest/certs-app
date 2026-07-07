@@ -1732,6 +1732,19 @@
       "flyTo": "Acercar a {name}",
       "hide": "Ocultar {name}"
     },
+    "timeline": {
+      "seriesFlights": "{count, plural, one {# vuelo de dron} other {# vuelos de dron}} sobre la misma zona",
+      "seriesHint": "La misma zona se sobrevoló en fechas distintas: activa la línea de tiempo para ver cómo cambia.",
+      "toggle": "Ver {name} a lo largo del tiempo",
+      "title": "Cambio a lo largo del tiempo",
+      "close": "Ocultar el control de tiempo",
+      "play": "Reproducir la línea de tiempo",
+      "pause": "Pausar la línea de tiempo",
+      "previous": "Captura anterior",
+      "next": "Captura siguiente",
+      "slider": "Fecha de captura",
+      "step": "{current} de {total}"
+    },
     "tree": {
       "title": "Árbol",
       "close": "Cerrar",
