@@ -41,6 +41,7 @@ import {
   SearchIcon,
   TreePineIcon,
   XIcon,
+  type LucideIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -98,6 +99,7 @@ type GlobeExplorerProps = {
 
 type GlobeMode = "global" | "organization" | "project";
 type PanelVariant = "floating" | "sheet";
+type OverlayTab = "details" | "layers";
 
 type SiteState = {
   status: "idle" | "loading" | "ready";
@@ -330,7 +332,7 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
   const [orgLayersLoading, setOrgLayersLoading] = useState(false);
   const [enabledLayerIds, setEnabledLayerIds] = useState<Set<string>>(new Set());
   const [landcoverVisible, setLandcoverVisible] = useState(false);
-  const [layersOpen, setLayersOpen] = useState(false);
+  const [activeOverlayTab, setActiveOverlayTab] = useState<OverlayTab>("details");
   // Drone time-series slider: which series is active, current stop, autoplay.
   const [activeSeriesId, setActiveSeriesId] = useState<string | null>(null);
   const [seriesStep, setSeriesStep] = useState(0);
@@ -697,6 +699,29 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
       }
     : null;
 
+  const layersPanelProps = {
+    landcoverVisible,
+    onToggleLandcover: () => setLandcoverVisible((value) => !value),
+    categorizedGlobalLayers,
+    globalLayersLoading: globalLayers === null,
+    orgLayers: nonSeriesOrgLayers,
+    orgLayersLoading,
+    showOrgLayers: Boolean(focusDid),
+    enabledLayerIds,
+    onToggleLayer: toggleLayer,
+    onLocateLayer: locateLayer,
+    droneSeries,
+    activeSeriesId,
+    activeSeriesStep: seriesStep,
+    onToggleSeries: toggleSeries,
+    onSelectSeriesStep: selectSeriesStep,
+    onLocateSeries: flyToSeries,
+    treesCount: visibleTrees?.features.length ?? 0,
+    treesLoading: treesState.status === "loading",
+    treesVisible,
+    onToggleTrees: () => setTreesVisible((value) => !value),
+  };
+
   // Bottom-sheet header summary (mobile). A null title means the roster is
   // still loading (hard refresh of /globe?org=…) — render a skeleton, not "…".
   const sheetTitle = focusDid ? (mode === "project" ? project?.title ?? null : focusName) : t("title");
@@ -713,7 +738,7 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="globe-glass absolute inset-0 overflow-hidden bg-[#0b0b19]" data-testid="globe-explorer">
+    <div className="dark globe-glass absolute inset-0 overflow-hidden bg-[#0b0b19]" data-testid="globe-explorer">
       <GlobeMap
         className="absolute inset-0"
         organizations={visibleOrganizations}
@@ -727,8 +752,8 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
         boundsKey={`${focusDid ?? "none"}:${selectedSiteUri ?? "all"}:${boundsNonce}:layer${layerFlightNonce}`}
         boundsPadding={
           isDesktop
-            ? { top: 96, bottom: 64, left: 416, right: 64 }
-            : { top: 84, bottom: 150, left: 36, right: 36 }
+            ? { top: 48, bottom: 64, left: 416, right: 64 }
+            : { top: 36, bottom: 150, left: 36, right: 36 }
         }
         spin={mode === "global" && !focusDid}
         landcoverVisible={landcoverVisible}
@@ -768,86 +793,36 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
         ) : null}
       </AnimatePresence>
 
-      {/* ── Layers control (top-right, both breakpoints) ── */}
-      <div className="pointer-events-none absolute right-3 top-[4.25rem] z-20 flex max-h-[calc(100%-11rem)] flex-col items-end gap-2.5 md:right-4 md:max-h-[calc(100%-6rem)]">
-        <button
-          type="button"
-          onClick={() => setLayersOpen((value) => !value)}
-          aria-expanded={layersOpen}
-          aria-label={t("layers.button")}
-          className={cn(
-            "pointer-events-auto inline-flex h-10 items-center gap-2 rounded-full border border-border bg-background/85 px-3.5 text-sm font-medium text-foreground shadow-lg backdrop-blur-xl transition-all hover:border-primary/40 hover:text-primary active:scale-[0.97] sm:px-4",
-            layersOpen && "border-primary/40 text-primary",
-          )}
-        >
-          <LayersIcon className="size-4" />
-          <span className="hidden sm:inline">{t("layers.button")}</span>
-        </button>
-
-        <AnimatePresence>
-          {layersOpen ? (
-            <motion.div
-              initial={{ opacity: 0, y: -6, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.98 }}
-              transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
-              className="pointer-events-auto flex min-h-0 w-[320px] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-background/90 shadow-xl backdrop-blur-xl"
-            >
-              <LayersPanel
-                landcoverVisible={landcoverVisible}
-                onToggleLandcover={() => setLandcoverVisible((value) => !value)}
-                categorizedGlobalLayers={categorizedGlobalLayers}
-                globalLayersLoading={globalLayers === null}
-                orgLayers={nonSeriesOrgLayers}
-                orgLayersLoading={orgLayersLoading}
-                showOrgLayers={Boolean(focusDid)}
-                enabledLayerIds={enabledLayerIds}
-                onToggleLayer={toggleLayer}
-                onLocateLayer={locateLayer}
-                droneSeries={droneSeries}
-                activeSeriesId={activeSeriesId}
-                activeSeriesStep={seriesStep}
-                onToggleSeries={toggleSeries}
-                onSelectSeriesStep={selectSeriesStep}
-                onLocateSeries={flyToSeries}
-                treesCount={visibleTrees?.features.length ?? 0}
-                treesLoading={treesState.status === "loading"}
-                treesVisible={treesVisible}
-                onToggleTrees={() => setTreesVisible((value) => !value)}
-              />
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </div>
-
-      {/* ── Desktop: floating left panel ── */}
-      <div
+      {/* ── Desktop: floating left tabbed overlays ── */}
+      <motion.section
         data-testid="globe-desktop-panel"
-        className="pointer-events-none absolute left-4 top-[4.25rem] z-10 hidden max-h-[calc(100%-6rem)] w-[360px] flex-col gap-3 md:flex"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+        className="pointer-events-auto absolute left-4 top-4 z-10 hidden max-h-[calc(100%-2rem)] w-[360px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-lg md:flex"
       >
-        {!focusDid && mode === "global" ? (
-          <motion.section
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-            className="pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-background/90 shadow-xl backdrop-blur-xl"
-          >
-            <GlobalPanel variant="floating" {...globalPanelProps} />
-          </motion.section>
-        ) : null}
-
-        {focusPanelProps ? (
-          <motion.section
-            key={focusDid}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-            className="pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-background/90 shadow-xl backdrop-blur-xl"
-          >
-            <FocusPanel variant="floating" {...focusPanelProps} />
-          </motion.section>
-        ) : null}
-      </div>
+        <OverlayTabs activeTab={activeOverlayTab} onChange={setActiveOverlayTab} />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={activeOverlayTab}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.14, ease: [0.25, 0.1, 0.25, 1] }}
+              className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            >
+              {activeOverlayTab === "layers" ? (
+                <LayersPanel {...layersPanelProps} />
+              ) : focusPanelProps ? (
+                <FocusPanel variant="floating" {...focusPanelProps} />
+              ) : (
+                <GlobalPanel variant="floating" {...globalPanelProps} />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </motion.section>
 
       {/* ── Mobile: bottom sheet ── */}
       <div className="md:hidden">
@@ -855,7 +830,7 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
           aria-label={sheetTitle ?? t("panel.loading")}
           data-testid="globe-sheet"
           className={cn(
-            "pointer-events-auto absolute inset-x-0 bottom-0 z-20 flex h-[min(62dvh,520px)] flex-col rounded-t-2xl border-x border-t border-border bg-background/95 shadow-[0_-8px_32px_rgb(0_0_0/0.25)] backdrop-blur-xl transition-transform duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
+            "pointer-events-auto absolute inset-x-0 bottom-0 z-20 flex h-[min(62dvh,520px)] flex-col rounded-t-2xl border-x border-t border-white/10 bg-black/40 shadow-[0_-8px_32px_rgb(0_0_0/0.25)] backdrop-blur-lg transition-transform duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
           )}
           style={{
             transform: sheetExpanded ? "translateY(0)" : "translateY(calc(100% - 4.75rem))",
@@ -891,11 +866,27 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
           </button>
 
           <div className="flex min-h-0 flex-1 flex-col border-t border-border pb-[env(safe-area-inset-bottom)]">
-            {focusPanelProps ? (
-              <FocusPanel variant="sheet" {...focusPanelProps} />
-            ) : (
-              <GlobalPanel variant="sheet" {...globalPanelProps} />
-            )}
+            <OverlayTabs activeTab={activeOverlayTab} onChange={setActiveOverlayTab} />
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={activeOverlayTab}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.14, ease: [0.25, 0.1, 0.25, 1] }}
+                  className="flex min-h-0 flex-1 flex-col overflow-hidden"
+                >
+                  {activeOverlayTab === "layers" ? (
+                    <LayersPanel {...layersPanelProps} />
+                  ) : focusPanelProps ? (
+                    <FocusPanel variant="sheet" {...focusPanelProps} />
+                  ) : (
+                    <GlobalPanel variant="sheet" {...globalPanelProps} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </section>
       </div>
@@ -929,7 +920,7 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
           {activeLegends.map((layer) => (
             <div
               key={layer.id}
-              className="pointer-events-auto rounded-xl border border-border bg-background/85 p-3 shadow-lg backdrop-blur-xl"
+              className="pointer-events-auto rounded-xl border border-white/10 bg-black/40 p-3 shadow-lg backdrop-blur-lg"
             >
               <p className="text-xs font-semibold text-foreground">{layer.name}</p>
               <div className="mt-2 flex flex-col gap-1">
@@ -944,6 +935,50 @@ export function GlobeExplorer({ orgDid = null, orgName = null, orgIdentifier = n
           ))}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+// ── Shared overlay tabs ───────────────────────────────────────────────────
+
+function OverlayTabs({
+  activeTab,
+  onChange,
+}: {
+  activeTab: OverlayTab;
+  onChange: (tab: OverlayTab) => void;
+}) {
+  const t = useTranslations("marketplace.globe");
+  const tabs: Array<{ id: OverlayTab; label: string; icon: LucideIcon }> = [
+    { id: "details", label: t("tabs.details"), icon: EarthIcon },
+    { id: "layers", label: t("tabs.layers"), icon: LayersIcon },
+  ];
+
+  return (
+    <div className="border-b border-border p-2">
+      <div role="tablist" aria-label={t("title")} className="grid grid-cols-2 gap-1 rounded-full bg-muted/70 p-1">
+        {tabs.map(({ id, label, icon: Icon }) => {
+          const selected = activeTab === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => onChange(id)}
+              className={cn(
+                "inline-flex h-8 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors",
+                selected
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className={cn("size-3.5", selected && "text-primary")} />
+              {label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1859,7 +1894,7 @@ function TimeSliderCard({
         transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
         aria-label={t("timeline.title")}
         data-testid="globe-time-slider"
-        className="pointer-events-auto w-full max-w-[460px] rounded-2xl border border-border bg-background/90 p-3.5 shadow-xl backdrop-blur-xl"
+        className="pointer-events-auto w-full max-w-[460px] rounded-2xl border border-white/10 bg-black/40 p-3.5 shadow-xl backdrop-blur-lg"
       >
         <div className="flex items-center gap-2">
           <span className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -1961,7 +1996,7 @@ function TreeDetailPanel({ tree, onClose }: { tree: TreeDetail; onClose: () => v
       transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
       aria-label={t("tree.title")}
       data-testid="globe-tree-detail"
-      className="pointer-events-auto absolute right-3 top-[7.5rem] z-30 flex max-h-[calc(100%-9rem)] w-[300px] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-background/90 shadow-xl backdrop-blur-xl md:right-4"
+      className="pointer-events-auto absolute right-3 top-4 z-30 flex max-h-[calc(100%-2rem)] w-[300px] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-lg md:right-4"
     >
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
         <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
@@ -2083,7 +2118,7 @@ function ActiveLayersCard({
   return (
     <div
       data-testid="globe-active-layers"
-      className="pointer-events-auto rounded-xl border border-border bg-background/85 p-3 shadow-lg backdrop-blur-xl"
+      className="pointer-events-auto rounded-xl border border-white/10 bg-black/40 p-3 shadow-lg backdrop-blur-lg"
     >
       <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
         <LayersIcon className="size-3.5 text-primary" />
@@ -2127,7 +2162,7 @@ function ActiveLayersCard({
 function LandcoverLegend() {
   const t = useTranslations("marketplace.globe");
   return (
-    <div className="pointer-events-auto rounded-xl border border-border bg-background/85 p-3 shadow-lg backdrop-blur-xl">
+    <div className="pointer-events-auto rounded-xl border border-white/10 bg-black/40 p-3 shadow-lg backdrop-blur-lg">
       <p className="text-xs font-semibold text-foreground">{t("layers.landcover")}</p>
       <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
         {LANDCOVER_LEGEND.map((entry) => (

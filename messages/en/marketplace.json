@@ -1676,6 +1676,10 @@
     "title": "Globe",
     "subtitle": "Organizations and their project sites on a living 3D Earth.",
     "viewOnGlobe": "View on Globe",
+    "tabs": {
+      "details": "Details",
+      "layers": "Layers"
+    },
     "panel": {
       "searchPlaceholder": "Search organizations…",
       "treeFilter": "Tree data",

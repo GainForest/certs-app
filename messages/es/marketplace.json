@@ -1676,6 +1676,10 @@
     "title": "Globo",
     "subtitle": "Organizaciones y sus sitios de proyecto en una Tierra 3D viva.",
     "viewOnGlobe": "Ver en el Globo",
+    "tabs": {
+      "details": "Detalles",
+      "layers": "Capas"
+    },
     "panel": {
       "searchPlaceholder": "Buscar organizaciones…",
       "treeFilter": "Datos de árboles",

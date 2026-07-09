@@ -1676,6 +1676,10 @@
     "title": "Bola Dunia",
     "subtitle": "Organisasi dan lokasi proyek mereka di Bumi 3D yang hidup.",
     "viewOnGlobe": "Lihat di Globe",
+    "tabs": {
+      "details": "Detail",
+      "layers": "Lapisan"
+    },
     "panel": {
       "searchPlaceholder": "Cari organisasi…",
       "treeFilter": "Data pohon",

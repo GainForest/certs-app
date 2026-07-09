@@ -1676,6 +1676,10 @@
     "title": "Dunia",
     "subtitle": "Mashirika na maeneo ya miradi yao kwenye Dunia hai ya 3D.",
     "viewOnGlobe": "Tazama kwenye Dunia",
+    "tabs": {
+      "details": "Maelezo",
+      "layers": "Tabaka"
+    },
     "panel": {
       "searchPlaceholder": "Tafuta mashirika…",
       "treeFilter": "Data ya miti",

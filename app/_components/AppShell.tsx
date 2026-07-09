@@ -34,6 +34,7 @@ export function AppShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const session = useShellSession(authSession);
+  const isGlobe = pathname.startsWith("/globe");
 
   useEffect(() => {
     try {
@@ -58,7 +59,7 @@ export function AppShell({
   return (
     <HeaderSlotsProvider>
       <div className="flex h-screen flex-col overflow-hidden">
-        {pathname !== "/bioblitz" ? (
+        {pathname !== "/bioblitz" && !isGlobe ? (
           <ChromeErrorBoundary name="bioblitz-banner">
             <BioblitzPromoBanner />
           </ChromeErrorBoundary>
@@ -76,12 +77,14 @@ export function AppShell({
             </ChromeErrorBoundary>
           </MobileNavDrawer>
           <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-            <ShellHeader
-              authSession={session.authSession}
-              profileName={session.profileName}
-              manageAccountKind={session.manageAccountKind}
-              onOpenMobileNav={() => setMobileNavOpen(true)}
-            />
+            {!isGlobe ? (
+              <ShellHeader
+                authSession={session.authSession}
+                profileName={session.profileName}
+                manageAccountKind={session.manageAccountKind}
+                onOpenMobileNav={() => setMobileNavOpen(true)}
+              />
+            ) : null}
             <ChromeErrorBoundary name="onboarding-prompt">
               <FreshAccountOnboardingPrompt
                 authSession={session.authSession}
