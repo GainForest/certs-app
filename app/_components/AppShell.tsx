@@ -41,12 +41,17 @@ export function AppShell({
   const mobileNav = useMemo(() => ({ open: () => setMobileNavOpen(true) }), []);
 
   useEffect(() => {
+    if (isGlobe) {
+      setSidebarCollapsed(true);
+      return;
+    }
+
     try {
       setSidebarCollapsed(window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "1");
     } catch {
       // Ignore storage access errors (private windows).
     }
-  }, []);
+  }, [isGlobe]);
 
   const toggleSidebarCollapsed = () => {
     setSidebarCollapsed((value) => {
