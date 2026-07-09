@@ -973,21 +973,18 @@ function GlobeHeader({
   const mobileNav = useMobileNav();
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-2 p-3">
-      {/* No backdrop-blur here: a blurred ancestor would become the backdrop
-          root and kill the hover-preview card's own blur. Solid glass is fine
-          for a slim bar. */}
-      <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-white/10 bg-black/80 p-1 shadow-lg">
-        {/* Mobile left cluster: a full sheet turns the hamburger + title into a
-            single "collapse" chevron so the sheet can be dismissed. */}
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-2 p-2.5">
+      {/* Mobile controls float as separate glass elements so they stay legible
+          above the map and don't merge visually with the bottom sheet. */}
+      <div className="pointer-events-auto flex items-center gap-2 md:hidden">
         {sheetFull ? (
           <button
             type="button"
             onClick={onCollapseSheet}
             aria-label={t("sheet.collapse")}
-            className="grid size-9 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:bg-white/[0.12] md:hidden"
+            className={cn("grid size-11 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:bg-white/[0.12]", OUTLINE_SURFACE)}
           >
-            <ChevronLeftIcon className="size-4" />
+            <ChevronLeftIcon className="size-5" />
           </button>
         ) : (
           <>
@@ -995,40 +992,43 @@ function GlobeHeader({
               type="button"
               onClick={() => mobileNav?.open()}
               aria-label={nav("openNavigation")}
-              className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-white/[0.12] hover:text-foreground md:hidden"
+              className={cn("grid size-11 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-white/[0.12] hover:text-foreground", OUTLINE_SURFACE)}
             >
-              <MenuIcon className="size-4" />
+              <MenuIcon className="size-5" />
             </button>
-            <span className="max-w-[52vw] truncate px-2 text-sm font-semibold text-foreground md:hidden">
+            <span className={cn("inline-flex h-11 max-w-[52vw] items-center truncate rounded-full px-4 text-sm font-semibold text-foreground", OUTLINE_SURFACE)}>
               {title}
             </span>
           </>
         )}
-        {/* Panel switcher — desktop only (mobile drives it from the bottom sheet) */}
-        <div className="hidden items-center gap-1 md:flex">
-          {NAV_ITEMS.map((item) => (
-            <HeaderNavItem
-              key={item.id}
-              label={t(item.labelKey)}
-              icon={item.icon}
-              active={railOpen && activeTab === item.id}
-              onSelect={() => onSelectNav(item.id)}
-              renderPanel={() => renderPanel(item.id, "floating")}
-            />
-          ))}
-          {/* Close the pinned tab (desktop). */}
-          {railOpen ? (
-            <button
-              type="button"
-              onClick={onCloseRail}
-              aria-label={t("tree.close")}
-              title={t("tree.close")}
-              className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-white/[0.12] hover:text-foreground"
-            >
-              <XIcon className="size-4" />
-            </button>
-          ) : null}
-        </div>
+      </div>
+
+      {/* Desktop panel switcher. No backdrop-blur on this ancestor: a blurred
+          ancestor would become the backdrop root and kill the hover-preview
+          card's own blur. Solid glass is fine for a slim desktop bar. */}
+      <div className="pointer-events-auto hidden items-center gap-1 rounded-full border border-white/10 bg-black/80 p-1 shadow-lg md:flex">
+        {NAV_ITEMS.map((item) => (
+          <HeaderNavItem
+            key={item.id}
+            label={t(item.labelKey)}
+            icon={item.icon}
+            active={railOpen && activeTab === item.id}
+            onSelect={() => onSelectNav(item.id)}
+            renderPanel={() => renderPanel(item.id, "floating")}
+          />
+        ))}
+        {/* Close the pinned tab (desktop). */}
+        {railOpen ? (
+          <button
+            type="button"
+            onClick={onCloseRail}
+            aria-label={t("tree.close")}
+            title={t("tree.close")}
+            className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-white/[0.12] hover:text-foreground"
+          >
+            <XIcon className="size-4" />
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -1159,7 +1159,7 @@ function MobileSheet({
     return () => window.removeEventListener("resize", measure);
   }, []);
 
-  const fullH = vh ? Math.round(vh * 0.92) : 0;
+  const fullH = vh ? Math.round(vh * 0.9) : 0;
   const halfH = vh ? Math.round(vh * 0.52) : 0;
   const targetY = useCallback(
     (s: SheetSnap) => {
@@ -1205,17 +1205,14 @@ function MobileSheet({
   };
 
   // The options rail rides just above the sheet's top edge. Positioned via
-  // `bottom` (not transform) so its own backdrop-blur keeps working — a
-  // transformed ancestor would disable it. Fades out as the sheet nears full.
+  // `bottom` (not transform) so each button's own backdrop-blur keeps working.
   const railBottom = useTransform(y, (v) => (fullH ? fullH - v + 12 : SHEET_PEEK + 12));
-  // Visible through the peek↔half range; fades out toward "full" (would hit the
-  // header) and toward "collapsed" (would clash with the map's zoom controls).
+  // Keep the search/tab controls available even at the full snap; only fade
+  // them out when the sheet is intentionally collapsed into the map controls.
   const railOpacity = useTransform(y, (v) => {
     if (!fullH) return 1;
     const peekY = fullH - SHEET_PEEK;
     const collapsedY = fullH - SHEET_COLLAPSED;
-    if (v <= 0) return 0;
-    if (v < 64) return v / 64;
     if (v <= peekY) return 1;
     if (v >= collapsedY) return 0;
     return 1 - (v - peekY) / (collapsedY - peekY);
@@ -1228,29 +1225,27 @@ function MobileSheet({
       {/* Floating options rail — search + quick tab switch, riding the sheet. */}
       <motion.div
         style={{ bottom: railBottom, opacity: railOpacity, pointerEvents: railPointer }}
-        className="absolute right-3 z-20 flex flex-col items-end gap-2"
+        className="absolute right-2.5 z-30 flex items-center gap-2"
       >
-        <div className="flex gap-2 rounded-full border border-white/10 bg-black/80 p-1 shadow-lg backdrop-blur-lg">
+        <button
+          type="button"
+          onClick={onSearch}
+          aria-label={t("panel.searchPlaceholder")}
+          className={cn("grid size-11 place-items-center rounded-full text-foreground shadow-lg transition-colors hover:bg-white/[0.12]", OUTLINE_SURFACE)}
+        >
+          <SearchIcon className="size-5" />
+        </button>
+        {others.map(({ id, labelKey, icon: Icon }) => (
           <button
+            key={id}
             type="button"
-            onClick={onSearch}
-            aria-label={t("panel.searchPlaceholder")}
-            className="grid size-11 place-items-center rounded-full text-foreground transition-colors hover:bg-white/[0.12]"
+            onClick={() => onSelectTab(id)}
+            aria-label={t(labelKey)}
+            className={cn("grid size-11 place-items-center rounded-full text-foreground shadow-lg transition-colors hover:bg-white/[0.12]", OUTLINE_SURFACE)}
           >
-            <SearchIcon className="size-4" />
+            <Icon className="size-5" />
           </button>
-          {others.map(({ id, labelKey, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onSelectTab(id)}
-              aria-label={t(labelKey)}
-              className="grid size-11 place-items-center rounded-full text-foreground transition-colors hover:bg-white/[0.12]"
-            >
-              <Icon className="size-4" />
-            </button>
-          ))}
-        </div>
+        ))}
       </motion.div>
 
       <motion.section
