@@ -10,6 +10,7 @@ import { AutoRefresh } from "./_components/AutoRefresh";
 import { getAccountRouteData, readAccountRouteParams } from "../../../account/_lib/account-route";
 import { accountHref, localProjectHref } from "../../../_lib/urls";
 import { RecordEngagement } from "../../../_components/RecordEngagement";
+import { localizedAlternates } from "../../../_lib/seo-metadata";
 import { FollowButton } from "../../../_components/FollowButton";
 import { getRequestOrigin } from "../../../_lib/request-origin";
 import {
@@ -70,15 +71,25 @@ export async function generateMetadata({ params }: { params: ProjectPageParams }
     };
   }
   const description = record.shortDescription?.trim() || t("metaFallback");
+  const detailHref = localProjectHref(urlIdentifier, rkey);
+  const title = t("metaTitle", { name: record.title });
+  const previewImage = record.imageUrl ? [{ url: record.imageUrl, alt: record.title }] : undefined;
   return {
-    title: t("metaTitle", { name: record.title }),
+    title,
     description,
-    alternates: { canonical: localProjectHref(urlIdentifier, rkey) },
+    alternates: localizedAlternates(localProjectHref(urlIdentifier, rkey)),
     openGraph: {
-      title: record.title,
+      title,
       description,
       type: "article",
-      images: record.imageUrl ? [{ url: record.imageUrl }] : undefined,
+      url: detailHref,
+      images: previewImage,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: previewImage,
     },
   };
 }
