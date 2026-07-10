@@ -5,7 +5,8 @@ Improve gainforest.app technical SEO and brand/entity signals so Google can bett
 
 ## Metrics
 Current phase:
-- **Primary**: `seo_findings` (count, lower is better) — core technical SEO findings from `scripts/seo-audit.mjs`, especially ensuring the audit correctly recognizes localized Metadata API usage.
+- **Primary**: `indexable_page_hreflang_gaps` (count, lower is better) — remaining indexable public pages with page-level canonicals but no localized `hreflang` alternates.
+- **Secondary**: `seo_findings` — core technical SEO findings from `scripts/seo-audit.mjs`.
 - **Secondary**: `localized_static_metadata_gaps` — sitemap-backed public pages with hardcoded English metadata or missing metadata translations.
 - **Secondary**: `sitemap_discovery_gaps` — missing sitemap discovery paths for public organization/profile landing pages.
 - **Secondary**: `account_profile_metadata_gaps` — missing hreflang/social metadata on public account and organization profile pages.
@@ -17,6 +18,7 @@ Current phase:
 - **Secondary**: `check_site_meta_ready` — whether `npx check-site-meta` successfully boots against the configured target URL.
 
 Previous phases:
+- **Primary**: `seo_findings` (count, lower is better) — core technical SEO findings from `scripts/seo-audit.mjs`.
 - **Primary**: `localized_static_metadata_gaps` (count, lower is better) — sitemap-backed public pages with hardcoded English metadata or missing metadata translations.
 - **Primary**: `sitemap_discovery_gaps` (count, lower is better) — missing sitemap discovery paths for public organization/profile landing pages.
 - **Primary**: `account_profile_metadata_gaps` (count, lower is better) — missing hreflang/social metadata on public account and organization profile pages.
@@ -68,3 +70,5 @@ The script outputs `METRIC name=value` lines. It also starts `npx check-site-met
 - Started a seventh phase for localized static metadata: sitemap-backed pages like home, devices, and status should not serve hardcoded English titles/descriptions on localized URLs.
 - Reduced `localized_static_metadata_gaps` from 13 to 0 by converting home/devices/status to translated `generateMetadata` and adding devices/status metadata translations.
 - Started an audit-alignment phase after localization: the core SEO audit must recognize translated home metadata from `common.seo` instead of expecting hardcoded English in `app/page.tsx`.
+- Restored `seo_findings` to 0 by aligning the audit with localized home Metadata API usage.
+- Started an eighth phase for remaining indexable page `hreflang`: public pages such as feed, submit-data, and Tainá use page-level canonicals and should preserve localized alternates unless explicitly noindexed.

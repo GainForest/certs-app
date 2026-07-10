@@ -10,6 +10,7 @@ const dynamicDetailMetadataGaps = [];
 const accountProfileMetadataGaps = [];
 const sitemapDiscoveryGaps = [];
 const localizedStaticMetadataGaps = [];
+const indexablePageHreflangGaps = [];
 const warnings = [];
 
 function read(path) {
@@ -52,11 +53,20 @@ function addLocalizedStaticMetadataGap(id, detail) {
   localizedStaticMetadataGaps.push({ id, detail });
 }
 
+function addIndexablePageHreflangGap(id, detail) {
+  indexablePageHreflangGaps.push({ id, detail });
+}
+
 const locales = ["en", "es", "pt", "sw", "id"];
 const layout = read("app/layout.tsx");
 const page = read("app/page.tsx");
 const devicesPage = read("app/devices/page.tsx");
 const statusPage = read("app/status/page.tsx");
+const indexablePagesNeedingLocalizedAlternates = [
+  { path: "/feed", file: "app/feed/page.tsx" },
+  { path: "/submit-data", file: "app/submit-data/page.tsx" },
+  { path: "/taina", file: "app/taina/page.tsx" },
+];
 const sitemap = read("app/sitemap.ts");
 const robots = read("app/robots.ts");
 const homeLanding = read("app/_components/HomeLanding.tsx");
@@ -173,6 +183,17 @@ for (const locale of locales) {
   }
   if (!common.status?.metadata?.title || !common.status?.metadata?.description) {
     addLocalizedStaticMetadataGap(`status-metadata-${locale}`, `${locale} status metadata translation is missing.`);
+  }
+}
+
+for (const { path, file } of indexablePagesNeedingLocalizedAlternates) {
+  const source = read(file);
+  const isNoindex = /robots:\s*\{[^}]*index:\s*false/s.test(source);
+  if (!isNoindex && (!source.includes("localizedAlternates") || !source.includes(`localizedAlternates(\"${path}\")`))) {
+    addIndexablePageHreflangGap(
+      `indexable-hreflang-${path.slice(1).replaceAll("-", "_")}`,
+      `${file} is an indexable localized page with page-level canonical metadata; it should use localizedAlternates(\"${path}\") to preserve hreflang alternates.`,
+    );
   }
 }
 
@@ -299,6 +320,10 @@ console.log("Localized static metadata gaps:");
 for (const gap of localizedStaticMetadataGaps) {
   console.log(`- ${gap.id}: ${gap.detail}`);
 }
+console.log("Indexable page hreflang gaps:");
+for (const gap of indexablePageHreflangGaps) {
+  console.log(`- ${gap.id}: ${gap.detail}`);
+}
 for (const warning of warnings) {
   console.log(`WARN ${warning.id}: ${warning.detail}`);
 }
@@ -309,4 +334,5 @@ console.log(`METRIC dynamic_detail_metadata_gaps=${dynamicDetailMetadataGaps.len
 console.log(`METRIC account_profile_metadata_gaps=${accountProfileMetadataGaps.length}`);
 console.log(`METRIC sitemap_discovery_gaps=${sitemapDiscoveryGaps.length}`);
 console.log(`METRIC localized_static_metadata_gaps=${localizedStaticMetadataGaps.length}`);
+console.log(`METRIC indexable_page_hreflang_gaps=${indexablePageHreflangGaps.length}`);
 console.log(`METRIC seo_warnings=${warnings.length}`);
