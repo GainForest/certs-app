@@ -130,6 +130,7 @@ export default async function AccountLayout({
               includeTaina={isOwner}
               showEndorsementsGiven={showEndorsementsGiven}
               showEquipment={showEquipment}
+              canManage={canManage}
             />
           </>
         }

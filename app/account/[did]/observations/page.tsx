@@ -3,7 +3,6 @@ import { CanonicalRedirect } from "@/app/account/_components/CanonicalRedirect";
 import { resolveAccountManageAccess } from "@/app/_lib/manage-server";
 import { TreesSection } from "@/app/(manage)/manage/_sections";
 import { AccountObservationsTabContent } from "../../_components/AccountTabContent";
-import { ObservationsSubNav } from "../../_components/ObservationsSubNav";
 import { accountObservationsPath, getAccountRouteData, readAccountRouteParams } from "../../_lib/account-route";
 
 export async function generateMetadata({ params }: { params: Promise<{ did: string }> }): Promise<Metadata> {
@@ -40,14 +39,9 @@ export default async function AccountObservationsPage({
   const layerParam = (await searchParams).layer;
   const showMeasurements = canManage && (Array.isArray(layerParam) ? layerParam[0] : layerParam) === "measurements";
 
-  return (
-    <>
-      <ObservationsSubNav identifier={account.urlIdentifier} showPrivate={canManage} />
-      {showMeasurements && access?.status === "allowed" ? (
-        <TreesSection target={access.target} />
-      ) : (
-        <AccountObservationsTabContent account={account} did={did} />
-      )}
-    </>
+  return showMeasurements && access?.status === "allowed" ? (
+    <TreesSection target={access.target} />
+  ) : (
+    <AccountObservationsTabContent account={account} did={did} />
   );
 }

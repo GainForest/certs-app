@@ -9,6 +9,7 @@ import {
   CameraIcon,
   CheckCircle2Icon,
   ChevronDownIcon,
+  ChevronLeftIcon,
   CircleHelpIcon,
   CopyIcon,
   FileSpreadsheetIcon,
@@ -847,7 +848,21 @@ export function AddObservationsModal({
     <ModalContent className="space-y-4" dismissible={false}>
       <ModalHeader>
         <div className="flex items-start justify-between gap-3">
-          <ModalTitle>{t("title")}</ModalTitle>
+          <div className="flex min-w-0 items-center gap-2">
+            {/* This flow is a full page now, so the exit affordance is a back
+                chevron (return to observations) rather than a modal close X. */}
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon-sm"
+              onClick={onClose}
+              aria-label={t("close")}
+              className="shrink-0 rounded-full"
+            >
+              <ChevronLeftIcon className="size-4" />
+            </Button>
+            <ModalTitle className="truncate">{t("title")}</ModalTitle>
+          </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -855,7 +870,7 @@ export function AddObservationsModal({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="-mt-1 rounded-full"
+                  className="rounded-full"
                   disabled={isSubmitting}
                 >
                   {t("moreWays")}
@@ -868,7 +883,7 @@ export function AddObservationsModal({
                   {t("uploadCsv")}
                 </DropdownMenuItem>
                 {/* Very large archives (photos + survey exports) go through the
-                    batch-review pipeline instead of this modal. */}
+                    batch-review pipeline instead of this flow. */}
                 <DropdownMenuItem asChild onClick={onClose}>
                   <Link href="/submit-data">
                     <ArchiveIcon className="size-4" />
@@ -877,16 +892,6 @@ export function AddObservationsModal({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon-sm"
-              onClick={onClose}
-              aria-label={t("close")}
-              className="-mr-1 -mt-1 rounded-full"
-            >
-              <XIcon className="size-4" />
-            </Button>
           </div>
         </div>
         <ModalDescription className="mt-1">{t("description")}</ModalDescription>
@@ -898,9 +903,15 @@ export function AddObservationsModal({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={cn(
-          "rounded-2xl border border-dashed transition-colors",
-          isDragging ? "border-primary bg-primary/10" : "border-primary/30",
-          showEmptyState ? "px-6 py-10" : "p-3",
+          "transition-colors",
+          showEmptyState
+            ? cn(
+                "rounded-2xl border border-dashed px-6 py-10",
+                isDragging ? "border-primary bg-primary/10" : "border-primary/30",
+              )
+            : // Once photos are added, drop the dashed frame entirely — the list
+              // stands on its own; a faint wash only appears while dragging more in.
+              cn("rounded-2xl", isDragging && "bg-primary/5 ring-2 ring-primary/20"),
         )}
       >
         {showEmptyState ? (
@@ -941,10 +952,9 @@ export function AddObservationsModal({
             </div>
           </div>
         ) : (
-          // Phones scroll the dialog as one surface (nested scrollers trap the
-          // touch gesture); larger screens keep the list in its own scroll area
-          // so the footer stays put.
-          <div className="space-y-3 sm:max-h-[52vh] sm:overflow-y-auto sm:pr-1">
+          // No inner scroller or fixed height: the list grows with its content
+          // and the page itself scrolls. Each observation is its own bg-muted box.
+          <div className="space-y-3">
             {identifyingCount > 0 ? (
               <QuickProgress
                 label={t("identifyingProgress", { done: items.length - identifyingCount, total: items.length })}
@@ -1111,7 +1121,7 @@ export function AddObservationsModal({
         // bottom edge (full-bleed over the dialog's p-6) — the primary action
         // stays reachable however long the card list grows. From sm up the list
         // scrolls internally instead and the footer sits statically below it.
-        <div className="sticky bottom-0 z-10 -mx-6 -mb-6 space-y-3 border-t border-border bg-background px-6 pb-5 pt-3 sm:static sm:mx-0 sm:mb-0 sm:bg-transparent sm:px-0 sm:pb-0">
+        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 space-y-3 border-t border-border bg-background px-4 pb-5 pt-3 sm:static sm:mx-0 sm:mb-0 sm:bg-transparent sm:px-0 sm:pb-0">
           {isSubmitting && uploadProgress ? (
             <QuickProgress
               label={t("uploadingProgress", { done: uploadProgress.done, total: uploadProgress.total })}
@@ -1324,8 +1334,8 @@ function ObservationGroupCard({
         if (itemId) onDropItem(itemId);
       }}
       className={cn(
-        "relative rounded-2xl border bg-card p-3 transition-colors",
-        isOver ? "border-primary ring-2 ring-primary/30" : "border-border",
+        "relative rounded-2xl bg-muted p-3 transition-colors",
+        isOver && "ring-2 ring-primary/40",
       )}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -1553,7 +1563,7 @@ function QuickTagsEditor({
   }
 
   return (
-    <div className="rounded-xl border border-border/70 bg-muted/20 p-2.5">
+    <div className="rounded-xl border border-border/70 bg-background p-2.5">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <TagIcon className="size-3.5 text-primary" />
@@ -1637,7 +1647,7 @@ function QuickMeasurementsEditor({
   }
 
   return (
-    <div className="rounded-xl border border-border/70 bg-muted/20 p-2.5">
+    <div className="rounded-xl border border-border/70 bg-background p-2.5">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <RulerIcon className="size-3.5 text-primary" />
