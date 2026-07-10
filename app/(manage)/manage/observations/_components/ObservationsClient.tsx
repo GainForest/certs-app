@@ -182,8 +182,11 @@ function mergeAnalysisWithDefaults(analysis: ObservationAnalysis, defaults: Part
   return {
     ...analysis,
     eventDate: analysis.eventDate || defaults.eventDate || "",
-    decimalLatitude: analysis.decimalLatitude || defaults.decimalLatitude || "",
-    decimalLongitude: analysis.decimalLongitude || defaults.decimalLongitude || "",
+    // Location is observer-controlled: keep the EXIF GPS coordinates seeded at
+    // file-add time, or the user's chosen fallback when the photo has no GPS.
+    // Do not let AI analysis replace those coordinates with a guess.
+    decimalLatitude: defaults.decimalLatitude || "",
+    decimalLongitude: defaults.decimalLongitude || "",
   };
 }
 
@@ -1852,13 +1855,9 @@ function ObservationBulkAddPanel({
       return;
     }
     // Location is optional. Each photo prefers its own EXIF GPS; otherwise it
-    // inherits a chosen location, then the owner's default site centre. Photos
-    // with none simply upload without coordinates and can be placed later.
-    const location = isValidLocation(chosenLocationRef.current)
-      ? chosenLocationRef.current
-      : isValidLocation(defaultCenter)
-        ? defaultCenter
-        : null;
+    // inherits the location explicitly chosen by the user. Photos with neither
+    // simply upload without coordinates and can be placed later.
+    const location = isValidLocation(chosenLocationRef.current) ? chosenLocationRef.current : null;
     const imageFiles = Array.from(fileList ?? []).filter((file) => file.type.startsWith("image/"));
     if (imageFiles.length === 0) return;
 

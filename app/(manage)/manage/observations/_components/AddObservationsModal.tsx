@@ -438,10 +438,6 @@ export function AddObservationsModal({
       setItems((current) =>
         current.map((item) => {
           if (item.id !== id) return item;
-          const lat = Number.parseFloat(a.decimalLatitude ?? "");
-          const lng = Number.parseFloat(a.decimalLongitude ?? "");
-          const suggestedLocation =
-            !item.location && Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : item.location;
           return {
             ...item,
             status: "ready",
@@ -449,7 +445,9 @@ export function AddObservationsModal({
             vernacularName: item.vernacularName || a.vernacularName?.trim() || "",
             kingdom: a.kingdom?.trim() || item.kingdom,
             eventDate: item.eventDate || a.eventDate?.trim() || "",
-            location: suggestedLocation,
+            // Location comes from photo GPS metadata first, then the user's
+            // device/location choice. AI analysis must not replace it.
+            location: item.location,
             notes: item.notes || a.occurrenceRemarks?.trim() || "",
           };
         }),
