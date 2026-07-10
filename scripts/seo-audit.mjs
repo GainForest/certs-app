@@ -19,6 +19,7 @@ const remainingSocialMetadataGaps = [];
 const projectBreadcrumbGaps = [];
 const accountProfileStructuredDataGaps = [];
 const observationsServerContentGaps = [];
+const projectsServerContentGaps = [];
 const warnings = [];
 
 function read(path) {
@@ -95,6 +96,10 @@ function addAccountProfileStructuredDataGap(id, detail) {
 
 function addObservationsServerContentGap(id, detail) {
   observationsServerContentGaps.push({ id, detail });
+}
+
+function addProjectsServerContentGap(id, detail) {
+  projectsServerContentGaps.push({ id, detail });
 }
 
 const locales = ["en", "es", "pt", "sw", "id"];
@@ -298,6 +303,12 @@ if (!observationsPage.includes("walkOccurrences") || !observationsPage.includes(
     "/observations should fetch and pass an initial server-rendered page of public sightings so crawlers and no-JS previews see real observation cards and links, not only an empty client shell.",
   );
 }
+if (!projectsPage.includes("fetchProjects") || !projectsPage.includes("initialPage={initialPage}")) {
+  addProjectsServerContentGap(
+    "projects-initial-server-page",
+    "/projects should fetch and pass an initial server-rendered page of public project cards so crawlers and no-JS previews see real project links, not only an empty client shell.",
+  );
+}
 
 for (const { path, file } of indexablePagesNeedingSocialMetadata) {
   const source = read(file);
@@ -475,6 +486,10 @@ console.log("Observations server-rendered content gaps:");
 for (const gap of observationsServerContentGaps) {
   console.log(`- ${gap.id}: ${gap.detail}`);
 }
+console.log("Projects server-rendered content gaps:");
+for (const gap of projectsServerContentGaps) {
+  console.log(`- ${gap.id}: ${gap.detail}`);
+}
 for (const warning of warnings) {
   console.log(`WARN ${warning.id}: ${warning.detail}`);
 }
@@ -494,4 +509,5 @@ console.log(`METRIC remaining_social_metadata_gaps=${remainingSocialMetadataGaps
 console.log(`METRIC project_breadcrumb_gaps=${projectBreadcrumbGaps.length}`);
 console.log(`METRIC account_profile_structured_data_gaps=${accountProfileStructuredDataGaps.length}`);
 console.log(`METRIC observations_server_content_gaps=${observationsServerContentGaps.length}`);
+console.log(`METRIC projects_server_content_gaps=${projectsServerContentGaps.length}`);
 console.log(`METRIC seo_warnings=${warnings.length}`);
