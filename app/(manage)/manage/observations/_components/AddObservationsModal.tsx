@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Fragment, useCallback, useEffect, useId, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { Fragment, useCallback, useEffect, useId, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import {
   ArchiveIcon,
@@ -143,6 +143,10 @@ type AnalyzeResponse = {
 };
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+function keepTextEntryKeysLocal(event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  event.stopPropagation();
+}
 
 // Local "yyyy-MM-dd" for today — caps the date picker so observers can't select a
 // future sighting date (which the occurrence proxy rejects anyway).
@@ -924,6 +928,7 @@ export function AddObservationsModal({
             rows={3}
             placeholder={t("batchStoryPlaceholder")}
             onChange={(event) => setBatchStory(event.currentTarget.value.slice(0, BATCH_STORY_MAX))}
+            onKeyDown={keepTextEntryKeysLocal}
             disabled={isSubmitting}
             className="mt-2 resize-y"
           />
@@ -1431,6 +1436,7 @@ function ObservationGroupCard({
           <Input
             value={fields.scientificName}
             onChange={(event) => onChange({ scientificName: event.target.value })}
+            onKeyDown={keepTextEntryKeysLocal}
             placeholder={identifying ? t("identifying") : t("speciesPlaceholder")}
             disabled={disabled || uploading}
             aria-label={t("speciesLabel")}
@@ -1497,6 +1503,7 @@ function ObservationGroupCard({
         <Textarea
           value={fields.notes}
           onChange={(event) => onChange({ notes: event.target.value })}
+          onKeyDown={keepTextEntryKeysLocal}
           placeholder={t("notesPlaceholder")}
           disabled={disabled || uploading}
           aria-label={t("notesLabel")}
@@ -1637,6 +1644,7 @@ function QuickTagsEditor({
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
+            keepTextEntryKeysLocal(event);
             if (event.key === "Enter" || event.key === ",") {
               event.preventDefault();
               commit(draft);
@@ -1710,6 +1718,7 @@ function QuickMeasurementsEditor({
             <Input
               value={entry.type}
               onChange={(event) => patchRow(entry.id, { type: event.target.value })}
+              onKeyDown={keepTextEntryKeysLocal}
               placeholder={t("measurementTypePlaceholder")}
               disabled={disabled}
               aria-label={t("measurementTypeLabel")}
@@ -1719,6 +1728,7 @@ function QuickMeasurementsEditor({
             <Input
               value={entry.value}
               onChange={(event) => patchRow(entry.id, { value: event.target.value })}
+              onKeyDown={keepTextEntryKeysLocal}
               placeholder={t("measurementValuePlaceholder")}
               disabled={disabled}
               aria-label={t("measurementValueLabel")}
@@ -1728,6 +1738,7 @@ function QuickMeasurementsEditor({
             <Input
               value={entry.unit}
               onChange={(event) => patchRow(entry.id, { unit: event.target.value })}
+              onKeyDown={keepTextEntryKeysLocal}
               placeholder={t("measurementUnitPlaceholder")}
               disabled={disabled}
               aria-label={t("measurementUnitLabel")}

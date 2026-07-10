@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ComponentProps, type DragEvent, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ComponentProps, type DragEvent, type KeyboardEvent, type ReactNode } from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import {
   AlertTriangleIcon,
@@ -78,6 +78,10 @@ type ObservationProjectContext = { projectUri: string; title: string };
 
 type Mode = "list" | "add";
 type ItemStatus = "analyzing" | "ready" | "error" | "uploading" | "uploaded" | "uploadError";
+
+function keepTextEntryKeysLocal(event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  event.stopPropagation();
+}
 
 type ObservationAnalysis = {
   scientificName: string;
@@ -3145,7 +3149,7 @@ function Field({ label, value, onChange, type = "text", disabled, required }: { 
         {label}
         {required ? <span className="text-destructive"> *</span> : null}
       </span>
-      <Input type={type} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} />
+      <Input type={type} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} onKeyDown={keepTextEntryKeysLocal} />
     </label>
   );
 }
@@ -3154,7 +3158,7 @@ function TextareaField({ label, value, onChange, disabled }: { label: string; va
   return (
     <label className="block space-y-1.5 text-sm">
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      <Textarea value={value} disabled={disabled} rows={3} onChange={(event) => onChange(event.target.value)} />
+      <Textarea value={value} disabled={disabled} rows={3} onChange={(event) => onChange(event.target.value)} onKeyDown={keepTextEntryKeysLocal} />
     </label>
   );
 }
