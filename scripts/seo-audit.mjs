@@ -7,6 +7,7 @@ const findings = [];
 const pageMetadataGaps = [];
 const publicHreflangGaps = [];
 const dynamicDetailMetadataGaps = [];
+const accountProfileMetadataGaps = [];
 const warnings = [];
 
 function read(path) {
@@ -37,6 +38,10 @@ function addDynamicDetailMetadataGap(id, detail) {
   dynamicDetailMetadataGaps.push({ id, detail });
 }
 
+function addAccountProfileMetadataGap(id, detail) {
+  accountProfileMetadataGaps.push({ id, detail });
+}
+
 const locales = ["en", "es", "pt", "sw", "id"];
 const layout = read("app/layout.tsx");
 const page = read("app/page.tsx");
@@ -46,6 +51,7 @@ const homeLanding = read("app/_components/HomeLanding.tsx");
 const projectsPage = read("app/projects/page.tsx");
 const observationsPage = read("app/observations/page.tsx");
 const projectDetailPage = read("app/projects/[did]/[rkey]/page.tsx");
+const accountLayout = read("app/account/[did]/layout.tsx");
 const publicPagesNeedingHreflang = [
   { path: "/", file: "app/page.tsx" },
   { path: "/observations", file: "app/observations/page.tsx" },
@@ -136,6 +142,25 @@ if (!projectDetailPage.includes("twitter:") || !projectDetailPage.includes("summ
   );
 }
 
+if (!accountLayout.includes("localizedAlternates(`/account/${encodeURIComponent(account.urlIdentifier)}`)")) {
+  addAccountProfileMetadataGap(
+    "account-profile-hreflang",
+    "Public account/profile metadata should use localizedAlternates for the canonical account path so organization profiles preserve language alternates.",
+  );
+}
+if (!accountLayout.includes("openGraph:") || !accountLayout.includes("url: accountHref")) {
+  addAccountProfileMetadataGap(
+    "account-profile-og-url",
+    "Public account/profile Open Graph metadata should include the canonical account URL for consistent previews.",
+  );
+}
+if (!accountLayout.includes("twitter:") || !accountLayout.includes("summary")) {
+  addAccountProfileMetadataGap(
+    "account-profile-twitter-card",
+    "Public account/profile metadata should define a Twitter/X summary card using the account name, description, and avatar when available.",
+  );
+}
+
 if (!projectsPage.includes("generateMetadata") || !projectsPage.includes("getTranslations")) {
   addPageMetadataGap("projects-page-localized-metadata", "Projects page should use localized metadata from messages, not hardcoded English.");
 }
@@ -215,6 +240,10 @@ console.log("Dynamic detail metadata gaps:");
 for (const gap of dynamicDetailMetadataGaps) {
   console.log(`- ${gap.id}: ${gap.detail}`);
 }
+console.log("Account profile metadata gaps:");
+for (const gap of accountProfileMetadataGaps) {
+  console.log(`- ${gap.id}: ${gap.detail}`);
+}
 for (const warning of warnings) {
   console.log(`WARN ${warning.id}: ${warning.detail}`);
 }
@@ -222,4 +251,5 @@ console.log(`METRIC seo_findings=${findings.length}`);
 console.log(`METRIC public_metadata_gaps=${pageMetadataGaps.length}`);
 console.log(`METRIC public_hreflang_gaps=${publicHreflangGaps.length}`);
 console.log(`METRIC dynamic_detail_metadata_gaps=${dynamicDetailMetadataGaps.length}`);
+console.log(`METRIC account_profile_metadata_gaps=${accountProfileMetadataGaps.length}`);
 console.log(`METRIC seo_warnings=${warnings.length}`);
