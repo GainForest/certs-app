@@ -3,10 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { localizedAlternates } from "@/app/_lib/seo-metadata";
 import { ExploreGridPageSkeleton } from "../_components/PageLoadingSkeletons";
+import { fetchSites } from "../_lib/indexer";
 import { getRequestOrigin } from "../_lib/request-origin";
 import { OrganizationsClient } from "./OrganizationsClient";
 
 export const revalidate = 86400;
+
+const INITIAL_ORGANIZATIONS_TARGET = 24;
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("marketplace.organizations.metadata");
@@ -34,9 +37,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function OrganizationsPage() {
-  const [t, origin] = await Promise.all([
+  const [t, origin, initialPage] = await Promise.all([
     getTranslations("marketplace.organizations.metadata"),
     getRequestOrigin(),
+    fetchSites(INITIAL_ORGANIZATIONS_TARGET, null, undefined, undefined, "both", {
+      sort: "newest",
+      featuredBadgesOnly: true,
+    }).catch(() => undefined),
   ]);
   const jsonLd = {
     "@context": "https://schema.org",
@@ -58,7 +65,7 @@ export default async function OrganizationsPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Suspense fallback={<ExploreGridPageSkeleton />}>
-        <OrganizationsClient />
+        <OrganizationsClient initialPage={initialPage} />
       </Suspense>
     </>
   );
