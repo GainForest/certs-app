@@ -23,6 +23,7 @@ const projectsServerContentGaps = [];
 const organizationsServerContentGaps = [];
 const listItemStructuredDataGaps = [];
 const observationDetailMetadataGaps = [];
+const observationBreadcrumbGaps = [];
 const warnings = [];
 
 function read(path) {
@@ -115,6 +116,10 @@ function addListItemStructuredDataGap(id, detail) {
 
 function addObservationDetailMetadataGap(id, detail) {
   observationDetailMetadataGaps.push({ id, detail });
+}
+
+function addObservationBreadcrumbGap(id, detail) {
+  observationBreadcrumbGaps.push({ id, detail });
 }
 
 const locales = ["en", "es", "pt", "sw", "id"];
@@ -264,6 +269,12 @@ if (!observationDetailPage.includes("buildObservationJsonLd") || !observationDet
   addObservationDetailMetadataGap(
     "observation-detail-jsonld",
     "Dynamic observation detail pages should emit Observation JSON-LD describing the public nature sighting, date, location, image, and observer profile when available.",
+  );
+}
+if (!observationDetailPage.includes("BreadcrumbList") || !observationDetailPage.includes("buildObservationBreadcrumbJsonLd") || !observationDetailPage.includes("observation-breadcrumb-json-ld")) {
+  addObservationBreadcrumbGap(
+    "observation-detail-breadcrumb-jsonld",
+    "Dynamic observation detail pages should emit BreadcrumbList JSON-LD (home → observations → sighting) so search results can understand hierarchy and breadcrumbs.",
   );
 }
 
@@ -560,6 +571,10 @@ console.log("Observation detail metadata gaps:");
 for (const gap of observationDetailMetadataGaps) {
   console.log(`- ${gap.id}: ${gap.detail}`);
 }
+console.log("Observation breadcrumb gaps:");
+for (const gap of observationBreadcrumbGaps) {
+  console.log(`- ${gap.id}: ${gap.detail}`);
+}
 for (const warning of warnings) {
   console.log(`WARN ${warning.id}: ${warning.detail}`);
 }
@@ -583,4 +598,5 @@ console.log(`METRIC projects_server_content_gaps=${projectsServerContentGaps.len
 console.log(`METRIC organizations_server_content_gaps=${organizationsServerContentGaps.length}`);
 console.log(`METRIC list_item_structured_data_gaps=${listItemStructuredDataGaps.length}`);
 console.log(`METRIC observation_detail_metadata_gaps=${observationDetailMetadataGaps.length}`);
+console.log(`METRIC observation_breadcrumb_gaps=${observationBreadcrumbGaps.length}`);
 console.log(`METRIC seo_warnings=${warnings.length}`);
