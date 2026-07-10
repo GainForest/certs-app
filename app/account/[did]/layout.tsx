@@ -8,6 +8,7 @@ import { fetchHiddenAccountDids, fetchRecognitionBadgesForDid } from "@/app/_lib
 import { fetchEndorsementsGivenCount } from "@/app/_lib/endorsements-given";
 import { RECOGNITION_BADGE_KEYS, type RecognitionBadgeKey } from "@/app/_lib/recognition-badges";
 import { getGainForestModeratorAccess } from "@/app/internal/badges/_lib/access";
+import { localizedAlternates } from "@/app/_lib/seo-metadata";
 import { AccountChrome } from "../_components/AccountChrome";
 import { AccountHero } from "../_components/AccountHero";
 import { AccountTabBar } from "../_components/AccountTabBar";
@@ -27,10 +28,27 @@ export async function generateMetadata({ params }: { params: Promise<{ did: stri
   }
 
   const account = await getAccountRouteData(routeParams.did, routeParams.urlIdentifier);
+  const accountHref = `/account/${encodeURIComponent(account.urlIdentifier)}`;
+  const title = `${account.displayName} — Account`;
+  const description = account.description ?? `Public GainForest profile for ${account.displayName}.`;
+  const previewImage = account.avatarUrl ? [{ url: account.avatarUrl, alt: account.displayName }] : undefined;
+
   return {
-    title: `${account.displayName} — Account`,
-    description: account.description ?? `Public GainForest profile for ${account.displayName}.`,
-    alternates: { canonical: `/account/${encodeURIComponent(account.urlIdentifier)}` },
+    title,
+    description,
+    alternates: localizedAlternates(`/account/${encodeURIComponent(account.urlIdentifier)}`),
+    openGraph: {
+      title,
+      description,
+      url: accountHref,
+      images: previewImage,
+    },
+    twitter: {
+      card: previewImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: previewImage,
+    },
   };
 }
 
