@@ -8,6 +8,7 @@ const pageMetadataGaps = [];
 const publicHreflangGaps = [];
 const dynamicDetailMetadataGaps = [];
 const accountProfileMetadataGaps = [];
+const sitemapDiscoveryGaps = [];
 const warnings = [];
 
 function read(path) {
@@ -40,6 +41,10 @@ function addDynamicDetailMetadataGap(id, detail) {
 
 function addAccountProfileMetadataGap(id, detail) {
   accountProfileMetadataGaps.push({ id, detail });
+}
+
+function addSitemapDiscoveryGap(id, detail) {
+  sitemapDiscoveryGaps.push({ id, detail });
 }
 
 const locales = ["en", "es", "pt", "sw", "id"];
@@ -139,6 +144,19 @@ if (!projectDetailPage.includes("twitter:") || !projectDetailPage.includes("summ
   addDynamicDetailMetadataGap(
     "project-detail-twitter-card",
     "Dynamic project detail metadata should define a Twitter/X card using the project title, description, and image.",
+  );
+}
+
+if (!sitemap.includes("fetchOrganizationEntries") || !sitemap.includes("/account/${encodeURIComponent(node.did)}")) {
+  addSitemapDiscoveryGap(
+    "organization-profile-sitemap",
+    "Sitemap should include public organization profile pages from app.certified.actor.organization so crawlers can discover organization landing pages alongside projects.",
+  );
+}
+if (!sitemap.includes("appCertifiedActorOrganization")) {
+  addSitemapDiscoveryGap(
+    "organization-profile-query",
+    "Sitemap should query certified organization records to discover public organization profile URLs.",
   );
 }
 
@@ -244,6 +262,10 @@ console.log("Account profile metadata gaps:");
 for (const gap of accountProfileMetadataGaps) {
   console.log(`- ${gap.id}: ${gap.detail}`);
 }
+console.log("Sitemap discovery gaps:");
+for (const gap of sitemapDiscoveryGaps) {
+  console.log(`- ${gap.id}: ${gap.detail}`);
+}
 for (const warning of warnings) {
   console.log(`WARN ${warning.id}: ${warning.detail}`);
 }
@@ -252,4 +274,5 @@ console.log(`METRIC public_metadata_gaps=${pageMetadataGaps.length}`);
 console.log(`METRIC public_hreflang_gaps=${publicHreflangGaps.length}`);
 console.log(`METRIC dynamic_detail_metadata_gaps=${dynamicDetailMetadataGaps.length}`);
 console.log(`METRIC account_profile_metadata_gaps=${accountProfileMetadataGaps.length}`);
+console.log(`METRIC sitemap_discovery_gaps=${sitemapDiscoveryGaps.length}`);
 console.log(`METRIC seo_warnings=${warnings.length}`);

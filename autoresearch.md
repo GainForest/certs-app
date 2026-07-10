@@ -5,7 +5,8 @@ Improve gainforest.app technical SEO and brand/entity signals so Google can bett
 
 ## Metrics
 Current phase:
-- **Primary**: `account_profile_metadata_gaps` (count, lower is better) — missing hreflang/social metadata on public account and organization profile pages.
+- **Primary**: `sitemap_discovery_gaps` (count, lower is better) — missing sitemap discovery paths for public organization/profile landing pages.
+- **Secondary**: `account_profile_metadata_gaps` — missing hreflang/social metadata on public account and organization profile pages.
 - **Secondary**: `dynamic_detail_metadata_gaps` — missing hreflang/social metadata on dynamic project detail pages that are included in the sitemap.
 - **Secondary**: `public_hreflang_gaps` — public pages whose page-level metadata overrides root metadata without preserving localized `hreflang` alternates.
 - **Secondary**: `public_metadata_gaps` — missing/hardcoded localized metadata on important public index pages.
@@ -14,6 +15,7 @@ Current phase:
 - **Secondary**: `check_site_meta_ready` — whether `npx check-site-meta` successfully boots against the configured target URL.
 
 Previous phases:
+- **Primary**: `account_profile_metadata_gaps` (count, lower is better) — missing hreflang/social metadata on public account and organization profile pages.
 - **Primary**: `dynamic_detail_metadata_gaps` (count, lower is better) — missing hreflang/social metadata on dynamic project detail pages that are included in the sitemap.
 - **Primary**: `public_hreflang_gaps` (count, lower is better) — public pages whose page-level metadata overrides root metadata without preserving localized `hreflang` alternates.
 - **Primary**: `public_metadata_gaps` (count, lower is better) — missing/hardcoded localized metadata on important public index pages.
@@ -56,3 +58,5 @@ The script outputs `METRIC name=value` lines. It also starts `npx check-site-met
 - Started a fourth phase for dynamic project detail metadata: sitemap-backed project detail pages should preserve localized alternates and include canonical Open Graph/Twitter preview metadata.
 - Reduced `dynamic_detail_metadata_gaps` from 3 to 0 by adding localized alternates plus Open Graph/Twitter metadata to project detail pages.
 - Started a fifth phase for public account/profile metadata: organization and user profiles are linked throughout the app and should preserve localized alternates plus social preview metadata.
+- Reduced `account_profile_metadata_gaps` from 3 to 0 by adding localized alternates plus Open Graph/Twitter metadata to public account/profile pages.
+- Started a sixth phase for sitemap discovery: public certified organization profiles should be discoverable in the sitemap, not only through client/internal links.
