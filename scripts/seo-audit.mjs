@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 const root = process.cwd();
 const findings = [];
+const pageMetadataGaps = [];
 const warnings = [];
 
 function read(path) {
@@ -22,15 +23,22 @@ function addWarning(id, detail) {
   warnings.push({ id, detail });
 }
 
+function addPageMetadataGap(id, detail) {
+  pageMetadataGaps.push({ id, detail });
+}
+
 const locales = ["en", "es", "pt", "sw", "id"];
 const layout = read("app/layout.tsx");
 const page = read("app/page.tsx");
 const sitemap = read("app/sitemap.ts");
 const robots = read("app/robots.ts");
 const homeLanding = read("app/_components/HomeLanding.tsx");
+const projectsPage = read("app/projects/page.tsx");
+const observationsPage = read("app/observations/page.tsx");
 
 for (const locale of locales) {
   const common = readJson(`messages/${locale}/common.json`);
+  const marketplace = readJson(`messages/${locale}/marketplace.json`);
   const seo = common.seo ?? {};
   const title = String(seo.title ?? "");
   const description = String(seo.description ?? "");
@@ -47,6 +55,20 @@ for (const locale of locales) {
   if (description.length < 80 || description.length > 170) {
     addFinding(`seo-description-length-${locale}`, `${locale} root SEO description length is ${description.length}; target 80–170 characters.`);
   }
+
+  const projectsMetadata = marketplace.projects?.metadata;
+  if (!projectsMetadata?.title || !projectsMetadata?.description) {
+    addPageMetadataGap(`projects-metadata-${locale}`, `${locale} projects metadata translation is missing.`);
+  } else if (!String(projectsMetadata.description).includes("GainForest")) {
+    addPageMetadataGap(`projects-metadata-brand-${locale}`, `${locale} projects metadata description should name GainForest.`);
+  }
+
+  const observationsMetadata = marketplace.observations?.metadata;
+  if (!observationsMetadata?.title || !observationsMetadata?.description) {
+    addPageMetadataGap(`observations-metadata-${locale}`, `${locale} observations metadata translation is missing.`);
+  } else if (!String(observationsMetadata.description).includes("GainForest")) {
+    addPageMetadataGap(`observations-metadata-brand-${locale}`, `${locale} observations metadata description should name GainForest.`);
+  }
 }
 
 if (!layout.includes("applicationName: SITE_NAME")) {
@@ -60,6 +82,13 @@ if (!layout.includes("@type") || !layout.includes("Organization") || !layout.inc
 }
 if (!layout.includes("sameAs")) {
   addFinding("jsonld-brand-sameas", "Organization JSON-LD should include sameAs links to connect GainForest's web entities.");
+}
+
+if (!projectsPage.includes("generateMetadata") || !projectsPage.includes("getTranslations")) {
+  addPageMetadataGap("projects-page-localized-metadata", "Projects page should use localized metadata from messages, not hardcoded English.");
+}
+if (!observationsPage.includes("generateMetadata") || !observationsPage.includes("getTranslations")) {
+  addPageMetadataGap("observations-page-localized-metadata", "Observations page should use localized metadata from messages, not hardcoded English.");
 }
 
 if (!page.includes("GainForest connects")) {
@@ -122,8 +151,13 @@ console.log("SEO audit findings:");
 for (const finding of findings) {
   console.log(`- ${finding.id}: ${finding.detail}`);
 }
+console.log("Public page metadata gaps:");
+for (const gap of pageMetadataGaps) {
+  console.log(`- ${gap.id}: ${gap.detail}`);
+}
 for (const warning of warnings) {
   console.log(`WARN ${warning.id}: ${warning.detail}`);
 }
 console.log(`METRIC seo_findings=${findings.length}`);
+console.log(`METRIC public_metadata_gaps=${pageMetadataGaps.length}`);
 console.log(`METRIC seo_warnings=${warnings.length}`);

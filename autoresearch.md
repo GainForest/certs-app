@@ -4,9 +4,14 @@
 Improve gainforest.app technical SEO and brand/entity signals so Google can better rank GainForest for direct and relevant sustainability searches. A top Google ranking cannot be guaranteed from code alone, so this loop optimizes measurable on-page and metadata factors that support ranking: titles, descriptions, canonicals, hreflang, crawlability, structured data, social previews, and sitemap coverage.
 
 ## Metrics
-- **Primary**: `seo_findings` (count, lower is better) — deterministic findings from `scripts/seo-audit.mjs`.
+Current phase:
+- **Primary**: `public_metadata_gaps` (count, lower is better) — missing/hardcoded localized metadata on important public index pages.
+- **Secondary**: `seo_findings` — core technical SEO findings from `scripts/seo-audit.mjs`.
 - **Secondary**: `seo_warnings` — non-blocking follow-up prompts from the audit.
 - **Secondary**: `check_site_meta_ready` — whether `npx check-site-meta` successfully boots against the configured target URL.
+
+Previous phase:
+- **Primary**: `seo_findings` (count, lower is better) — deterministic findings from `scripts/seo-audit.mjs`.
 
 ## How to Run
 `./autoresearch.sh`
@@ -37,3 +42,5 @@ The script outputs `METRIC name=value` lines. It also starts `npx check-site-met
 
 ## What's Been Tried
 - Baseline setup: deterministic SEO audit plus `npx check-site-meta` readiness smoke test.
+- Reduced `seo_findings` from 8 to 0 by adding localized brand descriptions, root hreflang alternates, and Organization/WebSite JSON-LD with sameAs links.
+- Started a second phase for localized public-page metadata: Projects and Observations should use translated Metadata API values and brand-forward descriptions across all configured languages.
