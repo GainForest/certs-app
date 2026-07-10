@@ -5,7 +5,8 @@ Improve gainforest.app technical SEO and brand/entity signals so Google can bett
 
 ## Metrics
 Current phase:
-- **Primary**: `project_breadcrumb_gaps` (count, lower is better) — dynamic project detail pages missing BreadcrumbList JSON-LD for search-result hierarchy.
+- **Primary**: `account_profile_structured_data_gaps` (count, lower is better) — public account/profile pages missing ProfilePage JSON-LD with Person/Organization mainEntity data.
+- **Secondary**: `project_breadcrumb_gaps` — dynamic project detail pages missing BreadcrumbList JSON-LD for search-result hierarchy.
 - **Secondary**: `remaining_social_metadata_gaps` — remaining indexable public pages whose social preview metadata still falls back to generic site/home Open Graph/Twitter data.
 - **Secondary**: `list_social_metadata_gaps` — public listing pages whose social preview metadata still falls back to generic site/home Open Graph/Twitter data.
 - **Secondary**: `list_structured_data_gaps` — public listing pages missing CollectionPage JSON-LD that describes their localized index/list content.
@@ -24,6 +25,7 @@ Current phase:
 - **Secondary**: `check_site_meta_ready` — whether `npx check-site-meta` successfully boots against the configured target URL.
 
 Previous phases:
+- **Primary**: `project_breadcrumb_gaps` (count, lower is better) — dynamic project detail pages missing BreadcrumbList JSON-LD for search-result hierarchy.
 - **Primary**: `remaining_social_metadata_gaps` (count, lower is better) — remaining indexable public pages whose social preview metadata still falls back to generic site/home Open Graph/Twitter data.
 - **Primary**: `list_social_metadata_gaps` (count, lower is better) — public listing pages whose social preview metadata still falls back to generic site/home Open Graph/Twitter data.
 - **Primary**: `list_structured_data_gaps` (count, lower is better) — public listing pages missing CollectionPage JSON-LD that describes their localized index/list content.
@@ -96,3 +98,5 @@ The script outputs `METRIC name=value` lines. It also starts `npx check-site-met
 - Started a thirteenth phase for remaining social metadata: other indexable public pages (`/feed`, `/submit-data`, `/taina`, `/devices`, `/status`) should also use page-specific social preview metadata because they now have localized metadata and sitemap/hreflang coverage.
 - Reduced `remaining_social_metadata_gaps` from 5 to 0 by adding a reusable `socialPreviewMetadata` helper and applying it to `/feed`, `/submit-data`, `/taina`, `/devices`, and `/status`.
 - Started a fourteenth phase for project breadcrumbs: dynamic project detail pages are high-value sitemap-backed landing pages and should emit `BreadcrumbList` JSON-LD for home → projects → project hierarchy.
+- Reduced `project_breadcrumb_gaps` from 1 to 0 by adding `BreadcrumbList` JSON-LD to dynamic project detail pages.
+- Started a fifteenth phase for account/profile structured data: public profile pages already have metadata, social previews, hreflang, and sitemap discovery for organizations, so they should also emit `ProfilePage` JSON-LD with `Person` or `Organization` mainEntity data.

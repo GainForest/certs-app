@@ -17,6 +17,7 @@ const listStructuredDataGaps = [];
 const listSocialMetadataGaps = [];
 const remainingSocialMetadataGaps = [];
 const projectBreadcrumbGaps = [];
+const accountProfileStructuredDataGaps = [];
 const warnings = [];
 
 function read(path) {
@@ -85,6 +86,10 @@ function addRemainingSocialMetadataGap(id, detail) {
 
 function addProjectBreadcrumbGap(id, detail) {
   projectBreadcrumbGaps.push({ id, detail });
+}
+
+function addAccountProfileStructuredDataGap(id, detail) {
+  accountProfileStructuredDataGaps.push({ id, detail });
 }
 
 const locales = ["en", "es", "pt", "sw", "id"];
@@ -324,6 +329,12 @@ if (!accountLayout.includes("twitter:") || !accountLayout.includes("summary")) {
     "Public account/profile metadata should define a Twitter/X summary card using the account name, description, and avatar when available.",
   );
 }
+if (!accountLayout.includes("ProfilePage") || !accountLayout.includes("buildAccountProfileJsonLd") || !accountLayout.includes("account-profile-json-ld")) {
+  addAccountProfileStructuredDataGap(
+    "account-profile-jsonld",
+    "Public account/profile pages should emit ProfilePage JSON-LD with Person/Organization mainEntity data so search engines understand profile entities beyond generic page metadata.",
+  );
+}
 
 if (!projectsPage.includes("generateMetadata") || !projectsPage.includes("getTranslations")) {
   addPageMetadataGap("projects-page-localized-metadata", "Projects page should use localized metadata from messages, not hardcoded English.");
@@ -444,6 +455,10 @@ console.log("Project breadcrumb gaps:");
 for (const gap of projectBreadcrumbGaps) {
   console.log(`- ${gap.id}: ${gap.detail}`);
 }
+console.log("Account profile structured data gaps:");
+for (const gap of accountProfileStructuredDataGaps) {
+  console.log(`- ${gap.id}: ${gap.detail}`);
+}
 for (const warning of warnings) {
   console.log(`WARN ${warning.id}: ${warning.detail}`);
 }
@@ -461,4 +476,5 @@ console.log(`METRIC list_structured_data_gaps=${listStructuredDataGaps.length}`)
 console.log(`METRIC list_social_metadata_gaps=${listSocialMetadataGaps.length}`);
 console.log(`METRIC remaining_social_metadata_gaps=${remainingSocialMetadataGaps.length}`);
 console.log(`METRIC project_breadcrumb_gaps=${projectBreadcrumbGaps.length}`);
+console.log(`METRIC account_profile_structured_data_gaps=${accountProfileStructuredDataGaps.length}`);
 console.log(`METRIC seo_warnings=${warnings.length}`);
