@@ -1729,6 +1729,7 @@
       "body": "When you post an update here, we can also publish it to Bluesky, an open social network with millions of people.",
       "discovery": "It's a great way to get discovered: your updates reach nature lovers, funders, and researchers far beyond GainForest.",
       "profileNote": "You don't have a Bluesky profile yet, so we'll create one for you from your GainForest profile (your name, photo, and bio).",
+      "profileNoteMaybe": "If you don't have a Bluesky profile yet, we'll create one for you from your GainForest profile (your name, photo, and bio).",
       "optOutNote": "Only new posts you publish after turning this on are shared. You can turn it off anytime in Settings.",
       "confirm": "Turn on sharing",
       "cancel": "Not now",

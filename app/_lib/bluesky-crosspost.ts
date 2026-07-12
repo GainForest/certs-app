@@ -81,15 +81,23 @@ export async function saveBlueskyCrosspostPref(did: string, enabled: boolean): P
 
 // ── Bluesky profile bootstrap ────────────────────────────────────────────────
 
-/** Whether the account already declares a Bluesky profile record. Public PDS
- *  read; null means "couldn't check" (offline PDS) and callers should treat it
- *  as unknown rather than missing. */
+/** Whether the account already declares a Bluesky profile record. Checks the
+ *  account's own PDS first, then the public Bluesky appview as a fallback
+ *  (an account the appview already knows definitely has a presence). Null
+ *  means "couldn't check" and callers should treat it as unknown, not missing. */
 export async function hasBlueskyProfile(did: string): Promise<boolean | null> {
   const record = await getPdsRecord(did, BLUESKY_PROFILE_COLLECTION, SELF_RKEY).catch(() => null);
   if (record) return true;
+  // The PDS read can fail for reasons other than "no record" (unreachable
+  // host, odd did:web setups); the appview is a second, independent signal.
+  const params = new URLSearchParams({ actor: did });
+  const res = await fetch(`${APPVIEW_BASE}/xrpc/app.bsky.actor.getProfile?${params.toString()}`, {
+    headers: { accept: "application/json" },
+  }).catch(() => null);
+  if (res?.ok) return true;
   // getPdsRecord folds "not found" and "unreachable" into null; distinguish by
-  // asking for the certified profile, which every account has. If that also
-  // fails the PDS is unreachable and we report "unknown".
+  // asking for the certified profile, which every GainForest account has. If
+  // that also fails the PDS is unreachable and we report "unknown".
   const certified = await getPdsRecord(did, CERTIFIED_PROFILE_COLLECTION, SELF_RKEY).catch(() => null);
   return certified ? false : null;
 }
@@ -116,8 +124,7 @@ function clip(value: unknown, max: number): string | null {
  * No-op when a Bluesky profile is already there.
  */
 export async function ensureBlueskyProfile(did: string): Promise<void> {
-  const existing = await getPdsRecord(did, BLUESKY_PROFILE_COLLECTION, SELF_RKEY).catch(() => null);
-  if (existing) return;
+  if ((await hasBlueskyProfile(did)) === true) return;
 
   const certified = await getPdsRecord(did, CERTIFIED_PROFILE_COLLECTION, SELF_RKEY).catch(() => null);
   const source = certified?.value ?? {};
@@ -138,16 +145,26 @@ export async function ensureBlueskyProfile(did: string): Promise<void> {
   const size = typeof avatarBlob?.size === "number" ? avatarBlob.size : null;
   const avatarOk = avatarBlob && (mimeType === "image/png" || mimeType === "image/jpeg") && size !== null && size <= 1_000_000;
 
+  // createRecord (not putRecord) so an existing profile can never be
+  // clobbered: if the existence checks above misfired, the PDS rejects a
+  // create for an rkey that's already taken and the user's real Bluesky
+  // profile stays untouched.
   if (avatarOk) {
     try {
-      await putRecord(BLUESKY_PROFILE_COLLECTION, SELF_RKEY, { ...record, avatar: avatarBlob });
+      await createRecord(BLUESKY_PROFILE_COLLECTION, { ...record, avatar: avatarBlob }, SELF_RKEY);
       return;
     } catch {
       // Blob constraints can still fail server-side (e.g. stale metadata);
-      // fall through and write the profile without the avatar.
+      // fall through and try the profile without the avatar. If the failure
+      // was "record exists", the retry below fails the same way — harmless.
     }
   }
-  await putRecord(BLUESKY_PROFILE_COLLECTION, SELF_RKEY, record);
+  try {
+    await createRecord(BLUESKY_PROFILE_COLLECTION, record, SELF_RKEY);
+  } catch {
+    // Most likely the profile already exists (existence check couldn't see
+    // it) — exactly the case we must not overwrite, so swallow and move on.
+  }
 }
 
 // ── Twin post writes (best-effort) ───────────────────────────────────────────

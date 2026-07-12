@@ -815,7 +815,9 @@ export function FeedComposer({
   const personalDid = signedIn && !acting.isGroup ? acting.actingDid : null;
   const [bskyPref, setBskyPref] = useState<BlueskyCrosspostPref | null>(null);
   const [consentOpen, setConsentOpen] = useState(false);
-  const [needsProfile, setNeedsProfile] = useState<boolean | null>(null);
+  // Whether the account already HAS an app.bsky.actor.profile (null = unknown);
+  // inverted into the modal's `needsProfile` prop below.
+  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
 
   useEffect(() => {
     setBskyPref(null);
@@ -839,8 +841,8 @@ export function FeedComposer({
     if (!personalDid || !bskyPref) return;
     if (!bskyPref.enabled && !bskyPref.consented) {
       // First activation: ask for consent before anything touches Bluesky.
-      setNeedsProfile(null);
-      void hasBlueskyProfile(personalDid).then(setNeedsProfile);
+      setHasProfile(null);
+      void hasBlueskyProfile(personalDid).then(setHasProfile);
       setConsentOpen(true);
       return;
     }
@@ -971,7 +973,7 @@ export function FeedComposer({
       {error ? <p className="mt-1 pl-12 text-xs text-destructive">{error}</p> : null}
       <BlueskyConsentModal
         open={consentOpen}
-        needsProfile={needsProfile}
+        needsProfile={hasProfile === null ? null : !hasProfile}
         onOpenChange={setConsentOpen}
         onConfirm={confirmBlueskyConsent}
       />

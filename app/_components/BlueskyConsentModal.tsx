@@ -73,7 +73,13 @@ export function BlueskyConsentModal({
             <div className="space-y-2.5">
               <p>{t("body")}</p>
               <p>{t("discovery")}</p>
-              {needsProfile !== false ? <p>{t("profileNote")}</p> : null}
+              {/* Definite copy only when we KNOW the profile is missing;
+                  conditional copy while the check is unresolved. */}
+              {needsProfile === true ? (
+                <p>{t("profileNote")}</p>
+              ) : needsProfile === null ? (
+                <p>{t("profileNoteMaybe")}</p>
+              ) : null}
               <p className="text-xs text-muted-foreground/80">{t("optOutNote")}</p>
             </div>
           </DialogDescription>

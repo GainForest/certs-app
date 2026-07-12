@@ -1729,6 +1729,7 @@
       "body": "Cuando publiques una actualización aquí, también podemos publicarla en Bluesky, una red social abierta con millones de personas.",
       "discovery": "Es una gran forma de darte a conocer: tus actualizaciones llegan a amantes de la naturaleza, financiadores e investigadores mucho más allá de GainForest.",
       "profileNote": "Aún no tienes un perfil de Bluesky, así que crearemos uno a partir de tu perfil de GainForest (tu nombre, foto y biografía).",
+      "profileNoteMaybe": "Si aún no tienes un perfil de Bluesky, crearemos uno a partir de tu perfil de GainForest (tu nombre, foto y biografía).",
       "optOutNote": "Solo se comparten las publicaciones nuevas que hagas después de activarlo. Puedes desactivarlo cuando quieras en Ajustes.",
       "confirm": "Activar el compartir",
       "cancel": "Ahora no",
