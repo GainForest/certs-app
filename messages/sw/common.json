@@ -978,6 +978,8 @@
       "cancelDelete": "Ghairi"
     },
     "composer": {
+      "title": "Shiriki taarifa",
+      "close": "Funga",
       "placeholder": "Shiriki taarifa mpya na jamii…",
       "signedOut": "Ingia ili kushiriki taarifa mpya",
       "addObservation": "Ongeza uchunguzi wa asili",

@@ -654,6 +654,7 @@
       "title": "Adicionar observações",
       "description": "Solte fotos e ajudamos a identificar o que aparece nelas.",
       "close": "Fechar",
+      "back": "Voltar",
       "dropTitle": "Arraste e solte suas fotos",
       "dropHint": "JPG, PNG ou HEIC · até {max} fotos",
       "choose": "Escolher fotos",

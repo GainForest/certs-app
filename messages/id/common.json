@@ -978,6 +978,8 @@
       "cancelDelete": "Batal"
     },
     "composer": {
+      "title": "Bagikan pembaruan",
+      "close": "Tutup",
       "placeholder": "Bagikan kabar terbaru dengan komunitas…",
       "signedOut": "Masuk untuk membagikan kabar terbaru",
       "addObservation": "Tambahkan pengamatan alam",

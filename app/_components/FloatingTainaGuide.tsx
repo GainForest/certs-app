@@ -748,7 +748,10 @@ export function FloatingTainaGuide() {
         }}
         aria-label={t("restoreLabel")}
         title={t("restoreLabel")}
-        className="fixed bottom-6 right-0 z-[70] flex items-center rounded-l-full border border-r-0 border-border bg-background/95 py-1 pl-2 pr-1.5 shadow-[0_2px_10px_-3px_rgba(40,50,30,0.3)] backdrop-blur-sm transition-transform hover:-translate-x-0.5"
+        // On /feed the phone composer bar sits at the bottom, so lift the tab
+        // above it there (mobile only — the bar is sm:hidden); elsewhere and on
+        // larger screens it keeps its usual bottom-6 spot.
+        className={`fixed right-0 z-[70] flex items-center rounded-l-full border border-r-0 border-border bg-background/95 py-1 pl-2 pr-1.5 shadow-[0_2px_10px_-3px_rgba(40,50,30,0.3)] backdrop-blur-sm transition-transform hover:-translate-x-0.5 ${pathname === "/feed" ? "bottom-24 sm:bottom-6" : "bottom-6"}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

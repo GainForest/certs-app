@@ -978,6 +978,8 @@
       "cancelDelete": "Cancelar"
     },
     "composer": {
+      "title": "Compartilhe uma novidade",
+      "close": "Fechar",
       "placeholder": "Compartilhe uma novidade com a comunidade…",
       "signedOut": "Entre para compartilhar uma novidade",
       "addObservation": "Adicionar um avistamento da natureza",

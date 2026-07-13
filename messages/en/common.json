@@ -978,6 +978,8 @@
       "cancelDelete": "Cancel"
     },
     "composer": {
+      "title": "Share an update",
+      "close": "Close",
       "placeholder": "Share an update with the community…",
       "signedOut": "Sign in to share an update",
       "addObservation": "Add a nature sighting",
