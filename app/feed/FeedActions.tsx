@@ -1053,6 +1053,22 @@ export function MobileComposerBar({
   // trip out to the sighting uploader and back.
   const [draft, setDraft] = useState("");
 
+  // The bar is fixed to the viewport bottom, so it would otherwise sit on top of
+  // the page footer at the end of the feed. Watch the footer and slide the bar
+  // (and its scrim) out of the way as it approaches, then bring it back on the
+  // way up. rootMargin gives a head start so the slide finishes before overlap.
+  const [footerNear, setFooterNear] = useState(false);
+  useEffect(() => {
+    const footer = document.querySelector("footer");
+    if (!footer) return;
+    const observer = new IntersectionObserver(
+      (entries) => setFooterNear(entries[0]?.isIntersecting ?? false),
+      { rootMargin: "0px 0px 96px 0px" },
+    );
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+
   // A drawer on phones (no fullscreenOnMobile → bottom sheet); a small centered
   // dialog on the narrow tablet band. replaceAll keeps exactly one modal on the
   // shared stack so its mode never fights the fullscreen sighting uploader.
@@ -1095,7 +1111,10 @@ export function MobileComposerBar({
           scrolling image feed re-composite every frame and tank mobile perf.
           A gradient is essentially free and still separates the bar. */}
       <div
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-32"
+        className={cn(
+          "pointer-events-none fixed inset-x-0 bottom-0 z-30 h-32 transition-transform duration-300",
+          footerNear && "translate-y-full",
+        )}
         style={{
           background:
             "linear-gradient(to top, var(--background) 0%, var(--background) 32%, transparent 100%)",
@@ -1103,11 +1122,15 @@ export function MobileComposerBar({
         }}
       />
       {/* A detached floating island — side margins + a gap above the bottom edge
-          and a shadow. */}
+          and a shadow. Slides down + fades out as the footer arrives so it never
+          overlaps it. */}
       <button
         type="button"
         onClick={openComposer}
-        className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex items-center gap-3 rounded-full border-2 border-primary bg-background/90 py-2 pl-2 pr-4 text-left shadow-lg backdrop-blur transition-colors active:bg-muted supports-[backdrop-filter]:bg-background/80"
+        className={cn(
+          "fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex items-center gap-3 rounded-full border-2 border-primary bg-background/90 py-2 pl-2 pr-4 text-left shadow-lg backdrop-blur transition-[transform,opacity] duration-300 active:bg-muted supports-[backdrop-filter]:bg-background/80",
+          footerNear && "pointer-events-none translate-y-[calc(100%+2rem)] opacity-0",
+        )}
       >
         <ResolvedAvatar
           did={acting.actingDid}
