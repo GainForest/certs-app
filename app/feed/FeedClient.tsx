@@ -458,9 +458,9 @@ export function FeedClient({
         </aside>
       </div>
 
-      {/* Phone composer bar — a section-level child so `sticky` keeps it
-          floating at the viewport bottom through the feed, then lets it ride up
-          into the footer at the end of the page instead of overlapping it. */}
+      {/* Phone composer bar — fixed to the viewport bottom (see note in
+          MobileComposerBar for why not sticky). Section-level placement is fine
+          since fixed is viewport-relative. */}
       <MobileComposerBar signedIn={signedIn} viewerDid={viewerDid} onPost={interactions.addPost} />
     </section>
   );

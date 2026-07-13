@@ -1084,18 +1084,18 @@ export function MobileComposerBar({
   };
 
   return (
-    // Sticky (not fixed): it floats at the viewport bottom while the feed
-    // scrolls, then rides up into the footer at the page end instead of pinning
-    // over it. Section-level so its sticky range spans the whole feed. The
-    // container itself is click-through; only the bar re-enables pointer events.
-    <div className="pointer-events-none sticky bottom-0 z-30 sm:hidden">
+    // Fixed (not sticky): the app shell is `h-screen` (100vh) with the feed
+    // scrolling inside <main>, so on mobile <main>'s bottom sits below the
+    // visible fold — a `sticky bottom-0` bar pins there and disappears. Fixed
+    // pins to the visual viewport bottom, so it stays visible. `sm:hidden`
+    // keeps it phone-only; the section's pb clears the last rows.
+    <div className="sm:hidden">
       {/* A plain gradient scrim so the feed fades out under the bar. We do NOT
-          use ProgressiveBlur here: stacked backdrop-filter layers, sticky over
-          the scrolling image feed, re-composite every frame and tank mobile
-          perf. A gradient is essentially free and still separates the bar.
-          Anchored to the bottom, taller than the bar (visual only). */}
+          use ProgressiveBlur here: stacked backdrop-filter layers over the
+          scrolling image feed re-composite every frame and tank mobile perf.
+          A gradient is essentially free and still separates the bar. */}
       <div
-        className="absolute inset-x-0 bottom-0 h-32"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-32"
         style={{
           background:
             "linear-gradient(to top, var(--background) 0%, var(--background) 32%, transparent 100%)",
@@ -1103,28 +1103,25 @@ export function MobileComposerBar({
         }}
       />
       {/* A detached floating island — side margins + a gap above the bottom edge
-          and a shadow. The wrapper's padding creates the float gap; the button
-          re-enables pointer events. Sits above the scrim. */}
-      <div className="relative z-10 px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <button
-          type="button"
-          onClick={openComposer}
-          className="pointer-events-auto flex w-full items-center gap-3 rounded-full border-2 border-primary bg-background/90 py-2 pl-2 pr-4 text-left shadow-lg backdrop-blur transition-colors active:bg-muted supports-[backdrop-filter]:bg-background/80"
-        >
-          <ResolvedAvatar
-            did={acting.actingDid}
-            imageUrl={acting.card.avatarUrl}
-            name={acting.card.name}
-            fallbackIcon={<UserIcon className="size-4" />}
-            className="size-8 shrink-0"
-            sizes="32px"
-          />
-          <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground/80">
-            {signedIn ? t("composer.placeholder") : t("composer.signedOut")}
-          </span>
-          <SendHorizonalIcon className="size-4 shrink-0 text-primary" />
-        </button>
-      </div>
+          and a shadow. */}
+      <button
+        type="button"
+        onClick={openComposer}
+        className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex items-center gap-3 rounded-full border-2 border-primary bg-background/90 py-2 pl-2 pr-4 text-left shadow-lg backdrop-blur transition-colors active:bg-muted supports-[backdrop-filter]:bg-background/80"
+      >
+        <ResolvedAvatar
+          did={acting.actingDid}
+          imageUrl={acting.card.avatarUrl}
+          name={acting.card.name}
+          fallbackIcon={<UserIcon className="size-4" />}
+          className="size-8 shrink-0"
+          sizes="32px"
+        />
+        <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground/80">
+          {signedIn ? t("composer.placeholder") : t("composer.signedOut")}
+        </span>
+        <SendHorizonalIcon className="size-4 shrink-0 text-primary" />
+      </button>
       <ModalPortal id={modalId}>
         {/* Not ModalContent on purpose: its built-in DialogClose can't reach the
             Radix Dialog context through the portal (content keeps the caller's
