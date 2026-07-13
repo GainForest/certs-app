@@ -30,6 +30,7 @@ import {
   InlineEditor,
   LikeButton,
   LocalPostsList,
+  MobileComposerBar,
   ReplyComposer,
   ReplyToggle,
   useFeedInteractions,
@@ -312,21 +313,19 @@ export function FeedClient({
       {/* Hero */}
       <div className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-linear-to-b from-primary/8 via-primary/2 to-transparent" />
-        <div className="mx-auto flex max-w-3xl flex-col px-6 pb-6 pt-[72px] sm:px-8 animate-in lg:max-w-4xl">
-          <div className="flex items-center gap-2 text-primary/70">
-            <NewspaperIcon className="size-5" />
-            <span className="text-xs font-medium uppercase tracking-[0.16em]">{t("eyebrow")}</span>
-          </div>
+        <div className="mx-auto flex max-w-3xl flex-col px-6 pb-4 pt-16 sm:px-8 sm:pb-6 sm:pt-[76px] animate-in lg:max-w-4xl">
           <h1
-            className="mt-3 text-4xl font-light leading-[0.98] tracking-[-0.035em] text-foreground sm:text-5xl"
-            style={{ fontFamily: "var(--font-garamond-var)" }}
+            className="text-3xl italic leading-[1.03] tracking-[-0.02em] text-foreground sm:text-4xl sm:leading-[0.98] lg:text-5xl"
+            style={{ fontFamily: "var(--font-instrument-serif-var)", fontStyle: "italic" }}
           >
-            {t("hero.title")}{" "}
-            <span style={{ fontFamily: "var(--font-instrument-serif-var)", fontStyle: "italic" }}>
-              {t("hero.accent")}
-            </span>
+            {t("hero.title")} {t("hero.accent")}
           </h1>
-          <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground">{t("hero.description")}</p>
+          {/* The description restates the title on small screens where vertical
+              space is scarce, so it's hidden there and the feed starts higher;
+              it returns from sm up. */}
+          <p className="mt-3 hidden max-w-xl text-base leading-7 text-muted-foreground sm:block">
+            {t("hero.description")}
+          </p>
         </div>
       </div>
 
@@ -341,14 +340,17 @@ export function FeedClient({
                 signedIn={signedIn}
                 isAdmin={isAdmin}
                 onSelect={selectFilter}
-                onRefresh={() => void loadFirst(filter, "refresh")}
-                refreshing={refreshing}
-                loading={loading}
               />
             </div>
           </div>
 
-          <FeedComposer signedIn={signedIn} viewerDid={viewerDid} onPost={interactions.addPost} />
+          {/* On phones the inline composer pushed the feed itself below the fold,
+              so it collapses into a floating bottom bar (MobileComposerBar,
+              rendered at the section level below so it can stick); the inline
+              card stays from sm up. */}
+          <div className="hidden sm:block">
+            <FeedComposer signedIn={signedIn} viewerDid={viewerDid} onPost={interactions.addPost} />
+          </div>
 
           <LocalPostsList
             posts={pendingPosts}
@@ -455,6 +457,11 @@ export function FeedClient({
           </div>
         </aside>
       </div>
+
+      {/* Phone composer bar — fixed to the viewport bottom (see note in
+          MobileComposerBar for why not sticky). Section-level placement is fine
+          since fixed is viewport-relative. */}
+      <MobileComposerBar signedIn={signedIn} viewerDid={viewerDid} onPost={interactions.addPost} />
     </section>
   );
 }
@@ -467,54 +474,37 @@ function FeedFilterTabs({
   signedIn,
   isAdmin,
   onSelect,
-  onRefresh,
-  refreshing,
-  loading,
 }: {
   filter: Filter;
   signedIn: boolean;
   isAdmin: boolean;
   onSelect: (next: Filter) => void;
-  onRefresh: () => void;
-  refreshing: boolean;
-  loading: boolean;
 }) {
   const t = useTranslations("common.feed");
   const tabs = FILTERS.filter((f) => visibleTab(f, signedIn, isAdmin));
   return (
-    <div className="flex min-w-0 items-center gap-1">
-      <div className="no-scrollbar flex items-center gap-1 overflow-x-auto">
-        {tabs.map(({ key, Icon }) => {
-          const active = filter === key;
-          const label = filterLabel(t, key);
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onSelect(key)}
-              aria-pressed={active}
-              className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              <Icon className="size-3.5" />
-              {label}
-            </button>
-          );
-        })}
-      </div>
-      <button
-        type="button"
-        onClick={onRefresh}
-        disabled={refreshing || loading}
-        aria-label={t("refresh")}
-        className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-      >
-        <RefreshCwIcon className={cn("size-4", refreshing && "animate-spin")} />
-      </button>
+    <div className="no-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto">
+      {tabs.map(({ key, Icon }) => {
+        const active = filter === key;
+        const label = filterLabel(t, key);
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onSelect(key)}
+            aria-pressed={active}
+            className={cn(
+              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              active
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <Icon className="size-3.5" />
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

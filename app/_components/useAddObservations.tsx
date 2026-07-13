@@ -55,9 +55,17 @@ export type UseAddObservationsResult = {
  * observations land in the right place. Shared by the sidebar card, the feed
  * header action, and the feed composer's image button.
  */
-export function useAddObservations(sessionDid: string): UseAddObservationsResult {
+export function useAddObservations(
+  sessionDid: string,
+  options?: {
+    /** When set, the modal shows a back arrow that runs this instead of just
+     *  closing — used by the feed composer to return to writing a post. */
+    onBack?: () => void;
+  },
+): UseAddObservationsResult {
   const router = useRouter();
   const modal = useModal();
+  const onBack = options?.onBack;
   const { groups } = useAccountList(sessionDid);
   const [activeContext, setActiveContext] = useActiveAccountContext(sessionDid);
   // Unique per caller so several triggers (sidebar, feed header, composer)
@@ -110,6 +118,7 @@ export function useAddObservations(sessionDid: string): UseAddObservationsResult
         <AddObservationsModalLazy
           target={state.target}
           onClose={closeModal}
+          onBack={onBack}
           onViewObservations={() => {
             closeModal();
             router.push(state.observationsHref);

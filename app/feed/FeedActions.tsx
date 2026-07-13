@@ -10,9 +10,9 @@
  * overlay immediately and the indexer reconciles it on the next load.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { HeartIcon, ImageIcon, Loader2Icon, MessageCircleIcon, PencilIcon, ReplyIcon, SendHorizonalIcon, Trash2Icon, UserIcon } from "lucide-react";
+import { HeartIcon, ImageIcon, Loader2Icon, MessageCircleIcon, PencilIcon, ReplyIcon, SendHorizonalIcon, Trash2Icon, UserIcon, XIcon } from "lucide-react";
 import {
   createFeedComment,
   createFeedLike,
@@ -50,6 +50,8 @@ import { useAccountList, useActiveAccountContext } from "@/app/_lib/account-swit
 import { useAddObservations } from "@/app/_components/useAddObservations";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ModalPortal, useModal } from "@/components/ui/modal/context";
+import { ModalTitle } from "@/components/ui/modal/modal";
 import { ResolvedAvatar } from "./ResolvedAvatar";
 
 /** Which account the viewer is currently acting as in the feed. When the
@@ -795,15 +797,37 @@ export function FeedComposer({
   signedIn,
   viewerDid,
   onPost,
+  embedded = false,
+  autoFocus = false,
+  onAddPhoto,
+  draftText,
+  onDraftChange,
 }: {
   signedIn: boolean;
   viewerDid: string | null;
   onPost: (text: string, opts?: { crosspost?: boolean }) => Promise<void>;
+  /** Drop the standalone card chrome (border/background/margin) so the composer
+   *  can sit inside another container, e.g. the phone composer modal. */
+  embedded?: boolean;
+  /** Focus the textarea on mount (used when opened in the modal). */
+  autoFocus?: boolean;
+  /** Override the photo button's action. When set, the composer does NOT own
+   *  the add-a-sighting modal itself (its own modal can't be nested inside the
+   *  phone composer modal — same global stack); the caller opens that flow at a
+   *  stable location instead. When omitted, the composer renders its own button. */
+  onAddPhoto?: () => void;
+  /** Lift the draft up so it survives the composer being remounted — the phone
+   *  composer modal is replaced when the sighting uploader opens, and this keeps
+   *  a half-written post intact when the user comes back. Controlled pair. */
+  draftText?: string;
+  onDraftChange?: (text: string) => void;
 }) {
   const t = useTranslations("common.feed");
   const tb = useTranslations("common.bluesky");
   const acting = useActingAccount(viewerDid);
-  const [text, setText] = useState("");
+  const [internalText, setInternalText] = useState("");
+  const text = draftText ?? internalText;
+  const setText = onDraftChange ?? setInternalText;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [posted, setPosted] = useState(false);
@@ -890,7 +914,13 @@ export function FeedComposer({
   }
 
   return (
-    <div className="mb-3 rounded-2xl border border-border/60 bg-card/40 p-3 transition-colors focus-within:border-primary/40">
+    <div
+      className={cn(
+        embedded
+          ? "w-full"
+          : "mb-3 rounded-2xl border border-border/60 bg-card/40 p-3 transition-colors focus-within:border-primary/40",
+      )}
+    >
       <div className="flex gap-3">
         <ResolvedAvatar
           did={acting.actingDid}
@@ -901,6 +931,8 @@ export function FeedComposer({
           sizes="36px"
         />
         <textarea
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus={autoFocus}
           value={text}
           onChange={(e) => {
             setText(e.target.value);
@@ -913,12 +945,29 @@ export function FeedComposer({
           maxLength={POST_MAX + 40}
           placeholder={signedIn ? t("composer.placeholder") : t("composer.signedOut")}
           aria-label={t("composer.placeholder")}
-          className="min-h-[3rem] flex-1 resize-none bg-transparent pt-1.5 text-[15px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/70"
+          className={cn(
+            "flex-1 resize-none bg-transparent pt-1.5 text-[15px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/70",
+            embedded ? "min-h-[8rem]" : "min-h-[3rem]",
+          )}
         />
       </div>
       <div className="mt-1 flex items-center justify-between gap-2 pl-12">
         <div className="flex min-w-0 items-center gap-1">
-          {signedIn && viewerDid ? <ComposerObservationButton sessionDid={viewerDid} /> : null}
+          {signedIn && viewerDid ? (
+            onAddPhoto ? (
+              <button
+                type="button"
+                onClick={onAddPhoto}
+                aria-label={t("composer.addObservation")}
+                title={t("composer.addObservation")}
+                className="-ml-1.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+              >
+                <ImageIcon className="size-5" />
+              </button>
+            ) : (
+              <ComposerObservationButton sessionDid={viewerDid} />
+            )
+          ) : null}
           {personalDid && bskyPref ? (
             <button
               type="button"
@@ -977,6 +1026,161 @@ export function FeedComposer({
         onOpenChange={setConsentOpen}
         onConfirm={confirmBlueskyConsent}
       />
+    </div>
+  );
+}
+
+/**
+ * Phone-only floating composer bar (hidden from sm up). A slim one-liner pinned
+ * to the bottom of the viewport; tapping it opens the full FeedComposer in a
+ * fullscreen modal (the shared modal architecture) so the feed timeline can
+ * start at the top of the screen instead of below the inline composer card.
+ */
+export function MobileComposerBar({
+  signedIn,
+  viewerDid,
+  onPost,
+}: {
+  signedIn: boolean;
+  viewerDid: string | null;
+  onPost: (text: string, opts?: { crosspost?: boolean }) => Promise<void>;
+}) {
+  const t = useTranslations("common.feed");
+  const acting = useActingAccount(viewerDid);
+  const modal = useModal();
+  const modalId = `feed-composer-${useId()}`;
+  // Held here (not in the composer) so a half-written post survives the round
+  // trip out to the sighting uploader and back.
+  const [draft, setDraft] = useState("");
+
+  // The bar is fixed to the viewport bottom, so it would otherwise sit on top of
+  // the page footer at the end of the feed. Watch the footer and slide the bar
+  // (and its scrim) out of the way as it approaches, then bring it back on the
+  // way up. rootMargin gives a head start so the slide finishes before overlap.
+  const [footerNear, setFooterNear] = useState(false);
+  useEffect(() => {
+    const footer = document.querySelector("footer");
+    if (!footer) return;
+    const observer = new IntersectionObserver(
+      (entries) => setFooterNear(entries[0]?.isIntersecting ?? false),
+      { rootMargin: "0px 0px 96px 0px" },
+    );
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+
+  // A drawer on phones (no fullscreenOnMobile → bottom sheet); a small centered
+  // dialog on the narrow tablet band. replaceAll keeps exactly one modal on the
+  // shared stack so its mode never fights the fullscreen sighting uploader.
+  const openComposer = () => {
+    if (!signedIn) {
+      redirectToLogin();
+      return;
+    }
+    modal.pushModal({ id: modalId, dialogWidth: "max-w-lg" }, true);
+    void modal.show();
+  };
+
+  // The add-a-sighting flow is owned HERE (a stable spot in the feed tree), not
+  // by the composer inside the modal: it's a fullscreen modal on the same single
+  // global stack, so it can't be nested inside the composer modal — it would
+  // unmount its own portal. Tapping the photo button swaps this composer out for
+  // it (replaceAll); its back arrow (onBack) swaps back to the composer.
+  const addObservations = useAddObservations(viewerDid ?? "", { onBack: openComposer });
+
+  const closeComposer = () => {
+    void modal.hide().then(() => modal.clear());
+  };
+
+  // Close the modal once the post lands; the optimistic row shows in the feed
+  // behind it immediately.
+  const handlePost = async (text: string, opts?: { crosspost?: boolean }) => {
+    await onPost(text, opts);
+    closeComposer();
+  };
+
+  return (
+    // Fixed (not sticky): the app shell is `h-screen` (100vh) with the feed
+    // scrolling inside <main>, so on mobile <main>'s bottom sits below the
+    // visible fold — a `sticky bottom-0` bar pins there and disappears. Fixed
+    // pins to the visual viewport bottom, so it stays visible. `sm:hidden`
+    // keeps it phone-only; the section's pb clears the last rows.
+    <div className="sm:hidden">
+      {/* A plain gradient scrim so the feed fades out under the bar. We do NOT
+          use ProgressiveBlur here: stacked backdrop-filter layers over the
+          scrolling image feed re-composite every frame and tank mobile perf.
+          A gradient is essentially free and still separates the bar. */}
+      <div
+        className={cn(
+          "pointer-events-none fixed inset-x-0 bottom-0 z-10 h-32 transition-transform duration-300",
+          footerNear && "translate-y-full",
+        )}
+        style={{
+          background:
+            "linear-gradient(to top, var(--background) 0%, var(--background) 32%, transparent 100%)",
+          opacity: 0.96,
+        }}
+      />
+      {/* A detached floating island — side margins + a gap above the bottom edge
+          and a shadow. Slides down + fades out as the footer arrives so it never
+          overlaps it. */}
+      <button
+        type="button"
+        onClick={openComposer}
+        className={cn(
+          // z-20 keeps the island above the scrolling feed but *below* the
+          // sticky header (z-30) so its user menu / sign-out dropdown, which is
+          // trapped in the header's stacking context, stays clickable on phones.
+          "fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex items-center gap-3 rounded-full border-2 border-primary bg-background/90 py-2 pl-2 pr-4 text-left shadow-lg backdrop-blur transition-[transform,opacity] duration-300 active:bg-muted supports-[backdrop-filter]:bg-background/80",
+          footerNear && "pointer-events-none translate-y-[calc(100%+2rem)] opacity-0",
+        )}
+      >
+        <ResolvedAvatar
+          did={acting.actingDid}
+          imageUrl={acting.card.avatarUrl}
+          name={acting.card.name}
+          fallbackIcon={<UserIcon className="size-4" />}
+          className="size-8 shrink-0"
+          sizes="32px"
+        />
+        <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground/80">
+          {signedIn ? t("composer.placeholder") : t("composer.signedOut")}
+        </span>
+        <SendHorizonalIcon className="size-4 shrink-0 text-primary" />
+      </button>
+      <ModalPortal id={modalId}>
+        {/* Not ModalContent on purpose: its built-in DialogClose can't reach the
+            Radix Dialog context through the portal (content keeps the caller's
+            tree) and it would throw. A plain wrapper also leaves the modal
+            dismissible by default, so the drawer keeps its swipe-to-close. We
+            render our own close control wired to closeComposer. */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <ModalTitle>{t("composer.title")}</ModalTitle>
+            <button
+              type="button"
+              onClick={closeComposer}
+              aria-label={t("composer.close")}
+              className="-mr-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <XIcon className="size-4" />
+            </button>
+          </div>
+          <FeedComposer
+            signedIn={signedIn}
+            viewerDid={viewerDid}
+            onPost={handlePost}
+            embedded
+            autoFocus
+            draftText={draft}
+            onDraftChange={setDraft}
+            onAddPhoto={signedIn && viewerDid ? addObservations.open : undefined}
+          />
+        </div>
+      </ModalPortal>
+      {/* Rendered at this stable level so it survives the composer modal being
+          replaced when the sighting uploader opens. */}
+      {addObservations.modal}
     </div>
   );
 }

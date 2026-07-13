@@ -6,6 +6,7 @@ import { Fragment, useCallback, useEffect, useId, useRef, useState, type ChangeE
 import { useTranslations } from "next-intl";
 import {
   ArchiveIcon,
+  ArrowLeftIcon,
   CameraIcon,
   CheckCircle2Icon,
   ChevronDownIcon,
@@ -249,6 +250,7 @@ export function AddObservationsModal({
   projectRef,
   onViewObservations,
   onClose,
+  onBack,
 }: {
   target: ManageTarget;
   /** When set, each new observation is attached to this project (at-uri). */
@@ -256,6 +258,9 @@ export function AddObservationsModal({
   /** Navigate to the observations list (called after a successful add). */
   onViewObservations: () => void;
   onClose: () => void;
+  /** When set, a back arrow returns to whatever opened this flow (e.g. the feed
+   *  composer) instead of closing outright. */
+  onBack?: () => void;
 }) {
   const t = useTranslations("upload.observations.quickAdd");
   const modal = useModal();
@@ -863,7 +868,22 @@ export function AddObservationsModal({
     <ModalContent className="space-y-4" dismissible={false}>
       <ModalHeader>
         <div className="flex items-start justify-between gap-3">
-          <ModalTitle>{t("title")}</ModalTitle>
+          <div className="flex min-w-0 items-center gap-2">
+            {onBack ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon-sm"
+                onClick={onBack}
+                aria-label={t("back")}
+                className="-ml-1 -mt-1 shrink-0 rounded-full"
+                disabled={isSubmitting}
+              >
+                <ArrowLeftIcon className="size-4" />
+              </Button>
+            ) : null}
+            <ModalTitle>{t("title")}</ModalTitle>
+          </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

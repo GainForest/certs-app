@@ -654,6 +654,7 @@
       "title": "Tambah observasi",
       "description": "Jatuhkan foto dan kami bantu mengenali isinya.",
       "close": "Tutup",
+      "back": "Kembali",
       "dropTitle": "Seret & lepas foto Anda",
       "dropHint": "JPG, PNG atau HEIC · hingga {max} foto",
       "choose": "Pilih foto",
