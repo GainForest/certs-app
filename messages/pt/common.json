@@ -988,6 +988,10 @@
       "postedTitle": "Publicado",
       "postedNote": "Sua novidade está no ar e vai aparecer no feed em breve.",
       "postingAs": "Publicando como {name}"
+    },
+    "quickLike": {
+      "like": "Curtir esta foto",
+      "unlike": "Remover curtida"
     }
   },
   "testAccount": {

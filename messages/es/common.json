@@ -988,6 +988,10 @@
       "postedTitle": "Publicado",
       "postedNote": "Tu novedad está activa y aparecerá en el feed en breve.",
       "postingAs": "Publicando como {name}"
+    },
+    "quickLike": {
+      "like": "Me gusta esta foto",
+      "unlike": "Quitar me gusta"
     }
   },
   "testAccount": {

@@ -988,6 +988,10 @@
       "postedTitle": "Posted",
       "postedNote": "Your update is live and will show up in the feed shortly.",
       "postingAs": "Posting as {name}"
+    },
+    "quickLike": {
+      "like": "Like this photo",
+      "unlike": "Remove like"
     }
   },
   "testAccount": {

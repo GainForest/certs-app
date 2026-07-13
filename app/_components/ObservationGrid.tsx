@@ -14,6 +14,7 @@ import {
 } from "../_lib/indexer";
 import { formatDate } from "../_lib/format";
 import { isPdsBlobUrl, resolveBlobUrl } from "../_lib/pds";
+import { QuickLikeButton, QuickLikeProvider } from "./QuickLike";
 import { pauseOtherAudio, playExclusiveAudio, registerAudioElement } from "../_lib/audio-coordinator";
 import { resolveDidProfile, getCachedProfile } from "../_lib/did-profile";
 
@@ -40,8 +41,10 @@ export function ObservationGrid({
 }) {
   const counts = useObservationMediaCounts(records);
   const measurements = useObservationMeasurements(records);
+  const subjectUris = useMemo(() => records.map((record) => record.atUri), [records]);
 
   return (
+    <QuickLikeProvider uris={subjectUris}>
     <ul role="list" className={className}>
       {leadingCard ? (
         <li className="animate-in" style={{ animationDelay: "0ms" }}>
@@ -61,6 +64,7 @@ export function ObservationGrid({
         </li>
       ))}
     </ul>
+    </QuickLikeProvider>
   );
 }
 
@@ -326,7 +330,11 @@ const ObservationCard = memo(function ObservationCard({
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
 
-      <div className="absolute inset-x-0 bottom-0 z-10 p-2.5">
+      {/* Quick like: one tap on the heart likes the sighting without opening it. */}
+      <QuickLikeButton subjectUri={record.atUri} className="absolute bottom-2 right-2" />
+
+      {/* pr-10 keeps the caption clear of the quick-like heart in the corner. */}
+      <div className="absolute inset-x-0 bottom-0 z-10 p-2.5 pr-10">
         {creatorLabel ? (
           onFilterOwner && record.did ? (
             <button
