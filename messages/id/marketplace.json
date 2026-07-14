@@ -17,8 +17,8 @@
   },
   "explore": {
     "metadata": {
-      "title": "Jelajahi sertifikat — Proyek dampak regeneratif terverifikasi",
-      "description": "Jelajahi sertifikat dampak lingkungan terverifikasi dari penjaga alam di seluruh dunia. Filter berdasarkan negara, organisasi, dan area dampak."
+      "title": "Jelajahi sertifikat",
+      "description": "Jelajahi catatan lingkungan dari penjaga alam di seluruh dunia, dengan foto, tempat, dan bukti di balik setiap sertifikat."
     },
     "structuredData": {
       "name": "Jelajahi sertifikat",
@@ -117,8 +117,8 @@
   },
   "organizations": {
     "metadata": {
-      "title": "Organisasi — GainForest",
-      "description": "Jelajahi organisasi penjaga alam yang menciptakan dampak lingkungan terverifikasi bersama GainForest."
+      "title": "Organisasi",
+      "description": "Jelajahi organisasi penjaga alam yang membagikan observasi lapangan, proyek, dan bukti bersama GainForest."
     },
     "hero": {
       "imageAltLight": "Hutan pegunungan berkabut saat matahari terbit",
@@ -268,7 +268,7 @@
   },
   "bioblitz": {
     "metadata": {
-      "title": "Tantangan BioBlitz Mingguan — GainForest",
+      "title": "Tantangan BioBlitz mingguan",
       "description": "Keluar rumah, foto makhluk hidup, dan tambahkan pengamatanmu. Setiap minggu, pengumpul terbanyak dan foto terbaik memenangkan hadiah."
     },
     "banner": {
@@ -539,7 +539,7 @@
   },
   "grants": {
     "metadata": {
-      "title": "Hibah — GainForest",
+      "title": "Hibah",
       "description": "Ajukan program hibah yang mendanai kedaulatan data dan keputusan untuk komunitas berbasis alam."
     },
     "hero": {
@@ -892,8 +892,8 @@
   },
   "projects": {
     "metadata": {
-      "title": "Proyek GainForest — dampak regeneratif terverifikasi",
-      "description": "Jelajahi proyek GainForest dari komunitas dan organisasi, masing-masing menampilkan kerja regeneratif terverifikasi dan bukti dampak lingkungan."
+      "title": "Proyek alam — bukti lapangan dan catatan dampak",
+      "description": "Jelajahi proyek komunitas dan organisasi dengan tempat, pembaruan, observasi, dan bukti kerja regeneratif."
     },
     "hero": {
       "eyebrow": "Jelajahi proyek",
@@ -993,7 +993,7 @@
   },
   "browseGrid": {
     "heading": "Cara menjelajah",
-    "description": "Empat jalan masuk ke karya GainForest, dibuat untuk pendana, penjaga alam, dan tim lapangan.",
+    "description": "Cara menjelajahi karya di GainForest, dirancang untuk penjelajah, penjaga, dan tim lapangan.",
     "cards": {
       "bumicerts": {
         "label": "Proyek terverifikasi",
@@ -1555,8 +1555,8 @@
       "colDate": "Tanggal"
     },
     "metadata": {
-      "title": "Pengamatan alam GainForest",
-      "description": "Jelajahi pengamatan alam GainForest dengan foto lapangan, rekaman suara, nama spesies, dan lokasi peta dari kerja pemulihan nyata."
+      "title": "Temuan alam",
+      "description": "Jelajahi temuan alam di GainForest dengan foto lapangan, rekaman suara, nama spesies, dan lokasi dari kerja lapangan nyata."
     }
   },
   "manageProjectCerts": {

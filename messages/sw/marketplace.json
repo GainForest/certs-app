@@ -17,8 +17,8 @@
   },
   "explore": {
     "metadata": {
-      "title": "Gundua vyeti — Miradi Iliyothibitishwa ya Athari ya Urejeshaji",
-      "description": "Vinjari vyeti vilivyothibitishwa vya athari za mazingira kutoka kwa watunzaji wa asili duniani kote. Chuja kwa nchi, shirika na eneo la athari."
+      "title": "Gundua vyeti",
+      "description": "Vinjari rekodi za mazingira kutoka kwa walezi wa asili duniani kote, zikiwa na picha, maeneo, na ushahidi nyuma ya kila cheti."
     },
     "structuredData": {
       "name": "Chunguza vyeti",
@@ -117,8 +117,8 @@
   },
   "organizations": {
     "metadata": {
-      "title": "Mashirika — GainForest",
-      "description": "Vinjari mashirika ya watunzaji wa asili yanayounda athari ya mazingira iliyothibitishwa na GainForest."
+      "title": "Mashirika",
+      "description": "Vinjari mashirika ya walezi wa asili yanayoshiriki uchunguzi wa uwandani, miradi, na ushahidi kupitia GainForest."
     },
     "hero": {
       "imageAltLight": "Msitu wa milimani wenye ukungu wakati wa macheo",
@@ -268,7 +268,7 @@
   },
   "bioblitz": {
     "metadata": {
-      "title": "Changamoto ya BioBlitz ya Wiki — GainForest",
+      "title": "Changamoto ya kila wiki ya BioBlitz",
       "description": "Toka nje, piga picha viumbe hai, na ongeza uoni wako. Kila wiki, mkusanyaji bora na picha bora hushinda zawadi."
     },
     "banner": {
@@ -539,7 +539,7 @@
   },
   "grants": {
     "metadata": {
-      "title": "Ruzuku — GainForest",
+      "title": "Ruzuku",
       "description": "Omba programu za ruzuku zinazofadhili uhuru wa data na maamuzi kwa jamii zinazotegemea asili."
     },
     "hero": {
@@ -892,8 +892,8 @@
   },
   "projects": {
     "metadata": {
-      "title": "Miradi ya GainForest — athari ya urejeshaji iliyothibitishwa",
-      "description": "Vinjari miradi ya GainForest kutoka kwa jamii na mashirika, kila moja ikionyesha kazi ya urejeshaji iliyothibitishwa na ushahidi wa athari ya mazingira."
+      "title": "Miradi ya mazingira — ushahidi wa uwandani na rekodi za athari",
+      "description": "Vinjari miradi ya jamii na mashirika yenye maeneo, masasisho, uchunguzi, na ushahidi wa kazi ya urejeshaji."
     },
     "hero": {
       "eyebrow": "Gundua miradi",
@@ -993,7 +993,7 @@
   },
   "browseGrid": {
     "heading": "Njia za kugundua",
-    "description": "Njia nne za kuingia kwenye kazi ya GainForest, zilizoundwa kwa wafadhili, watunzaji na timu za nyanjani.",
+    "description": "Njia za kuchunguza kazi ya GainForest, kwa wachunguzi, walezi, na timu za uwandani.",
     "cards": {
       "bumicerts": {
         "label": "Miradi iliyothibitishwa",
@@ -1555,8 +1555,8 @@
       "colDate": "Tarehe"
     },
     "metadata": {
-      "title": "Uchunguzi wa asili wa GainForest",
-      "description": "Gundua uchunguzi wa asili wa GainForest wenye picha za uwandani, rekodi za sauti, majina ya spishi, na maeneo kwenye ramani."
+      "title": "Vivutio vya asili",
+      "description": "Gundua vivutio vya asili kwenye GainForest vyenye picha za uwandani, rekodi za sauti, majina ya spishi, na maeneo kutoka kazi halisi ya uwandani."
     }
   },
   "manageProjectCerts": {

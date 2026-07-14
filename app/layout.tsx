@@ -54,9 +54,25 @@ const OG_IMAGE = "/og/gainforest-og-2.png";
 const OG_ALT =
   "GainForest — certified impact for nature stewards. Upload field observations and certify your environmental work, beside an aerial photo of humpback whales in turquoise water.";
 
-function buildHomeStructuredData(origin: string, description: string, language: string) {
-  const siteUrl = new URL("/", origin).toString();
+const PUBLIC_NAVIGATION_ROUTES = [
+  { key: "projects", pathname: "/projects" },
+  { key: "observations", pathname: "/observations" },
+  { key: "organizations", pathname: "/organizations" },
+  { key: "bioblitz", pathname: "/bioblitz" },
+] as const;
 
+type StructuredNavigationItem = {
+  name: string;
+  url: string;
+};
+
+function buildHomeStructuredData(
+  origin: string,
+  description: string,
+  language: string,
+  navigationItems: StructuredNavigationItem[],
+) {
+  const siteUrl = new URL("/", origin).toString();
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -64,6 +80,7 @@ function buildHomeStructuredData(origin: string, description: string, language: 
         "@type": "Organization",
         "@id": `${siteUrl}#organization`,
         name: SITE_NAME,
+        alternateName: ["GainForest App", "GainForest Explorer"],
         url: siteUrl,
         logo: new URL("/icons/icon-512.png", origin).toString(),
         sameAs: [
@@ -76,11 +93,19 @@ function buildHomeStructuredData(origin: string, description: string, language: 
         "@type": "WebSite",
         "@id": `${siteUrl}#website`,
         name: SITE_NAME,
+        alternateName: ["GainForest App", "GainForest Explorer"],
         url: siteUrl,
         description,
         publisher: { "@id": `${siteUrl}#organization` },
         inLanguage: language,
       },
+      ...navigationItems.map((item, index) => ({
+        "@type": "SiteNavigationElement",
+        "@id": `${item.url}#site-navigation`,
+        position: index + 1,
+        name: item.name,
+        url: item.url,
+      })),
     ],
   };
 }
@@ -107,11 +132,11 @@ export async function generateMetadata(): Promise<Metadata> {
     publisher: "GainForest",
     keywords: [
       "GainForest",
-      "projects",
-      "biodiversity",
-      "explorer",
+      "biodiversity observations",
+      "nature projects",
+      "field evidence",
+      "environmental records",
       "impact certification",
-      "donations",
     ],
     category: "sustainability",
     alternates: { canonical: withLocalePrefix("/", locale), languages },
@@ -164,14 +189,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // The session is resolved server-side (in parallel with i18n setup) so the
   // shell renders with the real signed-in state on first paint — no
   // signed-out flash, no client-side session fetch waterfall.
-  const [locale, messages, authSession, origin, seoT] = await Promise.all([
+  const [locale, messages, authSession, origin, seoT, navT] = await Promise.all([
     getLocale(),
     getMessages(),
     fetchAuthSession(),
     getRequestOrigin(),
     getTranslations("common.seo"),
+    getTranslations("landing.nav"),
   ]);
-  const structuredData = buildHomeStructuredData(origin, seoT("description"), locale);
+  const supportedLocale = resolveSupportedLanguage(locale);
+  const navigationItems = PUBLIC_NAVIGATION_ROUTES.map((item) => ({
+    name: navT(item.key),
+    url: new URL(withLocalePrefix(item.pathname, supportedLocale), origin).toString(),
+  }));
+  const structuredData = buildHomeStructuredData(origin, seoT("description"), locale, navigationItems);
 
   return (
     <html lang={locale} suppressHydrationWarning>

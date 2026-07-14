@@ -1,7 +1,7 @@
 {
   "seo": {
-    "title": "GainForest — Financia impacto regenerativo",
-    "description": "GainForest conecta a financiadores con guardianes de la naturaleza que realizan trabajo regenerativo en el terreno. Financia impacto ambiental verificado directamente."
+    "title": "GainForest — Biodiversidad y proyectos de naturaleza",
+    "description": "Explora observaciones de campo, registros de biodiversidad y proyectos de naturaleza de comunidades y organizaciones que usan GainForest."
   },
   "language": {
     "label": "Idioma",
@@ -223,7 +223,7 @@
   },
   "footer": {
     "brandAlt": "GainForest",
-    "tagline": "Conectando comunidades con financiadores.",
+    "tagline": "Conectando comunidades mediante evidencia de campo confiable.",
     "builtWith": "Infraestructura abierta. Construido con GainForest.",
     "dataCollectionsAria": "Colecciones de datos",
     "footerLinksAria": "Enlaces del pie de página",
@@ -251,7 +251,7 @@
   },
   "browseGrid": {
     "title": "Formas de explorar",
-    "description": "Maneras de entrar al trabajo de GainForest, pensadas para financiadores, guardianes y equipos de campo.",
+    "description": "Formas de explorar el trabajo en GainForest, pensadas para exploradores, guardianes y equipos de campo.",
     "loadingAria": "Cargando enlaces de exploración",
     "cards": {
       "projects": {
@@ -385,7 +385,7 @@
       "hoursAgo": "hace {count, plural, one {# hora} other {# horas}}"
     },
     "metadata": {
-      "title": "Estado del sitio de GainForest",
+      "title": "Estado del sitio",
       "description": "Estado en vivo de los servicios detrás de GainForest."
     }
   },
@@ -891,13 +891,13 @@
   "feed": {
     "meta": {
       "title": "Actividad reciente",
-      "description": "Los proyectos, avistamientos de naturaleza, organizaciones y donaciones más recientes en GainForest, en una sola transmisión en vivo."
+      "description": "Los proyectos, avistamientos de naturaleza, organizaciones y actualizaciones comunitarias más recientes de GainForest, en una transmisión en vivo."
     },
     "eyebrow": "Actividad en vivo",
     "hero": {
       "title": "Lo que está pasando en",
       "accent": "GainForest",
-      "description": "Una transmisión en vivo de los proyectos, avistamientos de naturaleza, organizaciones y donaciones más recientes, todo en un solo lugar."
+      "description": "Una transmisión en vivo de los proyectos, avistamientos de naturaleza, organizaciones y actualizaciones comunitarias más recientes, todo en un solo lugar."
     },
     "filters": {
       "all": "Todo",
@@ -1180,7 +1180,7 @@
   },
   "taina": {
     "meta": {
-      "title": "Tainá — GainForest",
+      "title": "Asistente de campo Tainá",
       "description": "Conecta tu propio bot de Telegram y convierte lo que ves en la naturaleza en observaciones de biodiversidad verificables."
     },
     "hero": {
@@ -1422,7 +1422,7 @@
   },
   "audiomoth": {
     "meta": {
-      "title": "AudioMoth — GainForest",
+      "title": "Configuración de grabadora AudioMoth",
       "description": "Ajusta el reloj, configura los horarios de grabación y actualiza el firmware de tu grabadora acústica AudioMoth, directamente desde el navegador."
     },
     "title": "AudioMoth",
@@ -1720,7 +1720,7 @@
   },
   "devices": {
     "metadata": {
-      "title": "Dispositivos Tainá — GainForest",
+      "title": "Dispositivos Tainá",
       "description": "Actualizaciones de campo de dispositivos GainForest que ejecutan Tainá, incluido si cada dispositivo está activo y listo."
     }
   },

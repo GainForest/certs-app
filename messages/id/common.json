@@ -1,7 +1,7 @@
 {
   "seo": {
-    "title": "GainForest — Danai dampak regeneratif",
-    "description": "GainForest menghubungkan pendana dengan penjaga alam yang melakukan kerja regeneratif di lapangan. Danai dampak lingkungan terverifikasi secara langsung."
+    "title": "GainForest — Biodiversitas dan proyek alam",
+    "description": "Jelajahi observasi lapangan, catatan biodiversitas, dan proyek alam dari komunitas serta organisasi yang menggunakan GainForest."
   },
   "language": {
     "label": "Bahasa",
@@ -223,7 +223,7 @@
   },
   "footer": {
     "brandAlt": "GainForest",
-    "tagline": "Menghubungkan komunitas dengan penyandang dana.",
+    "tagline": "Menghubungkan komunitas melalui bukti lapangan tepercaya.",
     "builtWith": "Infrastruktur terbuka. Dibangun dengan GainForest.",
     "dataCollectionsAria": "Koleksi data",
     "footerLinksAria": "Tautan footer",
@@ -251,7 +251,7 @@
   },
   "browseGrid": {
     "title": "Cara Menjelajah",
-    "description": "Berbagai jalan masuk ke karya GainForest, dibuat untuk pendana, penjaga alam, dan tim lapangan.",
+    "description": "Cara menjelajahi karya di GainForest, dirancang untuk penjelajah, penjaga, dan tim lapangan.",
     "loadingAria": "Memuat tautan jelajah",
     "cards": {
       "projects": {
@@ -385,7 +385,7 @@
       "hoursAgo": "{count, plural, one {# jam lalu} other {# jam lalu}}"
     },
     "metadata": {
-      "title": "Kesehatan situs GainForest",
+      "title": "Kesehatan situs",
       "description": "Kesehatan langsung layanan di balik GainForest."
     }
   },
@@ -891,13 +891,13 @@
   "feed": {
     "meta": {
       "title": "Aktivitas terkini",
-      "description": "Proyek, pengamatan alam, organisasi, dan donasi terbaru di GainForest, dalam satu aliran langsung."
+      "description": "Proyek, temuan alam, organisasi, dan pembaruan komunitas terbaru di GainForest, dalam satu aliran langsung."
     },
     "eyebrow": "Aktivitas langsung",
     "hero": {
       "title": "Apa yang terjadi di",
       "accent": "GainForest",
-      "description": "Aliran langsung dari proyek, pengamatan alam, organisasi, dan donasi terbaru — semua dalam satu tempat."
+      "description": "Aliran langsung proyek terbaru, temuan alam, organisasi, dan pembaruan komunitas — semuanya di satu tempat."
     },
     "filters": {
       "all": "Semua",
@@ -1180,7 +1180,7 @@
   },
   "taina": {
     "meta": {
-      "title": "Tainá — GainForest",
+      "title": "Asisten lapangan Tainá",
       "description": "Hubungkan bot Telegram milik Anda dan ubah apa yang Anda lihat di alam menjadi observasi keanekaragaman hayati yang dapat diverifikasi."
     },
     "hero": {
@@ -1422,7 +1422,7 @@
   },
   "audiomoth": {
     "meta": {
-      "title": "AudioMoth — GainForest",
+      "title": "Pengaturan perekam AudioMoth",
       "description": "Atur jam, konfigurasikan jadwal perekaman, dan perbarui firmware perekam akustik AudioMoth Anda, langsung dari peramban."
     },
     "title": "AudioMoth",
@@ -1720,7 +1720,7 @@
   },
   "devices": {
     "metadata": {
-      "title": "Perangkat Tainá — GainForest",
+      "title": "Perangkat Tainá",
       "description": "Pembaruan lapangan dari perangkat GainForest yang menjalankan Tainá, termasuk apakah tiap perangkat aktif dan siap."
     }
   },

@@ -1,7 +1,7 @@
 {
   "seo": {
-    "title": "GainForest — Fadhili athari ya urejeshaji",
-    "description": "GainForest huwaunganisha wafadhili na walinzi wa mazingira wanaofanya kazi ya urejeshaji ardhini. Fadhili athari ya mazingira iliyothibitishwa moja kwa moja."
+    "title": "GainForest — Bioanuwai na miradi ya mazingira",
+    "description": "Gundua uchunguzi wa uwandani, rekodi za bioanuwai, na miradi ya mazingira kutoka kwa jamii na mashirika yanayotumia GainForest."
   },
   "language": {
     "label": "Lugha",
@@ -223,7 +223,7 @@
   },
   "footer": {
     "brandAlt": "GainForest",
-    "tagline": "Kuunganisha jamii na wafadhili.",
+    "tagline": "Kuunganisha jamii kupitia ushahidi wa uwandani unaoaminika.",
     "builtWith": "Miundombinu wazi. Imejengwa na GainForest.",
     "dataCollectionsAria": "Mikusanyiko ya data",
     "footerLinksAria": "Viungo vya kijachini",
@@ -251,7 +251,7 @@
   },
   "browseGrid": {
     "title": "Njia za kuchunguza",
-    "description": "Njia za kuingia kwenye kazi ya GainForest, kwa wafadhili, watunzaji na timu za nyanjani.",
+    "description": "Njia za kuchunguza kazi ya GainForest, kwa wachunguzi, walezi, na timu za uwandani.",
     "loadingAria": "Inapakia viungo vya kuchunguza",
     "cards": {
       "projects": {
@@ -385,7 +385,7 @@
       "hoursAgo": "saa {count, plural, one {#} other {#}} zilizopita"
     },
     "metadata": {
-      "title": "Hali ya tovuti ya GainForest",
+      "title": "Hali ya tovuti",
       "description": "Hali ya moja kwa moja ya huduma zinazoendesha GainForest."
     }
   },
@@ -891,13 +891,13 @@
   "feed": {
     "meta": {
       "title": "Shughuli za hivi punde",
-      "description": "Miradi, maonevu ya asili, mashirika na michango ya hivi karibuni kwenye GainForest, katika mtiririko mmoja wa moja kwa moja."
+      "description": "Miradi, vivutio vya asili, mashirika, na masasisho ya jamii ya hivi karibuni kwenye GainForest, yote katika mtiririko mmoja wa moja kwa moja."
     },
     "eyebrow": "Shughuli zinazoendelea",
     "hero": {
       "title": "Kinachotokea kwenye",
       "accent": "GainForest",
-      "description": "Mtiririko wa moja kwa moja wa miradi, maonevu ya asili, mashirika na michango ya hivi karibuni — yote mahali pamoja."
+      "description": "Mtiririko wa moja kwa moja wa miradi mipya, vivutio vya asili, mashirika, na masasisho ya jamii — yote mahali pamoja."
     },
     "filters": {
       "all": "Yote",
@@ -1180,7 +1180,7 @@
   },
   "taina": {
     "meta": {
-      "title": "Tainá — GainForest",
+      "title": "Msaidizi wa uwandani Tainá",
       "description": "Unganisha boti yako mwenyewe ya Telegram na ubadilishe unachokiona katika mazingira kuwa rekodi za bioanuwai zinazoweza kuthibitishwa."
     },
     "hero": {
@@ -1422,7 +1422,7 @@
   },
   "audiomoth": {
     "meta": {
-      "title": "AudioMoth — GainForest",
+      "title": "Usanidi wa kinasa AudioMoth",
       "description": "Weka saa, sanidi ratiba za kurekodi na usasishe firmware ya kinasa sauti chako cha AudioMoth, moja kwa moja kutoka kwenye kivinjari."
     },
     "title": "AudioMoth",
@@ -1720,7 +1720,7 @@
   },
   "devices": {
     "metadata": {
-      "title": "Vifaa vya Tainá — GainForest",
+      "title": "Vifaa vya Tainá",
       "description": "Taarifa za uwandani kutoka kwa vifaa vya GainForest vinavyoendesha Tainá, ikiwemo kama kila kifaa kinafanya kazi na kiko tayari."
     }
   },

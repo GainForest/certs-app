@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { getTranslations } from "next-intl/server";
-import { localizedAlternates } from "@/app/_lib/seo-metadata";
+import { localizedAlternates, socialPreviewMetadata } from "@/app/_lib/seo-metadata";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,10 +15,14 @@ export const revalidate = 300;
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("common.seo");
 
+  const title = t("title");
+  const description = t("description");
+
   return {
-    title: t("title"),
-    description: t("description"),
+    title,
+    description,
     alternates: await localizedAlternates("/"),
+    ...socialPreviewMetadata("/", title, description),
   };
 }
 

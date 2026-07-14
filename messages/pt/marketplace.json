@@ -17,8 +17,8 @@
   },
   "explore": {
     "metadata": {
-      "title": "Explorar certificados — Projetos de impacto regenerativo verificado",
-      "description": "Explore certificados verificados de impacto ambiental de guardiões da natureza no mundo todo. Filtre por país, organização e área de impacto."
+      "title": "Explorar certificados",
+      "description": "Explore registros ambientais de guardiões da natureza no mundo todo, com fotos, lugares e evidências por trás de cada certificado."
     },
     "structuredData": {
       "name": "Explorar certificados",
@@ -117,8 +117,8 @@
   },
   "organizations": {
     "metadata": {
-      "title": "Organizações — GainForest",
-      "description": "Explore organizações guardiãs da natureza que criam impacto ambiental verificado com a GainForest."
+      "title": "Organizações",
+      "description": "Explore organizações guardiãs da natureza que compartilham observações de campo, projetos e evidências com o GainForest."
     },
     "hero": {
       "imageAltLight": "Floresta de montanha enevoada ao nascer do sol",
@@ -268,7 +268,7 @@
   },
   "bioblitz": {
     "metadata": {
-      "title": "Desafio BioBlitz Semanal — GainForest",
+      "title": "Desafio BioBlitz semanal",
       "description": "Saia, fotografe seres vivos e adicione seus registros. A cada semana, quem mais registrar e a melhor foto ganham um prêmio."
     },
     "banner": {
@@ -539,7 +539,7 @@
   },
   "grants": {
     "metadata": {
-      "title": "Subsídios — GainForest",
+      "title": "Editais",
       "description": "Candidate-se a programas de subsídios que financiam a soberania de dados e de decisões para comunidades baseadas na natureza."
     },
     "hero": {
@@ -892,8 +892,8 @@
   },
   "projects": {
     "metadata": {
-      "title": "Projetos GainForest — impacto regenerativo verificado",
-      "description": "Explore projetos GainForest de comunidades e organizações, cada um com trabalho regenerativo verificado e evidências de impacto ambiental."
+      "title": "Projetos de natureza — evidências de campo e registros de impacto",
+      "description": "Explore projetos de comunidades e organizações com lugares, atualizações, observações e evidências de trabalho regenerativo."
     },
     "hero": {
       "eyebrow": "Explorar projetos",
@@ -993,7 +993,7 @@
   },
   "browseGrid": {
     "heading": "Formas de explorar",
-    "description": "Quatro caminhos para o trabalho da GainForest, pensados para financiadores, guardiões e equipes de campo.",
+    "description": "Formas de explorar o trabalho no GainForest, pensadas para exploradores, guardiões e equipes de campo.",
     "cards": {
       "bumicerts": {
         "label": "Projetos verificados",
@@ -1555,8 +1555,8 @@
       "colDate": "Data"
     },
     "metadata": {
-      "title": "Avistamentos da natureza no GainForest",
-      "description": "Explore avistamentos da natureza no GainForest com fotos de campo, gravações de som, nomes de espécies e locais no mapa."
+      "title": "Avistamentos de natureza",
+      "description": "Explore avistamentos de natureza no GainForest com fotos de campo, gravações de som, nomes de espécies e localizações de trabalho real em campo."
     }
   },
   "manageProjectCerts": {

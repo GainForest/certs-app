@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
-import { localizedAlternates } from "@/app/_lib/seo-metadata";
+import { localizedAlternates, socialPreviewMetadata } from "@/app/_lib/seo-metadata";
 import { ExploreGridPageSkeleton } from "../_components/PageLoadingSkeletons";
 import { fetchSites, type SiteRecord } from "../_lib/indexer";
 import { getRequestOrigin } from "../_lib/request-origin";
@@ -56,19 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title,
     description,
     alternates: await localizedAlternates("/organizations"),
-    openGraph: {
-      title,
-      description,
-      url: "/organizations",
-      type: "website",
-      images: [{ url: "/og/gainforest-og-2.png", width: 1200, height: 630, alt: title }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [{ url: "/og/gainforest-og-2.png", alt: title }],
-    },
+    ...socialPreviewMetadata("/organizations", title, description),
   };
 }
 

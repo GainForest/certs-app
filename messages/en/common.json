@@ -1,7 +1,7 @@
 {
   "seo": {
-    "title": "GainForest — Fund Regenerative Impact",
-    "description": "GainForest connects funders with nature stewards doing on-ground regenerative work. Fund verified environmental impact directly."
+    "title": "GainForest — Biodiversity Observations & Nature Projects",
+    "description": "Explore field observations, biodiversity records, and nature projects from communities and organizations using GainForest."
   },
   "language": {
     "label": "Language",
@@ -223,7 +223,7 @@
   },
   "footer": {
     "brandAlt": "GainForest",
-    "tagline": "Connecting communities with funders.",
+    "tagline": "Connecting communities through trusted field evidence.",
     "builtWith": "Open infrastructure. Built with GainForest.",
     "dataCollectionsAria": "Data collections",
     "footerLinksAria": "Footer links",
@@ -251,7 +251,7 @@
   },
   "browseGrid": {
     "title": "Ways to Explore",
-    "description": "Ways into GainForest work, shaped for funders, stewards, and field teams.",
+    "description": "Ways into GainForest work, shaped for explorers, stewards, and field teams.",
     "loadingAria": "Explore links loading",
     "cards": {
       "projects": {
@@ -385,7 +385,7 @@
       "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}"
     },
     "metadata": {
-      "title": "GainForest site health",
+      "title": "Site health",
       "description": "Live health of the services behind GainForest."
     }
   },
@@ -891,13 +891,13 @@
   "feed": {
     "meta": {
       "title": "Activity Feed",
-      "description": "The latest projects, nature sightings, organizations, and donations across GainForest, in one live stream."
+      "description": "The latest projects, nature sightings, organizations, and community updates across GainForest, in one live stream."
     },
     "eyebrow": "Live activity",
     "hero": {
       "title": "What's happening on",
       "accent": "GainForest",
-      "description": "A live stream of the newest projects, nature sightings, organizations, and donations — all in one place."
+      "description": "A live stream of the newest projects, nature sightings, organizations, and community updates — all in one place."
     },
     "filters": {
       "all": "All",
@@ -1180,7 +1180,7 @@
   },
   "taina": {
     "meta": {
-      "title": "Tainá — GainForest",
+      "title": "Tainá field assistant",
       "description": "Connect your own Telegram bot and turn what you see in nature into verifiable biodiversity observations."
     },
     "hero": {
@@ -1422,7 +1422,7 @@
   },
   "audiomoth": {
     "meta": {
-      "title": "AudioMoth — GainForest",
+      "title": "AudioMoth recorder setup",
       "description": "Set the clock, configure recording schedules and update firmware on your AudioMoth acoustic recorder, straight from the browser."
     },
     "title": "AudioMoth",
@@ -1720,7 +1720,7 @@
   },
   "devices": {
     "metadata": {
-      "title": "Tainá devices — GainForest",
+      "title": "Tainá devices",
       "description": "Field updates from GainForest devices running Tainá, including whether each device is active and ready."
     }
   },

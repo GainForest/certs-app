@@ -17,8 +17,8 @@
   },
   "explore": {
     "metadata": {
-      "title": "Explore Certs — Verified Regenerative Impact Projects",
-      "description": "Browse verified environmental impact certificates from nature stewards around the world. Filter by country, organization, and impact area."
+      "title": "Explore Certs",
+      "description": "Browse environmental records from nature stewards around the world, with photos, places, and evidence behind each Cert."
     },
     "structuredData": {
       "name": "Explore Certs",
@@ -117,8 +117,8 @@
   },
   "organizations": {
     "metadata": {
-      "title": "Organizations — GainForest",
-      "description": "Browse nature steward organizations creating verified environmental impact with GainForest."
+      "title": "Organizations",
+      "description": "Browse nature steward organizations sharing field observations, projects, and evidence with GainForest."
     },
     "hero": {
       "imageAltLight": "Misty mountain forest at sunrise",
@@ -268,7 +268,7 @@
   },
   "bioblitz": {
     "metadata": {
-      "title": "Weekly BioBlitz Challenge — GainForest",
+      "title": "Weekly BioBlitz Challenge",
       "description": "Go outside, photograph living things, and add your sightings. Each week the top collector and the best photo win a prize."
     },
     "banner": {
@@ -539,7 +539,7 @@
   },
   "grants": {
     "metadata": {
-      "title": "Grants — GainForest",
+      "title": "Grants",
       "description": "Apply for grant programs that fund data and decision sovereignty for nature-based communities."
     },
     "hero": {
@@ -892,8 +892,8 @@
   },
   "projects": {
     "metadata": {
-      "title": "GainForest projects — Verified regenerative impact",
-      "description": "Browse GainForest projects from communities and organizations, each showing verified regenerative work and environmental impact evidence."
+      "title": "Nature projects — field evidence and impact records",
+      "description": "Browse community and organization projects with places, updates, observations, and evidence of regenerative work."
     },
     "hero": {
       "eyebrow": "Explore Projects",
@@ -993,7 +993,7 @@
   },
   "browseGrid": {
     "heading": "Ways to Explore",
-    "description": "Four ways into GainForest work, shaped for funders, stewards, and field teams.",
+    "description": "Ways into GainForest work, shaped for explorers, stewards, and field teams.",
     "cards": {
       "bumicerts": {
         "label": "Verified projects",
@@ -1555,8 +1555,8 @@
       "colDate": "Date"
     },
     "metadata": {
-      "title": "GainForest nature sightings",
-      "description": "Explore GainForest nature sightings with field photos, sound recordings, species names, and map locations from real restoration work."
+      "title": "Nature sightings",
+      "description": "Explore GainForest nature sightings with field photos, sound recordings, species names, and map locations from real fieldwork."
     }
   },
   "manageProjectCerts": {

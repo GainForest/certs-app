@@ -4,6 +4,7 @@ import { resolveSupportedLanguage } from "@/lib/i18n/languages";
 import { getLocalizedPathnames, withLocalePrefix } from "@/lib/i18n/routing";
 
 const SOCIAL_IMAGE = "/og/gainforest-og-2.png";
+const SITE_NAME = "GainForest";
 
 export async function localizedAlternates(
   pathname: string,
@@ -30,12 +31,15 @@ export function socialPreviewMetadata(
       description,
       url: pathname,
       type: "website",
+      siteName: SITE_NAME,
       images: [{ url: SOCIAL_IMAGE, width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      site: "@gainforest",
+      creator: "@gainforest",
       images: [{ url: SOCIAL_IMAGE, alt: title }],
     },
   };
