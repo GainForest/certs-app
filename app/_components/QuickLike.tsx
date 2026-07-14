@@ -70,8 +70,8 @@ export function QuickLikeProvider({ uris, children }: { uris: string[]; children
 const COMPACT = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 });
 
 /**
- * The heart itself. Renders nothing outside a provider or for non-AT subjects,
- * so cards can drop it in unconditionally. Position it via `className`
+ * The heart itself. Renders nothing without a provider/direct interaction store
+ * or for non-AT subjects, so cards can drop it in unconditionally. Position it via `className`
  * (typically `absolute bottom-2 right-2`).
  *
  * UX notes:
@@ -87,18 +87,29 @@ const COMPACT = new Intl.NumberFormat(undefined, { notation: "compact", maximumF
 export function QuickLikeButton({
   subjectUri,
   className,
+  interactions: providedInteractions,
+  signedIn: providedSignedIn,
+  size = "default",
 }: {
   subjectUri: string;
   className?: string;
+  /** Feed rows already own one shared interaction store, so they can pass it
+   *  directly instead of adding a second provider around the timeline. */
+  interactions?: FeedInteractions;
+  signedIn?: boolean;
+  size?: "default" | "sm";
 }) {
   const ctx = useContext(QuickLikeContext);
   const t = useTranslations("common.feed.quickLike");
   const [busy, setBusy] = useState(false);
   const [pop, setPop] = useState(false);
+  const interactions = providedInteractions ?? ctx?.interactions;
+  const signedIn = providedSignedIn ?? ctx?.signedIn ?? false;
 
-  if (!ctx || !subjectUri || !subjectUri.startsWith("at://")) return null;
+  if (!interactions || !subjectUri || !subjectUri.startsWith("at://")) return null;
+  const activeInteractions = interactions;
 
-  const engagement = ctx.interactions.getEngagement(subjectUri);
+  const engagement = activeInteractions.getEngagement(subjectUri);
   const liked = Boolean(engagement.viewerLikeUri);
   const count = engagement.likeCount;
 
@@ -106,8 +117,7 @@ export function QuickLikeButton({
     // Never let the tap open the card underneath.
     event.preventDefault();
     event.stopPropagation();
-    if (!ctx) return;
-    if (!ctx.signedIn) {
+    if (!signedIn) {
       redirectToLogin();
       return;
     }
@@ -115,7 +125,7 @@ export function QuickLikeButton({
     setBusy(true);
     if (!liked) setPop(true);
     try {
-      await ctx.interactions.toggleLike(subjectUri);
+      await activeInteractions.toggleLike(subjectUri);
     } catch {
       // The optimistic overlay already reverted; nothing more to surface here.
     } finally {
@@ -137,7 +147,8 @@ export function QuickLikeButton({
       aria-label={liked ? t("unlike") : t("like")}
       title={liked ? t("unlike") : t("like")}
       className={cn(
-        "z-20 inline-flex h-8 min-w-8 cursor-pointer items-center justify-center gap-1 rounded-full bg-black/45 px-2 text-[12px] font-semibold text-white shadow-md ring-1 ring-white/25 backdrop-blur-md transition hover:bg-black/60 active:scale-90",
+        "z-20 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-black/45 font-semibold text-white shadow-md ring-1 ring-white/25 backdrop-blur-md transition hover:bg-black/60 active:scale-90",
+        size === "sm" ? "h-7 min-w-7 px-1.5 text-[11px]" : "h-8 min-w-8 px-2 text-[12px]",
         className,
       )}
     >
@@ -145,7 +156,8 @@ export function QuickLikeButton({
         aria-hidden
         onAnimationEnd={() => setPop(false)}
         className={cn(
-          "h-4 w-4 transition-colors",
+          size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4",
+          "transition-colors",
           liked ? "fill-rose-500 text-rose-500" : "text-white",
           pop && "animate-quick-like-pop",
         )}

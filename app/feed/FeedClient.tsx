@@ -42,6 +42,7 @@ import { formatCompact, formatCompactUsd, formatRelative } from "../_lib/format"
 import { FeedImageLightbox } from "./FeedImageLightbox";
 import { ResolvedAvatar } from "./ResolvedAvatar";
 import { AccountHoverCard } from "./AccountHoverCard";
+import { QuickLikeButton } from "@/app/_components/QuickLike";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -599,15 +600,17 @@ function FeedRow({
 
   return (
     <li className="relative">
-      <Link
-        href={item.href}
-        className="group flex gap-3 rounded-2xl px-3 pb-1.5 pt-3.5 transition-colors hover:bg-muted/40"
-      >
+      <div className="group flex gap-3 rounded-2xl px-3 pb-1.5 pt-3.5 transition-colors hover:bg-muted/40">
         {/* Avatar */}
-        <FeedAvatar item={item} />
+        <Link href={item.href} className="shrink-0">
+          <FeedAvatar item={item} />
+        </Link>
 
         {/* Content */}
         <div className="min-w-0 flex-1">
+          {/* Text opens the record detail; photo and quick-like remain separate
+              controls immediately below it. */}
+          <Link href={item.href} className="block">
           {/* Author line */}
           <div className="flex items-center gap-1.5 text-sm">
             <AccountHoverCard
@@ -650,40 +653,45 @@ function FeedRow({
               {t("to")}: <span className="text-foreground/80">{item.targetTitle}</span>
             </p>
           ) : null}
+          </Link>
 
-          {/* Cover image — a tap opens the in-feed lightbox (like / comment in
-              place) instead of following the row link to the detail page. */}
+          {/* Cover image — the image itself opens the in-feed lightbox while
+              the separate corner heart likes it immediately. Keeping them as
+              sibling buttons avoids nested interactive controls. */}
           {hasImage(item) ? (
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label={t("actions.openImage")}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onOpenImage(item);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+            <div className="relative mt-2 overflow-hidden rounded-xl border border-border/60">
+              <button
+                type="button"
+                aria-label={t("actions.openImage")}
+                onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   onOpenImage(item);
-                }
-              }}
-              className="relative mt-2 block cursor-zoom-in overflow-hidden rounded-xl border border-border/60"
-            >
-              <FeedImage item={item} />
-            </span>
+                }}
+                className="block w-full cursor-zoom-in text-left"
+              >
+                <FeedImage item={item} />
+              </button>
+              <QuickLikeButton
+                subjectUri={item.id}
+                signedIn={signedIn}
+                interactions={interactions}
+                className="absolute bottom-2 right-2"
+              />
+            </div>
           ) : null}
         </div>
 
         {/* Donation amount pill */}
         {item.kind === "donation" && item.amount != null ? (
-          <span className="ml-auto mt-0.5 inline-flex shrink-0 items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary tabular-nums">
+          <Link
+            href={item.href}
+            className="ml-auto mt-0.5 inline-flex shrink-0 items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary tabular-nums"
+          >
             {item.currency === "USD" ? formatCompactUsd(item.amount) : `${item.amount} ${item.currency}`}
-          </span>
+          </Link>
         ) : null}
-      </Link>
+      </div>
 
       {/* Like + comment, aligned under the row content (outside the link). */}
       <div className="pb-2 pl-16 pr-3">
@@ -842,15 +850,23 @@ function ObservationBatchCard({
                   );
                 }
                 return (
-                  <button
-                    key={it.id}
-                    type="button"
-                    onClick={() => onOpenImage(it)}
-                    aria-label={t("actions.openImage")}
-                    className="block cursor-zoom-in rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                  >
-                    <ObservationThumb item={it} overlay={null} />
-                  </button>
+                  <div key={it.id} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => onOpenImage(it)}
+                      aria-label={t("actions.openImage")}
+                      className="block w-full cursor-zoom-in rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                    >
+                      <ObservationThumb item={it} overlay={null} />
+                    </button>
+                    <QuickLikeButton
+                      subjectUri={it.id}
+                      signedIn={signedIn}
+                      interactions={interactions}
+                      size="sm"
+                      className="absolute bottom-1.5 right-1.5"
+                    />
+                  </div>
                 );
               })}
             </div>
@@ -1080,14 +1096,14 @@ function ObservationThumb({ item, overlay }: { item: ActivityFeedItem; overlay: 
   const src = item.imageUrl ?? resolved;
 
   return (
-    <div className="relative aspect-square overflow-hidden rounded-lg border border-border/60 bg-muted">
+    <span className="relative block aspect-square overflow-hidden rounded-lg border border-border/60 bg-muted">
       {src ? <Image src={src} alt="" fill unoptimized sizes="140px" className="object-cover" /> : null}
       {overlay ? (
-        <div className="absolute inset-0 grid place-items-center bg-black/55 text-sm font-semibold text-white">
+        <span className="absolute inset-0 grid place-items-center bg-black/55 text-sm font-semibold text-white">
           {overlay}
-        </div>
+        </span>
       ) : null}
-    </div>
+    </span>
   );
 }
 
@@ -1134,9 +1150,9 @@ function FeedImage({ item }: { item: ActivityFeedItem }) {
   if (!src) return null;
 
   return (
-    <div className="relative aspect-[16/9] w-full bg-muted">
+    <span className="relative block aspect-[16/9] w-full bg-muted">
       <Image src={src} alt="" fill unoptimized sizes="(max-width: 672px) 100vw, 608px" className="object-cover" />
-    </div>
+    </span>
   );
 }
 
