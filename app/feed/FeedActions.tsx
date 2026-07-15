@@ -55,6 +55,7 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ModalPortal, useModal } from "@/components/ui/modal/context";
 import { ModalTitle } from "@/components/ui/modal/modal";
+import { AccountHoverCard } from "./AccountHoverCard";
 import { ResolvedAvatar } from "./ResolvedAvatar";
 
 /** Which account the viewer is currently acting as in the feed. When the
@@ -1626,18 +1627,27 @@ function LightboxCommentNode({
 
   return (
     <li className="flex gap-2">
-      <ResolvedAvatar
+      <AccountHoverCard
         did={c.did}
-        avatarRef={isYou ? null : c.authorAvatarRef}
-        imageUrl={isYou ? viewer.avatarUrl : null}
-        name={isYou ? viewer.name ?? name : name}
-        fallbackIcon={<UserIcon className="size-3.5" />}
-        className="mt-0.5 size-7"
-        sizes="28px"
-      />
+        name={c.authorName}
+        avatarRef={c.authorAvatarRef}
+        triggerClassName="mt-0.5 shrink-0 self-start"
+      >
+        <ResolvedAvatar
+          did={c.did}
+          avatarRef={isYou ? null : c.authorAvatarRef}
+          imageUrl={isYou ? viewer.avatarUrl : null}
+          name={isYou ? viewer.name ?? name : name}
+          fallbackIcon={<UserIcon className="size-3.5" />}
+          className="size-7"
+          sizes="28px"
+        />
+      </AccountHoverCard>
       <div className="min-w-0 flex-1">
         <div className="text-sm">
-          <span className="font-medium text-foreground">{name}</span>{" "}
+          <AccountHoverCard did={c.did} name={c.authorName} avatarRef={c.authorAvatarRef}>
+            <span className="font-medium text-foreground hover:underline">{name}</span>
+          </AccountHoverCard>{" "}
           <span className="text-xs text-muted-foreground/70">
             {c.createdAt ? formatRelative(c.createdAt) : t("actions.postedJustNow")}
           </span>

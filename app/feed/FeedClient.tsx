@@ -1031,17 +1031,26 @@ function BatchCommentNode({
 
   return (
     <li className="flex gap-2">
-      <ResolvedAvatar
+      <AccountHoverCard
         did={comment.did}
+        name={comment.authorName}
         avatarRef={comment.authorAvatarRef}
-        name={name}
-        fallbackIcon={<UserIcon className="size-3.5" />}
-        className="mt-0.5 size-7"
-        sizes="28px"
-      />
+        triggerClassName="mt-0.5 shrink-0 self-start"
+      >
+        <ResolvedAvatar
+          did={comment.did}
+          avatarRef={comment.authorAvatarRef}
+          name={name}
+          fallbackIcon={<UserIcon className="size-3.5" />}
+          className="size-7"
+          sizes="28px"
+        />
+      </AccountHoverCard>
       <div className="min-w-0 flex-1">
         <div className="text-sm">
-          <span className="font-medium text-foreground">{name}</span>{" "}
+          <AccountHoverCard did={comment.did} name={comment.authorName} avatarRef={comment.authorAvatarRef}>
+            <span className="font-medium text-foreground hover:underline">{name}</span>
+          </AccountHoverCard>{" "}
           {isRoot && item.title ? (
             <button
               type="button"
