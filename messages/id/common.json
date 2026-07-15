@@ -1027,6 +1027,13 @@
     "unhideAction": "Tampilkan kembali",
     "genericError": "Terjadi kesalahan. Silakan coba lagi."
   },
+  "testRecord": {
+    "hideAction": "Sembunyikan sebagai uji coba",
+    "hideHint": "Sembunyikan entri ini dari feed publik dan halaman jelajah sebagai konten uji coba",
+    "confirmHide": "Sembunyikan dari semua orang",
+    "cancel": "Batal",
+    "genericError": "Terjadi kesalahan. Silakan coba lagi."
+  },
   "adminTestAccounts": {
     "title": "Akun uji coba",
     "description": "Akun-akun ini ditandai sebagai uji coba, jadi proyek, pengamatan, hasil pencarian, dan aktivitas feed-nya disembunyikan dari semua orang.",
@@ -1034,6 +1041,24 @@
     "remove": "Hapus",
     "unnamed": "Akun tanpa nama",
     "error": "Terjadi kesalahan. Silakan coba lagi."
+  },
+  "adminTestRecords": {
+    "title": "Postingan & pengamatan tersembunyi",
+    "description": "Postingan dan pengamatan ini ditandai sebagai uji coba, jadi disembunyikan dari feed publik dan halaman jelajah. Bagian lain dari akun pemiliknya tetap terlihat.",
+    "empty": "Belum ada postingan atau pengamatan yang disembunyikan.",
+    "remove": "Tampilkan kembali",
+    "unnamed": "Akun tanpa nama",
+    "error": "Terjadi kesalahan. Silakan coba lagi.",
+    "itemLabel": "{kind} oleh {name}",
+    "hiddenAgo": "Disembunyikan {time}",
+    "kinds": {
+      "post": "Postingan",
+      "observation": "Pengamatan",
+      "project": "Proyek",
+      "organization": "Pembaruan organisasi",
+      "donation": "Donasi",
+      "record": "Entri"
+    }
   },
   "recognition": {
     "eyebrow": "Pengelola GainForest",

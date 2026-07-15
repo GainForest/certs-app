@@ -903,9 +903,15 @@ export async function walkOccurrences(opts: OccurrenceWalkOptions): Promise<Occu
     // the shared cache; hiding is applied per-read from the short-lived hidden
     // set, so a steward's flag takes effect without busting the page cache.
     const pagePromise = rawPromise.then(async (page) => {
-      const hidden = await hiddenDidsForScope(false, signal);
-      if (hidden.size === 0) return page;
-      return { ...page, records: page.records.filter((record) => !hidden.has(record.did)) };
+      const [hidden, hiddenRecords] = await Promise.all([
+        hiddenDidsForScope(false, signal),
+        hiddenRecordUrisForScope(false, signal),
+      ]);
+      if (hidden.size === 0 && hiddenRecords.size === 0) return page;
+      return {
+        ...page,
+        records: page.records.filter((record) => !hidden.has(record.did) && !hiddenRecords.has(record.atUri)),
+      };
     });
     if (onProgress) void pagePromise.then((page) => onProgress(page.records)).catch(() => {});
     return pagePromise;
@@ -1863,6 +1869,11 @@ export async function fetchMaEarthOrganizationDids(signal?: AbortSignal): Promis
 /** The badge title that marks an account as a hidden test account. */
 export const TEST_ACCOUNT_BADGE_TITLE = "test-account";
 
+/** The badge title that marks a single record (a feed post, an observation, a
+ *  project, …) as a hidden test record. The award's subject is a StrongRef to
+ *  the flagged record instead of a bare DID. */
+export const TEST_RECORD_BADGE_TITLE = "test-record";
+
 /** The admin group account (admins-gxlw.certified.one) that gates who may flag
  *  test accounts and holds the `test-account` moderation badges. Its members
  *  can flag/unflag; the public hiding read scans this same repo. Kept separate
@@ -1876,7 +1887,12 @@ const HIDDEN_ACCOUNTS_CACHE_MS = 5 * 60 * 1000;
 
 const EMPTY_DID_SET: ReadonlySet<string> = new Set<string>();
 
-async function fetchHiddenAccountDidsUncached(signal?: AbortSignal): Promise<Set<string>> {
+/** Both hidden sets, read in one scan of the moderation repo: account DIDs
+ *  flagged via `test-account` awards, and record AT-URIs flagged via
+ *  `test-record` awards. */
+type HiddenModerationSets = { dids: Set<string>; recordUris: Set<string> };
+
+async function fetchHiddenModerationSetsUncached(signal?: AbortSignal): Promise<HiddenModerationSets> {
   const definitions: RawFeaturedBadgeDefinition[] = [];
   const awards: RawFeaturedBadgeAward[] = [];
   let afterDefinitions: string | null = null;
@@ -1908,21 +1924,44 @@ async function fetchHiddenAccountDidsUncached(signal?: AbortSignal): Promise<Set
     if (!afterDefinitions && !afterAwards) break;
   }
 
-  const testBadgeUris = new Set(
-    definitions
-      .filter((definition) => normalizeFeaturedBadgeTitle(definition.title) === normalizeFeaturedBadgeTitle(TEST_ACCOUNT_BADGE_TITLE))
-      .flatMap((definition) => (definition.uri ? [definition.uri] : [])),
-  );
-  if (testBadgeUris.size === 0) return new Set<string>();
+  const badgeUrisFor = (title: string) =>
+    new Set(
+      definitions
+        .filter((definition) => normalizeFeaturedBadgeTitle(definition.title) === normalizeFeaturedBadgeTitle(title))
+        .flatMap((definition) => (definition.uri ? [definition.uri] : [])),
+    );
+  const accountBadgeUris = badgeUrisFor(TEST_ACCOUNT_BADGE_TITLE);
+  const recordBadgeUris = badgeUrisFor(TEST_RECORD_BADGE_TITLE);
 
   const dids = new Set<string>();
+  const recordUris = new Set<string>();
   for (const award of awards) {
     const badgeUri = award.badge?.uri;
-    if (!badgeUri || !testBadgeUris.has(badgeUri)) continue;
+    if (!badgeUri) continue;
     const subject = award.subject;
-    if (subject?.__typename === "AppCertifiedDefsDid" && subject.did) dids.add(subject.did);
+    if (accountBadgeUris.has(badgeUri)) {
+      if (subject?.__typename === "AppCertifiedDefsDid" && subject.did) dids.add(subject.did);
+    } else if (recordBadgeUris.has(badgeUri)) {
+      if (subject?.__typename === "ComAtprotoRepoStrongRef" && subject.uri?.trim()) {
+        recordUris.add(subject.uri.trim());
+      }
+    }
   }
-  return dids;
+  return { dids, recordUris };
+}
+
+/** Cached account + record hidden sets. Returns empty sets on any error so a
+ *  transient indexer hiccup never hides the whole catalog. */
+function fetchHiddenModerationSets(signal?: AbortSignal): Promise<HiddenModerationSets> {
+  return cachedAsync(
+    "hidden-moderation-sets:v1",
+    HIDDEN_ACCOUNTS_CACHE_MS,
+    () =>
+      fetchHiddenModerationSetsUncached().catch(
+        (): HiddenModerationSets => ({ dids: new Set<string>(), recordUris: new Set<string>() }),
+      ),
+    signal,
+  );
 }
 
 /**
@@ -1930,13 +1969,17 @@ async function fetchHiddenAccountDidsUncached(signal?: AbortSignal): Promise<Set
  * projects / observations / feed surfaces. Returns an empty set on any error so
  * a transient indexer hiccup never hides the whole catalog.
  */
-export function fetchHiddenAccountDids(signal?: AbortSignal): Promise<Set<string>> {
-  return cachedAsync(
-    "hidden-account-dids:v1",
-    HIDDEN_ACCOUNTS_CACHE_MS,
-    () => fetchHiddenAccountDidsUncached().catch(() => new Set<string>()),
-    signal,
-  );
+export async function fetchHiddenAccountDids(signal?: AbortSignal): Promise<Set<string>> {
+  return (await fetchHiddenModerationSets(signal)).dids;
+}
+
+/**
+ * The set of record AT-URIs a GainForest steward flagged as test records —
+ * individual posts, observations, or other records hidden from the public feed
+ * and catalogs without hiding the whole account. Empty set on any error.
+ */
+export async function fetchHiddenRecordUris(signal?: AbortSignal): Promise<Set<string>> {
+  return (await fetchHiddenModerationSets(signal)).recordUris;
 }
 
 /**
@@ -2021,6 +2064,13 @@ export async function fetchRecognitionBadgesForDid(did: string, signal?: AbortSi
 async function hiddenDidsForScope(ownerScoped: boolean, signal?: AbortSignal): Promise<ReadonlySet<string>> {
   if (ownerScoped) return EMPTY_DID_SET;
   return fetchHiddenAccountDids(signal).catch(() => EMPTY_DID_SET);
+}
+
+/** Same scoping rule for record-level flags: the public catalogs hide flagged
+ *  records, while an owner-scoped drill-down still shows them to their owner. */
+async function hiddenRecordUrisForScope(ownerScoped: boolean, signal?: AbortSignal): Promise<ReadonlySet<string>> {
+  if (ownerScoped) return EMPTY_DID_SET;
+  return fetchHiddenRecordUris(signal).catch(() => EMPTY_DID_SET);
 }
 
 /**

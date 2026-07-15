@@ -1027,6 +1027,13 @@
     "unhideAction": "Make visible again",
     "genericError": "Something went wrong. Please try again."
   },
+  "testRecord": {
+    "hideAction": "Hide as test",
+    "hideHint": "Hide this entry from the public feed and explore pages as test content",
+    "confirmHide": "Hide from everyone",
+    "cancel": "Cancel",
+    "genericError": "Something went wrong. Please try again."
+  },
   "adminTestAccounts": {
     "title": "Test accounts",
     "description": "These accounts are marked as test, so their projects, observations, search results and feed activity are hidden from everyone.",
@@ -1034,6 +1041,24 @@
     "remove": "Remove",
     "unnamed": "Unnamed account",
     "error": "Something went wrong. Please try again."
+  },
+  "adminTestRecords": {
+    "title": "Hidden posts & observations",
+    "description": "These individual posts and observations are marked as test, so they are hidden from the public feed and explore pages. The rest of their owner's account stays visible.",
+    "empty": "No posts or observations are hidden right now.",
+    "remove": "Make visible",
+    "unnamed": "Unnamed account",
+    "error": "Something went wrong. Please try again.",
+    "itemLabel": "{kind} by {name}",
+    "hiddenAgo": "Hidden {time}",
+    "kinds": {
+      "post": "Post",
+      "observation": "Observation",
+      "project": "Project",
+      "organization": "Organization update",
+      "donation": "Donation",
+      "record": "Entry"
+    }
   },
   "recognition": {
     "eyebrow": "GainForest steward",

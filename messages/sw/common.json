@@ -1027,6 +1027,13 @@
     "unhideAction": "Ionyeshe tena",
     "genericError": "Hitilafu imetokea. Tafadhali jaribu tena."
   },
+  "testRecord": {
+    "hideAction": "Ficha kama jaribio",
+    "hideHint": "Ficha kipengee hiki kutoka mlisho wa umma na kurasa za uchunguzi kama maudhui ya majaribio",
+    "confirmHide": "Ficha kwa kila mtu",
+    "cancel": "Ghairi",
+    "genericError": "Hitilafu imetokea. Tafadhali jaribu tena."
+  },
   "adminTestAccounts": {
     "title": "Akaunti za majaribio",
     "description": "Akaunti hizi zimewekwa alama kama za majaribio, hivyo miradi, uchunguzi, matokeo ya utafutaji na shughuli za mlisho zake zimefichwa kwa kila mtu.",
@@ -1034,6 +1041,24 @@
     "remove": "Ondoa",
     "unnamed": "Akaunti isiyo na jina",
     "error": "Hitilafu imetokea. Tafadhali jaribu tena."
+  },
+  "adminTestRecords": {
+    "title": "Machapisho na uchunguzi vilivyofichwa",
+    "description": "Machapisho na uchunguzi huu vimewekwa alama kama vya majaribio, hivyo vimefichwa kutoka mlisho wa umma na kurasa za uchunguzi. Sehemu nyingine ya akaunti ya mmiliki bado inaonekana.",
+    "empty": "Hakuna chapisho au uchunguzi uliofichwa kwa sasa.",
+    "remove": "Onyesha tena",
+    "unnamed": "Akaunti isiyo na jina",
+    "error": "Hitilafu imetokea. Tafadhali jaribu tena.",
+    "itemLabel": "{kind} ya {name}",
+    "hiddenAgo": "Imefichwa {time}",
+    "kinds": {
+      "post": "Chapisho",
+      "observation": "Uchunguzi",
+      "project": "Mradi",
+      "organization": "Sasisho la shirika",
+      "donation": "Mchango",
+      "record": "Kipengee"
+    }
   },
   "recognition": {
     "eyebrow": "Msimamizi wa GainForest",

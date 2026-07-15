@@ -5,6 +5,7 @@ import { ShieldCheckIcon } from "lucide-react";
 import Container from "@/components/ui/container";
 import { getGainForestModeratorAccess, getInternalBadgeAccess } from "@/app/internal/badges/_lib/access";
 import { fetchFlaggedTestAccounts } from "@/app/internal/badges/_lib/test-accounts";
+import { fetchFlaggedTestRecords } from "@/app/internal/badges/_lib/test-records";
 import { fetchGrantApplicants } from "@/app/_lib/grants";
 import { fetchBioblitzRegistrants } from "@/app/_lib/bioblitz";
 import { fetchTainaAdminResidents } from "@/app/_lib/taina-agent";
@@ -115,9 +116,10 @@ export default async function AdminPage({
   }
 
   const t = await getTranslations("common.adminModeration");
-  const [{ tab }, testAccounts, grantApplicants, bioblitzRegistrants, taina, dataJobRows, endorsers, awardEndorsements, facilitatorStats] = await Promise.all([
+  const [{ tab }, testAccounts, testRecords, grantApplicants, bioblitzRegistrants, taina, dataJobRows, endorsers, awardEndorsements, facilitatorStats] = await Promise.all([
     searchParams,
     fetchFlaggedTestAccounts().catch(() => []),
+    moderator.repoDid ? fetchFlaggedTestRecords(moderator.repoDid).catch(() => []) : Promise.resolve([]),
     fetchGrantApplicants().catch(() => []),
     fetchBioblitzRegistrants().catch(() => []),
     loadTainaRows(),
@@ -141,6 +143,7 @@ export default async function AdminPage({
       <AdminModerationDashboard
         initialTab={initialTab}
         testAccounts={testAccounts}
+        testRecords={testRecords}
         grantApplicants={grantApplicants}
         bioblitzRegistrants={bioblitzRegistrants}
         tainaRows={taina?.rows ?? null}

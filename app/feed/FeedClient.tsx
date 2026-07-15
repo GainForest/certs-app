@@ -31,6 +31,7 @@ import {
   LikeButton,
   LocalPostsList,
   MobileComposerBar,
+  ModeratorHideButton,
   ReplyComposer,
   ReplyToggle,
   useFeedInteractions,
@@ -162,6 +163,12 @@ export function FeedClient({
   const [error, setError] = useState(false);
   // The image a viewer tapped open in the in-feed lightbox (null = closed).
   const [lightboxItem, setLightboxItem] = useState<ActivityFeedItem | null>(null);
+  // AT-URIs an admin just hid as test records, removed from view immediately;
+  // the server-side feed filter takes over once the flag propagates.
+  const [moderatedUris, setModeratedUris] = useState<Set<string>>(() => new Set());
+  const onModerated = useCallback((uri: string) => {
+    setModeratedUris((prev) => new Set(prev).add(uri));
+  }, []);
 
   // Bumped on every first-page request (filter switch / refresh) so an in-flight
   // load-more from a previous filter can't append stale rows.
@@ -265,11 +272,15 @@ export function FeedClient({
     return () => observer.disconnect();
   }, [hasMore]);
 
-  // Hide rows the viewer just deleted until the indexer stops returning them.
+  // Hide rows the viewer just deleted until the indexer stops returning them,
+  // plus rows an admin just hid as test records.
   const removedUris = interactions.removedUris;
   const visibleItems = useMemo(
-    () => (removedUris.size === 0 ? items : items.filter((it) => !removedUris.has(it.id))),
-    [items, removedUris],
+    () =>
+      removedUris.size === 0 && moderatedUris.size === 0
+        ? items
+        : items.filter((it) => !removedUris.has(it.id) && !moderatedUris.has(it.id)),
+    [items, removedUris, moderatedUris],
   );
   const entries = useMemo(() => groupFeedEntries(visibleItems), [visibleItems]);
 
@@ -404,6 +415,8 @@ export function FeedClient({
                     interactions={interactions}
                     onOpenImage={setLightboxItem}
                     bskyUrl={blueskyLinks.get(entry.item.id) ?? null}
+                    isAdmin={isAdmin}
+                    onModerated={onModerated}
                   />
                 ),
               )}
@@ -580,6 +593,8 @@ function FeedRow({
   interactions,
   onOpenImage,
   bskyUrl = null,
+  isAdmin = false,
+  onModerated,
 }: {
   item: ActivityFeedItem;
   signedIn: boolean;
@@ -587,6 +602,9 @@ function FeedRow({
   onOpenImage: (item: ActivityFeedItem) => void;
   /** bsky.app URL of this post's confirmed Bluesky twin, when cross-posted. */
   bskyUrl?: string | null;
+  /** GainForest steward affordances (hide a row as a test record). */
+  isAdmin?: boolean;
+  onModerated?: (uri: string) => void;
 }) {
   const t = useTranslations("common.feed");
   const verb = t(`verbs.${item.kind}`);
@@ -695,7 +713,16 @@ function FeedRow({
 
       {/* Like + comment, aligned under the row content (outside the link). */}
       <div className="pb-2 pl-16 pr-3">
-        <FeedActionBar subjectUri={item.id} signedIn={signedIn} interactions={interactions} />
+        <FeedActionBar
+          subjectUri={item.id}
+          signedIn={signedIn}
+          interactions={interactions}
+          extraActions={
+            isAdmin && onModerated && item.id.startsWith("at://") ? (
+              <ModeratorHideButton subjectUri={item.id} onHidden={() => onModerated(item.id)} />
+            ) : null
+          }
+        />
         {bskyUrl ? <BlueskyPostLink href={bskyUrl} /> : null}
         {canEditPost ? (
           editing ? (

@@ -1027,6 +1027,13 @@
     "unhideAction": "Volver a mostrar",
     "genericError": "Algo salió mal. Inténtalo de nuevo."
   },
+  "testRecord": {
+    "hideAction": "Ocultar como prueba",
+    "hideHint": "Oculta esta entrada del feed público y de las páginas de exploración como contenido de prueba",
+    "confirmHide": "Ocultar para todos",
+    "cancel": "Cancelar",
+    "genericError": "Algo salió mal. Inténtalo de nuevo."
+  },
   "adminTestAccounts": {
     "title": "Cuentas de prueba",
     "description": "Estas cuentas están marcadas como de prueba, así que sus proyectos, observaciones, resultados de búsqueda y actividad del feed están ocultos para todos.",
@@ -1034,6 +1041,24 @@
     "remove": "Quitar",
     "unnamed": "Cuenta sin nombre",
     "error": "Algo salió mal. Inténtalo de nuevo."
+  },
+  "adminTestRecords": {
+    "title": "Publicaciones y observaciones ocultas",
+    "description": "Estas publicaciones y observaciones están marcadas como de prueba, así que están ocultas del feed público y de las páginas de exploración. El resto de la cuenta de su propietario sigue visible.",
+    "empty": "Ninguna publicación ni observación está oculta por ahora.",
+    "remove": "Hacer visible",
+    "unnamed": "Cuenta sin nombre",
+    "error": "Algo salió mal. Inténtalo de nuevo.",
+    "itemLabel": "{kind} de {name}",
+    "hiddenAgo": "Oculto {time}",
+    "kinds": {
+      "post": "Publicación",
+      "observation": "Observación",
+      "project": "Proyecto",
+      "organization": "Actualización de organización",
+      "donation": "Donación",
+      "record": "Entrada"
+    }
   },
   "recognition": {
     "eyebrow": "Administración de GainForest",
