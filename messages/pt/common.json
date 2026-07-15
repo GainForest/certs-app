@@ -1027,6 +1027,13 @@
     "unhideAction": "Tornar visível novamente",
     "genericError": "Algo deu errado. Tente novamente."
   },
+  "testRecord": {
+    "hideAction": "Ocultar como teste",
+    "hideHint": "Oculte este item do feed público e das páginas de exploração como conteúdo de teste",
+    "confirmHide": "Ocultar de todos",
+    "cancel": "Cancelar",
+    "genericError": "Algo deu errado. Tente novamente."
+  },
   "adminTestAccounts": {
     "title": "Contas de teste",
     "description": "Estas contas estão marcadas como teste, então seus projetos, observações, resultados de busca e atividade do feed ficam ocultos para todos.",
@@ -1034,6 +1041,24 @@
     "remove": "Remover",
     "unnamed": "Conta sem nome",
     "error": "Algo deu errado. Tente novamente."
+  },
+  "adminTestRecords": {
+    "title": "Publicações e observações ocultas",
+    "description": "Estas publicações e observações estão marcadas como teste, então ficam ocultas do feed público e das páginas de exploração. O restante da conta do proprietário continua visível.",
+    "empty": "Nenhuma publicação ou observação está oculta no momento.",
+    "remove": "Tornar visível",
+    "unnamed": "Conta sem nome",
+    "error": "Algo deu errado. Tente novamente.",
+    "itemLabel": "{kind} de {name}",
+    "hiddenAgo": "Oculto {time}",
+    "kinds": {
+      "post": "Publicação",
+      "observation": "Observação",
+      "project": "Projeto",
+      "organization": "Atualização de organização",
+      "donation": "Doação",
+      "record": "Item"
+    }
   },
   "recognition": {
     "eyebrow": "Equipe da GainForest",

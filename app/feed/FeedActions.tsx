@@ -10,9 +10,9 @@
  * overlay immediately and the indexer reconciles it on the next load.
  */
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { HeartIcon, ImageIcon, Loader2Icon, MessageCircleIcon, PencilIcon, ReplyIcon, SendHorizonalIcon, Trash2Icon, UserIcon, XIcon } from "lucide-react";
+import { EyeOffIcon, HeartIcon, ImageIcon, Loader2Icon, MessageCircleIcon, PencilIcon, ReplyIcon, SendHorizonalIcon, Trash2Icon, UserIcon, XIcon } from "lucide-react";
 import {
   createFeedComment,
   createFeedLike,
@@ -791,6 +791,75 @@ export function DeleteButton({ onDelete }: { onDelete: () => Promise<void> }) {
   );
 }
 
+/** Steward-only control on a feed row: hide the underlying record from the
+ *  public feed and catalogs by flagging it as a test record. Two-step confirm
+ *  like DeleteButton; on success the row is removed via `onHidden`. */
+export function ModeratorHideButton({ subjectUri, onHidden }: { subjectUri: string; onHidden: () => void }) {
+  const t = useTranslations("common.testRecord");
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+
+  async function run() {
+    if (busy) return;
+    setBusy(true);
+    setError(false);
+    try {
+      const response = await fetch("/api/internal/test-records", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ uri: subjectUri }),
+      });
+      const data = (await response.json().catch(() => null)) as { flagged?: boolean; error?: string } | null;
+      if (!response.ok || !data || data.error) throw new Error(data?.error || "flag failed");
+      onHidden();
+    } catch {
+      setError(true);
+      setBusy(false);
+      setConfirming(false);
+    }
+  }
+
+  if (confirming) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => void run()}
+          disabled={busy}
+          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+        >
+          {busy ? <Loader2Icon className="size-3 animate-spin" /> : <EyeOffIcon className="size-3" />}
+          {t("confirmHide")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          disabled={busy}
+          className="rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+        >
+          {t("cancel")}
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        title={t("hideHint")}
+        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground/70 transition-colors hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
+      >
+        <EyeOffIcon className="size-3" />
+        {t("hideAction")}
+      </button>
+      {error ? <span className="text-[11px] text-destructive">{t("genericError")}</span> : null}
+    </span>
+  );
+}
+
 // ── Composer (publish a post) ────────────────────────────────────────────────
 
 export function FeedComposer({
@@ -1330,10 +1399,13 @@ export function FeedActionBar({
   subjectUri,
   signedIn,
   interactions,
+  extraActions = null,
 }: {
   subjectUri: string;
   signedIn: boolean;
   interactions: FeedInteractions;
+  /** Extra controls appended to the like/comment row (e.g. steward actions). */
+  extraActions?: ReactNode;
 }) {
   const t = useTranslations("common.feed");
   const engagement = interactions.getEngagement(subjectUri);
@@ -1362,6 +1434,7 @@ export function FeedActionBar({
             {engagement.commentCount > 0 ? engagement.commentCount : t("actions.comment")}
           </span>
         </button>
+        {extraActions}
       </div>
 
       {open ? <CommentPanel subjectUri={subjectUri} signedIn={signedIn} interactions={interactions} /> : null}

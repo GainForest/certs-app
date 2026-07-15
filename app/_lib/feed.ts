@@ -24,7 +24,7 @@
  */
 
 import { cachedAsync } from "./async-cache";
-import { fetchHiddenAccountDids, indexerQuery } from "./indexer";
+import { fetchHiddenAccountDids, fetchHiddenRecordUris, indexerQuery } from "./indexer";
 import { normaliseRef } from "./pds";
 import { FACILITATOR_DID, accountHref, localBumicertHref, localObservationHref, localProjectHref } from "./urls";
 
@@ -893,8 +893,13 @@ async function buildFeedPageUncached(
   const { items: donationItems, certUriById } = mapDonations(receiptNodes);
 
   // Accounts a GainForest steward flagged as "test" are hidden from the feed —
-  // every row owned by a flagged DID is dropped before the merge.
-  const hidden = await fetchHiddenAccountDids().catch(() => new Set<string>());
+  // every row owned by a flagged DID is dropped before the merge. Individual
+  // records flagged as test (posts, observations, …) are dropped the same way
+  // by their AT-URI, without hiding the rest of the account.
+  const [hidden, hiddenRecords] = await Promise.all([
+    fetchHiddenAccountDids().catch(() => new Set<string>()),
+    fetchHiddenRecordUris().catch(() => new Set<string>()),
+  ]);
 
   // Merge every wanted kind into one pool ordered purely by recency — no
   // per-kind quota — then keep only rows strictly older than the cursor. A
@@ -905,7 +910,13 @@ async function buildFeedPageUncached(
     ...mapOrganizations(orgNodes),
     ...mapPosts(postNodes),
     ...donationItems,
-  ].filter((item) => item.createdAt && (filter === "all" || item.kind === filter) && !hidden.has(item.actorDid));
+  ].filter(
+    (item) =>
+      item.createdAt &&
+      (filter === "all" || item.kind === filter) &&
+      !hidden.has(item.actorDid) &&
+      !hiddenRecords.has(item.id),
+  );
   pool.sort(compareNewestFirst);
 
   const eligible = cursor ? pool.filter((it) => isStrictlyOlder(it, cursor)) : pool;

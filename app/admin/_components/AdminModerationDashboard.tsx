@@ -9,6 +9,7 @@ import { ArchiveIcon, AwardIcon, BotIcon, Building2Icon, FlaskConicalIcon, LeafI
 import type { GrantApplicant } from "@/app/_lib/grants";
 import type { BioblitzRegistrant } from "@/app/_lib/bioblitz";
 import type { FlaggedTestAccount } from "@/app/internal/badges/_lib/test-accounts";
+import type { FlaggedTestRecord } from "@/app/internal/badges/_lib/test-records";
 import type { BuiltinEndorser, EndorserRecord } from "@/app/_lib/endorsers";
 import type { AwardEndorsementsData } from "../_lib/award-endorsements";
 import type { FacilitatorStats } from "../_lib/facilitator-stats";
@@ -16,6 +17,7 @@ import { formatRelative } from "@/app/_lib/format";
 import { cn } from "@/lib/utils";
 import { accountPath } from "@/app/account/_lib/account-route";
 import { AdminTestAccountsList } from "./AdminTestAccountsList";
+import { AdminTestRecordsList } from "./AdminTestRecordsList";
 import { AdminTainaPanel, type AdminTainaRow } from "./AdminTainaPanel";
 import { AdminDataJobsPanel, type AdminDataJobRow } from "./AdminDataJobsPanel";
 import { AdminFacilitatorPanel } from "./AdminFacilitatorPanel";
@@ -33,6 +35,7 @@ export type AdminTab = "taina" | "dataJobs" | "grants" | "bioblitz" | "testAccou
 export function AdminModerationDashboard({
   initialTab,
   testAccounts,
+  testRecords,
   grantApplicants,
   bioblitzRegistrants,
   tainaRows,
@@ -45,6 +48,7 @@ export function AdminModerationDashboard({
 }: {
   initialTab: AdminTab;
   testAccounts: FlaggedTestAccount[];
+  testRecords: FlaggedTestRecord[];
   grantApplicants: GrantApplicant[];
   bioblitzRegistrants: BioblitzRegistrant[];
   /** null = the Tainá runtime was unreachable (distinct from an empty roster). */
@@ -61,6 +65,7 @@ export function AdminModerationDashboard({
   const tTaina = useTranslations("common.adminTaina");
   const tDataJobs = useTranslations("common.adminDataJobs");
   const tTest = useTranslations("common.adminTestAccounts");
+  const tTestRecords = useTranslations("common.adminTestRecords");
   const tEndorsers = useTranslations("common.adminEndorsers");
   const tAward = useTranslations("common.adminAwardEndorsements");
   const tFacilitator = useTranslations("common.adminFacilitator");
@@ -78,7 +83,7 @@ export function AdminModerationDashboard({
     { id: "dataJobs", label: t("tabs.dataJobs"), Icon: ArchiveIcon, count: dataJobRows?.length ?? 0 },
     { id: "grants", label: t("tabs.grants"), Icon: SproutIcon, count: grantApplicants.length },
     { id: "bioblitz", label: t("tabs.bioblitz"), Icon: LeafIcon, count: bioblitzRegistrants.length },
-    { id: "testAccounts", label: t("tabs.testAccounts"), Icon: FlaskConicalIcon, count: testAccounts.length },
+    { id: "testAccounts", label: t("tabs.testAccounts"), Icon: FlaskConicalIcon, count: testAccounts.length + testRecords.length },
     { id: "endorsers", label: t("tabs.endorsers"), Icon: Building2Icon, count: builtinEndorsers.length + endorsers.length },
     { id: "awardEndorsements", label: t("tabs.awardEndorsements"), Icon: AwardIcon, count: awardEndorsements.awards.length },
     { id: "facilitator", label: t("tabs.facilitator"), Icon: WalletIcon, count: facilitatorStats.receiptCount ?? 0 },
@@ -161,14 +166,24 @@ export function AdminModerationDashboard({
           <BioblitzRegistrantsList registrants={bioblitzRegistrants} />
         </AdminPanel>
       ) : tab === "testAccounts" ? (
-        <AdminPanel
-          Icon={FlaskConicalIcon}
-          title={tTest("title")}
-          description={tTest("description")}
-          count={testAccounts.length}
-        >
-          <AdminTestAccountsList accounts={testAccounts} />
-        </AdminPanel>
+        <div className="space-y-5">
+          <AdminPanel
+            Icon={FlaskConicalIcon}
+            title={tTest("title")}
+            description={tTest("description")}
+            count={testAccounts.length}
+          >
+            <AdminTestAccountsList accounts={testAccounts} />
+          </AdminPanel>
+          <AdminPanel
+            Icon={FlaskConicalIcon}
+            title={tTestRecords("title")}
+            description={tTestRecords("description")}
+            count={testRecords.length}
+          >
+            <AdminTestRecordsList records={testRecords} />
+          </AdminPanel>
+        </div>
       ) : tab === "endorsers" ? (
         <AdminPanel
           Icon={Building2Icon}
