@@ -2029,10 +2029,10 @@
   },
   "epdsRouter": {
     "metaTitle": "Cara kerja router ePDS",
-    "metaDescription": "Panduan interaktif router ePDS: bagaimana aplikasi menemukan server yang tepat untuk masuk dengan email di antara banyak server, tanpa router pernah menyimpan email.",
+    "metaDescription": "Panduan interaktif router ePDS: bagaimana aplikasi menemukan server yang tepat untuk masuk dengan email di antara banyak server — tuan rumah hanya membagikan sidik jari satu arah, tidak pernah kredensial atau alamat.",
     "kicker": "penemuan email ke server",
     "title": "Satu email, banyak server",
-    "lead": "ePDS memungkinkan Anda masuk hanya dengan email. Namun ketika sebuah komunitas menjalankan beberapa server, aplikasi harus lebih dulu menjawab pertanyaan kecil: server mana yang mengenal email ini? Router menjawabnya dalam satu panggilan — tanpa pernah menyimpan alamat siapa pun.",
+    "lead": "ePDS memungkinkan Anda masuk hanya dengan email. Namun ketika sebuah komunitas menjalankan beberapa server, aplikasi harus lebih dulu menjawab pertanyaan kecil: server mana yang mengenal email ini? Router menjawabnya dalam satu panggilan — tuan rumah tetap memegang kendali penuh, dan tidak ada yang pernah menyerahkan alamat atau kata sandi.",
     "facts": {
       "routing": {
         "title": "Satu pencarian, server yang tepat",
@@ -2040,17 +2040,17 @@
       },
       "privacy": {
         "title": "Email tidak pernah disimpan",
-        "text": "Router hanya menyimpan sidik jari teracak dari alamat. Bahkan salinan penuh memorinya tidak mengungkap daftar email."
+        "text": "Alamat diacak di servernya sendiri sebelum apa pun keluar dari sana. Router hanya melihat sidik jari — dan mengacaknya lagi sebelum menyimpan."
       },
       "zerochange": {
-        "title": "Tanpa perubahan pada server Anda",
-        "text": "Router membaca endpoint server standar. ePDS atau PDS Bluesky apa pun bisa bergabung apa adanya."
+        "title": "Tuan rumah tetap memegang kendali",
+        "text": "Tidak ada kredensial yang diserahkan, tidak ada yang dipasang di dalam PDS. Tuan rumah menjalankan satu skrip kecil di samping servernya, dengan jadwalnya sendiri."
       }
     },
     "problem": {
       "heading": "Mengapa penemuan diperlukan",
       "p1": "Aplikasi dengan masuk lewat email harus mengirim login ke satu server tertentu: server itulah yang mengirim kode dan menyimpan akun. Dengan satu server jawabannya tetap. Dengan beberapa, aplikasi butuh direktori — dan alamat email adalah jenis data yang justru tidak ingin Anda salin ke satu daftar besar.",
-      "p2": "Router menyelesaikannya dengan trik kecil: ia mengingat sidik jari, bukan alamat. Setiap alamat yang dipelajarinya diacak satu arah sebelum disimpan, dan setiap pencarian mengacak email yang masuk dengan cara yang sama lalu membandingkan sidik jarinya. Jawaban sama, tanpa buku alamat."
+      "p2": "Router menyelesaikannya dengan trik kecil: ia hanya bekerja dengan sidik jari. Setiap server mengacak alamatnya satu arah di rumah dan tidak membagikan apa pun lagi, dan setiap pencarian mengacak email yang masuk dengan cara yang sama lalu membandingkan sidik jarinya. Jawaban sama, tanpa buku alamat — dan tidak ada yang menyerahkan kuncinya."
     },
     "demo": {
       "heading": "Coba sebuah pencarian",
@@ -2095,7 +2095,7 @@
     },
     "sync": {
       "heading": "Bagaimana router tetap mutakhir",
-      "intro": "Tidak ada yang perlu melapor. Router menarik sendiri apa yang dibutuhkannya dengan pewaktu.",
+      "intro": "Tidak ada yang diserahkan: tiap tuan rumah mendorong potretnya sendiri, dengan pewaktu pilihannya.",
       "play": "Putar",
       "pause": "Jeda",
       "back": "Kembali",
@@ -2103,36 +2103,36 @@
       "stepLabel": "Langkah {n} dari {total}",
       "ariaLabel": "Diagram siklus sinkronisasi",
       "nodes": {
-        "pds": "ePDS",
+        "pds": "ePDS Anda",
         "router": "Router",
         "index": "indeks sidik jari"
       },
       "steps": {
         "s1": {
-          "title": "Router bertanya",
-          "text": "Setiap menit ia memanggil tiap server terdaftar dengan dua permintaan standar: daftar akunmu, lalu bagikan email masuknya. Ini endpoint admin yang sama yang sudah dimiliki setiap PDS."
+          "title": "Server Anda mengumpulkan daftarnya sendiri",
+          "text": "Sebuah skrip kecil berjalan di samping PDS Anda, dengan jadwal yang Anda pilih. Ia membaca email akun secara lokal — kata sandi admin Anda tidak pernah meninggalkan mesin Anda."
         },
         "s2": {
-          "title": "Email hadir sekejap",
-          "text": "Alamat berpindah lewat koneksi terenkripsi dan hanya ada di router sesaat, di memori."
+          "title": "Sidik jari dibuat di rumah",
+          "text": "Setiap alamat diacak satu arah di server Anda sendiri. Sejak saat ini, tidak ada email teks polos di mana pun dalam prosesnya."
         },
         "s3": {
-          "title": "Sidik jari menggantikannya",
-          "text": "Setiap alamat diacak satu arah lalu dibuang. Yang tersisa adalah himpunan sidik jari yang tidak bisa diubah kembali menjadi daftar email."
+          "title": "Potret didorong",
+          "text": "Skrip mengirim seluruh himpunan sidik jari ke router lewat panggilan terenkripsi yang dilindungi token. Ia menggantikan potret sebelumnya sepenuhnya."
         },
         "s4": {
-          "title": "Potret ditukar",
-          "text": "Seluruh himpunan server diganti dalam satu langkah atomik. Akun yang dihapus lenyap pada putaran berikutnya, dan jika server sempat mati, potret baik terakhir tetap menjawab."
+          "title": "Router menukarnya",
+          "text": "Router mengacak setiap sidik jari untuk kedua kalinya dengan kunci privatnya sendiri, lalu mengganti seluruh himpunan server Anda dalam satu langkah atomik. Akun yang dihapus lenyap pada dorongan berikutnya."
         }
       }
     },
     "register": {
-      "heading": "Daftarkan ePDS Anda",
-      "intro": "Bergabung ke jaringan cukup satu panggilan. Anda butuh dua hal: token admin dari operator router, dan kata sandi admin server Anda sendiri agar router dapat membaca email akun.",
-      "p1": "Router langsung memeriksa datanya dengan menjalankan sinkronisasi pertama secara penuh. Balasan sukses berarti server Anda sudah terindeks dan dapat ditemukan; galat berarti tidak ada yang tersimpan.",
-      "registerLabel": "daftarkan sebuah instans",
-      "verifyNote": "Server terdaftar diingat meski router dimulai ulang dan disinkronkan lagi setiap menit sejak itu. Keluar sama mudahnya:",
-      "unregisterLabel": "batalkan pendaftaran"
+      "heading": "Bergabung sebagai tuan rumah ePDS",
+      "intro": "Anda tidak pernah membagikan kata sandi admin dan tidak pernah menunggu router menghubungi Anda. Daftar sekali, dorong sidik jari dengan jadwal sendiri, dan minta operator menyetujui Anda.",
+      "p1": "Mendaftar cukup satu panggilan tanpa kredensial — balasannya membawa token kirim Anda (simpan, hanya ditampilkan sekali). Server Anda berstatus menunggu dan tak terlihat oleh pencarian sampai operator router menyetujuinya.",
+      "enrollLabel": "1 · daftarkan server Anda",
+      "pushLabel": "2 · dorong sidik jari dengan pewaktu",
+      "approveNote": "3 · Minta operator router menyetujui pendaftaran Anda — pencarian mulai berjalan begitu disetujui. Keluar sepenuhnya pilihan Anda: berhenti mendorong, atau minta operator menghapus entri Anda."
     },
     "integrate": {
       "heading": "Integrasikan pencarian di aplikasi Anda",
@@ -2146,9 +2146,11 @@
       "intro": "Lima endpoint kecil. Pencarian dan status memakai token klien; mengelola server memakai token admin.",
       "lookup": "Tanyakan server mana yang mengenal sebuah email.",
       "status": "Keadaan sinkronisasi tiap server: jumlah akun, sinkronisasi terakhir, galat terakhir.",
-      "register": "Daftarkan sebuah server; diverifikasi dengan sinkronisasi pertama penuh sebelum diterima.",
-      "list": "Daftar server terdaftar. Kata sandi tidak pernah dikembalikan.",
-      "unregister": "Hapus server yang didaftarkan lewat API."
+      "unregister": "Hapus server terdaftar (token admin).",
+      "enroll": "Daftarkan server Anda. Panggilan terbuka tanpa kredensial; mengembalikan token kirim sekali-tampil dan entri menunggu.",
+      "digests": "Dorong potret lengkap sidik jari email (SHA-256 heks). Setiap dorongan menggantikan yang sebelumnya.",
+      "script": "Skrip dorong siap pakai untuk tuan rumah — Python 3, hanya pustaka standar.",
+      "approve": "Operator menyetujui pendaftaran; pencarian mulai melayaninya (token admin)."
     },
     "snippets": {
       "copy": "Salin",

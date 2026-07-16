@@ -2029,10 +2029,10 @@
   },
   "epdsRouter": {
     "metaTitle": "Jinsi router ya ePDS inavyofanya kazi",
-    "metaDescription": "Mwongozo shirikishi wa router ya ePDS: jinsi programu inavyopata seva sahihi ya kuingia kwa barua pepe kati ya seva nyingi, bila router kuhifadhi barua pepe yoyote.",
+    "metaDescription": "Mwongozo shirikishi wa router ya ePDS: jinsi programu inavyopata seva sahihi ya kuingia kwa barua pepe kati ya seva nyingi — wenyeji hushiriki alama za vidole za njia moja tu, kamwe si vitambulisho wala anwani.",
     "kicker": "ugunduzi wa barua pepe hadi seva",
     "title": "Barua pepe moja, seva nyingi",
-    "lead": "ePDS inakuwezesha kuingia kwa barua pepe yako tu. Lakini jumuiya inapoendesha seva kadhaa, programu lazima kwanza ijibu swali dogo: seva ipi inaijua barua pepe hii? Router inalijibu kwa wito mmoja — bila kamwe kuhifadhi anwani ya mtu yeyote.",
+    "lead": "ePDS inakuwezesha kuingia kwa barua pepe yako tu. Lakini jumuiya inapoendesha seva kadhaa, programu lazima kwanza ijibu swali dogo: seva ipi inaijua barua pepe hii? Router inalijibu kwa wito mmoja — wenyeji wanabaki na udhibiti kamili, na hakuna anayekabidhi anwani wala nenosiri.",
     "facts": {
       "routing": {
         "title": "Utafutaji mmoja, seva sahihi",
@@ -2040,17 +2040,17 @@
       },
       "privacy": {
         "title": "Barua pepe hazihifadhiwi kamwe",
-        "text": "Router huhifadhi alama za vidole zilizochanganywa tu za anwani. Hata nakala kamili ya kumbukumbu yake haionyeshi orodha ya barua pepe."
+        "text": "Anwani huchanganywa kwenye seva yao wenyewe kabla ya chochote kuondoka. Router huona alama za vidole tu — na kuzichanganya tena kabla ya kuhifadhi."
       },
       "zerochange": {
-        "title": "Hakuna mabadiliko kwenye seva yako",
-        "text": "Router husoma vituo vya kawaida vya seva. ePDS yoyote au PDS ya Bluesky inaweza kujiunga kama ilivyo."
+        "title": "Wenyeji wanabaki na udhibiti",
+        "text": "Hakuna vitambulisho vya kukabidhi, hakuna cha kusakinisha ndani ya PDS. Wenyeji huendesha skripti moja ndogo kando ya seva yao, kwa ratiba yao wenyewe."
       }
     },
     "problem": {
       "heading": "Kwa nini ugunduzi unahitajika",
       "p1": "Programu yenye kuingia kwa barua pepe lazima ipeleke ombi la kuingia kwa seva moja mahususi: seva hiyo ndiyo hutuma msimbo na kuhifadhi akaunti. Kwa seva moja jibu ni thabiti. Kwa seva kadhaa, programu inahitaji orodha ya mwelekeo — na anwani za barua pepe ni aina ya data usiyotaka kuinakili kwenye orodha moja kubwa.",
-      "p2": "Router hutatua hili kwa mbinu ndogo: hukumbuka alama za vidole badala ya anwani. Kila anwani inayojifunza huchanganywa kwa njia isiyoweza kurudishwa kabla ya kuhifadhiwa, na kila utafutaji huchanganya barua pepe inayoingia kwa njia ile ile na kulinganisha alama. Jibu lile lile, bila kitabu cha anwani."
+      "p2": "Router hutatua hili kwa mbinu ndogo: hufanya kazi na alama za vidole tu. Kila seva huchanganya anwani zake kwa njia moja nyumbani na haishiriki kitu kingine, na kila utafutaji huchanganya barua pepe inayoingia kwa njia ile ile na kulinganisha alama. Jibu lile lile, bila kitabu cha anwani — na hakuna anayekabidhi funguo zake."
     },
     "demo": {
       "heading": "Jaribu utafutaji",
@@ -2095,7 +2095,7 @@
     },
     "sync": {
       "heading": "Jinsi router inavyobaki na taarifa mpya",
-      "intro": "Hakuna anayelazimika kuripoti chochote. Router huvuta yenyewe inachohitaji kwa kipima muda.",
+      "intro": "Hakuna cha kukabidhi: kila mwenyeji husukuma picha yake mwenyewe, kwa kipima muda anachochagua.",
       "play": "Cheza",
       "pause": "Simamisha",
       "back": "Nyuma",
@@ -2103,36 +2103,36 @@
       "stepLabel": "Hatua ya {n} kati ya {total}",
       "ariaLabel": "Mchoro wa mzunguko wa usawazishaji",
       "nodes": {
-        "pds": "ePDS",
+        "pds": "ePDS yako",
         "router": "Router",
         "index": "fahirisi ya alama za vidole"
       },
       "steps": {
         "s1": {
-          "title": "Router inauliza",
-          "text": "Kila dakika huita kila seva iliyosajiliwa kwa maombi mawili ya kawaida: orodhesha akaunti zako, kisha shiriki barua pepe zao za kuingia. Ni vituo vile vile vya usimamizi ambavyo kila PDS tayari inavyo."
+          "title": "Seva yako inakusanya orodha yake yenyewe",
+          "text": "Skripti ndogo huendeshwa kando ya PDS yako, kwa ratiba unayochagua. Inasoma barua pepe za akaunti papo hapo — nenosiri lako la msimamizi haliondoki kamwe kwenye mashine yako."
         },
         "s2": {
-          "title": "Barua pepe zinafika kwa muda mfupi",
-          "text": "Anwani husafiri kupitia muunganisho uliosimbwa na zipo kwenye router kwa muda mfupi tu, kwenye kumbukumbu."
+          "title": "Alama za vidole zinatengenezwa nyumbani",
+          "text": "Kila anwani huchanganywa kwa njia moja kwenye seva yako mwenyewe. Kuanzia sasa, hakuna barua pepe ya maandishi wazi popote katika mchakato."
         },
         "s3": {
-          "title": "Alama za vidole zinazichukua nafasi",
-          "text": "Kila anwani huchanganywa kwa njia isiyoweza kurudishwa na kutupwa. Kinachobaki ni seti ya alama za vidole isiyoweza kurudishwa kuwa orodha ya barua pepe."
+          "title": "Picha inasukumwa",
+          "text": "Skripti hutuma seti kamili ya alama za vidole kwa router kupitia wito uliosimbwa na kulindwa kwa tokeni. Inachukua nafasi ya picha iliyotangulia kabisa."
         },
         "s4": {
-          "title": "Picha inabadilishwa",
-          "text": "Seti nzima ya seva hubadilishwa kwa hatua moja kamili. Akaunti zilizofutwa hutoweka kwenye mzunguko unaofuata, na seva ikipumzika kwa muda, picha nzuri ya mwisho inaendelea kujibu."
+          "title": "Router inaibadilisha",
+          "text": "Router huchanganya kila alama ya kidole mara ya pili kwa ufunguo wake binafsi, kisha kubadilisha seti nzima ya seva yako kwa hatua moja kamili. Akaunti zilizofutwa hutoweka kwa msukumo wako unaofuata."
         }
       }
     },
     "register": {
-      "heading": "Sajili ePDS yako",
-      "intro": "Kujiunga na mtandao ni wito mmoja tu. Unahitaji vitu viwili: tokeni ya msimamizi kutoka kwa mwendeshaji wa router, na nenosiri la msimamizi la seva yako mwenyewe ili router iweze kusoma barua pepe za akaunti.",
-      "p1": "Router hukagua taarifa mara moja kwa kuendesha usawazishaji kamili wa kwanza. Jibu la mafanikio linamaanisha seva yako tayari imeorodheshwa na inapatikana; hitilafu inamaanisha hakuna kilichohifadhiwa.",
-      "registerLabel": "sajili seva",
-      "verifyNote": "Seva zilizosajiliwa hukumbukwa hata baada ya kuwasha upya na kusawazishwa kila dakika tangu hapo. Kuondoka ni rahisi vilevile:",
-      "unregisterLabel": "ondoa usajili"
+      "heading": "Jiunge kama mwenyeji wa ePDS",
+      "intro": "Hushiriki kamwe nenosiri lako la msimamizi, na husubiri kamwe router ikupigie. Jisajili mara moja, sukuma alama za vidole kwa ratiba yako mwenyewe, na muombe mwendeshaji akuidhinishe.",
+      "p1": "Kujisajili ni wito mmoja bila vitambulisho — jibu linabeba tokeni yako ya kusukuma (ihifadhi, inaonyeshwa mara moja tu). Seva yako inabaki inasubiri na haionekani kwenye tafutizi hadi mwendeshaji wa router aidhinishe.",
+      "enrollLabel": "1 · sajili seva yako",
+      "pushLabel": "2 · sukuma alama za vidole kwa kipima muda",
+      "approveNote": "3 · Muombe mwendeshaji wa router aidhinishe usajili wako — tafutizi zinaanza mara tu atakapofanya hivyo. Kuondoka ni uamuzi wako peke yako: acha kusukuma, au muombe mwendeshaji aondoe ingizo lako."
     },
     "integrate": {
       "heading": "Unganisha tafutizi kwenye programu yako",
@@ -2146,9 +2146,11 @@
       "intro": "Vituo vitano vidogo. Utafutaji na hali hutumia tokeni ya mteja; kusimamia seva hutumia tokeni ya msimamizi.",
       "lookup": "Uliza seva zipi zinaijua barua pepe.",
       "status": "Hali ya usawazishaji ya kila seva: idadi ya akaunti, usawazishaji wa mwisho, hitilafu ya mwisho.",
-      "register": "Sajili seva; huthibitishwa kwa usawazishaji kamili wa kwanza kabla ya kukubaliwa.",
-      "list": "Orodhesha seva zilizosajiliwa. Manenosiri hayarudishwi kamwe.",
-      "unregister": "Ondoa seva iliyosajiliwa kupitia API."
+      "unregister": "Ondoa seva iliyosajiliwa (tokeni ya msimamizi).",
+      "enroll": "Sajili seva yako. Wito wazi bila vitambulisho; hurudisha tokeni ya kusukuma ya mara moja na ingizo linalosubiri.",
+      "digests": "Sukuma picha kamili ya alama za vidole za barua pepe (SHA-256 heksi). Kila msukumo huchukua nafasi ya uliotangulia.",
+      "script": "Skripti ya kusukuma tayari kwa wenyeji — Python 3, maktaba ya kawaida tu.",
+      "approve": "Mwendeshaji huidhinisha usajili; tafutizi zinaanza kuutumikia (tokeni ya msimamizi)."
     },
     "snippets": {
       "copy": "Nakili",

@@ -2029,10 +2029,10 @@
   },
   "epdsRouter": {
     "metaTitle": "How the ePDS router works",
-    "metaDescription": "An interactive guide to the ePDS router: how an app finds the right server for an email login across many servers, without the router ever storing an email.",
+    "metaDescription": "An interactive guide to the ePDS router: how an app finds the right server for an email login across many servers — hosts share only one-way fingerprints, never credentials or addresses.",
     "kicker": "email-to-server discovery",
     "title": "One email, many servers",
-    "lead": "ePDS lets you sign in with just your email. But when a community runs several servers, an app must first answer a small question: which server knows this email? The router answers it in a single call — without ever keeping anyone's address.",
+    "lead": "ePDS lets you sign in with just your email. But when a community runs several servers, an app must first answer a small question: which server knows this email? The router answers it in a single call — hosts stay in full control, and nobody ever hands over an address or a password.",
     "facts": {
       "routing": {
         "title": "One lookup, the right server",
@@ -2040,17 +2040,17 @@
       },
       "privacy": {
         "title": "Emails are never stored",
-        "text": "The router keeps only scrambled fingerprints of addresses. Even a full copy of its memory reveals no email list."
+        "text": "Addresses are scrambled on their own server before anything leaves it. The router only ever sees fingerprints — and scrambles them again before storing."
       },
       "zerochange": {
-        "title": "No changes to your server",
-        "text": "The router reads standard server endpoints. Any stock ePDS or Bluesky PDS can join exactly as it is."
+        "title": "Hosts stay in control",
+        "text": "No credentials to hand over, nothing to install inside the PDS. Hosts run one small script next to their server, on their own schedule."
       }
     },
     "problem": {
       "heading": "Why discovery is needed",
       "p1": "An app that offers email sign-in has to send the login to one specific server: that server emails the code and holds the account. With a single server the answer is fixed. With several, the app needs a directory — and email addresses are exactly the kind of data you do not want to copy into one big list.",
-      "p2": "The router solves this with a small trick: it remembers fingerprints instead of addresses. Every address it learns is scrambled one-way before it is kept, and each lookup scrambles the incoming email the same way and compares fingerprints. Same answer, no address book."
+      "p2": "The router solves this with a small trick: it deals only in fingerprints. Each server scrambles its addresses one-way at home and shares nothing else, and each lookup scrambles the incoming email the same way and compares fingerprints. Same answer, no address book — and nobody hands anyone their keys."
     },
     "demo": {
       "heading": "Try a lookup",
@@ -2095,7 +2095,7 @@
     },
     "sync": {
       "heading": "How the router stays current",
-      "intro": "Nobody has to report anything. The router quietly pulls what it needs on a timer.",
+      "intro": "Nothing to hand over: each host pushes its own snapshot, on a timer it chooses.",
       "play": "Play",
       "pause": "Pause",
       "back": "Back",
@@ -2103,36 +2103,36 @@
       "stepLabel": "Step {n} of {total}",
       "ariaLabel": "Sync loop diagram",
       "nodes": {
-        "pds": "ePDS",
+        "pds": "Your ePDS",
         "router": "Router",
         "index": "fingerprint index"
       },
       "steps": {
         "s1": {
-          "title": "The router asks",
-          "text": "Every minute it calls each registered server with two standard requests: list your accounts, then share their sign-in emails. These are the same admin endpoints every stock PDS already has."
+          "title": "Your server gathers its own list",
+          "text": "A small script runs next to your PDS, on a timer you choose. It reads the account emails locally — your admin password never leaves your machine."
         },
         "s2": {
-          "title": "Emails arrive briefly",
-          "text": "Addresses travel over an encrypted connection and exist in the router only for a moment, in memory."
+          "title": "Fingerprints are made at home",
+          "text": "Each address is scrambled one-way on your own server. From this moment on, no plaintext email exists anywhere in the process."
         },
         "s3": {
-          "title": "Fingerprints replace them",
-          "text": "Each address is scrambled one-way and discarded. What remains is a set of fingerprints that cannot be turned back into a mailing list."
+          "title": "The snapshot is pushed",
+          "text": "The script sends the complete fingerprint set to the router over an encrypted, token-protected call. It replaces the previous snapshot entirely."
         },
         "s4": {
-          "title": "The snapshot is swapped",
-          "text": "The server's whole set is replaced in one atomic step. Deleted accounts vanish on the next pass, and if a server is briefly down the last good snapshot keeps answering."
+          "title": "The router swaps it in",
+          "text": "The router scrambles every fingerprint a second time with its own private key, then replaces your server's whole set in one atomic step. Deleted accounts vanish with your next push."
         }
       }
     },
     "register": {
-      "heading": "Register your ePDS",
-      "intro": "Joining the network is one call. You need two things: an admin token from the router operator, and your own server's admin password so the router can read account emails.",
-      "p1": "The router checks the details right away by running a full first sync. A success reply means your server is already indexed and discoverable; an error means nothing was saved.",
-      "registerLabel": "register an instance",
-      "verifyNote": "Registered servers are remembered across restarts and re-synced every minute from then on. Leaving is just as simple:",
-      "unregisterLabel": "unregister"
+      "heading": "Join as an ePDS host",
+      "intro": "You never share your admin password, and you never wait on the router to call you. Enroll once, push fingerprints on your own schedule, and ask the operator to approve you.",
+      "p1": "Enrolling takes one call and no credentials — the reply carries your submit token (keep it, it is shown only once). Your server stays pending and invisible to lookups until the router operator approves it.",
+      "enrollLabel": "1 · enroll your server",
+      "pushLabel": "2 · push fingerprints on a timer",
+      "approveNote": "3 · Ask the router operator to approve your enrollment — lookups start the moment they do. Leaving is your choice alone: stop pushing, or ask the operator to remove your entry."
     },
     "integrate": {
       "heading": "Integrate lookups in your app",
@@ -2146,9 +2146,11 @@
       "intro": "Five small endpoints. Lookup and status use a client token; managing servers uses the admin token.",
       "lookup": "Ask which servers know an email.",
       "status": "Sync state of every server: account counts, last sync, last error.",
-      "register": "Register a server; verified with a full first sync before it is accepted.",
-      "list": "List registered servers. Passwords are never returned.",
-      "unregister": "Remove a server registered through the API."
+      "unregister": "Remove an enrolled server (admin token).",
+      "enroll": "Enroll your server. Open call, no credentials; returns a one-time submit token and a pending entry.",
+      "digests": "Push a full snapshot of email fingerprints (hex SHA-256). Each push replaces the previous one.",
+      "script": "The ready-made push script for hosts — Python 3, standard library only.",
+      "approve": "Operator approves an enrollment; lookups start serving it (admin token)."
     },
     "snippets": {
       "copy": "Copy",

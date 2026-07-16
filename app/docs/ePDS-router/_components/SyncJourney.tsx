@@ -12,17 +12,18 @@ const ROUTER = { x: 560, y: 120 };
 
 // Which direction the sync "packet" travels per step (null = no travel).
 const STEP_FLOW: ({ from: { x: number; y: number }; to: { x: number; y: number } } | null)[] = [
-  { from: ROUTER, to: PDS }, // router asks
-  { from: PDS, to: ROUTER }, // emails come back
-  null, // hashing happens inside the router
-  null, // snapshot swap
+  null, // the host's script gathers emails locally
+  null, // fingerprints are made on the host's own machine
+  { from: PDS, to: ROUTER }, // the snapshot is pushed
+  null, // snapshot swap inside the router
 ];
 
 const PLAY_INTERVAL_MS = 3400;
 
-// Step-through animation of the pull-based sync loop: the router asks a
-// PDS for its accounts, receives the emails, turns each one into a
-// fingerprint, and atomically swaps the server's snapshot in its index.
+// Step-through animation of the host-initiated push loop: a script next
+// to the PDS gathers its account emails locally, scrambles each one into
+// a fingerprint at home, pushes the snapshot to the router, and the
+// router swaps it in atomically (after a second scrambling of its own).
 export function SyncJourney() {
   const t = useTranslations("common.epdsRouter.sync");
   const [step, setStep] = useState(0);
@@ -68,7 +69,7 @@ export function SyncJourney() {
 
         {/* PDS node */}
         <g>
-          <rect x={PDS.x - 66} y={PDS.y - 26} width={132} height={52} rx={12} fill="var(--background)" stroke={step <= 1 ? "var(--primary)" : "var(--border)"} strokeWidth={1.2} />
+          <rect x={PDS.x - 66} y={PDS.y - 26} width={132} height={52} rx={12} fill="var(--background)" stroke={step <= 2 ? "var(--primary)" : "var(--border)"} strokeWidth={1.2} />
           <text x={PDS.x} y={PDS.y + 4} textAnchor="middle" className="fill-foreground" style={{ font: "500 13px var(--font-sans, sans-serif)" }}>
             {t("nodes.pds")}
           </text>
@@ -76,7 +77,7 @@ export function SyncJourney() {
 
         {/* Router node with index drawer */}
         <g>
-          <rect x={ROUTER.x - 66} y={ROUTER.y - 26} width={132} height={52} rx={12} fill="var(--background)" stroke={step >= 2 ? "var(--primary)" : "var(--border)"} strokeWidth={1.2} />
+          <rect x={ROUTER.x - 66} y={ROUTER.y - 26} width={132} height={52} rx={12} fill="var(--background)" stroke={step >= 3 ? "var(--primary)" : "var(--border)"} strokeWidth={1.2} />
           <text x={ROUTER.x} y={ROUTER.y + 4} textAnchor="middle" className="fill-foreground" style={{ font: "500 13px var(--font-sans, sans-serif)" }}>
             {t("nodes.router")}
           </text>
@@ -86,20 +87,22 @@ export function SyncJourney() {
           </text>
         </g>
 
-        {/* Email-to-fingerprint morph while hashing */}
+        {/* Email-to-fingerprint morph — happens on the host's own machine
+            (steps 1–2), before anything leaves it. During the push (step 3)
+            only the fingerprint is shown travelling. */}
         <AnimatePresence mode="wait">
           <motion.text
             key={step}
-            x={(PDS.x + ROUTER.x) / 2}
-            y={PDS.y - 24}
-            textAnchor="middle"
+            x={step <= 1 ? PDS.x - 60 : (PDS.x + ROUTER.x) / 2}
+            y={step <= 1 ? PDS.y - 42 : PDS.y - 24}
+            textAnchor={step <= 1 ? "start" : "middle"}
             className="fill-muted-foreground"
             style={{ font: "11.5px var(--font-mono, monospace)" }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: step === 1 || step === 2 ? 1 : 0 }}
+            animate={{ opacity: step <= 2 ? 1 : 0 }}
             exit={{ opacity: 0 }}
           >
-            {step === 1 ? "maya@example.com" : step === 2 ? "maya@example.com → 3f9c…b2d1" : ""}
+            {step === 0 ? "maya@example.com" : step === 1 ? "maya@example.com → 3f9c…b2d1" : step === 2 ? "3f9c…b2d1" : ""}
           </motion.text>
         </AnimatePresence>
 

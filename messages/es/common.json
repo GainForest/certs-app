@@ -2029,10 +2029,10 @@
   },
   "epdsRouter": {
     "metaTitle": "Cómo funciona el router de ePDS",
-    "metaDescription": "Una guía interactiva del router de ePDS: cómo una app encuentra el servidor correcto para iniciar sesión con email entre varios servidores, sin que el router guarde nunca un email.",
+    "metaDescription": "Una guía interactiva del router de ePDS: cómo una app encuentra el servidor correcto para iniciar sesión con email entre varios servidores — los anfitriones comparten solo huellas irreversibles, nunca credenciales ni direcciones.",
     "kicker": "descubrimiento de email a servidor",
     "title": "Un email, muchos servidores",
-    "lead": "ePDS te permite iniciar sesión solo con tu email. Pero cuando una comunidad tiene varios servidores, la app primero debe responder una pequeña pregunta: ¿qué servidor conoce este email? El router la responde en una sola llamada, sin guardar nunca la dirección de nadie.",
+    "lead": "ePDS te permite iniciar sesión solo con tu email. Pero cuando una comunidad tiene varios servidores, la app primero debe responder una pequeña pregunta: ¿qué servidor conoce este email? El router la responde en una sola llamada — los anfitriones mantienen el control total y nadie entrega nunca una dirección ni una contraseña.",
     "facts": {
       "routing": {
         "title": "Una consulta, el servidor correcto",
@@ -2040,17 +2040,17 @@
       },
       "privacy": {
         "title": "Los emails nunca se guardan",
-        "text": "El router solo conserva huellas cifradas de las direcciones. Ni una copia completa de su memoria revela una lista de emails."
+        "text": "Las direcciones se cifran en su propio servidor antes de que algo salga de él. El router solo ve huellas — y las vuelve a cifrar antes de guardarlas."
       },
       "zerochange": {
-        "title": "Sin cambios en tu servidor",
-        "text": "El router lee endpoints estándar del servidor. Cualquier ePDS o PDS de Bluesky puede unirse tal como está."
+        "title": "Los anfitriones mantienen el control",
+        "text": "Sin credenciales que entregar, nada que instalar dentro del PDS. Los anfitriones ejecutan un pequeño script junto a su servidor, con su propio calendario."
       }
     },
     "problem": {
       "heading": "Por qué hace falta el descubrimiento",
       "p1": "Una app con inicio de sesión por email tiene que enviar el login a un servidor concreto: ese servidor envía el código y guarda la cuenta. Con un solo servidor la respuesta es fija. Con varios, la app necesita un directorio, y las direcciones de email son justo el tipo de dato que no quieres copiar en una gran lista.",
-      "p2": "El router lo resuelve con un pequeño truco: recuerda huellas en lugar de direcciones. Cada dirección que aprende se cifra de forma irreversible antes de guardarse, y cada consulta cifra el email entrante de la misma manera y compara huellas. La misma respuesta, sin agenda de direcciones."
+      "p2": "El router lo resuelve con un pequeño truco: solo trabaja con huellas. Cada servidor cifra sus direcciones de forma irreversible en casa y no comparte nada más, y cada consulta cifra el email entrante de la misma manera y compara huellas. La misma respuesta, sin agenda de direcciones — y nadie entrega sus llaves."
     },
     "demo": {
       "heading": "Prueba una consulta",
@@ -2095,7 +2095,7 @@
     },
     "sync": {
       "heading": "Cómo se mantiene al día el router",
-      "intro": "Nadie tiene que informar nada. El router extrae lo que necesita con un temporizador.",
+      "intro": "Nada que entregar: cada anfitrión envía su propia instantánea, con el temporizador que elija.",
       "play": "Reproducir",
       "pause": "Pausar",
       "back": "Atrás",
@@ -2103,36 +2103,36 @@
       "stepLabel": "Paso {n} de {total}",
       "ariaLabel": "Diagrama del ciclo de sincronización",
       "nodes": {
-        "pds": "ePDS",
+        "pds": "Tu ePDS",
         "router": "Router",
         "index": "índice de huellas"
       },
       "steps": {
         "s1": {
-          "title": "El router pregunta",
-          "text": "Cada minuto llama a cada servidor registrado con dos peticiones estándar: lista tus cuentas y comparte sus emails de acceso. Son los mismos endpoints de administración que ya tiene cualquier PDS."
+          "title": "Tu servidor reúne su propia lista",
+          "text": "Un pequeño script se ejecuta junto a tu PDS, con la frecuencia que tú eliges. Lee los emails de las cuentas localmente — tu contraseña de administrador nunca sale de tu máquina."
         },
         "s2": {
-          "title": "Los emails llegan por un instante",
-          "text": "Las direcciones viajan por una conexión cifrada y existen en el router solo un momento, en memoria."
+          "title": "Las huellas se hacen en casa",
+          "text": "Cada dirección se cifra de forma irreversible en tu propio servidor. Desde este momento, no existe ningún email en claro en todo el proceso."
         },
         "s3": {
-          "title": "Las huellas los reemplazan",
-          "text": "Cada dirección se cifra de forma irreversible y se descarta. Lo que queda es un conjunto de huellas que no puede convertirse de nuevo en una lista de correo."
+          "title": "Se envía la instantánea",
+          "text": "El script envía el conjunto completo de huellas al router por una llamada cifrada y protegida con token. Reemplaza por completo la instantánea anterior."
         },
         "s4": {
-          "title": "Se intercambia la instantánea",
-          "text": "Todo el conjunto del servidor se reemplaza en un solo paso atómico. Las cuentas borradas desaparecen en la siguiente pasada, y si un servidor cae un momento, la última instantánea buena sigue respondiendo."
+          "title": "El router la intercambia",
+          "text": "El router vuelve a cifrar cada huella con su propia clave privada y reemplaza todo el conjunto de tu servidor en un solo paso atómico. Las cuentas borradas desaparecen con tu siguiente envío."
         }
       }
     },
     "register": {
-      "heading": "Registra tu ePDS",
-      "intro": "Unirse a la red es una sola llamada. Necesitas dos cosas: un token de administrador del operador del router y la contraseña de administrador de tu propio servidor para que el router pueda leer los emails de las cuentas.",
-      "p1": "El router comprueba los datos de inmediato ejecutando una primera sincronización completa. Una respuesta de éxito significa que tu servidor ya está indexado y es localizable; un error significa que no se guardó nada.",
-      "registerLabel": "registrar una instancia",
-      "verifyNote": "Los servidores registrados se recuerdan entre reinicios y se resincronizan cada minuto desde entonces. Salir es igual de simple:",
-      "unregisterLabel": "dar de baja"
+      "heading": "Únete como anfitrión de ePDS",
+      "intro": "Nunca compartes tu contraseña de administrador y nunca esperas a que el router te llame. Inscríbete una vez, envía huellas con tu propio calendario y pide al operador que te apruebe.",
+      "p1": "Inscribirse es una sola llamada y sin credenciales — la respuesta trae tu token de envío (guárdalo, se muestra solo una vez). Tu servidor queda pendiente e invisible para las consultas hasta que el operador del router lo apruebe.",
+      "enrollLabel": "1 · inscribe tu servidor",
+      "pushLabel": "2 · envía huellas con un temporizador",
+      "approveNote": "3 · Pide al operador del router que apruebe tu inscripción — las consultas empiezan en cuanto lo haga. Irte es solo decisión tuya: deja de enviar, o pide al operador que elimine tu entrada."
     },
     "integrate": {
       "heading": "Integra consultas en tu app",
@@ -2146,9 +2146,11 @@
       "intro": "Cinco endpoints pequeños. La consulta y el estado usan un token de cliente; gestionar servidores usa el token de administrador.",
       "lookup": "Pregunta qué servidores conocen un email.",
       "status": "Estado de sincronización de cada servidor: número de cuentas, última sincronización, último error.",
-      "register": "Registra un servidor; se verifica con una primera sincronización completa antes de aceptarlo.",
-      "list": "Lista los servidores registrados. Las contraseñas nunca se devuelven.",
-      "unregister": "Elimina un servidor registrado a través de la API."
+      "unregister": "Elimina un servidor inscrito (token de administrador).",
+      "enroll": "Inscribe tu servidor. Llamada abierta, sin credenciales; devuelve un token de envío de un solo uso y una entrada pendiente.",
+      "digests": "Envía una instantánea completa de huellas de email (SHA-256 en hex). Cada envío reemplaza al anterior.",
+      "script": "El script de envío listo para usar — Python 3, solo biblioteca estándar.",
+      "approve": "El operador aprueba una inscripción; las consultas empiezan a servirla (token de administrador)."
     },
     "snippets": {
       "copy": "Copiar",

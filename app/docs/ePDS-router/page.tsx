@@ -11,14 +11,25 @@ import { SyncJourney } from "./_components/SyncJourney";
 const GITHUB_URL = "https://github.com/GainForest/ePDS-router";
 const ROUTER_URL = "https://router.gainforest.id";
 
-const REGISTER_SNIPPET = `curl -X POST ${ROUTER_URL}/v1/instances \\
-  -H "Authorization: Bearer $ROUTER_ADMIN_TOKEN" \\
+const ENROLL_SNIPPET = `curl -X POST ${ROUTER_URL}/v1/enroll \\
   -H "Content-Type: application/json" \\
-  -d '{
-    "id": "my-pds",
-    "url": "https://pds.example.com",
-    "admin_password": "'"$PDS_ADMIN_PASSWORD"'"
-  }'`;
+  -d '{"id": "my-pds", "url": "https://pds.example.com"}'
+
+# → {"status": "pending", "submit_token": "…"}   keep it — shown only once`;
+
+const PUSH_SNIPPET = `# The script runs on YOUR machine — your admin password never leaves it.
+# Python 3, standard library only.
+curl -sO ${ROUTER_URL}/push-digests.py
+
+PDS_URL=http://localhost:3000 \\
+PDS_ADMIN_PASSWORD=... \\
+ROUTER_URL=${ROUTER_URL} \\
+INSTANCE_ID=my-pds \\
+SUBMIT_TOKEN=... \\
+python3 push-digests.py
+
+# then put the same command on a timer, e.g. cron every 5 minutes:
+# */5 * * * *  cd /opt/pds && PDS_URL=... SUBMIT_TOKEN=... python3 push-digests.py`;
 
 const LOOKUP_SNIPPET = `curl -X POST ${ROUTER_URL}/v1/lookup \\
   -H "Authorization: Bearer $ROUTER_CLIENT_TOKEN" \\
@@ -48,8 +59,7 @@ if (instances.length === 1) {
   startSignup(DEFAULT_PDS_URL, email);
 }`;
 
-const UNREGISTER_SNIPPET = `curl -X DELETE ${ROUTER_URL}/v1/instances/my-pds \\
-  -H "Authorization: Bearer $ROUTER_ADMIN_TOKEN"`;
+
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("common.epdsRouter");
@@ -109,9 +119,11 @@ export default async function EpdsRouterDocsPage() {
 
       <Section heading={t("register.heading")} intro={t("register.intro")}>
         <p className="mb-5 max-w-prose text-[14.5px] leading-relaxed text-muted-foreground">{t("register.p1")}</p>
-        <CodeSnippet code={REGISTER_SNIPPET} label={t("register.registerLabel")} />
-        <p className="mt-4 mb-5 max-w-prose text-[13px] leading-relaxed text-muted-foreground">{t("register.verifyNote")}</p>
-        <CodeSnippet code={UNREGISTER_SNIPPET} label={t("register.unregisterLabel")} />
+        <CodeSnippet code={ENROLL_SNIPPET} label={t("register.enrollLabel")} />
+        <div className="mt-4">
+          <CodeSnippet code={PUSH_SNIPPET} label={t("register.pushLabel")} />
+        </div>
+        <p className="mt-4 max-w-prose text-[13px] leading-relaxed text-muted-foreground">{t("register.approveNote")}</p>
       </Section>
 
       <Section heading={t("integrate.heading")} intro={t("integrate.intro")}>
@@ -128,8 +140,10 @@ export default async function EpdsRouterDocsPage() {
             <tbody>
               <ApiRow method="POST" path="/v1/lookup" text={t("api.lookup")} />
               <ApiRow method="GET" path="/v1/status" text={t("api.status")} />
-              <ApiRow method="POST" path="/v1/instances" text={t("api.register")} />
-              <ApiRow method="GET" path="/v1/instances" text={t("api.list")} />
+              <ApiRow method="POST" path="/v1/enroll" text={t("api.enroll")} />
+              <ApiRow method="PUT" path="/v1/instances/:id/digests" text={t("api.digests")} />
+              <ApiRow method="GET" path="/push-digests.py" text={t("api.script")} />
+              <ApiRow method="POST" path="/v1/instances/:id/approve" text={t("api.approve")} />
               <ApiRow method="DELETE" path="/v1/instances/:id" text={t("api.unregister")} />
             </tbody>
           </table>
