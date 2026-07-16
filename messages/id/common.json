@@ -2022,7 +2022,144 @@
       "atprotoTitle": "Cara kerja AT Protocol",
       "atprotoDesc": "Tur interaktif jaringan terbuka tempat semua ini dibangun.",
       "teeTitle": "Penandatanganan ePDS terlindungi",
-      "teeDesc": "Lihat cara kunci privat tetap berada di perangkat keras terlindungi."
+      "teeDesc": "Lihat cara kunci privat tetap berada di perangkat keras terlindungi.",
+      "routerTitle": "Router ePDS",
+      "routerDesc": "Bagaimana aplikasi menemukan server yang tepat untuk sebuah email saat komunitas menjalankan beberapa."
+    }
+  },
+  "epdsRouter": {
+    "metaTitle": "Cara kerja router ePDS",
+    "metaDescription": "Panduan interaktif router ePDS: bagaimana aplikasi menemukan server yang tepat untuk masuk dengan email di antara banyak server, tanpa router pernah menyimpan email.",
+    "kicker": "penemuan email ke server",
+    "title": "Satu email, banyak server",
+    "lead": "ePDS memungkinkan Anda masuk hanya dengan email. Namun ketika sebuah komunitas menjalankan beberapa server, aplikasi harus lebih dulu menjawab pertanyaan kecil: server mana yang mengenal email ini? Router menjawabnya dalam satu panggilan — tanpa pernah menyimpan alamat siapa pun.",
+    "facts": {
+      "routing": {
+        "title": "Satu pencarian, server yang tepat",
+        "text": "Aplikasi bertanya sekali dan tahu server mana yang mengenal email itu: tidak ada, tepat satu, atau beberapa."
+      },
+      "privacy": {
+        "title": "Email tidak pernah disimpan",
+        "text": "Router hanya menyimpan sidik jari teracak dari alamat. Bahkan salinan penuh memorinya tidak mengungkap daftar email."
+      },
+      "zerochange": {
+        "title": "Tanpa perubahan pada server Anda",
+        "text": "Router membaca endpoint server standar. ePDS atau PDS Bluesky apa pun bisa bergabung apa adanya."
+      }
+    },
+    "problem": {
+      "heading": "Mengapa penemuan diperlukan",
+      "p1": "Aplikasi dengan masuk lewat email harus mengirim login ke satu server tertentu: server itulah yang mengirim kode dan menyimpan akun. Dengan satu server jawabannya tetap. Dengan beberapa, aplikasi butuh direktori — dan alamat email adalah jenis data yang justru tidak ingin Anda salin ke satu daftar besar.",
+      "p2": "Router menyelesaikannya dengan trik kecil: ia mengingat sidik jari, bukan alamat. Setiap alamat yang dipelajarinya diacak satu arah sebelum disimpan, dan setiap pencarian mengacak email yang masuk dengan cara yang sama lalu membandingkan sidik jarinya. Jawaban sama, tanpa buku alamat."
+    },
+    "demo": {
+      "heading": "Coba sebuah pencarian",
+      "intro": "Tiga server contoh, tiga email contoh. Pilih satu dan lihat router mengarahkannya.",
+      "reset": "Ulangi",
+      "ariaLabel": "Diagram perutean pencarian email",
+      "nodes": {
+        "app": "Aplikasi Anda",
+        "router": "Router",
+        "forest": "PDS Hutan",
+        "ocean": "PDS Samudra",
+        "river": "PDS Sungai"
+      },
+      "steps": {
+        "idle": {
+          "title": "Pilih email di atas",
+          "text": "Aplikasi ingin memulai masuk lewat email tetapi belum tahu harus bicara dengan server mana."
+        },
+        "sent": {
+          "title": "Aplikasi bertanya ke router",
+          "text": "Email dikirim lewat panggilan privat yang terautentikasi. Pencarian tidak pernah ditulis ke log mana pun."
+        },
+        "fingerprint": {
+          "title": "Router mengacaknya",
+          "text": "Email menjadi sidik jari begitu tiba, dan hanya sidik jarinya yang dibandingkan dengan himpunan tiap server."
+        }
+      },
+      "outcomes": {
+        "one": {
+          "title": "Satu rumah ditemukan",
+          "text": "Tepat satu server mengenal email ini, jadi aplikasi memulai proses masuk di sana. Kodenya sampai ke kotak masuk yang benar."
+        },
+        "many": {
+          "title": "Dua rumah ditemukan",
+          "text": "Dua server mengenal email ini — itu dua akun terpisah. Aplikasi menampilkan pemilih dan orangnya memilih yang mana yang dipakai."
+        },
+        "none": {
+          "title": "Belum punya rumah",
+          "text": "Tidak ada server yang mengenal email ini, jadi aplikasi menawarkan membuat akun baru di server bawaannya."
+        }
+      }
+    },
+    "sync": {
+      "heading": "Bagaimana router tetap mutakhir",
+      "intro": "Tidak ada yang perlu melapor. Router menarik sendiri apa yang dibutuhkannya dengan pewaktu.",
+      "play": "Putar",
+      "pause": "Jeda",
+      "back": "Kembali",
+      "next": "Lanjut",
+      "stepLabel": "Langkah {n} dari {total}",
+      "ariaLabel": "Diagram siklus sinkronisasi",
+      "nodes": {
+        "pds": "ePDS",
+        "router": "Router",
+        "index": "indeks sidik jari"
+      },
+      "steps": {
+        "s1": {
+          "title": "Router bertanya",
+          "text": "Setiap menit ia memanggil tiap server terdaftar dengan dua permintaan standar: daftar akunmu, lalu bagikan email masuknya. Ini endpoint admin yang sama yang sudah dimiliki setiap PDS."
+        },
+        "s2": {
+          "title": "Email hadir sekejap",
+          "text": "Alamat berpindah lewat koneksi terenkripsi dan hanya ada di router sesaat, di memori."
+        },
+        "s3": {
+          "title": "Sidik jari menggantikannya",
+          "text": "Setiap alamat diacak satu arah lalu dibuang. Yang tersisa adalah himpunan sidik jari yang tidak bisa diubah kembali menjadi daftar email."
+        },
+        "s4": {
+          "title": "Potret ditukar",
+          "text": "Seluruh himpunan server diganti dalam satu langkah atomik. Akun yang dihapus lenyap pada putaran berikutnya, dan jika server sempat mati, potret baik terakhir tetap menjawab."
+        }
+      }
+    },
+    "register": {
+      "heading": "Daftarkan ePDS Anda",
+      "intro": "Bergabung ke jaringan cukup satu panggilan. Anda butuh dua hal: token admin dari operator router, dan kata sandi admin server Anda sendiri agar router dapat membaca email akun.",
+      "p1": "Router langsung memeriksa datanya dengan menjalankan sinkronisasi pertama secara penuh. Balasan sukses berarti server Anda sudah terindeks dan dapat ditemukan; galat berarti tidak ada yang tersimpan.",
+      "registerLabel": "daftarkan sebuah instans",
+      "verifyNote": "Server terdaftar diingat meski router dimulai ulang dan disinkronkan lagi setiap menit sejak itu. Keluar sama mudahnya:",
+      "unregisterLabel": "batalkan pendaftaran"
+    },
+    "integrate": {
+      "heading": "Integrasikan pencarian di aplikasi Anda",
+      "intro": "Aplikasi klien mendapat token sendiri dari operator router. Satu panggilan sebelum menampilkan layar masuk sudah cukup.",
+      "lookupLabel": "cari sebuah email",
+      "jsLabel": "tangani tiga hasilnya",
+      "cacheTip": "Kiat: setelah masuk pertama berhasil, simpan identitas akun (DID) di aplikasi Anda. Sejak itu jaringan bisa menemukan server yang tepat sendiri, dan router hanya diperlukan untuk pengunjung yang benar-benar baru."
+    },
+    "api": {
+      "heading": "API selayang pandang",
+      "intro": "Lima endpoint kecil. Pencarian dan status memakai token klien; mengelola server memakai token admin.",
+      "lookup": "Tanyakan server mana yang mengenal sebuah email.",
+      "status": "Keadaan sinkronisasi tiap server: jumlah akun, sinkronisasi terakhir, galat terakhir.",
+      "register": "Daftarkan sebuah server; diverifikasi dengan sinkronisasi pertama penuh sebelum diterima.",
+      "list": "Daftar server terdaftar. Kata sandi tidak pernah dikembalikan.",
+      "unregister": "Hapus server yang didaftarkan lewat API."
+    },
+    "snippets": {
+      "copy": "Salin",
+      "copied": "Tersalin!"
+    },
+    "more": {
+      "heading": "Terus jelajahi",
+      "epdsTitle": "Cara kerja ePDS",
+      "epdsDesc": "Pintu depan yang ramah itu sendiri: masuk dengan kode email di AT Protocol.",
+      "githubTitle": "Router ePDS di GitHub",
+      "githubDesc": "Kode sumber lengkap router: satu layanan Go kecil tanpa dependensi."
     }
   },
   "cgs": {

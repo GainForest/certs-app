@@ -2022,7 +2022,144 @@
       "atprotoTitle": "Cómo funciona el AT Protocol",
       "atprotoDesc": "Un recorrido interactivo por la red abierta sobre la que está construido todo esto.",
       "teeTitle": "Firma protegida de ePDS",
-      "teeDesc": "Mira cómo las claves privadas pueden quedar dentro de hardware protegido."
+      "teeDesc": "Mira cómo las claves privadas pueden quedar dentro de hardware protegido.",
+      "routerTitle": "El router de ePDS",
+      "routerDesc": "Cómo las apps encuentran el servidor correcto para un email cuando una comunidad tiene varios."
+    }
+  },
+  "epdsRouter": {
+    "metaTitle": "Cómo funciona el router de ePDS",
+    "metaDescription": "Una guía interactiva del router de ePDS: cómo una app encuentra el servidor correcto para iniciar sesión con email entre varios servidores, sin que el router guarde nunca un email.",
+    "kicker": "descubrimiento de email a servidor",
+    "title": "Un email, muchos servidores",
+    "lead": "ePDS te permite iniciar sesión solo con tu email. Pero cuando una comunidad tiene varios servidores, la app primero debe responder una pequeña pregunta: ¿qué servidor conoce este email? El router la responde en una sola llamada, sin guardar nunca la dirección de nadie.",
+    "facts": {
+      "routing": {
+        "title": "Una consulta, el servidor correcto",
+        "text": "La app pregunta una vez y sabe qué servidores conocen el email: ninguno, exactamente uno o varios."
+      },
+      "privacy": {
+        "title": "Los emails nunca se guardan",
+        "text": "El router solo conserva huellas cifradas de las direcciones. Ni una copia completa de su memoria revela una lista de emails."
+      },
+      "zerochange": {
+        "title": "Sin cambios en tu servidor",
+        "text": "El router lee endpoints estándar del servidor. Cualquier ePDS o PDS de Bluesky puede unirse tal como está."
+      }
+    },
+    "problem": {
+      "heading": "Por qué hace falta el descubrimiento",
+      "p1": "Una app con inicio de sesión por email tiene que enviar el login a un servidor concreto: ese servidor envía el código y guarda la cuenta. Con un solo servidor la respuesta es fija. Con varios, la app necesita un directorio, y las direcciones de email son justo el tipo de dato que no quieres copiar en una gran lista.",
+      "p2": "El router lo resuelve con un pequeño truco: recuerda huellas en lugar de direcciones. Cada dirección que aprende se cifra de forma irreversible antes de guardarse, y cada consulta cifra el email entrante de la misma manera y compara huellas. La misma respuesta, sin agenda de direcciones."
+    },
+    "demo": {
+      "heading": "Prueba una consulta",
+      "intro": "Tres servidores de ejemplo, tres emails de ejemplo. Elige uno y mira cómo el router lo enruta.",
+      "reset": "Reiniciar",
+      "ariaLabel": "Diagrama de enrutamiento de consultas de email",
+      "nodes": {
+        "app": "Tu app",
+        "router": "Router",
+        "forest": "PDS Bosque",
+        "ocean": "PDS Océano",
+        "river": "PDS Río"
+      },
+      "steps": {
+        "idle": {
+          "title": "Elige un email arriba",
+          "text": "La app quiere iniciar una sesión por email pero aún no sabe con qué servidor hablar."
+        },
+        "sent": {
+          "title": "La app pregunta al router",
+          "text": "Envía el email por una llamada privada y autenticada. Las consultas nunca se escriben en ningún registro."
+        },
+        "fingerprint": {
+          "title": "El router lo cifra",
+          "text": "El email se convierte en una huella al llegar, y solo la huella se compara con el conjunto de cada servidor."
+        }
+      },
+      "outcomes": {
+        "one": {
+          "title": "Un hogar encontrado",
+          "text": "Exactamente un servidor conoce este email, así que la app inicia la sesión allí. El código llega a la bandeja correcta."
+        },
+        "many": {
+          "title": "Dos hogares encontrados",
+          "text": "Dos servidores conocen este email: son dos cuentas separadas. La app muestra un selector y la persona elige cuál usar."
+        },
+        "none": {
+          "title": "Aún sin hogar",
+          "text": "Ningún servidor conoce este email, así que la app ofrece crear una cuenta nueva en su servidor predeterminado."
+        }
+      }
+    },
+    "sync": {
+      "heading": "Cómo se mantiene al día el router",
+      "intro": "Nadie tiene que informar nada. El router extrae lo que necesita con un temporizador.",
+      "play": "Reproducir",
+      "pause": "Pausar",
+      "back": "Atrás",
+      "next": "Siguiente",
+      "stepLabel": "Paso {n} de {total}",
+      "ariaLabel": "Diagrama del ciclo de sincronización",
+      "nodes": {
+        "pds": "ePDS",
+        "router": "Router",
+        "index": "índice de huellas"
+      },
+      "steps": {
+        "s1": {
+          "title": "El router pregunta",
+          "text": "Cada minuto llama a cada servidor registrado con dos peticiones estándar: lista tus cuentas y comparte sus emails de acceso. Son los mismos endpoints de administración que ya tiene cualquier PDS."
+        },
+        "s2": {
+          "title": "Los emails llegan por un instante",
+          "text": "Las direcciones viajan por una conexión cifrada y existen en el router solo un momento, en memoria."
+        },
+        "s3": {
+          "title": "Las huellas los reemplazan",
+          "text": "Cada dirección se cifra de forma irreversible y se descarta. Lo que queda es un conjunto de huellas que no puede convertirse de nuevo en una lista de correo."
+        },
+        "s4": {
+          "title": "Se intercambia la instantánea",
+          "text": "Todo el conjunto del servidor se reemplaza en un solo paso atómico. Las cuentas borradas desaparecen en la siguiente pasada, y si un servidor cae un momento, la última instantánea buena sigue respondiendo."
+        }
+      }
+    },
+    "register": {
+      "heading": "Registra tu ePDS",
+      "intro": "Unirse a la red es una sola llamada. Necesitas dos cosas: un token de administrador del operador del router y la contraseña de administrador de tu propio servidor para que el router pueda leer los emails de las cuentas.",
+      "p1": "El router comprueba los datos de inmediato ejecutando una primera sincronización completa. Una respuesta de éxito significa que tu servidor ya está indexado y es localizable; un error significa que no se guardó nada.",
+      "registerLabel": "registrar una instancia",
+      "verifyNote": "Los servidores registrados se recuerdan entre reinicios y se resincronizan cada minuto desde entonces. Salir es igual de simple:",
+      "unregisterLabel": "dar de baja"
+    },
+    "integrate": {
+      "heading": "Integra consultas en tu app",
+      "intro": "Las apps cliente reciben su propio token del operador del router. Basta una llamada antes de mostrar la pantalla de inicio de sesión.",
+      "lookupLabel": "consultar un email",
+      "jsLabel": "manejar los tres resultados",
+      "cacheTip": "Consejo: tras el primer inicio de sesión exitoso, recuerda la identidad de la cuenta (el DID) en tu app. A partir de ahí la red puede resolver el servidor correcto por sí sola, y solo necesitas el router para visitantes nuevos."
+    },
+    "api": {
+      "heading": "La API de un vistazo",
+      "intro": "Cinco endpoints pequeños. La consulta y el estado usan un token de cliente; gestionar servidores usa el token de administrador.",
+      "lookup": "Pregunta qué servidores conocen un email.",
+      "status": "Estado de sincronización de cada servidor: número de cuentas, última sincronización, último error.",
+      "register": "Registra un servidor; se verifica con una primera sincronización completa antes de aceptarlo.",
+      "list": "Lista los servidores registrados. Las contraseñas nunca se devuelven.",
+      "unregister": "Elimina un servidor registrado a través de la API."
+    },
+    "snippets": {
+      "copy": "Copiar",
+      "copied": "¡Copiado!"
+    },
+    "more": {
+      "heading": "Sigue explorando",
+      "epdsTitle": "Cómo funciona ePDS",
+      "epdsDesc": "La puerta de entrada amigable en sí: inicio de sesión con código por email en el AT Protocol.",
+      "githubTitle": "Router de ePDS en GitHub",
+      "githubDesc": "El código fuente completo del router: un pequeño servicio en Go sin dependencias."
     }
   },
   "cgs": {

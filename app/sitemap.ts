@@ -30,6 +30,7 @@ const ROUTES: Array<{ path: string; priority: number; changeFrequency: ChangeFre
   { path: "/docs/lexicons", priority: 0.4, changeFrequency: "monthly" },
   { path: "/docs/atproto", priority: 0.4, changeFrequency: "monthly" },
   { path: "/docs/ePDS", priority: 0.4, changeFrequency: "monthly" },
+  { path: "/docs/ePDS-router", priority: 0.4, changeFrequency: "monthly" },
   { path: "/docs/TEE-ePDS", priority: 0.4, changeFrequency: "monthly" },
   { path: "/docs/cgs", priority: 0.4, changeFrequency: "monthly" },
 ];

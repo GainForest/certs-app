@@ -39,6 +39,7 @@ const allowedExactValues = new Set([
   "GBIF",
   "PDS",
   "ePDS",
+  "Router",
   "AT Protocol",
   "atproto.com",
   "link",

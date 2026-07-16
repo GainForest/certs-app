@@ -2022,7 +2022,144 @@
       "atprotoTitle": "Jinsi AT Protocol inavyofanya kazi",
       "atprotoDesc": "Ziara shirikishi ya mtandao wazi ambao yote haya yamejengwa juu yake.",
       "teeTitle": "Utiaji saini salama wa ePDS",
-      "teeDesc": "Ona jinsi funguo binafsi zinavyoweza kubaki ndani ya maunzi salama."
+      "teeDesc": "Ona jinsi funguo binafsi zinavyoweza kubaki ndani ya maunzi salama.",
+      "routerTitle": "Router ya ePDS",
+      "routerDesc": "Jinsi programu zinavyopata seva sahihi ya barua pepe wakati jumuiya inaendesha seva kadhaa."
+    }
+  },
+  "epdsRouter": {
+    "metaTitle": "Jinsi router ya ePDS inavyofanya kazi",
+    "metaDescription": "Mwongozo shirikishi wa router ya ePDS: jinsi programu inavyopata seva sahihi ya kuingia kwa barua pepe kati ya seva nyingi, bila router kuhifadhi barua pepe yoyote.",
+    "kicker": "ugunduzi wa barua pepe hadi seva",
+    "title": "Barua pepe moja, seva nyingi",
+    "lead": "ePDS inakuwezesha kuingia kwa barua pepe yako tu. Lakini jumuiya inapoendesha seva kadhaa, programu lazima kwanza ijibu swali dogo: seva ipi inaijua barua pepe hii? Router inalijibu kwa wito mmoja — bila kamwe kuhifadhi anwani ya mtu yeyote.",
+    "facts": {
+      "routing": {
+        "title": "Utafutaji mmoja, seva sahihi",
+        "text": "Programu inauliza mara moja na kujua seva zipi zinaijua barua pepe: hakuna, moja tu, au kadhaa."
+      },
+      "privacy": {
+        "title": "Barua pepe hazihifadhiwi kamwe",
+        "text": "Router huhifadhi alama za vidole zilizochanganywa tu za anwani. Hata nakala kamili ya kumbukumbu yake haionyeshi orodha ya barua pepe."
+      },
+      "zerochange": {
+        "title": "Hakuna mabadiliko kwenye seva yako",
+        "text": "Router husoma vituo vya kawaida vya seva. ePDS yoyote au PDS ya Bluesky inaweza kujiunga kama ilivyo."
+      }
+    },
+    "problem": {
+      "heading": "Kwa nini ugunduzi unahitajika",
+      "p1": "Programu yenye kuingia kwa barua pepe lazima ipeleke ombi la kuingia kwa seva moja mahususi: seva hiyo ndiyo hutuma msimbo na kuhifadhi akaunti. Kwa seva moja jibu ni thabiti. Kwa seva kadhaa, programu inahitaji orodha ya mwelekeo — na anwani za barua pepe ni aina ya data usiyotaka kuinakili kwenye orodha moja kubwa.",
+      "p2": "Router hutatua hili kwa mbinu ndogo: hukumbuka alama za vidole badala ya anwani. Kila anwani inayojifunza huchanganywa kwa njia isiyoweza kurudishwa kabla ya kuhifadhiwa, na kila utafutaji huchanganya barua pepe inayoingia kwa njia ile ile na kulinganisha alama. Jibu lile lile, bila kitabu cha anwani."
+    },
+    "demo": {
+      "heading": "Jaribu utafutaji",
+      "intro": "Seva tatu za mfano, barua pepe tatu za mfano. Chagua moja uone router ikiielekeza.",
+      "reset": "Anza upya",
+      "ariaLabel": "Mchoro wa uelekezaji wa utafutaji wa barua pepe",
+      "nodes": {
+        "app": "Programu yako",
+        "router": "Router",
+        "forest": "PDS Msitu",
+        "ocean": "PDS Bahari",
+        "river": "PDS Mto"
+      },
+      "steps": {
+        "idle": {
+          "title": "Chagua barua pepe hapo juu",
+          "text": "Programu inataka kuanzisha kuingia kwa barua pepe lakini bado haijui iongee na seva ipi."
+        },
+        "sent": {
+          "title": "Programu inauliza router",
+          "text": "Inatuma barua pepe kupitia wito wa faragha uliothibitishwa. Tafutizi hazirekodiwi kwenye kumbukumbu yoyote."
+        },
+        "fingerprint": {
+          "title": "Router inaichanganya",
+          "text": "Barua pepe inakuwa alama ya kidole mara inapofika, na alama pekee ndiyo inayolinganishwa na seti ya kila seva."
+        }
+      },
+      "outcomes": {
+        "one": {
+          "title": "Nyumba moja imepatikana",
+          "text": "Seva moja tu inaijua barua pepe hii, hivyo programu inaanzisha kuingia hapo. Msimbo unafika kwenye kikasha sahihi."
+        },
+        "many": {
+          "title": "Nyumba mbili zimepatikana",
+          "text": "Seva mbili zinaijua barua pepe hii — hizo ni akaunti mbili tofauti. Programu inaonyesha kichaguzi na mtu anachagua ipi atumie."
+        },
+        "none": {
+          "title": "Bado hakuna nyumba",
+          "text": "Hakuna seva inayoijua barua pepe hii, hivyo programu inatoa kutengeneza akaunti mpya kwenye seva yake ya msingi."
+        }
+      }
+    },
+    "sync": {
+      "heading": "Jinsi router inavyobaki na taarifa mpya",
+      "intro": "Hakuna anayelazimika kuripoti chochote. Router huvuta yenyewe inachohitaji kwa kipima muda.",
+      "play": "Cheza",
+      "pause": "Simamisha",
+      "back": "Nyuma",
+      "next": "Mbele",
+      "stepLabel": "Hatua ya {n} kati ya {total}",
+      "ariaLabel": "Mchoro wa mzunguko wa usawazishaji",
+      "nodes": {
+        "pds": "ePDS",
+        "router": "Router",
+        "index": "fahirisi ya alama za vidole"
+      },
+      "steps": {
+        "s1": {
+          "title": "Router inauliza",
+          "text": "Kila dakika huita kila seva iliyosajiliwa kwa maombi mawili ya kawaida: orodhesha akaunti zako, kisha shiriki barua pepe zao za kuingia. Ni vituo vile vile vya usimamizi ambavyo kila PDS tayari inavyo."
+        },
+        "s2": {
+          "title": "Barua pepe zinafika kwa muda mfupi",
+          "text": "Anwani husafiri kupitia muunganisho uliosimbwa na zipo kwenye router kwa muda mfupi tu, kwenye kumbukumbu."
+        },
+        "s3": {
+          "title": "Alama za vidole zinazichukua nafasi",
+          "text": "Kila anwani huchanganywa kwa njia isiyoweza kurudishwa na kutupwa. Kinachobaki ni seti ya alama za vidole isiyoweza kurudishwa kuwa orodha ya barua pepe."
+        },
+        "s4": {
+          "title": "Picha inabadilishwa",
+          "text": "Seti nzima ya seva hubadilishwa kwa hatua moja kamili. Akaunti zilizofutwa hutoweka kwenye mzunguko unaofuata, na seva ikipumzika kwa muda, picha nzuri ya mwisho inaendelea kujibu."
+        }
+      }
+    },
+    "register": {
+      "heading": "Sajili ePDS yako",
+      "intro": "Kujiunga na mtandao ni wito mmoja tu. Unahitaji vitu viwili: tokeni ya msimamizi kutoka kwa mwendeshaji wa router, na nenosiri la msimamizi la seva yako mwenyewe ili router iweze kusoma barua pepe za akaunti.",
+      "p1": "Router hukagua taarifa mara moja kwa kuendesha usawazishaji kamili wa kwanza. Jibu la mafanikio linamaanisha seva yako tayari imeorodheshwa na inapatikana; hitilafu inamaanisha hakuna kilichohifadhiwa.",
+      "registerLabel": "sajili seva",
+      "verifyNote": "Seva zilizosajiliwa hukumbukwa hata baada ya kuwasha upya na kusawazishwa kila dakika tangu hapo. Kuondoka ni rahisi vilevile:",
+      "unregisterLabel": "ondoa usajili"
+    },
+    "integrate": {
+      "heading": "Unganisha tafutizi kwenye programu yako",
+      "intro": "Programu za mteja hupata tokeni yao wenyewe kutoka kwa mwendeshaji wa router. Wito mmoja kabla ya kuonyesha skrini ya kuingia unatosha.",
+      "lookupLabel": "tafuta barua pepe",
+      "jsLabel": "shughulikia matokeo matatu",
+      "cacheTip": "Kidokezo: baada ya kuingia kwa mara ya kwanza kufanikiwa, hifadhi utambulisho wa akaunti (DID) kwenye programu yako. Tangu hapo mtandao unaweza kupata seva sahihi wenyewe, na router inahitajika tu kwa wageni wapya kabisa."
+    },
+    "api": {
+      "heading": "API kwa mtazamo mmoja",
+      "intro": "Vituo vitano vidogo. Utafutaji na hali hutumia tokeni ya mteja; kusimamia seva hutumia tokeni ya msimamizi.",
+      "lookup": "Uliza seva zipi zinaijua barua pepe.",
+      "status": "Hali ya usawazishaji ya kila seva: idadi ya akaunti, usawazishaji wa mwisho, hitilafu ya mwisho.",
+      "register": "Sajili seva; huthibitishwa kwa usawazishaji kamili wa kwanza kabla ya kukubaliwa.",
+      "list": "Orodhesha seva zilizosajiliwa. Manenosiri hayarudishwi kamwe.",
+      "unregister": "Ondoa seva iliyosajiliwa kupitia API."
+    },
+    "snippets": {
+      "copy": "Nakili",
+      "copied": "Imenakiliwa!"
+    },
+    "more": {
+      "heading": "Endelea kuchunguza",
+      "epdsTitle": "Jinsi ePDS inavyofanya kazi",
+      "epdsDesc": "Mlango wa mbele wenyewe: kuingia kwa msimbo wa barua pepe kwenye AT Protocol.",
+      "githubTitle": "Router ya ePDS kwenye GitHub",
+      "githubDesc": "Msimbo kamili wa chanzo wa router: huduma moja ndogo ya Go bila utegemezi."
     }
   },
   "cgs": {

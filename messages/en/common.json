@@ -2022,7 +2022,144 @@
       "atprotoTitle": "How the AT Protocol works",
       "atprotoDesc": "An interactive tour of the open network everything here is built on.",
       "teeTitle": "Protected ePDS signing",
-      "teeDesc": "See how private keys can stay inside protected hardware."
+      "teeDesc": "See how private keys can stay inside protected hardware.",
+      "routerTitle": "The ePDS router",
+      "routerDesc": "How apps find the right server for an email when a community runs several."
+    }
+  },
+  "epdsRouter": {
+    "metaTitle": "How the ePDS router works",
+    "metaDescription": "An interactive guide to the ePDS router: how an app finds the right server for an email login across many servers, without the router ever storing an email.",
+    "kicker": "email-to-server discovery",
+    "title": "One email, many servers",
+    "lead": "ePDS lets you sign in with just your email. But when a community runs several servers, an app must first answer a small question: which server knows this email? The router answers it in a single call — without ever keeping anyone's address.",
+    "facts": {
+      "routing": {
+        "title": "One lookup, the right server",
+        "text": "An app asks once and learns which servers know the email: none, exactly one, or several."
+      },
+      "privacy": {
+        "title": "Emails are never stored",
+        "text": "The router keeps only scrambled fingerprints of addresses. Even a full copy of its memory reveals no email list."
+      },
+      "zerochange": {
+        "title": "No changes to your server",
+        "text": "The router reads standard server endpoints. Any stock ePDS or Bluesky PDS can join exactly as it is."
+      }
+    },
+    "problem": {
+      "heading": "Why discovery is needed",
+      "p1": "An app that offers email sign-in has to send the login to one specific server: that server emails the code and holds the account. With a single server the answer is fixed. With several, the app needs a directory — and email addresses are exactly the kind of data you do not want to copy into one big list.",
+      "p2": "The router solves this with a small trick: it remembers fingerprints instead of addresses. Every address it learns is scrambled one-way before it is kept, and each lookup scrambles the incoming email the same way and compares fingerprints. Same answer, no address book."
+    },
+    "demo": {
+      "heading": "Try a lookup",
+      "intro": "Three example servers, three example emails. Pick one and watch the router route it.",
+      "reset": "Reset",
+      "ariaLabel": "Email lookup routing diagram",
+      "nodes": {
+        "app": "Your app",
+        "router": "Router",
+        "forest": "Forest PDS",
+        "ocean": "Ocean PDS",
+        "river": "River PDS"
+      },
+      "steps": {
+        "idle": {
+          "title": "Pick an email above",
+          "text": "The app wants to start an email sign-in but does not yet know which server to talk to."
+        },
+        "sent": {
+          "title": "The app asks the router",
+          "text": "It sends the email over a private, authenticated call. Lookups are never written to any log."
+        },
+        "fingerprint": {
+          "title": "The router scrambles it",
+          "text": "The email becomes a fingerprint on arrival, and only the fingerprint is compared against each server's set."
+        }
+      },
+      "outcomes": {
+        "one": {
+          "title": "One home found",
+          "text": "Exactly one server knows this email, so the app starts the sign-in there. The code lands in the right inbox."
+        },
+        "many": {
+          "title": "Two homes found",
+          "text": "Two servers know this email — those are two separate accounts. The app shows a chooser and the person picks which one to use."
+        },
+        "none": {
+          "title": "No home yet",
+          "text": "No server knows this email, so the app offers to create a brand-new account on its default server."
+        }
+      }
+    },
+    "sync": {
+      "heading": "How the router stays current",
+      "intro": "Nobody has to report anything. The router quietly pulls what it needs on a timer.",
+      "play": "Play",
+      "pause": "Pause",
+      "back": "Back",
+      "next": "Next",
+      "stepLabel": "Step {n} of {total}",
+      "ariaLabel": "Sync loop diagram",
+      "nodes": {
+        "pds": "ePDS",
+        "router": "Router",
+        "index": "fingerprint index"
+      },
+      "steps": {
+        "s1": {
+          "title": "The router asks",
+          "text": "Every minute it calls each registered server with two standard requests: list your accounts, then share their sign-in emails. These are the same admin endpoints every stock PDS already has."
+        },
+        "s2": {
+          "title": "Emails arrive briefly",
+          "text": "Addresses travel over an encrypted connection and exist in the router only for a moment, in memory."
+        },
+        "s3": {
+          "title": "Fingerprints replace them",
+          "text": "Each address is scrambled one-way and discarded. What remains is a set of fingerprints that cannot be turned back into a mailing list."
+        },
+        "s4": {
+          "title": "The snapshot is swapped",
+          "text": "The server's whole set is replaced in one atomic step. Deleted accounts vanish on the next pass, and if a server is briefly down the last good snapshot keeps answering."
+        }
+      }
+    },
+    "register": {
+      "heading": "Register your ePDS",
+      "intro": "Joining the network is one call. You need two things: an admin token from the router operator, and your own server's admin password so the router can read account emails.",
+      "p1": "The router checks the details right away by running a full first sync. A success reply means your server is already indexed and discoverable; an error means nothing was saved.",
+      "registerLabel": "register an instance",
+      "verifyNote": "Registered servers are remembered across restarts and re-synced every minute from then on. Leaving is just as simple:",
+      "unregisterLabel": "unregister"
+    },
+    "integrate": {
+      "heading": "Integrate lookups in your app",
+      "intro": "Client apps get their own token from the router operator. One call before showing the sign-in screen is enough.",
+      "lookupLabel": "look up an email",
+      "jsLabel": "handle the three outcomes",
+      "cacheTip": "Tip: after the first successful sign-in, remember the account identity (the DID) in your app. From then on the network can resolve the right server on its own, and you only need the router for brand-new visitors."
+    },
+    "api": {
+      "heading": "The API at a glance",
+      "intro": "Five small endpoints. Lookup and status use a client token; managing servers uses the admin token.",
+      "lookup": "Ask which servers know an email.",
+      "status": "Sync state of every server: account counts, last sync, last error.",
+      "register": "Register a server; verified with a full first sync before it is accepted.",
+      "list": "List registered servers. Passwords are never returned.",
+      "unregister": "Remove a server registered through the API."
+    },
+    "snippets": {
+      "copy": "Copy",
+      "copied": "Copied!"
+    },
+    "more": {
+      "heading": "Keep exploring",
+      "epdsTitle": "How ePDS works",
+      "epdsDesc": "The friendly front door itself: email-code login on the AT Protocol.",
+      "githubTitle": "ePDS router on GitHub",
+      "githubDesc": "The full source code of the router: one small Go service with no dependencies."
     }
   },
   "cgs": {

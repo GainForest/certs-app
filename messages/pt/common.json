@@ -2022,7 +2022,144 @@
       "atprotoTitle": "Como funciona o AT Protocol",
       "atprotoDesc": "Um passeio interativo pela rede aberta sobre a qual tudo isto é construído.",
       "teeTitle": "Assinatura protegida do ePDS",
-      "teeDesc": "Veja como chaves privadas podem ficar dentro de hardware protegido."
+      "teeDesc": "Veja como chaves privadas podem ficar dentro de hardware protegido.",
+      "routerTitle": "O roteador do ePDS",
+      "routerDesc": "Como os apps encontram o servidor certo para um email quando uma comunidade tem vários."
+    }
+  },
+  "epdsRouter": {
+    "metaTitle": "Como funciona o roteador do ePDS",
+    "metaDescription": "Um guia interativo do roteador do ePDS: como um app encontra o servidor certo para login por email entre vários servidores, sem que o roteador guarde qualquer email.",
+    "kicker": "descoberta de email para servidor",
+    "title": "Um email, muitos servidores",
+    "lead": "O ePDS permite entrar só com o seu email. Mas quando uma comunidade tem vários servidores, o app precisa primeiro responder a uma pequena pergunta: qual servidor conhece este email? O roteador responde em uma única chamada — sem nunca guardar o endereço de ninguém.",
+    "facts": {
+      "routing": {
+        "title": "Uma consulta, o servidor certo",
+        "text": "O app pergunta uma vez e descobre quais servidores conhecem o email: nenhum, exatamente um ou vários."
+      },
+      "privacy": {
+        "title": "Emails nunca são guardados",
+        "text": "O roteador mantém apenas impressões digitais embaralhadas dos endereços. Nem uma cópia completa da sua memória revela uma lista de emails."
+      },
+      "zerochange": {
+        "title": "Sem mudanças no seu servidor",
+        "text": "O roteador lê endpoints padrão do servidor. Qualquer ePDS ou PDS do Bluesky pode entrar exatamente como está."
+      }
+    },
+    "problem": {
+      "heading": "Por que a descoberta é necessária",
+      "p1": "Um app com login por email precisa enviar o login para um servidor específico: esse servidor envia o código e guarda a conta. Com um único servidor a resposta é fixa. Com vários, o app precisa de um diretório — e endereços de email são exatamente o tipo de dado que você não quer copiar para uma grande lista.",
+      "p2": "O roteador resolve isso com um pequeno truque: ele memoriza impressões digitais em vez de endereços. Cada endereço que aprende é embaralhado de forma irreversível antes de ser guardado, e cada consulta embaralha o email recebido da mesma forma e compara impressões. A mesma resposta, sem agenda de endereços."
+    },
+    "demo": {
+      "heading": "Experimente uma consulta",
+      "intro": "Três servidores de exemplo, três emails de exemplo. Escolha um e veja o roteador encaminhá-lo.",
+      "reset": "Reiniciar",
+      "ariaLabel": "Diagrama de roteamento de consultas de email",
+      "nodes": {
+        "app": "Seu app",
+        "router": "Roteador",
+        "forest": "PDS Floresta",
+        "ocean": "PDS Oceano",
+        "river": "PDS Rio"
+      },
+      "steps": {
+        "idle": {
+          "title": "Escolha um email acima",
+          "text": "O app quer iniciar um login por email mas ainda não sabe com qual servidor falar."
+        },
+        "sent": {
+          "title": "O app pergunta ao roteador",
+          "text": "Ele envia o email por uma chamada privada e autenticada. As consultas nunca são gravadas em nenhum registro."
+        },
+        "fingerprint": {
+          "title": "O roteador o embaralha",
+          "text": "O email vira uma impressão digital ao chegar, e só a impressão é comparada com o conjunto de cada servidor."
+        }
+      },
+      "outcomes": {
+        "one": {
+          "title": "Um lar encontrado",
+          "text": "Exatamente um servidor conhece este email, então o app inicia o login lá. O código chega à caixa de entrada certa."
+        },
+        "many": {
+          "title": "Dois lares encontrados",
+          "text": "Dois servidores conhecem este email — são duas contas separadas. O app mostra um seletor e a pessoa escolhe qual usar."
+        },
+        "none": {
+          "title": "Ainda sem lar",
+          "text": "Nenhum servidor conhece este email, então o app oferece criar uma conta nova no seu servidor padrão."
+        }
+      }
+    },
+    "sync": {
+      "heading": "Como o roteador se mantém atualizado",
+      "intro": "Ninguém precisa informar nada. O roteador busca o que precisa em um temporizador.",
+      "play": "Reproduzir",
+      "pause": "Pausar",
+      "back": "Voltar",
+      "next": "Avançar",
+      "stepLabel": "Passo {n} de {total}",
+      "ariaLabel": "Diagrama do ciclo de sincronização",
+      "nodes": {
+        "pds": "ePDS",
+        "router": "Roteador",
+        "index": "índice de impressões"
+      },
+      "steps": {
+        "s1": {
+          "title": "O roteador pergunta",
+          "text": "A cada minuto ele chama cada servidor registrado com duas requisições padrão: liste suas contas e compartilhe os emails de acesso. São os mesmos endpoints de administração que qualquer PDS já tem."
+        },
+        "s2": {
+          "title": "Os emails chegam por um instante",
+          "text": "Os endereços viajam por uma conexão criptografada e existem no roteador só por um momento, em memória."
+        },
+        "s3": {
+          "title": "Impressões digitais os substituem",
+          "text": "Cada endereço é embaralhado de forma irreversível e descartado. O que resta é um conjunto de impressões que não pode voltar a ser uma lista de emails."
+        },
+        "s4": {
+          "title": "O retrato é trocado",
+          "text": "Todo o conjunto do servidor é substituído em um único passo atômico. Contas apagadas somem na próxima passada, e se um servidor cair por um instante, o último retrato bom continua respondendo."
+        }
+      }
+    },
+    "register": {
+      "heading": "Registre seu ePDS",
+      "intro": "Entrar na rede é uma única chamada. Você precisa de duas coisas: um token de administrador do operador do roteador e a senha de administrador do seu próprio servidor, para o roteador poder ler os emails das contas.",
+      "p1": "O roteador confere os dados na hora executando uma primeira sincronização completa. Uma resposta de sucesso significa que seu servidor já está indexado e localizável; um erro significa que nada foi salvo.",
+      "registerLabel": "registrar uma instância",
+      "verifyNote": "Servidores registrados são lembrados entre reinícios e ressincronizados a cada minuto a partir daí. Sair é igualmente simples:",
+      "unregisterLabel": "cancelar registro"
+    },
+    "integrate": {
+      "heading": "Integre consultas no seu app",
+      "intro": "Apps clientes recebem seu próprio token do operador do roteador. Uma chamada antes de mostrar a tela de login é suficiente.",
+      "lookupLabel": "consultar um email",
+      "jsLabel": "tratar os três resultados",
+      "cacheTip": "Dica: após o primeiro login bem-sucedido, guarde a identidade da conta (o DID) no seu app. A partir daí a rede resolve o servidor certo sozinha, e você só precisa do roteador para visitantes totalmente novos."
+    },
+    "api": {
+      "heading": "A API num relance",
+      "intro": "Cinco endpoints pequenos. Consulta e status usam um token de cliente; gerenciar servidores usa o token de administrador.",
+      "lookup": "Pergunte quais servidores conhecem um email.",
+      "status": "Estado de sincronização de cada servidor: número de contas, última sincronização, último erro.",
+      "register": "Registre um servidor; verificado com uma primeira sincronização completa antes de ser aceito.",
+      "list": "Liste os servidores registrados. Senhas nunca são retornadas.",
+      "unregister": "Remova um servidor registrado pela API."
+    },
+    "snippets": {
+      "copy": "Copiar",
+      "copied": "Copiado!"
+    },
+    "more": {
+      "heading": "Continue explorando",
+      "epdsTitle": "Como o ePDS funciona",
+      "epdsDesc": "A própria porta de entrada amigável: login com código por email no AT Protocol.",
+      "githubTitle": "Roteador do ePDS no GitHub",
+      "githubDesc": "O código-fonte completo do roteador: um pequeno serviço em Go sem dependências."
     }
   },
   "cgs": {
