@@ -8,6 +8,9 @@
     "changeAria": "Ubah bahasa",
     "currentLanguage": "Bahasa saat ini"
   },
+  "adminOnly": {
+    "label": "Khusus admin"
+  },
   "navigation": {
     "navigation": "Navigasi",
     "openNavigation": "Buka navigasi",

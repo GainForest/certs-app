@@ -8,6 +8,9 @@
     "changeAria": "Change language",
     "currentLanguage": "Current language"
   },
+  "adminOnly": {
+    "label": "Admin only"
+  },
   "navigation": {
     "navigation": "Navigation",
     "openNavigation": "Open navigation",

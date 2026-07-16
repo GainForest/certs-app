@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { ActivityFeedItem, ActivityFeedKind, ActivityFeedPage } from "../_lib/feed";
 import type { MentionCandidate } from "../_lib/mentions";
+import { AdminOnlyIndicator } from "@/app/_components/AdminOnlyIndicator";
 import { MentionText } from "@/app/_components/MentionText";
 import { resolveBlobUrl } from "../_lib/pds";
 import {
@@ -500,7 +501,7 @@ function FeedFilterTabs({
   const tabs = FILTERS.filter((f) => visibleTab(f, signedIn, isAdmin));
   return (
     <div className="no-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto">
-      {tabs.map(({ key, Icon }) => {
+      {tabs.map(({ key, Icon, adminOnly }) => {
         const active = filter === key;
         const label = filterLabel(t, key);
         return (
@@ -518,6 +519,7 @@ function FeedFilterTabs({
           >
             <Icon className="size-3.5" />
             {label}
+            {adminOnly ? <AdminOnlyIndicator /> : null}
           </button>
         );
       })}
@@ -549,7 +551,7 @@ function FeedFilterRail({
   return (
     <div className="flex flex-col gap-1">
       <nav aria-label={t("filterHeading")} className="flex flex-col gap-0.5">
-        {tabs.map(({ key, Icon }) => {
+        {tabs.map(({ key, Icon, adminOnly }) => {
           const active = filter === key;
           const label = filterLabel(t, key);
           return (
@@ -572,6 +574,7 @@ function FeedFilterRail({
                 )}
               />
               <span className="truncate">{label}</span>
+              {adminOnly ? <AdminOnlyIndicator className="ml-auto" /> : null}
             </button>
           );
         })}

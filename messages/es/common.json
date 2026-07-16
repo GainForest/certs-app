@@ -8,6 +8,9 @@
     "changeAria": "Cambiar idioma",
     "currentLanguage": "Idioma actual"
   },
+  "adminOnly": {
+    "label": "Solo administradores"
+  },
   "navigation": {
     "navigation": "Navegación",
     "openNavigation": "Abrir navegación",

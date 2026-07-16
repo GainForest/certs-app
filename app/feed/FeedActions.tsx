@@ -34,6 +34,7 @@ import {
 } from "@/app/_lib/feed-engagement";
 import { redirectToLogin } from "@/app/_lib/auth-client";
 import { buildMentionFacets, type MentionCandidate } from "@/app/_lib/mentions";
+import { AdminOnlyIndicator } from "@/app/_components/AdminOnlyIndicator";
 import { MentionText } from "@/app/_components/MentionText";
 import { MentionTextarea } from "@/app/_components/MentionTextarea";
 import {
@@ -851,6 +852,7 @@ export function ModeratorHideButton({ subjectUri, onHidden }: { subjectUri: stri
         >
           {busy ? <Loader2Icon className="size-3 animate-spin" /> : <EyeOffIcon className="size-3" />}
           {t("confirmHide")}
+          <AdminOnlyIndicator />
         </button>
         <button
           type="button"
@@ -874,6 +876,7 @@ export function ModeratorHideButton({ subjectUri, onHidden }: { subjectUri: stri
       >
         <EyeOffIcon className="size-3" />
         {t("hideAction")}
+        <AdminOnlyIndicator />
       </button>
       {error ? <span className="text-[11px] text-destructive">{t("genericError")}</span> : null}
     </span>

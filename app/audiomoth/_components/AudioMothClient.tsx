@@ -33,6 +33,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AdminOnlyIndicator } from "@/app/_components/AdminOnlyIndicator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -795,12 +796,17 @@ export function AudioMothClient({
     { id: "configure", label: t("tabs.configure"), Icon: SlidersHorizontalIcon },
   ];
 
-  const mainTabs: Array<{ id: MainTabId; label: string; Icon: typeof ClockIcon }> = [
+  const mainTabs: Array<{
+    id: MainTabId;
+    label: string;
+    Icon: typeof ClockIcon;
+    adminOnly?: boolean;
+  }> = [
     { id: "setup", label: t("mainTabs.setup"), Icon: WrenchIcon },
     { id: "deployments", label: t("mainTabs.deployments"), Icon: MapPinIcon },
     { id: "upload", label: t("mainTabs.upload"), Icon: HardDriveUploadIcon },
     ...(canUseLabelling
-      ? [{ id: "label" as const, label: t("mainTabs.label"), Icon: TagsIcon }]
+      ? [{ id: "label" as const, label: t("mainTabs.label"), Icon: TagsIcon, adminOnly: true }]
       : []),
   ];
 
@@ -820,7 +826,7 @@ export function AudioMothClient({
 
       {/* Setup (this device over USB) vs Deployment (field events) */}
       <nav className="flex w-full gap-1 self-start rounded-full border border-border bg-card/70 p-1 sm:w-auto" aria-label={t("title")}>
-        {mainTabs.map(({ id, label, Icon }) => (
+        {mainTabs.map(({ id, label, Icon, adminOnly }) => (
           <button
             key={id}
             type="button"
@@ -833,6 +839,7 @@ export function AudioMothClient({
           >
             <Icon className="size-4" />
             {label}
+            {adminOnly ? <AdminOnlyIndicator /> : null}
           </button>
         ))}
       </nav>

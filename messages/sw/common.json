@@ -8,6 +8,9 @@
     "changeAria": "Badilisha lugha",
     "currentLanguage": "Lugha ya sasa"
   },
+  "adminOnly": {
+    "label": "Wasimamizi pekee"
+  },
   "navigation": {
     "navigation": "Urambazaji",
     "openNavigation": "Fungua urambazaji",
