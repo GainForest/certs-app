@@ -25,7 +25,14 @@ const NODES: Record<"app" | "router" | PdsId, { x: number; y: number }> = {
 };
 
 const PDS_IDS: PdsId[] = ["forest", "ocean", "river"];
+const NODE_HALF_W = 62; // half the node box width — edges stop at box borders
 const STEP_MS = 1900;
+
+// Endpoint of an edge leaving a node horizontally toward a target,
+// clipped to the node's border so lines never cross the boxes.
+function edgeEnd(node: { x: number; y: number }, towardRight: boolean) {
+  return { x: node.x + (towardRight ? NODE_HALF_W : -NODE_HALF_W), y: node.y };
+}
 
 // A toy multi-server network: pick an email and watch the router turn it
 // into a fingerprint, match it against each server's set, and hand the
@@ -107,11 +114,11 @@ export function RouterLookupDemo() {
       </div>
 
       <svg viewBox="0 0 700 330" className="mx-auto block w-full" style={{ maxWidth: 640 }} role="img" aria-label={t("ariaLabel")}>
-        {/* Edges */}
+        {/* Edges — drawn border-to-border so they never cross the boxes. */}
         <line
-          x1={NODES.app.x}
+          x1={edgeEnd(NODES.app, true).x}
           y1={NODES.app.y}
-          x2={NODES.router.x}
+          x2={edgeEnd(NODES.router, false).x}
           y2={NODES.router.y}
           stroke={step === 1 ? "var(--primary)" : "var(--border)"}
           strokeWidth={step === 1 ? 1.5 : 1}
@@ -119,13 +126,15 @@ export function RouterLookupDemo() {
         />
         {PDS_IDS.map((id) => {
           const hit = matched.includes(id);
+          const from = edgeEnd(NODES.router, true);
+          const to = edgeEnd(NODES[id], false);
           return (
             <line
               key={id}
-              x1={NODES.router.x}
-              y1={NODES.router.y}
-              x2={NODES[id].x}
-              y2={NODES[id].y}
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
               stroke={hit ? "var(--primary)" : "var(--border)"}
               strokeWidth={hit ? 1.5 : 1}
               strokeDasharray={hit ? undefined : "3 4"}

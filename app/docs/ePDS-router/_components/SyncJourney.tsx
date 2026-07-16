@@ -57,10 +57,11 @@ export function SyncJourney() {
   return (
     <div>
       <svg viewBox="0 0 700 260" className="mx-auto block w-full" style={{ maxWidth: 640 }} role="img" aria-label={t("ariaLabel")}>
+        {/* Border-to-border so the line never crosses the boxes. */}
         <line
-          x1={PDS.x}
+          x1={PDS.x + 66}
           y1={PDS.y}
-          x2={ROUTER.x}
+          x2={ROUTER.x - 66}
           y2={ROUTER.y}
           stroke={flow ? "var(--primary)" : "var(--border)"}
           strokeWidth={flow ? 1.5 : 1}
