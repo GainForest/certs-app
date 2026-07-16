@@ -1028,6 +1028,12 @@
       "like": "Penda picha hii",
       "unlike": "Ondoa kupenda"
     },
+    "audio": {
+      "play": "Cheza sauti",
+      "pause": "Simamisha sauti",
+      "unavailable": "Sauti haipatikani",
+      "spectrogramAlt": "Spektrogramu ya rekodi ikiwa na sauti iliyowekewa lebo imeangaziwa"
+    },
     "mentions": {
       "suggestionsAria": "Mapendekezo ya akaunti",
       "searching": "Inatafuta akaunti…",

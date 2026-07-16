@@ -1028,6 +1028,12 @@
       "like": "Like this photo",
       "unlike": "Remove like"
     },
+    "audio": {
+      "play": "Play sound",
+      "pause": "Pause sound",
+      "unavailable": "Sound unavailable",
+      "spectrogramAlt": "Spectrogram of the recording with the labelled sound highlighted"
+    },
     "mentions": {
       "suggestionsAria": "Account suggestions",
       "searching": "Searching accounts…",

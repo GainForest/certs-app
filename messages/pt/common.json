@@ -1028,6 +1028,12 @@
       "like": "Curtir esta foto",
       "unlike": "Remover curtida"
     },
+    "audio": {
+      "play": "Reproduzir som",
+      "pause": "Pausar som",
+      "unavailable": "Som indisponível",
+      "spectrogramAlt": "Espectrograma da gravação com o som rotulado em destaque"
+    },
     "mentions": {
       "suggestionsAria": "Sugestões de contas",
       "searching": "Buscando contas…",

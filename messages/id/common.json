@@ -1028,6 +1028,12 @@
       "like": "Sukai foto ini",
       "unlike": "Batalkan suka"
     },
+    "audio": {
+      "play": "Putar suara",
+      "pause": "Jeda suara",
+      "unavailable": "Suara tidak tersedia",
+      "spectrogramAlt": "Spektrogram rekaman dengan suara berlabel yang disorot"
+    },
     "mentions": {
       "suggestionsAria": "Saran akun",
       "searching": "Mencari akun…",

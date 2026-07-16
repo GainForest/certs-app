@@ -24,6 +24,8 @@
  */
 
 import { cachedAsync } from "./async-cache";
+import type { AudioLabelCategory } from "./audiomoth/labels";
+import { parseAudioSegmentDynamicProperties } from "./audiomoth/occurrences";
 import { fetchHiddenAccountDids, fetchHiddenRecordUris, indexerQuery } from "./indexer";
 import { mentionCandidatesFromFacets, type MentionCandidate, type RawIndexedFacet } from "./mentions";
 import { normaliseRef } from "./pds";
@@ -42,6 +44,21 @@ export type ActivityFeedKind =
   | "organization"
   | "donation"
   | "post";
+
+/** The labelled section of an AudioMoth recording a bioacoustic sighting
+ *  points at — everything the feed needs to preview the spectrogram box and
+ *  play that sound. Parsed from the occurrence's
+ *  `dynamicProperties.gainforestBioacoustics` sidecar. */
+export interface FeedBioacousticsClip {
+  /** AT-URI of the source `app.gainforest.ac.audio` record. */
+  audioUri: string;
+  /** What the labeller heard (bird / frog / insect / other / note). */
+  category: AudioLabelCategory;
+  startTimeSeconds: number;
+  endTimeSeconds: number;
+  minFrequencyHz: number;
+  maxFrequencyHz: number;
+}
 
 /** Normalized, serializable feed row — ready to ship to the client. */
 export interface ActivityFeedItem {
@@ -80,6 +97,9 @@ export interface ActivityFeedItem {
   observationEventId?: string | null;
   /** Observations only: shared field note/story for a multi-sighting upload. */
   observationBatchNote?: string | null;
+  /** Observations only: the labelled audio segment behind a bioacoustic
+   *  sighting, so the feed can preview its spectrogram and play the sound. */
+  bioacoustics?: FeedBioacousticsClip | null;
   /** Observations only, set on the sampled rows of a server-collapsed burst:
    *  how many sightings the burst holds from the collapse point down (counted
    *  for free by the burst scan; includes the sampled rows themselves). Rows
@@ -267,7 +287,7 @@ const FEED_QUERY = `
       edges { node {
         did rkey uri createdAt eventDate eventID fieldNotes
         scientificName vernacularName kingdom family country countryCode locality habitat
-        thumbnailUrl speciesImageUrl
+        thumbnailUrl speciesImageUrl dynamicProperties associatedMedia
         ${CERTIFIED_PROFILE_DATA_FIELDS}
         imageEvidence { file { ref } }
       } }
@@ -358,6 +378,8 @@ type RawOccurrence = {
   habitat?: string | null;
   thumbnailUrl?: string | null;
   speciesImageUrl?: string | null;
+  dynamicProperties?: string | null;
+  associatedMedia?: string | null;
   certifiedProfileData?: CertifiedProfileData;
   imageEvidence?: { file?: { ref?: string | null } | null } | null;
 };
@@ -452,6 +474,24 @@ function observationText(n: RawOccurrence): string | null {
   return clampText(n.family?.trim() ? `Family: ${n.family.trim()}` : null);
 }
 
+/** The audio segment behind a bioacoustic sighting, when the occurrence's
+ *  `dynamicProperties` carry a valid `gainforestBioacoustics` sidecar that
+ *  matches its `associatedMedia` (same validation as the labelling tool). */
+function occurrenceBioacoustics(n: RawOccurrence): FeedBioacousticsClip | null {
+  const segment = parseAudioSegmentDynamicProperties(n.dynamicProperties);
+  if (!segment) return null;
+  const media = (n.associatedMedia ?? "").split("|").map((value) => value.trim());
+  if (!media.includes(segment.sourceAudioUri)) return null;
+  return {
+    audioUri: segment.sourceAudioUri,
+    category: segment.labelCategory,
+    startTimeSeconds: segment.startTimeSeconds,
+    endTimeSeconds: segment.endTimeSeconds,
+    minFrequencyHz: segment.minFrequencyHz,
+    maxFrequencyHz: segment.maxFrequencyHz,
+  };
+}
+
 function mapOccurrences(nodes: RawOccurrence[]): ActivityFeedItem[] {
   return nodes.map((n) => {
     const external = n.thumbnailUrl?.trim() || n.speciesImageUrl?.trim() || null;
@@ -470,6 +510,7 @@ function mapOccurrences(nodes: RawOccurrence[]): ActivityFeedItem[] {
       imageRef,
       observationEventId: n.eventID?.trim() || null,
       observationBatchNote: clampText(n.fieldNotes, 600),
+      bioacoustics: occurrenceBioacoustics(n),
       targetTitle: null,
       targetHref: null,
       amount: null,

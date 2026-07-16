@@ -43,6 +43,7 @@ import {
 import { fetchBlueskyPostLinks } from "../_lib/bluesky-crosspost";
 import { buildCommentTree, type CommentTreeNode } from "../_lib/feed-engagement";
 import { formatCompact, formatCompactUsd, formatRelative } from "../_lib/format";
+import { FeedAudioClip } from "./FeedAudioClip";
 import { FeedImageLightbox } from "./FeedImageLightbox";
 import { ResolvedAvatar } from "./ResolvedAvatar";
 import { AccountHoverCard } from "./AccountHoverCard";
@@ -76,17 +77,20 @@ type FeedEntry =
 /** Collapse maximal runs of >= MIN_BATCH consecutive observations by the same
  *  account (adjacent in the newest-first timeline AND uploaded within
  *  MAX_BATCH_GAP_MS of each other) into one batch entry. Every other row
- *  passes through unchanged. */
+ *  passes through unchanged. Bioacoustic sightings never join a batch — their
+ *  whole point on the feed is the inline spectrogram + sound preview, which a
+ *  collapsed montage card (built around photos) would hide. */
 function groupFeedEntries(items: ActivityFeedItem[]): FeedEntry[] {
   const entries: FeedEntry[] = [];
   let i = 0;
   while (i < items.length) {
     const item = items[i];
-    if (item.kind === "observation" && item.actorDid) {
+    if (item.kind === "observation" && item.actorDid && !item.bioacoustics) {
       let j = i + 1;
       while (
         j < items.length &&
         items[j].kind === "observation" &&
+        !items[j].bioacoustics &&
         items[j].actorDid === item.actorDid &&
         Math.abs(batchTime(items[j - 1].createdAt) - batchTime(items[j].createdAt)) <= MAX_BATCH_GAP_MS
       )
@@ -707,6 +711,10 @@ function FeedRow({
               />
             </div>
           ) : null}
+
+          {/* Bioacoustic sighting — spectrogram of the labelled section with
+              in-place playback of that sound. */}
+          {item.bioacoustics ? <FeedAudioClip clip={item.bioacoustics} /> : null}
         </div>
 
         {/* Donation amount pill */}

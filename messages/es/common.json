@@ -1028,6 +1028,12 @@
       "like": "Me gusta esta foto",
       "unlike": "Quitar me gusta"
     },
+    "audio": {
+      "play": "Reproducir sonido",
+      "pause": "Pausar sonido",
+      "unavailable": "Sonido no disponible",
+      "spectrogramAlt": "Espectrograma de la grabación con el sonido etiquetado resaltado"
+    },
     "mentions": {
       "suggestionsAria": "Sugerencias de cuentas",
       "searching": "Buscando cuentas…",
