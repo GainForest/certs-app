@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { blo } from "blo";
 import {
   AlertTriangleIcon,
   AtSignIcon,
@@ -19,11 +18,8 @@ import {
   KeyRoundIcon,
   Loader2Icon,
   PencilIcon,
-  PlusIcon,
-  SparklesIcon,
   Trash2Icon,
   UserIcon,
-  WalletIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +34,6 @@ import {
 } from "@/components/ui/input-group";
 import { ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal/modal";
 import { useModal } from "@/components/ui/modal/context";
-import { AddWalletModal } from "@/components/global/modals/wallet/add";
 import {
   deleteAccountDataChunk,
   deleteRecord,
@@ -59,19 +54,6 @@ import { BlueskyIcon } from "@/app/_components/BlueskyIcon";
 import { INDEXER_URL } from "@/app/_lib/urls";
 import { isTainaAgentKeyName } from "@/app/_lib/taina-shared";
 import { cn } from "@/lib/utils";
-
-type WalletLink = {
-  uri: string | null;
-  rkey: string | null;
-  name: string | null;
-  address: string | null;
-  valid: boolean;
-};
-
-function shortAddress(address: string | null | undefined): string {
-  if (!address) return "";
-  return `${address.slice(0, 6)}…${address.slice(-4)}`;
-}
 
 async function resolvePdsUrl(did: string): Promise<string> {
   const response = await fetch(`/api/atproto/resolve-pds?did=${encodeURIComponent(did)}`);
@@ -450,214 +432,6 @@ function PasswordSection({ did }: { did: string }) {
           <div className="flex items-center gap-2 px-4 py-4 text-sm text-green-700 dark:text-green-400">
             <CheckIcon className="h-4 w-4 shrink-0" />
             Password changed successfully.
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Wallets ─────────────────────────────────────────────────────────────────
-
-async function fetchWalletLinks(did: string): Promise<WalletLink[]> {
-  const query = `
-    query LinkEvmByDid($did: String!, $first: Int) {
-      appGainforestLinkEvm(where: { did: { eq: $did } }, first: $first, sortDirection: DESC, sortBy: createdAt) {
-        edges {
-          node {
-            uri
-            rkey
-            name
-            address
-            certifiedProfileData { displayName }
-            platformAttestation { __typename }
-            userProof { __typename }
-          }
-        }
-      }
-    }
-  `;
-  const response = await fetch(INDEXER_URL, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ query, variables: { did, first: 20 } }),
-  });
-  const json = (await response.json().catch(() => null)) as {
-    data?: { appGainforestLinkEvm?: { edges?: Array<{ node?: { uri?: string; rkey?: string; name?: string | null; address?: string | null; certifiedProfileData?: { displayName?: string | null } | null; platformAttestation?: { __typename?: string } | null; userProof?: { __typename?: string } | null } }> } };
-  } | null;
-  return json?.data?.appGainforestLinkEvm?.edges?.map(({ node }) => ({
-    uri: node?.uri ?? null,
-    rkey: node?.rkey ?? null,
-    name: node?.name ?? null,
-    address: node?.address ?? null,
-    valid: node?.platformAttestation?.__typename === "AppGainforestLinkEvmEip712PlatformAttestation" && node?.userProof?.__typename === "AppGainforestLinkEvmEip712Proof",
-  })) ?? [];
-}
-
-function DeleteWalletModal({ link, onDeleted, onBack }: { link: WalletLink; onDeleted: () => void; onBack: () => void }) {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleDelete() {
-    if (!link.rkey) return;
-    setIsDeleting(true);
-    setError(null);
-    try {
-      await deleteRecord("app.gainforest.link.evm", link.rkey);
-      onDeleted();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not remove this wallet. Please try again.");
-      setIsDeleting(false);
-    }
-  }
-
-  const label = link.name ?? "Untitled";
-  const address = link.address ?? "";
-
-  return (
-    <ModalContent dismissible={!isDeleting}>
-      <ModalHeader backAction={isDeleting ? undefined : onBack}>
-        <ModalTitle>Remove Wallet</ModalTitle>
-        <ModalDescription>Confirm your choice</ModalDescription>
-      </ModalHeader>
-
-      <p className="mt-6 text-center text-pretty">
-        You are about to remove <span className="font-medium text-foreground">&quot;{label}&quot;</span> from your linked wallets.
-      </p>
-      <div className="bg-muted/50 rounded-2xl p-4 mt-4 grid grid-cols-[1fr_2rem_1fr] overflow-hidden">
-        <div className="flex flex-col items-center justify-center">
-          {address ? (
-            <Image height={32} width={32} alt={label} src={blo(address as `0x${string}`)} className="rounded-full border-2 drop-shadow-sm" />
-          ) : (
-            <div className="h-8 w-8 rounded-full bg-muted" />
-          )}
-          <span className="font-medium text-sm mt-2 bg-muted px-1 py-0.5 rounded-md">{shortAddress(address)}</span>
-        </div>
-        <div className="flex items-center justify-center">
-          <ChevronRight className="size-6 text-destructive opacity-50" />
-        </div>
-        <div className="flex items-center justify-center relative">
-          <div className="absolute h-10 w-10 rounded-full blur-xl bg-destructive/70" />
-          <Trash2Icon className="text-destructive size-8" />
-        </div>
-      </div>
-
-      {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
-      <ModalFooter>
-        <Button variant="destructive" className="w-full" onClick={() => void handleDelete()} disabled={isDeleting || !link.rkey}>
-          {isDeleting ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
-          {isDeleting ? "Removing…" : "Remove Wallet"}
-        </Button>
-        <Button variant="outline" className="w-full" onClick={onBack} disabled={isDeleting}>Cancel</Button>
-      </ModalFooter>
-    </ModalContent>
-  );
-}
-
-function WalletsSection({ did }: { did: string }) {
-  const modal = useModal();
-  const createT = useTranslations("modals.walletCreate");
-  const [links, setLinks] = useState<WalletLink[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  async function loadLinks() {
-    setIsLoading(true);
-    setError(null);
-    try {
-      setLinks(await fetchWalletLinks(did));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load wallets");
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  useEffect(() => { void loadLinks(); }, [did]);
-
-  function closeModal() {
-    void modal.hide().then(() => modal.popModal());
-  }
-
-  function openAdd(existing?: WalletLink) {
-    modal.pushModal({
-      id: "settings-wallet-add",
-      content: (
-        <AddWalletModal
-          did={did}
-          existingName={existing?.name ?? undefined}
-          onBack={closeModal}
-          onSuccess={() => { closeModal(); void loadLinks(); }}
-        />
-      ),
-    });
-    void modal.show();
-  }
-
-  function openDelete(link: WalletLink) {
-    modal.pushModal({
-      id: "settings-wallet-delete",
-      content: <DeleteWalletModal link={link} onBack={closeModal} onDeleted={() => { closeModal(); void loadLinks(); }} />,
-    });
-    void modal.show();
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <WalletIcon className="h-4 w-4 text-foreground/70" />
-          <h2 className="text-sm font-medium">Linked Wallets</h2>
-        </div>
-        <Button size="sm" variant="outline" onClick={() => openAdd()} className="gap-1.5">
-          <PlusIcon className="h-3.5 w-3.5" />
-          Add Wallet
-        </Button>
-      </div>
-
-      <div className="bg-muted rounded-xl p-1 flex flex-col items-center w-full">
-        {isLoading ? (
-          <div className="w-full flex flex-col gap-0.5">
-            {[1, 2].map((i) => <Skeleton key={i} className="h-[62px] rounded-lg" />)}
-          </div>
-        ) : error ? (
-          <p className="text-sm text-destructive py-4 text-center">{error}</p>
-        ) : links.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-4 px-3 w-full">
-            <p className="text-sm text-muted-foreground text-center">No wallets linked yet.</p>
-            <Button size="sm" onClick={() => openAdd()} className="gap-1.5">
-              <SparklesIcon className="h-3.5 w-3.5" />
-              {createT("addWallet")}
-            </Button>
-            <p className="text-xs text-muted-foreground text-center max-w-xs">{createT("createHint")}</p>
-          </div>
-        ) : (
-          <div className="w-full flex flex-col gap-0.5">
-            {links.map((link) => (
-              <div key={link.uri ?? link.rkey ?? link.address} className="flex items-center gap-3 rounded-lg bg-background/60 px-3 py-2.5">
-                <div className="relative shrink-0">
-                  {link.address ? (
-                    <Image src={blo(link.address as `0x${string}`)} alt={link.address} width={36} height={36} className="rounded-full" />
-                  ) : (
-                    <div className="h-9 w-9 rounded-full bg-muted" />
-                  )}
-                  <span className={cn("absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-muted", link.valid ? "bg-primary" : "bg-amber-500")} />
-                </div>
-                <div className="flex flex-col flex-1 min-w-0">
-                  {link.name ? <span className="text-sm font-medium leading-snug truncate">{link.name}</span> : null}
-                  <span className="text-xs text-muted-foreground font-mono leading-snug">{shortAddress(link.address)}</span>
-                </div>
-                {link.valid ? (
-                  <span className="hidden sm:inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full"><CheckCircle2Icon className="h-3 w-3" />Verified</span>
-                ) : (
-                  <span className="hidden sm:inline-flex shrink-0 items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full"><AlertTriangleIcon className="h-3 w-3" />Unverified</span>
-                )}
-                <div className="flex items-center gap-0.5 shrink-0">
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => openAdd(link)} aria-label="Edit wallet"><PencilIcon className="h-3.5 w-3.5" /></Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => openDelete(link)} aria-label="Delete wallet"><Trash2Icon className="h-3.5 w-3.5" /></Button>
-                </div>
-              </div>
-            ))}
           </div>
         )}
       </div>
@@ -1432,7 +1206,6 @@ export function AccountSettingsSections({ did, handle }: { did: string; handle?:
       {handle ? <HandleSection did={did} handle={handle} /> : null}
       <PasswordSection did={did} />
       <BlueskySection did={did} />
-      <WalletsSection did={did} />
       <AgentKeysSection />
       <Accordion type="single" collapsible>
         <AccordionItem value="advanced" className="border-none">
