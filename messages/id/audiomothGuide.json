@@ -27,9 +27,6 @@
   "prepare": {
     "heading": "Sebelum memulai",
     "intro": "Gunakan daftar ini agar tidak ada barang penting yang tertinggal. Kemajuan disimpan di perangkat ini dan tetap ada setelah halaman dimuat ulang.",
-    "equipmentTab": "Peralatan",
-    "managerTab": "Pengelola proyek",
-    "fieldTab": "Tim lapangan",
     "equipment": {
       "computer": "Laptop atau komputer",
       "recorder": "AudioMoth dan 3 baterai AA",
@@ -38,24 +35,8 @@
       "card": "Kartu MicroSD berukuran 32 GB atau kurang",
       "case": "Casing ponsel tahan air atau kantong ziplock tebal"
     },
-    "manager": {
-      "arbimon": "Akun Arbimon",
-      "config": "Aplikasi AudioMoth Configuration",
-      "flash": "Aplikasi AudioMoth Flash",
-      "time": "Aplikasi AudioMoth Time",
-      "companion": "Aplikasi Arbimon Companion di ponsel",
-      "uploader": "Arbimon Uploader di komputer"
-    },
-    "field": {
-      "arbimon": "Akun Arbimon",
-      "companion": "Aplikasi Arbimon Companion di ponsel"
-    },
     "remaining": "{count, plural, =0 {Semuanya siap} other {# item tersisa}}",
-    "reset": "Atur ulang daftar",
-    "linksNote": "Buka setiap tautan aplikasi selagi koneksi internet masih andal.",
-    "downloadApps": "Unduh aplikasi desktop AudioMoth",
-    "openArbimon": "Buka Arbimon",
-    "openUploader": "Buka Arbimon Uploader"
+    "reset": "Atur ulang daftar"
   },
   "account": {
     "heading": "Buat proyek Arbimon Anda",

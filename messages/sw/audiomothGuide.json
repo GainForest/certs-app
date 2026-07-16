@@ -26,10 +26,7 @@
   },
   "prepare": {
     "heading": "Kabla ya kuanza",
-    "intro": "Tumia orodha hizi kuhakikisha hakuna kitu muhimu kinachoachwa. Maendeleo yanahifadhiwa kwenye kifaa hiki na yatabaki baada ya kupakia ukurasa upya.",
-    "equipmentTab": "Vifaa",
-    "managerTab": "Meneja wa mradi",
-    "fieldTab": "Timu ya uwanjani",
+    "intro": "Tumia orodha hii kuhakikisha hakuna kitu muhimu kinachoachwa. Maendeleo yanahifadhiwa kwenye kifaa hiki na yatabaki baada ya kupakia ukurasa upya.",
     "equipment": {
       "computer": "Kompyuta mpakato au kompyuta",
       "recorder": "AudioMoth na betri 3 za AA",
@@ -38,24 +35,8 @@
       "card": "Kadi ya MicroSD ya GB 32 au chini",
       "case": "Kifuniko cha simu kisichopitisha maji au mfuko mzito unaofungwa"
     },
-    "manager": {
-      "arbimon": "Akaunti ya Arbimon",
-      "config": "Programu ya AudioMoth Configuration",
-      "flash": "Programu ya AudioMoth Flash",
-      "time": "Programu ya AudioMoth Time",
-      "companion": "Programu ya Arbimon Companion kwenye simu",
-      "uploader": "Arbimon Uploader kwenye kompyuta"
-    },
-    "field": {
-      "arbimon": "Akaunti ya Arbimon",
-      "companion": "Programu ya Arbimon Companion kwenye simu"
-    },
     "remaining": "{count, plural, =0 {Kila kitu kiko tayari} one {Kitu # kimebaki} other {Vitu # vimebaki}}",
-    "reset": "Anza orodha upya",
-    "linksNote": "Fungua kila kiungo cha programu ukiwa bado na intaneti ya uhakika.",
-    "downloadApps": "Pakua programu za AudioMoth za kompyuta",
-    "openArbimon": "Fungua Arbimon",
-    "openUploader": "Fungua Arbimon Uploader"
+    "reset": "Anza orodha upya"
   },
   "account": {
     "heading": "Unda mradi wako wa Arbimon",

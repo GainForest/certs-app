@@ -16,7 +16,6 @@ import {
   CircleCheckIcon,
   Clock3Icon,
   CloudUploadIcon,
-  ExternalLinkIcon,
   HardDriveDownloadIcon,
   HeadphonesIcon,
   MapPinIcon,
@@ -36,14 +35,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type PrepTab = "equipment" | "manager" | "field";
 type ChecklistItem = { id: string; text: string; images?: string[] };
 type ConfigTab = "flash" | "time" | "record" | "card";
 type SwitchMode = "off" | "custom" | "default";
 
 const APP_URL = "https://www.openacousticdevices.info/applications";
 const ARBIMON_URL = "https://arbimon.org/";
-const UPLOADER_URL = "https://arbimon.org/p/perm-stations/import-recordings";
 const VIDEO_URL = "https://www.youtube-nocookie.com/embed/HDTtGw_DFNU?rel=0";
 const CHECKLIST_STORAGE_KEY = "gainforest:audiomoth-deployment-checklist:v1";
 
@@ -252,7 +249,6 @@ function ChapterNav() {
 
 function PreparationChecklist() {
   const t = useTranslations("audiomothGuide.prepare");
-  const [tab, setTab] = useState<PrepTab>("equipment");
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [previewedItem, setPreviewedItem] = useState<ChecklistItem | null>(null);
   const [hasLoadedStoredProgress, setHasLoadedStoredProgress] = useState(false);
@@ -263,7 +259,7 @@ function PreparationChecklist() {
       if (stored) {
         const values: unknown = JSON.parse(stored);
         if (Array.isArray(values)) {
-          setChecked(new Set(values.filter((value): value is string => typeof value === "string" && value !== "equipment:phone")));
+          setChecked(new Set(values.filter((value): value is string => typeof value === "string" && value.startsWith("equipment:") && value !== "equipment:phone")));
         }
       }
     } catch {
@@ -282,42 +278,23 @@ function PreparationChecklist() {
     }
   }, [checked, hasLoadedStoredProgress]);
 
-  const tabs: { id: PrepTab; label: string }[] = [
-    { id: "equipment", label: t("equipmentTab") },
-    { id: "manager", label: t("managerTab") },
-    { id: "field", label: t("fieldTab") },
+  const items: ChecklistItem[] = [
+    { id: "computer", text: t("equipment.computer"), images: ["/images/audiomoth/equipment/laptop.webp"] },
+    {
+      id: "recorder",
+      text: t("equipment.recorder"),
+      images: [
+        "/images/audiomoth/equipment/audiomoth.webp",
+        "/images/audiomoth/equipment/aa-batteries.webp",
+      ],
+    },
+    { id: "cable", text: t("equipment.cable"), images: ["/images/audiomoth/equipment/micro-usb-cable.webp"] },
+    { id: "reader", text: t("equipment.reader"), images: ["/images/audiomoth/equipment/microsd-card-and-adapter.webp"] },
+    { id: "card", text: t("equipment.card"), images: ["/images/audiomoth/equipment/microsd-card-and-adapter.webp"] },
+    { id: "case", text: t("equipment.case"), images: ["/images/audiomoth/equipment/waterproof-case.webp"] },
   ];
-  const items: Record<PrepTab, ChecklistItem[]> = {
-    equipment: [
-      { id: "computer", text: t("equipment.computer"), images: ["/images/audiomoth/equipment/laptop.webp"] },
-      {
-        id: "recorder",
-        text: t("equipment.recorder"),
-        images: [
-          "/images/audiomoth/equipment/audiomoth.webp",
-          "/images/audiomoth/equipment/aa-batteries.webp",
-        ],
-      },
-      { id: "cable", text: t("equipment.cable"), images: ["/images/audiomoth/equipment/micro-usb-cable.webp"] },
-      { id: "reader", text: t("equipment.reader"), images: ["/images/audiomoth/equipment/microsd-card-and-adapter.webp"] },
-      { id: "card", text: t("equipment.card"), images: ["/images/audiomoth/equipment/microsd-card-and-adapter.webp"] },
-      { id: "case", text: t("equipment.case"), images: ["/images/audiomoth/equipment/waterproof-case.webp"] },
-    ],
-    manager: [
-      { id: "arbimon", text: t("manager.arbimon") },
-      { id: "config", text: t("manager.config") },
-      { id: "flash", text: t("manager.flash") },
-      { id: "time", text: t("manager.time") },
-      { id: "companion", text: t("manager.companion") },
-      { id: "uploader", text: t("manager.uploader") },
-    ],
-    field: [
-      { id: "arbimon", text: t("field.arbimon") },
-      { id: "companion", text: t("field.companion") },
-    ],
-  };
-  const visible = items[tab];
-  const scopedKey = (id: string) => `${tab}:${id}`;
+  const visible = items;
+  const scopedKey = (id: string) => `equipment:${id}`;
   const remaining = visible.filter((item) => !checked.has(scopedKey(item.id))).length;
 
   function toggle(id: string) {
@@ -332,36 +309,15 @@ function PreparationChecklist() {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/60">
-      <div className="flex overflow-x-auto border-b border-border/60 bg-muted/25 p-1.5" role="tablist">
-        {tabs.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === item.id}
-            onClick={() => {
-              setTab(item.id);
-              setPreviewedItem(null);
-            }}
-            className={cn(
-              "min-w-max flex-1 rounded-lg px-3 py-2 text-[12.5px] font-medium transition-colors",
-              tab === item.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
       <div className="p-4 sm:p-5">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={tab}
+            key="equipment"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
-            className={cn("grid gap-4", tab === "equipment" && "md:grid-cols-[minmax(0,1fr)_12rem]")}
+            className="grid gap-4 md:grid-cols-[minmax(0,1fr)_12rem]"
           >
             <div className="grid content-start gap-2" onMouseLeave={() => setPreviewedItem(null)}>
               {visible.map((item) => {
@@ -416,31 +372,29 @@ function PreparationChecklist() {
               })}
             </div>
 
-            {tab === "equipment" && (
-              <div className="relative hidden min-h-48 md:block">
-                <AnimatePresence mode="wait">
-                  {previewedItem?.images && (
-                    <motion.div
-                      key={previewedItem.id}
-                      initial={{ opacity: 0, scale: 0.96, y: 4 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.96, y: -4 }}
-                      transition={{ duration: 0.15 }}
-                      className={cn(
-                        "sticky top-24 grid h-48 overflow-hidden rounded-xl border border-border/60 bg-white shadow-sm",
-                        previewedItem.images.length > 1 && "grid-rows-2",
-                      )}
-                    >
-                      {previewedItem.images.map((src) => (
-                        <div key={src} className="relative min-h-0">
-                          <Image src={src} alt="" fill sizes="192px" className="object-contain p-2" />
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
+            <div className="relative hidden min-h-48 md:block">
+              <AnimatePresence mode="wait">
+                {previewedItem?.images && (
+                  <motion.div
+                    key={previewedItem.id}
+                    initial={{ opacity: 0, scale: 0.96, y: 4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className={cn(
+                      "sticky top-24 grid h-48 overflow-hidden rounded-xl border border-border/60 bg-white shadow-sm",
+                      previewedItem.images.length > 1 && "grid-rows-2",
+                    )}
+                  >
+                    {previewedItem.images.map((src) => (
+                      <div key={src} className="relative min-h-0">
+                        <Image src={src} alt="" fill sizes="192px" className="object-contain p-2" />
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         </AnimatePresence>
 
@@ -456,15 +410,6 @@ function PreparationChecklist() {
             <RotateCcwIcon className="h-3 w-3" />
             {t("reset")}
           </button>
-        </div>
-      </div>
-
-      <div className="border-t border-border/60 bg-muted/20 p-4 sm:p-5">
-        <p className="text-[12px] leading-relaxed text-muted-foreground">{t("linksNote")}</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <ExternalButton href={APP_URL} label={t("downloadApps")} />
-          <ExternalButton href={ARBIMON_URL} label={t("openArbimon")} />
-          <ExternalButton href={UPLOADER_URL} label={t("openUploader")} />
         </div>
       </div>
     </div>
@@ -789,14 +734,6 @@ function ProcessLine({ items }: { items: { icon: React.ReactNode; text: string }
         </li>
       ))}
     </ol>
-  );
-}
-
-function ExternalButton({ href, label }: { href: string; label: string }) {
-  return (
-    <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-lg border border-border/70 bg-background px-3 py-2 text-[11.5px] font-medium text-foreground no-underline transition-colors hover:border-primary/50 hover:text-primary">
-      {label}<ExternalLinkIcon className="h-3 w-3 opacity-60" />
-    </a>
   );
 }
 

@@ -26,10 +26,7 @@
   },
   "prepare": {
     "heading": "Antes de começar",
-    "intro": "Use as listas para não esquecer nada importante. Seu progresso fica salvo neste dispositivo e permanece após atualizar a página.",
-    "equipmentTab": "Equipamento",
-    "managerTab": "Gestão do projeto",
-    "fieldTab": "Equipe de campo",
+    "intro": "Use esta lista para não esquecer nada importante. Seu progresso fica salvo neste dispositivo e permanece após atualizar a página.",
     "equipment": {
       "computer": "Notebook ou computador",
       "recorder": "AudioMoth e 3 pilhas AA",
@@ -38,24 +35,8 @@
       "card": "Cartão MicroSD de até 32 GB",
       "case": "Capa impermeável de celular ou saco hermético resistente"
     },
-    "manager": {
-      "arbimon": "Conta no Arbimon",
-      "config": "Aplicativo AudioMoth Configuration",
-      "flash": "Aplicativo AudioMoth Flash",
-      "time": "Aplicativo AudioMoth Time",
-      "companion": "Aplicativo Arbimon Companion no celular",
-      "uploader": "Arbimon Uploader no computador"
-    },
-    "field": {
-      "arbimon": "Conta no Arbimon",
-      "companion": "Aplicativo Arbimon Companion no celular"
-    },
     "remaining": "{count, plural, =0 {Tudo pronto} one {Falta # item} other {Faltam # itens}}",
-    "reset": "Reiniciar lista",
-    "linksNote": "Abra cada link de aplicativo enquanto ainda tiver uma conexão confiável.",
-    "downloadApps": "Baixar aplicativos do AudioMoth",
-    "openArbimon": "Abrir o Arbimon",
-    "openUploader": "Abrir o Arbimon Uploader"
+    "reset": "Reiniciar lista"
   },
   "account": {
     "heading": "Crie seu projeto no Arbimon",
