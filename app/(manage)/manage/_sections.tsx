@@ -28,7 +28,7 @@ import { InlineCardGridSkeleton } from "@/app/_components/PageLoadingSkeletons";
 import { Button } from "@/components/ui/button";
 import { getAccountRouteData } from "@/app/account/_lib/account-route";
 import { fetchAuthSession } from "@/app/_lib/auth-server";
-import { AccountSettingsSections, AgentKeysSection } from "@/app/account/_components/AccountSettingsSections";
+import { AccountSettingsSections, OrganizationSettingsSections } from "@/app/account/_components/AccountSettingsSections";
 import { accountMembersPath } from "@/app/account/_lib/account-route";
 import { UsersIcon } from "lucide-react";
 import Container from "@/components/ui/container";
@@ -319,13 +319,10 @@ export async function SettingsSection({ target }: { target: ManageTarget }) {
             <Link href={accountMembersPath(target.identifier || target.did)}>{t("openMembers")}</Link>
           </Button>
         </div>
-        <div className="space-y-8">
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">{t("orgAgentKeysHint")}</p>
-            <AgentKeysSection />
-          </div>
-          <INaturalistSettingsSection target={target} projects={inaturalistProjects} disabledReason={createPermission.reason} />
-        </div>
+        <OrganizationSettingsSections
+          agentKeysHint={t("orgAgentKeysHint")}
+          integrations={<INaturalistSettingsSection target={target} projects={inaturalistProjects} disabledReason={createPermission.reason} />}
+        />
       </Container>
     );
   }

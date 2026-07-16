@@ -154,7 +154,8 @@
       "myOrganizations": "Mis organizaciones",
       "admin": "Administración",
       "submitData": "Enviar datos de campo"
-    }
+    },
+    "more": "Más"
   },
   "settings": {
     "handle": {
@@ -246,6 +247,24 @@
       },
       "connect": "Conectar",
       "hideSetup": "Ocultar configuración"
+    },
+    "groups": {
+      "account": {
+        "title": "Cuenta",
+        "description": "Nombre de usuario y seguridad de acceso"
+      },
+      "connections": {
+        "title": "Conexiones",
+        "description": "Cuentas sociales y servicios externos"
+      },
+      "agents": {
+        "title": "Agentes de IA",
+        "description": "Claves para herramientas que actúan con tu permiso"
+      },
+      "advanced": {
+        "title": "Opciones avanzadas",
+        "description": "Datos de la cuenta y eliminación"
+      }
     }
   },
   "bumicertCard": {
@@ -637,7 +656,9 @@
       "errorTooLarge": "{name} supera los 10 MB.",
       "errorGeneric": "No pudimos añadir estas imágenes. Inténtalo de nuevo.",
       "recordTitleProject": "Galería de {projectTitle}",
-      "recordTitleAccount": "Galería de {name}"
+      "recordTitleAccount": "Galería de {name}",
+      "open": "Añadir imágenes",
+      "close": "Cerrar"
     }
   },
   "projectManage": {

@@ -154,7 +154,8 @@
       "myOrganizations": "Mashirika yangu",
       "admin": "Msimamizi",
       "submitData": "Tuma data ya uwandani"
-    }
+    },
+    "more": "Zaidi"
   },
   "settings": {
     "handle": {
@@ -246,6 +247,24 @@
       },
       "connect": "Unganisha",
       "hideSetup": "Ficha usanidi"
+    },
+    "groups": {
+      "account": {
+        "title": "Akaunti",
+        "description": "Jina la mtumiaji na usalama wa kuingia"
+      },
+      "connections": {
+        "title": "Miunganisho",
+        "description": "Akaunti za kijamii na huduma za nje"
+      },
+      "agents": {
+        "title": "Mawakala wa AI",
+        "description": "Funguo za zana zinazotenda kwa ruhusa yako"
+      },
+      "advanced": {
+        "title": "Mipangilio ya juu",
+        "description": "Data ya akaunti na ufutaji"
+      }
     }
   },
   "bumicertCard": {
@@ -637,7 +656,9 @@
       "errorTooLarge": "{name} ni kubwa kuliko MB 10.",
       "errorGeneric": "Hatukuweza kuongeza picha hizi. Tafadhali jaribu tena.",
       "recordTitleProject": "Matunzio ya {projectTitle}",
-      "recordTitleAccount": "Matunzio ya {name}"
+      "recordTitleAccount": "Matunzio ya {name}",
+      "open": "Ongeza picha",
+      "close": "Funga"
     }
   },
   "projectManage": {

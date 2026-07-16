@@ -154,7 +154,8 @@
       "myOrganizations": "My organizations",
       "admin": "Admin",
       "submitData": "Submit field data"
-    }
+    },
+    "more": "More"
   },
   "settings": {
     "handle": {
@@ -246,6 +247,24 @@
       },
       "connect": "Connect",
       "hideSetup": "Hide setup"
+    },
+    "groups": {
+      "account": {
+        "title": "Account",
+        "description": "Username and sign-in security"
+      },
+      "connections": {
+        "title": "Connections",
+        "description": "Social accounts and external services"
+      },
+      "agents": {
+        "title": "AI agents",
+        "description": "Keys for tools that act with your permission"
+      },
+      "advanced": {
+        "title": "Advanced",
+        "description": "Account data and deletion"
+      }
     }
   },
   "bumicertCard": {
@@ -637,7 +656,9 @@
       "errorTooLarge": "{name} is larger than 10 MB.",
       "errorGeneric": "We couldn't add these images. Please try again.",
       "recordTitleProject": "{projectTitle} gallery",
-      "recordTitleAccount": "{name} gallery"
+      "recordTitleAccount": "{name} gallery",
+      "open": "Add images",
+      "close": "Close"
     }
   },
   "projectManage": {

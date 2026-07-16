@@ -1200,6 +1200,32 @@ function DangerZoneSection({ handle }: { handle: string | null }) {
   );
 }
 
+function SettingsGroup({
+  value,
+  title,
+  description,
+  children,
+}: {
+  value: string;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <AccordionItem value={value} className="overflow-hidden rounded-xl border border-border bg-background px-4">
+      <AccordionTrigger className="py-4 text-left hover:no-underline">
+        <span className="flex min-w-0 flex-col pr-3">
+          <span className="text-sm font-medium text-foreground">{title}</span>
+          <span className="mt-0.5 text-xs font-normal leading-5 text-muted-foreground">{description}</span>
+        </span>
+      </AccordionTrigger>
+      <AccordionContent className="space-y-8 border-t border-border/60 pb-4 pt-4">
+        {children}
+      </AccordionContent>
+    </AccordionItem>
+  );
+}
+
 export function AccountSettingsSections({
   did,
   handle,
@@ -1207,31 +1233,53 @@ export function AccountSettingsSections({
 }: {
   did: string;
   handle?: string | null;
-  /** Extra integration sections (e.g. iNaturalist) slotted next to Bluesky,
-   *  so account basics stay on top and Advanced stays last. */
+  /** Extra integration sections (e.g. iNaturalist), grouped with Bluesky. */
   integrations?: React.ReactNode;
 }) {
+  const t = useTranslations("common.settings.groups");
   return (
-    <div className="space-y-8">
-      {handle ? <HandleSection did={did} handle={handle} /> : null}
-      <PasswordSection did={did} />
-      <BlueskySection did={did} />
-      {integrations}
-      <AgentKeysSection />
-      <Accordion type="single" collapsible>
-        <AccordionItem value="advanced" className="border-none">
-          <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:text-foreground hover:no-underline py-0 pb-3">
-            Advanced
-          </AccordionTrigger>
-          <AccordionContent className="pb-0 space-y-8">
-            <AccountSection did={did} />
-            {/* Danger zone lives INSIDE the collapsed Advanced accordion on
-                purpose — destructive account deletion should never sit in
-                the visitor's direct line of sight. */}
-            <DangerZoneSection handle={handle ?? null} />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </div>
+    <Accordion type="multiple" defaultValue={["account"]} className="space-y-3">
+      <SettingsGroup value="account" title={t("account.title")} description={t("account.description")}>
+        {handle ? <HandleSection did={did} handle={handle} /> : null}
+        <PasswordSection did={did} />
+      </SettingsGroup>
+      <SettingsGroup value="connections" title={t("connections.title")} description={t("connections.description")}>
+        <BlueskySection did={did} />
+        {integrations}
+      </SettingsGroup>
+      <SettingsGroup value="agents" title={t("agents.title")} description={t("agents.description")}>
+        <AgentKeysSection />
+      </SettingsGroup>
+      <SettingsGroup value="advanced" title={t("advanced.title")} description={t("advanced.description")}>
+        <AccountSection did={did} />
+        {/* Destructive account deletion stays behind Advanced disclosure. */}
+        <DangerZoneSection handle={handle ?? null} />
+      </SettingsGroup>
+    </Accordion>
+  );
+}
+
+/** Compact organization settings: infrequent tools stay discoverable without
+ * rendering their full forms into the page on first load. */
+export function OrganizationSettingsSections({
+  integrations,
+  agentKeysHint,
+}: {
+  integrations: React.ReactNode;
+  agentKeysHint: string;
+}) {
+  const t = useTranslations("common.settings.groups");
+  return (
+    <Accordion type="multiple" className="space-y-3">
+      <SettingsGroup value="agents" title={t("agents.title")} description={t("agents.description")}>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">{agentKeysHint}</p>
+          <AgentKeysSection />
+        </div>
+      </SettingsGroup>
+      <SettingsGroup value="connections" title={t("connections.title")} description={t("connections.description")}>
+        {integrations}
+      </SettingsGroup>
+    </Accordion>
   );
 }

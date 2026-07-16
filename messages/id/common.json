@@ -154,7 +154,8 @@
       "myOrganizations": "Organisasi saya",
       "admin": "Admin",
       "submitData": "Kirim data lapangan"
-    }
+    },
+    "more": "Lainnya"
   },
   "settings": {
     "handle": {
@@ -246,6 +247,24 @@
       },
       "connect": "Hubungkan",
       "hideSetup": "Sembunyikan penyiapan"
+    },
+    "groups": {
+      "account": {
+        "title": "Akun",
+        "description": "Nama pengguna dan keamanan masuk"
+      },
+      "connections": {
+        "title": "Koneksi",
+        "description": "Akun sosial dan layanan eksternal"
+      },
+      "agents": {
+        "title": "Agen AI",
+        "description": "Kunci untuk alat yang bertindak dengan izin Anda"
+      },
+      "advanced": {
+        "title": "Lanjutan",
+        "description": "Data akun dan penghapusan"
+      }
     }
   },
   "bumicertCard": {
@@ -637,7 +656,9 @@
       "errorTooLarge": "{name} lebih besar dari 10 MB.",
       "errorGeneric": "Kami tidak dapat menambahkan gambar ini. Silakan coba lagi.",
       "recordTitleProject": "Galeri {projectTitle}",
-      "recordTitleAccount": "Galeri {name}"
+      "recordTitleAccount": "Galeri {name}",
+      "open": "Tambah gambar",
+      "close": "Tutup"
     }
   },
   "projectManage": {
