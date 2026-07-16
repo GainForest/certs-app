@@ -185,7 +185,10 @@ function ExploreNav({ sessionDid }: { sessionDid: string | null }) {
   const isModerator = groups.some((group) => group.groupDid === GAINFOREST_MODERATION_REPO_DID);
   const sections = NAV_ITEMS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => !item.adminOnly || isModerator),
+    // Organizations are already reached through profiles and the account
+    // switcher; repeating the directory here adds noise without helping the
+    // everyday Feed → Projects → Observations flow.
+    items: section.items.filter((item) => item.id !== "organizations" && (!item.adminOnly || isModerator)),
   })).filter((section) => section.items.length > 0);
 
   // Keep the everyday path short for new visitors. Specialist destinations

@@ -470,7 +470,8 @@
     "files": "Arquivos",
     "taina": "Tainá",
     "endorsementsGiven": "Endossos",
-    "equipment": "Equipamentos"
+    "equipment": "Equipamentos",
+    "more": "Mais"
   },
   "equipment": {
     "metadataTitle": "Equipamentos — {name}",

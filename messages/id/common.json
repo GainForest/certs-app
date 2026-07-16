@@ -470,7 +470,8 @@
     "files": "Berkas",
     "taina": "Tainá",
     "endorsementsGiven": "Dukungan",
-    "equipment": "Peralatan"
+    "equipment": "Peralatan",
+    "more": "Lainnya"
   },
   "equipment": {
     "metadataTitle": "Peralatan — {name}",

@@ -470,7 +470,8 @@
     "files": "Faili",
     "taina": "Tainá",
     "endorsementsGiven": "Idhini",
-    "equipment": "Vifaa"
+    "equipment": "Vifaa",
+    "more": "Zaidi"
   },
   "equipment": {
     "metadataTitle": "Vifaa — {name}",

@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BadgeCheckIcon, BinocularsIcon, BotIcon, FolderKanbanIcon, HeartHandshakeIcon, HomeIcon, ImageIcon, MessageSquareTextIcon, SettingsIcon, UsersIcon, WrenchIcon } from "lucide-react";
+import { BadgeCheckIcon, BinocularsIcon, BotIcon, ChevronDownIcon, FolderKanbanIcon, HeartHandshakeIcon, HomeIcon, ImageIcon, LayoutGridIcon, MessageSquareTextIcon, SettingsIcon, UsersIcon, WrenchIcon } from "lucide-react";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { AccountKind } from "../_lib/account-route";
 import {
   accountAttachmentsPath,
@@ -264,35 +265,69 @@ export function AccountTabBar({
     return tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
   }
 
+  // Profiles can expose many specialist/private surfaces. Keep the three
+  // universal destinations visible and put everything else in one proper
+  // menu; direct URLs and active states continue to work unchanged.
+  const primaryKeys = new Set<TabLabelKey>(["overview", "projects", "observations"]);
+  const primaryTabs = tabs.filter((tab) => primaryKeys.has(tab.labelKey));
+  const moreTabs = tabs.filter((tab) => !primaryKeys.has(tab.labelKey));
+  const moreActive = moreTabs.some(isActive);
+
   return (
     <div className="mt-3">
-      {/* Horizontally scrollable on mobile, hidden scrollbar */}
-      <div className="overflow-x-auto scrollbar-hidden -mx-4 px-4">
-        <div className="flex items-end gap-1 min-w-max border-b border-border">
-          {tabs.map((tab) => {
+      <div className="-mx-4 overflow-x-auto px-4 scrollbar-hidden">
+        <div className="flex min-w-max items-end gap-1 border-b border-border">
+          {primaryTabs.map((tab) => {
             const active = isActive(tab);
             const Icon = tab.icon;
-
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
                 className={cn(
-                  "relative flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors duration-150 whitespace-nowrap select-none",
-                  active
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
+                  "relative flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-sm font-medium transition-colors duration-150 select-none",
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" />
                 {t(tab.labelKey)}
-
-                {active && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground rounded-full" />
-                )}
+                {active ? <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-foreground" /> : null}
               </Link>
             );
           })}
+
+          {moreTabs.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "relative flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-sm font-medium transition-colors duration-150 select-none",
+                    moreActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <LayoutGridIcon className="h-3.5 w-3.5 shrink-0" />
+                  {t("more")}
+                  <ChevronDownIcon className="h-3.5 w-3.5 shrink-0" />
+                  {moreActive ? <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-foreground" /> : null}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-52">
+                {moreTabs.map((tab) => {
+                  const active = isActive(tab);
+                  const Icon = tab.icon;
+                  return (
+                    <DropdownMenuItem key={tab.href} asChild>
+                      <Link href={tab.href} className={cn("flex items-center gap-2", active && "bg-accent font-medium text-accent-foreground")}>
+                        <Icon className="size-4 text-muted-foreground" />
+                        {t(tab.labelKey)}
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
         </div>
       </div>
     </div>
