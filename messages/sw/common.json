@@ -2588,170 +2588,6 @@
       "ethosLink": "Ethos ya atproto"
     }
   },
-  "walletService": {
-    "metaTitle": "Jinsi pochi za GainForest zinavyofanya kazi",
-    "metaDescription": "Mwongozo shirikishi wa pochi za funguo za siri: pochi ya michango ambayo anwani yake inakokotolewa kutoka kwenye akaunti yako mwenyewe, ikilindwa kwa Face ID au alama ya kidole, bila maneno ya siri ya kuandika na bila kampuni inayoshika funguo.",
-    "kicker": "Pochi za GainForest",
-    "title": "Pochi iliyoundwa kutoka kwenye akaunti yako",
-    "lead": "Kila akaunti na shirika kwenye GainForest linaweza kuwa na pochi yake ya michango. Face ID, alama ya kidole, au ufunguo wa usalama unachukua nafasi ya maneno ya siri. Anwani ya pochi inakokotolewa kutoka kwenye utambulisho wa akaunti yako, hivyo mtu yeyote anaweza kuthibitisha kuwa ni yako kweli. Hakuna seva inayoshika ufunguo.",
-    "facts": {
-      "noSeed": {
-        "title": "Hakuna maneno ya siri",
-        "text": "Funguo za pochi yako ni funguo za siri za kifaa. Kifaa chako mwenyewe kinazilinda kwa Face ID, alama ya kidole, au ufunguo wa usalama."
-      },
-      "fromAccount": {
-        "title": "Akaunti yako ndiyo uthibitisho",
-        "text": "Anwani inatokana na fomula isiyobadilika juu ya utambulisho wa akaunti yako. Mtu yeyote anaweza kurudia hesabu hiyo na kuthibitisha uhusiano."
-      },
-      "noCustodian": {
-        "title": "Hakuna anayeshika funguo kwa niaba yako",
-        "text": "Hakuna seva ya pochi. Funguo za siri zilizo kwenye orodha ya pochi pekee ndizo zinazoweza kuidhinisha malipo."
-      }
-    },
-    "what": {
-      "heading": "Pochi hii ni nini?",
-      "intro": "Akaunti mahiri kwenye Ethereum, inayodhibitiwa kikamilifu na funguo za siri na kuelezwa na rekodi moja ndogo kwenye akaunti yako mwenyewe.",
-      "p1": "Watu binafsi wanapata pochi binafsi ya michango, na mashirika yanapata pochi ya pamoja ambayo wanachama kadhaa wanaweza kuidhinisha malipo kutoka kwayo. Zote mbili zinafanya kazi kwa njia ile ile. Pochi ni akaunti mahiri ya Splits, muundo wa mkataba wa chanzo huria unaokubali saini za funguo za siri moja kwa moja.",
-      "p2": "Rekodi ndogo ya umma kwenye akaunti yako mwenyewe inaeleza pochi: kanuni zake na orodha ya funguo za siri zinazoweza kutumia fedha zake. Anwani ya pochi inakokotolewa kutoka kwenye taarifa hizo hasa. Hakuna seva ya pochi, hakuna maneno ya siri, na hakuna kampuni inayoshika funguo kwa niaba yako.",
-      "p3": "Anwani inafanya kazi tangu sekunde ya kwanza. Michango inaweza kufika kabla ya chochote kuwepo kwenye blockchain, kwa sababu fomula tayari imehifadhi anwani hiyo kwa akaunti yako na funguo zako hasa. Msimbo wa pochi unawekwa kwenye blockchain pale tu malipo ya kwanza yanapotoka."
-    },
-    "enroll": {
-      "heading": "Jinsi ya kuipata",
-      "intro": "Bonyeza cheza au chagua hatua. Kuunda pochi kunahitaji uthibitisho mmoja wa ufunguo wa siri na kunaandika rekodi moja. Blockchain bado haihusiki.",
-      "play": "Cheza",
-      "pause": "Simamisha",
-      "back": "Nyuma",
-      "next": "Mbele",
-      "stepLabel": "Hatua {n} kati ya {total}",
-      "jumpTo": "Nenda hatua ya {step}",
-      "nodes": {
-        "device": "Kifaa chako",
-        "account": "Akaunti yako",
-        "math": "Hesabu ya anwani",
-        "wallet": "Pochi yako"
-      },
-      "steps": {
-        "s1": {
-          "title": "Kifaa chako kinaunda ufunguo wa siri",
-          "text": "Simu au kompyuta yako inaunda ufunguo mpya wa siri na kuulinda kwa Face ID, alama ya kidole, au ufunguo wa usalama. Sehemu ya siri haitoki kamwe kwenye kifaa. Hakuna cha kuandika."
-        },
-        "s2": {
-          "title": "Rekodi inahifadhiwa kwenye akaunti yako",
-          "text": "Sehemu ya umma ya ufunguo inaingia kwenye rekodi ndogo inayohifadhiwa pamoja na taarifa za akaunti yako mwenyewe. Rekodi hiyo pia inaorodhesha kanuni zisizobadilika za pochi na kila ufunguo wa siri unaoruhusiwa kuidhinisha malipo."
-        },
-        "s3": {
-          "title": "Fomula inazalisha anwani",
-          "text": "Fomula isiyobadilika inageuza utambulisho wa akaunti yako na orodha ya funguo za siri kuwa anwani moja ya pochi. Iendeshe popote, mara ngapi zozote, na viingizo vile vile vinatoa jibu lile lile."
-        },
-        "s4": {
-          "title": "Pochi iko tayari",
-          "text": "Anwani inaweza kupokea michango mara moja. Bado hakuna chochote kwenye blockchain, na hakihitajiki. Pochi inabaki imelala hadi malipo ya kwanza yatoke."
-        }
-      }
-    },
-    "address": {
-      "heading": "Anwani inatoka wapi",
-      "intro": "Viingizo vitatu vya umma vinaingia kwenye fomula moja isiyobadilika. Badilisha orodha ya funguo za siri uone jibu likibadilika pamoja na viingizo.",
-      "one": {
-        "tab": "Ufunguo mmoja",
-        "title": "Viingizo vile vile, anwani ile ile, milele",
-        "text": "Mtu yeyote anaweza kuendesha fomula hii mwakani kwenye kompyuta yoyote na kupata jibu lile lile kabisa. Ndiyo maana rekodi kwenye akaunti yako inatosha kuwa uthibitisho kuwa anwani ni yako. Hakuna saini inayohitajika."
-      },
-      "two": {
-        "tab": "Funguo mbili",
-        "title": "Funguo tofauti, anwani tofauti",
-        "text": "Badilisha orodha ya funguo za siri na fomula itaelekeza mahali pengine. Hakuna anayeweza kuzalisha anwani yako bila akaunti yako hasa na funguo zako hasa."
-      },
-      "account": {
-        "title": "Utambulisho wa akaunti yako",
-        "text": "Kitambulisho cha kudumu nyuma ya akaunti yako ya GainForest."
-      },
-      "passkeys": {
-        "title": "Orodha ya funguo za siri",
-        "text": "Sehemu za umma za kila ufunguo wa siri unaoruhusiwa kutumia fedha."
-      },
-      "rules": {
-        "title": "Kanuni zisizobadilika",
-        "text": "Muundo ule ule wa mkataba na mipangilio ile ile kwa kila pochi."
-      },
-      "passkeyOne": "Simu yako",
-      "passkeyTwo": "Kompyuta yako",
-      "mathLabel": "Fomula moja isiyobadilika",
-      "addressLabel": "Anwani ya pochi"
-    },
-    "gate": {
-      "heading": "Nani anaweza kutumia fedha",
-      "intro": "Jaribu zote mbili. Pochi inakubali tu saini za funguo za siri zilizo kwenye orodha yake, na funguo hizo zinaishi kwenye vifaa halisi vya watu halisi.",
-      "otherAttempt": "Seva au mgeni",
-      "passkeyAttempt": "Ufunguo wako wa siri",
-      "otherNode": "Hakuna ufunguo kabisa",
-      "passkeyNode": "Face ID / alama ya kidole",
-      "walletNode": "Pochi yako",
-      "approved": "Malipo yameidhinishwa",
-      "denied": "Hakuna cha kuiba",
-      "approvedDesc": "Kifaa chako kinaomba Face ID, alama ya kidole, au ufunguo wako wa usalama, kisha kinasaini malipo papo hapo kwenye kifaa. Pochi inalinganisha saini na orodha yake ya funguo za siri na kuruhusu malipo yapite.",
-      "deniedDesc": "Rekodi kwenye akaunti yako ni ya umma na ina funguo za umma pekee. Hakuna siri kwenye seva yoyote inayoweza kuibiwa, kuvuja, au kutumiwa vibaya. GainForest haiwezi kuhamisha pesa zako, na hakuna anayesoma rekodi anayeweza."
-    },
-    "lifecycle": {
-      "heading": "Kwanza imelala, kisha hai",
-      "intro": "Pochi ina maisha mawili. Badilisha kati yake uone kinachoweza kubadilika katika kila moja.",
-      "receives": "Inaweza kupokea michango",
-      "signersLabel": "Nani anaweza kuidhinisha malipo",
-      "signerOne": "Simu yako",
-      "signerTwo": "Kompyuta yako",
-      "dormant": {
-        "tab": "Kabla ya malipo ya kwanza",
-        "badge": "Imelala",
-        "editHint": "Ongeza au ondoa",
-        "title": "Kupokea kunafanya kazi tangu siku ya kwanza",
-        "text": "Pochi iliyolala ni anwani pamoja na rekodi tu, na hiyo inatosha kupokea michango. Orodha ya funguo za siri bado inaweza kubadilika: ongeza kifaa chako cha pili au alika wenzako. Fomula inakokotoa anwani upya kila orodha inapobadilika, hivyo ni vyema kukamilisha orodha mapema."
-      },
-      "active": {
-        "tab": "Baada ya malipo ya kwanza",
-        "badge": "Hai",
-        "editHint": "Imefungwa",
-        "title": "Malipo ya kwanza yanaipeleka kwenye blockchain",
-        "text": "Malipo ya kwanza yanayotoka yanaweka msimbo wa pochi kwenye anwani hiyo. Kuanzia hapo rekodi inagandishwa. Kuongeza au kuondoa funguo za siri sasa kunafanyika kwenye blockchain yenyewe na kunahitaji idhini ya ufunguo wa siri uliopo tayari kwenye orodha."
-      }
-    },
-    "proof": {
-      "heading": "Jinsi mtu yeyote anavyoweza kukagua uhusiano",
-      "intro": "Rekodi na fomula zote ni za umma, hivyo kuthibitisha pochi hakuhitaji kuiamini GainForest.",
-      "cardLabel": "Uthibitisho wa kihesabu",
-      "text": "Wewe pekee unaweza kuandika rekodi kwenye akaunti yako mwenyewe, na rekodi ya pochi inaorodhesha viingizo hasa vya fomula ya anwani. Mkaguzi anachukua rekodi, anaendesha fomula, na kulinganisha jibu na anwani iliyorekodiwa. Vikilingana, pochi imethibitika kuwa ya akaunti yako. Hakuna saini, hakuna mpatanishi, na hakuna huduma maalum inayohitajika."
-    },
-    "limits": {
-      "heading": "Ya kuzingatia",
-      "intro": "Muundo huu unaondoa seva na maneno ya siri kwenye picha. Mipaka michache ya wazi inabaki.",
-      "passkeys": {
-        "title": "Funguo zilizopotea",
-        "text": "Ikiwa funguo zote za siri kwenye orodha zimepotea, hakuna tena anayeweza kutumia fedha za pochi. Ongeza mapema ufunguo wa siri kutoka kifaa cha pili, au alika mtu unayemwamini."
-      },
-      "frozen": {
-        "title": "Inagandishwa baada ya kuwashwa",
-        "text": "Pochi ikishaishi kwenye blockchain, rekodi yake haiwezi kubadilika tena. Mabadiliko ya funguo za siri yanafanyika sasa kwenye blockchain na yanahitaji idhini ya ufunguo uliopo."
-      },
-      "fees": {
-        "title": "Ada za mtandao",
-        "text": "Malipo ya kwanza yanayotoka pia yanaweka msimbo wa pochi, hivyo yanagharimu ada za mtandao kidogo zaidi kuliko malipo yanayofuata."
-      },
-      "single": {
-        "title": "Pochi moja kwa kila akaunti",
-        "text": "Kila akaunti na kila shirika lina rekodi moja rasmi ya pochi. Inaweza kuondolewa tu wakati pochi bado imelala na anwani haina fedha."
-      }
-    },
-    "more": {
-      "heading": "Endelea kuchunguza",
-      "epdsTitle": "Jinsi kuingia kwa ePDS kunavyofanya kazi",
-      "epdsDesc": "Ona mlango wa mbele usio na nenosiri na huduma za kawaida zinazouzunguka.",
-      "lexiconsTitle": "Miundo ya data",
-      "lexiconsDesc": "Chunguza fomati huria za rekodi, ikiwemo rekodi ya pochi yenyewe.",
-      "atprotoTitle": "Jinsi AT Protocol inavyofanya kazi",
-      "atprotoDesc": "Ziara shirikishi ya mtandao huria ambao kila kitu hapa kimejengwa juu yake.",
-      "githubTitle": "Akaunti mahiri kwenye GitHub",
-      "githubDesc": "Soma mikataba ya akaunti mahiri ya Splits ya chanzo huria inayoendesha pochi hizi."
-    }
-  },
   "identifications": {
     "meta": {
       "title": "Vitambulisho",
@@ -2780,6 +2616,128 @@
       "insect": "Mdudu",
       "other": "Nyingine",
       "note": "Dokezo"
+    }
+  },
+  "walletExplainer": {
+    "metaTitle": "Anatomia ya pochi ya michango: insha shirikishi",
+    "metaDescription": "Otesha ufunguo halisi wa mkunjo wa funguo za siri kwenye kivinjari chako, kokotoa anwani halisi ya kasha kwa hesabu ya kiwanda chenyewe, na fuatilia maisha ya mchango. Insha shirikishi kuhusu pochi za michango za GainForest.",
+    "kicker": "Insha shirikishi",
+    "title": "Anatomia ya pochi ya michango",
+    "standfirst": "Kila shirika kwenye GainForest linaweza kuhifadhi michango kwenye pochi isiyo na nenosiri, isiyo na maneno ya siri, na isiyo na kampuni inayoshika funguo. Ukurasa huu hauelezi tu jinsi inavyofanya kazi. Unakuruhusu uendeshe mitambo mwenyewe, papa hapa kwenye kivinjari chako.",
+    "intro": {
+      "p1": "Mfadhili anapogharamia urejeshaji wa mikoko au sensa ya ndege, pesa hutua kwenye kasha dogo kwenye Ethereum. Kasha halina mwendeshaji wala dawati la msaada. Linatii kitu kimoja tu: saini za kriptografia kutoka kwenye simu na kompyuta za watu wanaoendesha mradi.",
+      "p2": "Mawazo matatu yanafanya hilo liwezekane. Ufunguo unaootea ndani ya kifaa chako na hautoki kamwe. Anwani inayoweza kukokotolewa kabla pochi haijawepo. Na mkataba unaokagua saini ya alama ya kidole kwa hesabu tupu. Tujenge kila moja, moja kwa moja."
+    },
+    "part1": {
+      "label": "Jaribio la moja kwa moja",
+      "heading": "Ufunguo unaota kwenye simu yako",
+      "p1": "Nyuma ya kila ombi la Face ID kuna kipande cha zamani na kizuri cha kriptografia: jozi ya funguo za mkunjo wa elipsi kwenye mkunjo uitwao P-256. Kifaa chako kinabuni namba kubwa mno ya nasibu, kinaifungia ndani ya chipu salama, na kinatoa tu nukta ya umma inayolingana: kuratibu mbili, x na y.",
+      "p2": "Kivinjari chako kinaweza kufanya vivyo hivyo sekunde hii. Bonyeza kitufe hapa chini na kitaotesha ufunguo mpya kwenye mkunjo huo hasa. Nusu ya siri inazaliwa na sheria kali: inaweza kusaini, na haiwezi kamwe kuhamishwa nje. Hata ukurasa huu hauwezi kuisoma.",
+      "p3": "Kuratibu hizo mbili ndizo kila kitu pochi inachojua kukuhusu. Mkataba unazihifadhi kama jozi ya sehemu za baiti 32 na, pesa inapopaswa kuhama, unadai saini ambayo nusu iliyofungiwa pekee inaweza kutengeneza. Umeshuhudia kivinjari chako kikipita ukaguzi huo hasa."
+    },
+    "keyForge": {
+      "bench": "Jaribio 1 · Otesha ufunguo",
+      "invite": "Kivinjari chako kitaunda jozi halisi ya funguo kwenye mkunjo wa funguo za siri (P-256). Inaishi kwenye ukurasa huu tu na inatoweka unapoondoka.",
+      "growButton": "Otesha ufunguo",
+      "unsupported": "Kivinjari chako hakitumii WebCrypto hapa. Sehemu nyingine ya insha inafanya kazi vizuri bila hilo.",
+      "privateLabel": "Ufunguo wa siri · chipu salama",
+      "privateNote": "Umewekwa alama ya kutosafirishwa tangu kuzaliwa. Unaweza kusaini, na hilo ndilo pekee utakalofanya milele.",
+      "publicLabel": "Ufunguo wa umma · kinachohifadhiwa na mnyororo",
+      "publicNote": "X na y ya nukta yako ya umma, kama vile struct ya Signer ya mkataba inavyozihifadhi.",
+      "messageLabel": "Malipo ya kuidhinisha",
+      "sampleMessage": "lipa USDC 20 kwa Rio Claro",
+      "signButton": "Saini kwa ufunguo wako",
+      "verified": "Saini ni sahihi",
+      "failed": "Uthibitishaji umeshindikana",
+      "verifyNote": "Ufunguo wako ulisaini hash ya malipo na kivinjari chako kilithibitisha dhidi ya nukta ya umma. Kwenye Ethereum, kasha linaendesha ukaguzi huu huu wa P-256.",
+      "privacyNote": "Hakuna kilichohifadhiwa na hakuna kilichotumwa popote. Pakia ukurasa upya na ufunguo huu unatoweka milele."
+    },
+    "part2": {
+      "label": "Jaribio la moja kwa moja",
+      "heading": "Anwani iliyotengenezwa kwa hesabu",
+      "p1": "Hii ndiyo sifa ya ajabu zaidi ya mfumo mzima: anwani ya pochi ipo kabla ya pochi yenyewe. Hakuna muamala, hakuna usimikaji, hakuna usajili popote. Anwani ni jibu la hesabu tu, na yeyote anayejua viungo anapata jibu lile lile.",
+      "p2": "Mapishi yana viungo vinne: sehemu ya mmiliki iliyo tupu milele, orodha ya funguo za kusaini, kizingiti cha idhini, na chumvi iliyopondwa kutoka kwenye utambulisho wa shirika. Mkataba wa kiwanda unavichanganya kwa keccak256 na kanuni ya CREATE2. Jaribu hapa chini. Andika jina na uone kila tarakimu ya anwani ikiitikia.",
+      "p3": "Ndiyo maana hakuna anayehitaji kuiamini GainForest kuhusu anwani ipi ni ya shirika lipi. Shirika linachapisha viungo vyake kama rekodi ya umma kwenye akaunti yake mwenyewe. Una shaka na lebo? Rudia hesabu, kama ulivyofanya sasa hivi, kisha linganisha."
+    },
+    "addressForge": {
+      "bench": "Jaribio 2 · Karakana ya anwani",
+      "liveTag": "hesabu halisi ya kiwanda, inakokotolewa unapoandika",
+      "stepAccount": "Kiungo: utambulisho wa akaunti",
+      "nameAria": "Jina la shirika",
+      "typeHint": "andika chochote",
+      "stepSigners": "Kiungo: kundi la wasaini",
+      "yourKey": "ufunguo wako wa jaribio 1",
+      "sampleKey": "ufunguo wa mfano",
+      "secondKey": "kifaa cha pili",
+      "addSecond": "ongeza kifaa cha pili",
+      "thresholdNote": "kizingiti 1 · ufunguo wowote kwenye orodha waweza kusaini",
+      "stepSalt": "Hash moja juu ya viungo vyote",
+      "stepAddress": "Kanuni ya CREATE2 inaipa anwani jina",
+      "footnote": "Anwani ya kiwanda na hash ya msimbo wa proxy hapo juu ni thamani halisi za mtandao mkuu wa Ethereum, na ukokotoaji huu unalingana na fanksheni getAddress ya kiwanda chenyewe. Kila hash kwenye benchi hii inakokotolewa na kivinjari chako."
+    },
+    "part3": {
+      "label": "Kusoma chanzo",
+      "heading": "Mkataba, wenye maelezo",
+      "p1": "Kasha ni akaunti mahiri ya Splits: chanzo huria, imekaguliwa, na imejengwa juu ya miundo ya Coinbase na Daimo. Huhitaji kuamini neno lolote la insha hii. Hivi hapa vifungu vitatu vinavyobeba uzito, kila kimoja na maelezo ya maana yake.",
+      "p2": "Sifa moja zaidi inatokana na muundo huu. Kiwanda kinasimika kwa CREATE2, hivyo viungo vile vile vinazalisha anwani ile ile kwenye kila mnyororo ambako kiwanda kipo. Anwani ya shirika inabebeka kote kwenye ulimwengu wa EVM."
+    },
+    "contract": {
+      "signerNote": "Msaini ni sehemu mbili tu za baiti 32. Kwa ufunguo wa siri zinabeba x na y ulizootesha kwenye jaribio 1. Struct ile ile inakubali pia anwani ya kawaida ya Ethereum, na sehemu ya pili ikiachwa tupu.",
+      "saltNote": "Utambulisho mzima wa pochi, umepondwa kuwa chumvi moja: nani anaimiliki (kwa pochi za GainForest, hakuna mtu), funguo zipi zinaweza kusaini, na ngapi lazima zikubaliane. Badilisha kiungo chochote na anwani inahama.",
+      "webauthnNote": "Hivi ndivyo mnyororo unavyokagua saini ya Face ID: kwanza unajaribu kithibitishaji kilichojengwa ndani kwenye anwani 0x100 na, pale mnyororo usipokuwa nacho, unathibitisha mlinganyo wa mkunjo hatua kwa hatua kupitia maktaba."
+    },
+    "part4": {
+      "label": "Mchezo wa hatua",
+      "heading": "Maisha ya mchango",
+      "p1": "Unganisha vipande na mfululizo wa kuvutia unajitokeza. Mfadhili anaweza kutuma pesa kwenye anwani siku ya kwanza, wakati anwani bado si chochote isipokuwa jibu la jaribio 2. Mnyororo haujali. Salio ni mali ya anwani, na anwani hii ni halisi kama nyingine yoyote.",
+      "p2": "Kipengele cha mwisho kinafunga mzunguko. Kabla ya usimikaji, orodha ya wasaini bado inaweza kubadilika, na rekodi inaelekeza tu kwenye anwani mpya iliyokokotolewa. Baadaye rekodi inaganda na kasha linachukua usukani: kuongeza kifaa kunakuwa kitendo cha kwenye mnyororo, kikiidhinishwa na ufunguo ulio tayari kwenye orodha."
+    },
+    "ledger": {
+      "bench": "Jaribio 3 · Leja ya pochi",
+      "replay": "Rudia",
+      "start": "Anza",
+      "next": "Endelea",
+      "empty": "Matukio sita, kutoka pochi isiyokuwepo hadi pochi inayolipia kazi halisi. Bonyeza Anza.",
+      "events": {
+        "record": {
+          "title": "Mapishi yanachapishwa",
+          "body": "Shirika linaandika viungo vya pochi yake kwenye akaunti yake mwenyewe. Nje ya mnyororo, bure, na hadharani."
+        },
+        "first": {
+          "title": "Mchango wa kwanza unawasili",
+          "body": "Umetumwa kwenye anwani iliyokokotolewa. Hakuna mkataba pale. Pesa inasubiri hata hivyo."
+        },
+        "second": {
+          "title": "Mfadhili mwingine anatoa",
+          "body": "Anwani inaendelea kukusanya. Bado hakuna msimbo, bado hakuna cha kutunza."
+        },
+        "deploy": {
+          "title": "Malipo ya kwanza: pochi inajitokeza",
+          "body": "Malipo yanabeba initCode, hivyo kiwanda kinasimika kasha kwenye anwani ambayo hesabu iliahidi. Kisha malipo yanatekelezwa."
+        },
+        "payout": {
+          "title": "Mradi unalipwa",
+          "body": "Msaini aliidhinisha kwa alama ya kidole. Kasha lilithibitisha saini ya P-256 kwenye mnyororo."
+        },
+        "freeze": {
+          "title": "Mapishi yanaganda",
+          "body": "Anwani sasa ina msimbo, hivyo orodha ya viungo haiwezi kamwe kubadilika kimyakimya tena. Kuanzia hapa, kasha lenyewe linasimamia wasaini wake."
+        }
+      },
+      "balanceLabel": "Kilichohifadhiwa kwenye anwani",
+      "codeLabel": "Msimbo kwenye anwani",
+      "codeNone": "hakuna",
+      "codeDeployed": "kasha la ERC-1967",
+      "meterNoteBefore": "Pesa inaweza kusubiri kwenye anwani isiyo na msimbo. Mkataba pekee unaoweza kutokea pale ni kasha linaloelezwa na viungo.",
+      "meterNoteAfter": "Kasha liko hai. Kila malipo yanayotoka sasa yanakaguliwa dhidi ya orodha ya wasaini."
+    },
+    "epilogue": {
+      "heading": "Kagua lebo wewe mwenyewe",
+      "p1": "Kila dai kwenye ukurasa huu linaweza kukaguliwa. Mapishi ya pochi yako kwenye akaunti ya shirika lenyewe kama rekodi ya umma. Kiwanda kiko kwenye anwani ile ile kwenye Ethereum. Chukua rekodi, endesha jaribio 2 kwa viungo vyake hasa, na anwani italingana au haitalingana. Bila saini, bila mamlaka, na bila kuamini tovuti hii.",
+      "p2": "Tahadhari za wazi: ikiwa funguo zote za orodha zimepotea, pesa haiwezi kuhama, hivyo mashirika yanapaswa kusajili kifaa cha pili mapema. Na hadi malipo ya kwanza, kubadilisha orodha ya wasaini kunabadilisha anwani, hivyo orodha inapaswa kutulia kabla michango haijaelekezwa kwake.",
+      "contractLink": "Soma mikataba ya kasha mahiri kwenye GitHub",
+      "lexiconLink": "Muundo wa rekodi ya pochi, na mingine yote",
+      "atprotoLink": "Jinsi AT Protocol inavyohifadhi rekodi"
     }
   }
 }

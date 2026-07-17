@@ -2588,170 +2588,6 @@
       "ethosLink": "O ethos do atproto"
     }
   },
-  "walletService": {
-    "metaTitle": "Como funcionam as carteiras da GainForest",
-    "metaDescription": "Um guia interativo das carteiras com chaves de acesso: uma carteira de doações cujo endereço é calculado a partir da sua própria conta, protegida com Face ID ou impressão digital, sem frase-semente e sem empresas guardando chaves.",
-    "kicker": "Carteiras GainForest",
-    "title": "Uma carteira feita da sua conta",
-    "lead": "Cada conta e organização na GainForest pode ter sua própria carteira de doações. Face ID, impressão digital ou uma chave de segurança ocupam o lugar da frase-semente. O endereço da carteira é calculado a partir da identidade da sua conta, então qualquer pessoa pode conferir que ele é mesmo seu. Nenhum servidor guarda uma chave.",
-    "facts": {
-      "noSeed": {
-        "title": "Sem frase-semente",
-        "text": "As chaves da sua carteira são chaves de acesso. Seu próprio dispositivo as protege com Face ID, impressão digital ou uma chave de segurança."
-      },
-      "fromAccount": {
-        "title": "Sua conta é a prova",
-        "text": "O endereço vem de uma fórmula fixa sobre a identidade da sua conta. Qualquer pessoa pode refazer o cálculo e confirmar o vínculo."
-      },
-      "noCustodian": {
-        "title": "Ninguém guarda chaves por você",
-        "text": "Não existe servidor de carteiras. Somente as chaves de acesso na lista da carteira podem aprovar um pagamento."
-      }
-    },
-    "what": {
-      "heading": "O que é esta carteira?",
-      "intro": "Uma conta inteligente na Ethereum, controlada inteiramente por chaves de acesso e descrita por um pequeno registro na sua própria conta.",
-      "p1": "Pessoas recebem uma carteira de doações pessoal e organizações recebem uma compartilhada, da qual vários membros podem aprovar pagamentos. As duas funcionam do mesmo jeito. A carteira é uma conta inteligente da Splits, um desenho de contrato de código aberto que aceita assinaturas de chaves de acesso diretamente.",
-      "p2": "Um pequeno registro público na sua própria conta descreve a carteira: suas regras e a lista de chaves de acesso que podem gastar a partir dela. O endereço da carteira é calculado exatamente a partir desses dados. Não há servidor de carteiras, nem frase-semente, nem empresas guardando chaves por você.",
-      "p3": "O endereço funciona desde o primeiro segundo. Doações podem chegar antes de existir qualquer coisa na blockchain, porque a fórmula já reserva o endereço para a sua conta e as suas chaves de acesso exatas. O código da carteira é instalado na cadeia somente quando o primeiro pagamento sai."
-    },
-    "enroll": {
-      "heading": "Como você consegue uma",
-      "intro": "Aperte play ou escolha um passo. Criar a carteira pede uma única confirmação com sua chave de acesso e grava um único registro. A blockchain ainda não participa.",
-      "play": "Reproduzir",
-      "pause": "Pausar",
-      "back": "Voltar",
-      "next": "Avançar",
-      "stepLabel": "Passo {n} de {total}",
-      "jumpTo": "Ir para o passo {step}",
-      "nodes": {
-        "device": "Seu dispositivo",
-        "account": "Sua conta",
-        "math": "Cálculo do endereço",
-        "wallet": "Sua carteira"
-      },
-      "steps": {
-        "s1": {
-          "title": "Seu dispositivo cria uma chave de acesso",
-          "text": "Seu celular ou computador cria uma chave de acesso nova e a protege com Face ID, impressão digital ou uma chave de segurança. A parte privada nunca sai do dispositivo. Não há nada para anotar."
-        },
-        "s2": {
-          "title": "Um registro é salvo na sua conta",
-          "text": "A metade pública da chave entra em um pequeno registro guardado junto aos dados da sua própria conta. O registro também lista as regras fixas da carteira e cada chave de acesso autorizada a aprovar pagamentos."
-        },
-        "s3": {
-          "title": "A fórmula produz o endereço",
-          "text": "Uma fórmula fixa transforma a identidade da sua conta e a lista de chaves de acesso em um endereço de carteira. Rode a fórmula onde quiser, quantas vezes quiser, e as mesmas entradas dão a mesma resposta."
-        },
-        "s4": {
-          "title": "A carteira está pronta",
-          "text": "O endereço já pode receber doações. Ainda não há nada na blockchain, e nem precisa. A carteira fica adormecida até o primeiro pagamento sair."
-        }
-      }
-    },
-    "address": {
-      "heading": "De onde vem o endereço",
-      "intro": "Três entradas públicas passam por uma fórmula fixa. Troque a lista de chaves de acesso e veja a resposta se mover com as entradas.",
-      "one": {
-        "tab": "Uma chave de acesso",
-        "title": "Mesmas entradas, mesmo endereço, para sempre",
-        "text": "Qualquer pessoa pode rodar esta fórmula no ano que vem, em qualquer computador, e obter a resposta idêntica. Por isso o registro na sua conta basta como prova de que o endereço é seu. Nenhuma assinatura é necessária."
-      },
-      "two": {
-        "tab": "Duas chaves de acesso",
-        "title": "Outras chaves, outro endereço",
-        "text": "Mude a lista de chaves de acesso e a fórmula aponta para outro lugar. Ninguém consegue produzir o seu endereço sem a sua conta exata e as suas chaves de acesso exatas."
-      },
-      "account": {
-        "title": "A identidade da sua conta",
-        "text": "O identificador permanente por trás da sua conta GainForest."
-      },
-      "passkeys": {
-        "title": "A lista de chaves de acesso",
-        "text": "As metades públicas de cada chave de acesso autorizada a gastar."
-      },
-      "rules": {
-        "title": "Regras fixas",
-        "text": "O mesmo desenho de contrato e os mesmos ajustes para todas as carteiras."
-      },
-      "passkeyOne": "Seu celular",
-      "passkeyTwo": "Seu notebook",
-      "mathLabel": "Uma fórmula fixa",
-      "addressLabel": "Endereço da carteira"
-    },
-    "gate": {
-      "heading": "Quem pode gastar",
-      "intro": "Teste os dois. A carteira só aceita assinaturas das chaves de acesso da sua lista, e elas vivem em dispositivos reais de pessoas reais.",
-      "otherAttempt": "Um servidor ou um estranho",
-      "passkeyAttempt": "Sua chave de acesso",
-      "otherNode": "Sem chave nenhuma",
-      "passkeyNode": "Face ID / digital",
-      "walletNode": "Sua carteira",
-      "approved": "Pagamento aprovado",
-      "denied": "Nada para roubar",
-      "approvedDesc": "Seu dispositivo pede Face ID, impressão digital ou sua chave de segurança e assina o pagamento localmente. A carteira confere a assinatura com a lista de chaves de acesso e deixa o pagamento passar.",
-      "deniedDesc": "O registro na sua conta é público e contém apenas chaves públicas. Não há segredo em servidor algum para roubar, vazar ou abusar. A GainForest não pode mover o seu dinheiro, e ninguém que leia o registro pode."
-    },
-    "lifecycle": {
-      "heading": "Primeiro adormecida, depois ativa",
-      "intro": "A carteira tem duas vidas. Alterne entre elas para ver o que pode mudar em cada uma.",
-      "receives": "Pode receber doações",
-      "signersLabel": "Quem pode aprovar pagamentos",
-      "signerOne": "Seu celular",
-      "signerTwo": "Seu notebook",
-      "dormant": {
-        "tab": "Antes do primeiro pagamento",
-        "badge": "Adormecida",
-        "editHint": "Adicionar ou remover",
-        "title": "Receber funciona desde o primeiro dia",
-        "text": "Uma carteira adormecida é só um endereço mais o registro, e isso basta para receber doações. A lista de chaves de acesso ainda pode mudar: adicione seu segundo dispositivo ou convide colegas. A fórmula recalcula o endereço sempre que a lista muda, então é melhor definir a lista cedo."
-      },
-      "active": {
-        "tab": "Depois do primeiro pagamento",
-        "badge": "Ativa",
-        "editHint": "Bloqueado",
-        "title": "O primeiro pagamento a leva para a cadeia",
-        "text": "O primeiro pagamento de saída instala o código da carteira no endereço. A partir daí o registro fica congelado. Adicionar ou remover chaves de acesso passa a acontecer na própria blockchain e precisa da aprovação de uma chave que já esteja na lista."
-      }
-    },
-    "proof": {
-      "heading": "Como qualquer pessoa pode conferir o vínculo",
-      "intro": "O registro e a fórmula são públicos, então verificar uma carteira não exige confiança na GainForest.",
-      "cardLabel": "Prova matemática",
-      "text": "Somente você pode gravar registros na sua própria conta, e o registro da carteira lista as entradas exatas da fórmula do endereço. Um verificador busca o registro, roda a fórmula e compara o resultado com o endereço registrado. Se baterem, a carteira pertence à sua conta. Não é preciso assinatura, intermediário nem serviço especial."
-    },
-    "limits": {
-      "heading": "O que ter em mente",
-      "intro": "O desenho tira servidores e frases-semente da equação. Restam alguns limites honestos.",
-      "passkeys": {
-        "title": "Chaves perdidas",
-        "text": "Se todas as chaves de acesso da lista forem perdidas, ninguém mais consegue gastar da carteira. Adicione cedo uma chave de um segundo dispositivo ou convide uma pessoa de confiança."
-      },
-      "frozen": {
-        "title": "Congelada após a ativação",
-        "text": "Quando a carteira já vive na blockchain, seu registro não pode mais mudar. Mudanças de chaves passam a acontecer na cadeia e precisam da aprovação de uma chave existente."
-      },
-      "fees": {
-        "title": "Taxas de rede",
-        "text": "O primeiro pagamento de saída também instala o código da carteira, então custa um pouco mais em taxas de rede do que os pagamentos seguintes."
-      },
-      "single": {
-        "title": "Uma carteira por conta",
-        "text": "Cada conta e cada organização tem um único registro canônico de carteira. Ele só pode ser removido enquanto a carteira está adormecida e o endereço não guarda fundos."
-      }
-    },
-    "more": {
-      "heading": "Continue explorando",
-      "epdsTitle": "Como funciona o login com ePDS",
-      "epdsDesc": "Veja a porta de entrada sem senhas e os serviços normais ao redor dela.",
-      "lexiconsTitle": "Esquemas de dados",
-      "lexiconsDesc": "Explore os formatos abertos de registros, incluindo o próprio registro da carteira.",
-      "atprotoTitle": "Como funciona o AT Protocol",
-      "atprotoDesc": "Um passeio interativo pela rede aberta sobre a qual tudo isto é construído.",
-      "githubTitle": "Contas inteligentes no GitHub",
-      "githubDesc": "Leia os contratos de conta inteligente da Splits, de código aberto, que fazem estas carteiras funcionar."
-    }
-  },
   "identifications": {
     "meta": {
       "title": "Identificações",
@@ -2780,6 +2616,128 @@
       "insect": "Inseto",
       "other": "Outro",
       "note": "Nota"
+    }
+  },
+  "walletExplainer": {
+    "metaTitle": "Anatomia de uma carteira de doações: um ensaio interativo",
+    "metaDescription": "Cultive uma chave real da curva das chaves de acesso no seu navegador, derive um endereço real com a matemática da própria fábrica e acompanhe a vida de uma doação. Um ensaio interativo sobre as carteiras da GainForest.",
+    "kicker": "Um ensaio interativo",
+    "title": "Anatomia de uma carteira de doações",
+    "standfirst": "Cada organização na GainForest pode guardar doações em uma carteira sem senha, sem frase-semente e sem empresas segurando chaves. Esta página não se limita a descrever como isso funciona. Ela deixa você operar a maquinaria, aqui mesmo no seu navegador.",
+    "intro": {
+      "p1": "Quando alguém financia uma restauração de mangue ou um censo de aves, o dinheiro chega a um pequeno cofre na Ethereum. O cofre não tem operador nem central de suporte. Ele obedece a exatamente uma coisa: assinaturas criptográficas dos celulares e computadores das pessoas que tocam o projeto.",
+      "p2": "Três ideias tornam isso possível. Uma chave que cresce dentro do seu aparelho e nunca sai dele. Um endereço que pode ser calculado antes de a carteira existir. E um contrato que confere a assinatura de uma digital com pura matemática. Vamos construir cada uma, ao vivo."
+    },
+    "part1": {
+      "label": "Experimento ao vivo",
+      "heading": "Uma chave cresce no seu celular",
+      "p1": "Atrás de cada aviso do Face ID existe uma peça antiga e bonita de criptografia: um par de chaves de curva elíptica sobre uma curva chamada P-256. Seu aparelho inventa um número aleatório enorme, tranca esse número em um chip seguro e entrega apenas o ponto público correspondente: duas coordenadas, x e y.",
+      "p2": "Seu navegador pode fazer o mesmo neste segundo. Aperte o botão abaixo e ele cultivará uma chave nova nessa curva exata. A metade privada nasce sob uma regra rígida: pode assinar, e nunca pode ser exportada. Nem esta página consegue lê-la.",
+      "p3": "Essas duas coordenadas são tudo o que uma carteira chega a saber sobre você. O contrato as guarda como um par de campos de 32 bytes e, quando o dinheiro deve se mover, exige uma assinatura que só a metade trancada consegue produzir. Você acabou de ver seu navegador passar exatamente nessa checagem."
+    },
+    "keyForge": {
+      "bench": "Experimento 1 · Cultive uma chave",
+      "invite": "Seu navegador vai criar um par de chaves real na curva das chaves de acesso (P-256). Ele vive só nesta página e some quando você sai.",
+      "growButton": "Cultivar uma chave",
+      "unsupported": "Seu navegador não suporta WebCrypto aqui. O resto do ensaio funciona normalmente sem isso.",
+      "privateLabel": "Chave privada · chip seguro",
+      "privateNote": "Marcada como não exportável ao nascer. Pode assinar, e é tudo o que fará na vida.",
+      "publicLabel": "Chave pública · o que a cadeia guarda",
+      "publicNote": "O x e o y do seu ponto público, exatamente como a estrutura Signer do contrato os conserva.",
+      "messageLabel": "Um pagamento a aprovar",
+      "sampleMessage": "pagar 20 USDC ao Rio Claro",
+      "signButton": "Assinar com sua chave",
+      "verified": "Assinatura confere",
+      "failed": "A verificação falhou",
+      "verifyNote": "Sua chave assinou o hash do pagamento e seu navegador o verificou contra o ponto público. Na Ethereum, o cofre roda essa mesma checagem P-256.",
+      "privacyNote": "Nada foi salvo e nada foi enviado a lugar nenhum. Recarregue a página e esta chave desaparece para sempre."
+    },
+    "part2": {
+      "label": "Experimento ao vivo",
+      "heading": "Um endereço feito de aritmética",
+      "p1": "Eis a propriedade mais estranha de todo o sistema: o endereço da carteira existe antes da carteira. Sem transação, sem implantação, sem cadastro em lugar algum. O endereço é simplesmente a resposta de um cálculo, e qualquer pessoa que conheça os ingredientes obtém a mesma resposta.",
+      "p2": "A receita tem quatro ingredientes: um campo de dono permanentemente vazio, a lista de chaves signatárias, o limiar de aprovação e um sal derivado da identidade da organização. O contrato-fábrica os mistura com keccak256 e a regra CREATE2. Experimente abaixo. Digite um nome e veja cada dígito do endereço reagir.",
+      "p3": "É por isso que ninguém precisa confiar na GainForest sobre qual endereço pertence a qual organização. A organização publica seus ingredientes como registro público na própria conta. Duvida de um rótulo? Refaça a aritmética, como você acabou de fazer, e compare."
+    },
+    "addressForge": {
+      "bench": "Experimento 2 · A forja de endereços",
+      "liveTag": "matemática real da fábrica, calculada enquanto você digita",
+      "stepAccount": "Ingrediente: a identidade da conta",
+      "nameAria": "Nome da organização",
+      "typeHint": "digite qualquer coisa",
+      "stepSigners": "Ingrediente: o conjunto de signatários",
+      "yourKey": "sua chave do experimento 1",
+      "sampleKey": "chave de exemplo",
+      "secondKey": "segundo aparelho",
+      "addSecond": "adicionar um segundo aparelho",
+      "thresholdNote": "limiar 1 · qualquer chave listada pode assinar",
+      "stepSalt": "Um hash sobre todos os ingredientes",
+      "stepAddress": "A regra CREATE2 nomeia o endereço",
+      "footnote": "O endereço da fábrica e o hash do código do proxy acima são os valores reais da rede principal da Ethereum, e esta derivação bate com a própria função getAddress da fábrica. Cada hash desta bancada é calculado pelo seu navegador."
+    },
+    "part3": {
+      "label": "Lendo a fonte",
+      "heading": "O contrato, anotado",
+      "p1": "O cofre é uma conta inteligente da Splits: código aberto, auditada e construída sobre desenhos da Coinbase e da Daimo. Você não precisa acreditar em nada deste ensaio. Aqui estão os três trechos que carregam o peso, cada um com uma nota sobre o que significa.",
+      "p2": "Mais uma propriedade nasce do desenho. A fábrica implanta com CREATE2, então os mesmos ingredientes produzem o mesmo endereço em cada cadeia onde a fábrica existe. O endereço de uma organização é portátil por todo o mundo EVM."
+    },
+    "contract": {
+      "signerNote": "Um signatário é só dois campos de 32 bytes. Para uma chave de acesso, eles guardam o x e o y que você cultivou no experimento 1. A mesma estrutura também aceita um endereço clássico da Ethereum, com o segundo campo vazio.",
+      "saltNote": "A identidade inteira de uma carteira, condensada em um sal: quem é o dono (nas carteiras da GainForest, ninguém), quais chaves podem assinar e quantas precisam concordar. Mude qualquer ingrediente e o endereço muda.",
+      "webauthnNote": "Assim a cadeia confere uma assinatura de Face ID: primeiro tenta um verificador embutido no endereço 0x100 e, onde a cadeia não o tem, verifica a equação da curva passo a passo em uma biblioteca."
+    },
+    "part4": {
+      "label": "Percurso",
+      "heading": "A vida de uma doação",
+      "p1": "Junte as peças e uma sequência curiosa aparece. Um apoiador pode mandar dinheiro para o endereço no primeiro dia, quando o endereço ainda não é nada além da resposta do experimento 2. A cadeia não se importa. Saldos pertencem a endereços, e este endereço é tão real quanto qualquer outro.",
+      "p2": "A última entrada fecha o ciclo. Antes da implantação, a lista de signatários ainda pode mudar, e o registro simplesmente aponta para um endereço recém-calculado. Depois, o registro congela e o cofre assume: adicionar um aparelho vira uma ação na cadeia, aprovada por uma chave que já está na lista."
+    },
+    "ledger": {
+      "bench": "Experimento 3 · O livro-razão de uma carteira",
+      "replay": "Repetir",
+      "start": "Começar",
+      "next": "Avançar",
+      "empty": "Seis eventos, de uma carteira que não existe até uma que paga trabalho de verdade. Aperte Começar.",
+      "events": {
+        "record": {
+          "title": "Uma receita é publicada",
+          "body": "A organização escreve os ingredientes da carteira na própria conta. Fora da cadeia, grátis e público."
+        },
+        "first": {
+          "title": "Chega a primeira doação",
+          "body": "Enviada ao endereço calculado. Não há contrato nenhum lá. O dinheiro espera mesmo assim."
+        },
+        "second": {
+          "title": "Outra pessoa doa",
+          "body": "O endereço segue acumulando. Ainda sem código, ainda sem nada para manter."
+        },
+        "deploy": {
+          "title": "Primeiro pagamento: a carteira se materializa",
+          "body": "O pagamento carrega o initCode, então a fábrica implanta o cofre no endereço que a matemática prometeu. Depois o pagamento executa."
+        },
+        "payout": {
+          "title": "O projeto recebe",
+          "body": "Um signatário aprovou com a digital. O cofre verificou a assinatura P-256 na cadeia."
+        },
+        "freeze": {
+          "title": "A receita congela",
+          "body": "O endereço agora tem código, então a lista de ingredientes nunca mais pode mudar em silêncio. Daqui em diante, o próprio cofre gerencia seus signatários."
+        }
+      },
+      "balanceLabel": "Guardado no endereço",
+      "codeLabel": "Código no endereço",
+      "codeNone": "nenhum",
+      "codeDeployed": "cofre ERC-1967",
+      "meterNoteBefore": "Dinheiro pode esperar em um endereço sem código. O único contrato que pode aparecer ali é o cofre que os ingredientes descrevem.",
+      "meterNoteAfter": "O cofre está vivo. Cada pagamento de saída agora é conferido contra a lista de signatários."
+    },
+    "epilogue": {
+      "heading": "Confira o rótulo você mesmo",
+      "p1": "Cada afirmação desta página é conferível. A receita da carteira está na própria conta da organização como registro público. A fábrica está no mesmo endereço na Ethereum. Busque o registro, rode o experimento 2 com os ingredientes exatos, e o endereço bate ou não bate. Sem assinaturas, sem autoridade e sem confiar neste site.",
+      "p2": "As ressalvas honestas: se todas as chaves da lista se perderem, o dinheiro não pode se mover, então vale inscrever um segundo aparelho cedo. E até o primeiro pagamento, mudar a lista de signatários muda o endereço, então a lista deve se assentar antes de apontar doações para ela.",
+      "contractLink": "Leia os contratos do cofre inteligente no GitHub",
+      "lexiconLink": "O esquema do registro da carteira, e todos os outros",
+      "atprotoLink": "Como o AT Protocol guarda o registro"
     }
   }
 }

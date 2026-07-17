@@ -2588,170 +2588,6 @@
       "ethosLink": "El ethos de atproto"
     }
   },
-  "walletService": {
-    "metaTitle": "Cómo funcionan las billeteras de GainForest",
-    "metaDescription": "Una guía interactiva de las billeteras con llaves de acceso: una billetera de donaciones cuya dirección se calcula desde tu propia cuenta, protegida con Face ID o huella digital, sin frase semilla y sin empresas que guarden claves.",
-    "kicker": "Billeteras GainForest",
-    "title": "Una billetera hecha de tu cuenta",
-    "lead": "Cada cuenta y organización en GainForest puede tener su propia billetera de donaciones. Face ID, una huella digital o una llave de seguridad ocupan el lugar de la frase semilla. La dirección de la billetera se calcula a partir de la identidad de tu cuenta, así que cualquiera puede comprobar que de verdad es tuya. Ningún servidor guarda una clave.",
-    "facts": {
-      "noSeed": {
-        "title": "Sin frase semilla",
-        "text": "Las claves de tu billetera son llaves de acceso. Tu propio dispositivo las protege con Face ID, huella digital o una llave de seguridad."
-      },
-      "fromAccount": {
-        "title": "Tu cuenta es la prueba",
-        "text": "La dirección sale de una fórmula fija sobre la identidad de tu cuenta. Cualquiera puede repetir el cálculo y confirmar el vínculo."
-      },
-      "noCustodian": {
-        "title": "Nadie guarda claves por ti",
-        "text": "No existe un servidor de billeteras. Solo las llaves de acceso en la lista de la billetera pueden aprobar un pago."
-      }
-    },
-    "what": {
-      "heading": "¿Qué es esta billetera?",
-      "intro": "Una cuenta inteligente en Ethereum, controlada por completo con llaves de acceso y descrita por un pequeño registro en tu propia cuenta.",
-      "p1": "Las personas obtienen una billetera de donaciones personal y las organizaciones una compartida desde la que varios miembros pueden aprobar pagos. Ambas funcionan igual. La billetera es una cuenta inteligente de Splits, un diseño de contrato de código abierto que acepta firmas de llaves de acceso directamente.",
-      "p2": "Un pequeño registro público en tu propia cuenta describe la billetera: sus reglas y la lista de llaves de acceso que pueden gastar desde ella. La dirección de la billetera se calcula exactamente a partir de esos datos. No hay servidor de billeteras, ni frase semilla, ni empresas guardando claves por ti.",
-      "p3": "La dirección funciona desde el primer segundo. Las donaciones pueden llegar antes de que exista algo en la blockchain, porque la fórmula ya reserva la dirección para tu cuenta y tus llaves de acceso exactas. El código de la billetera se instala en la cadena solo cuando sale el primer pago."
-    },
-    "enroll": {
-      "heading": "Cómo obtienes una",
-      "intro": "Pulsa reproducir o elige un paso. Crear la billetera requiere una sola confirmación con tu llave de acceso y escribe un solo registro. La blockchain todavía no participa.",
-      "play": "Reproducir",
-      "pause": "Pausa",
-      "back": "Atrás",
-      "next": "Siguiente",
-      "stepLabel": "Paso {n} de {total}",
-      "jumpTo": "Ir al paso {step}",
-      "nodes": {
-        "device": "Tu dispositivo",
-        "account": "Tu cuenta",
-        "math": "Cálculo de dirección",
-        "wallet": "Tu billetera"
-      },
-      "steps": {
-        "s1": {
-          "title": "Tu dispositivo crea una llave de acceso",
-          "text": "Tu teléfono o computadora crea una llave de acceso nueva y la protege con Face ID, huella digital o una llave de seguridad. La parte privada nunca sale del dispositivo. No hay nada que anotar."
-        },
-        "s2": {
-          "title": "Se guarda un registro en tu cuenta",
-          "text": "La mitad pública de la llave entra en un pequeño registro guardado junto a los datos de tu propia cuenta. El registro también lista las reglas fijas de la billetera y cada llave de acceso autorizada a aprobar pagos."
-        },
-        "s3": {
-          "title": "La fórmula produce la dirección",
-          "text": "Una fórmula fija convierte la identidad de tu cuenta y la lista de llaves de acceso en una dirección de billetera. Ejecútala donde sea, las veces que sea, y las mismas entradas dan la misma respuesta."
-        },
-        "s4": {
-          "title": "La billetera está lista",
-          "text": "La dirección puede recibir donaciones de inmediato. Todavía no hay nada en la blockchain, y no hace falta. La billetera permanece inactiva hasta que sale el primer pago."
-        }
-      }
-    },
-    "address": {
-      "heading": "De dónde sale la dirección",
-      "intro": "Tres entradas públicas pasan por una fórmula fija. Cambia la lista de llaves de acceso y mira cómo la respuesta se mueve con las entradas.",
-      "one": {
-        "tab": "Una llave de acceso",
-        "title": "Mismas entradas, misma dirección, para siempre",
-        "text": "Cualquiera puede ejecutar esta fórmula el año que viene en cualquier computadora y obtener la respuesta idéntica. Por eso el registro en tu cuenta basta como prueba de que la dirección es tuya. No hace falta ninguna firma."
-      },
-      "two": {
-        "tab": "Dos llaves de acceso",
-        "title": "Otras llaves, otra dirección",
-        "text": "Cambia la lista de llaves de acceso y la fórmula apunta a otro lugar. Nadie puede producir tu dirección sin tu cuenta exacta y tus llaves de acceso exactas."
-      },
-      "account": {
-        "title": "La identidad de tu cuenta",
-        "text": "El identificador permanente detrás de tu cuenta de GainForest."
-      },
-      "passkeys": {
-        "title": "La lista de llaves de acceso",
-        "text": "Las mitades públicas de cada llave de acceso autorizada a gastar."
-      },
-      "rules": {
-        "title": "Reglas fijas",
-        "text": "El mismo diseño de contrato y los mismos ajustes para todas las billeteras."
-      },
-      "passkeyOne": "Tu teléfono",
-      "passkeyTwo": "Tu laptop",
-      "mathLabel": "Una fórmula fija",
-      "addressLabel": "Dirección de la billetera"
-    },
-    "gate": {
-      "heading": "Quién puede gastar",
-      "intro": "Prueba ambos. La billetera solo acepta firmas de las llaves de acceso de su lista, y esas viven en dispositivos reales de personas reales.",
-      "otherAttempt": "Un servidor o un extraño",
-      "passkeyAttempt": "Tu llave de acceso",
-      "otherNode": "Sin clave alguna",
-      "passkeyNode": "Face ID / huella",
-      "walletNode": "Tu billetera",
-      "approved": "Pago aprobado",
-      "denied": "Nada que robar",
-      "approvedDesc": "Tu dispositivo pide Face ID, huella digital o tu llave de seguridad y firma el pago localmente. La billetera compara la firma con su lista de llaves de acceso y deja pasar el pago.",
-      "deniedDesc": "El registro en tu cuenta es público y solo contiene claves públicas. No hay ningún secreto en ningún servidor que se pueda robar, filtrar o mal usar. GainForest no puede mover tu dinero, y tampoco nadie que lea el registro."
-    },
-    "lifecycle": {
-      "heading": "Primero inactiva, luego en vivo",
-      "intro": "La billetera tiene dos vidas. Alterna entre ellas para ver qué puede cambiar en cada una.",
-      "receives": "Puede recibir donaciones",
-      "signersLabel": "Quién puede aprobar pagos",
-      "signerOne": "Tu teléfono",
-      "signerTwo": "Tu laptop",
-      "dormant": {
-        "tab": "Antes del primer pago",
-        "badge": "Inactiva",
-        "editHint": "Agregar o quitar",
-        "title": "Recibir funciona desde el primer día",
-        "text": "Una billetera inactiva es solo una dirección más el registro, y eso basta para recibir donaciones. La lista de llaves de acceso aún puede cambiar: agrega tu segundo dispositivo o invita a tu equipo. La fórmula recalcula la dirección cada vez que la lista cambia, así que conviene definir la lista pronto."
-      },
-      "active": {
-        "tab": "Después del primer pago",
-        "badge": "Activa",
-        "editHint": "Bloqueado",
-        "title": "El primer pago la lleva a la cadena",
-        "text": "El primer pago saliente instala el código de la billetera en la dirección. Desde ese momento el registro queda congelado. Agregar o quitar llaves de acceso ahora ocurre en la propia blockchain y necesita la aprobación de una llave que ya esté en la lista."
-      }
-    },
-    "proof": {
-      "heading": "Cómo cualquiera puede verificar el vínculo",
-      "intro": "El registro y la fórmula son públicos, así que verificar una billetera no exige confiar en GainForest.",
-      "cardLabel": "Prueba matemática",
-      "text": "Solo tú puedes escribir registros en tu propia cuenta, y el registro de la billetera lista las entradas exactas de la fórmula de dirección. Un verificador descarga el registro, ejecuta la fórmula y compara el resultado con la dirección registrada. Si coinciden, la billetera pertenece a tu cuenta. No hace falta firma, ni intermediario, ni ningún servicio especial."
-    },
-    "limits": {
-      "heading": "Qué tener en cuenta",
-      "intro": "El diseño saca de la ecuación a los servidores y las frases semilla. Quedan algunos límites honestos.",
-      "passkeys": {
-        "title": "Llaves perdidas",
-        "text": "Si se pierden todas las llaves de acceso de la lista, ya nadie puede gastar desde la billetera. Agrega pronto una llave desde un segundo dispositivo o invita a una persona de confianza."
-      },
-      "frozen": {
-        "title": "Congelada tras la activación",
-        "text": "Cuando la billetera ya vive en la blockchain, su registro no puede cambiar más. Los cambios de llaves pasan entonces en la cadena y necesitan la aprobación de una llave existente."
-      },
-      "fees": {
-        "title": "Comisiones de red",
-        "text": "El primer pago saliente también instala el código de la billetera, así que cuesta un poco más en comisiones de red que los pagos siguientes."
-      },
-      "single": {
-        "title": "Una billetera por cuenta",
-        "text": "Cada cuenta y cada organización tiene un único registro canónico de billetera. Solo se puede eliminar mientras la billetera está inactiva y la dirección no tiene fondos."
-      }
-    },
-    "more": {
-      "heading": "Sigue explorando",
-      "epdsTitle": "Cómo funciona el acceso con ePDS",
-      "epdsDesc": "Mira la puerta de entrada sin contraseñas y los servicios normales que la rodean.",
-      "lexiconsTitle": "Esquemas de datos",
-      "lexiconsDesc": "Explora los formatos abiertos de registros, incluido el registro de la billetera.",
-      "atprotoTitle": "Cómo funciona el Protocolo AT",
-      "atprotoDesc": "Un recorrido interactivo por la red abierta sobre la que está construido todo esto.",
-      "githubTitle": "Cuentas inteligentes en GitHub",
-      "githubDesc": "Lee los contratos de cuenta inteligente de Splits, de código abierto, sobre los que funcionan estas billeteras."
-    }
-  },
   "identifications": {
     "meta": {
       "title": "Identificaciones",
@@ -2780,6 +2616,128 @@
       "insect": "Insecto",
       "other": "Otro",
       "note": "Nota"
+    }
+  },
+  "walletExplainer": {
+    "metaTitle": "Anatomía de una billetera de donaciones: un ensayo interactivo",
+    "metaDescription": "Cultiva una clave real de la curva de las llaves de acceso en tu navegador, deriva una dirección real con la matemática de la propia fábrica y recorre la vida de una donación. Un ensayo interactivo sobre las billeteras de GainForest.",
+    "kicker": "Un ensayo interactivo",
+    "title": "Anatomía de una billetera de donaciones",
+    "standfirst": "Cada organización en GainForest puede guardar donaciones en una billetera sin contraseña, sin frase semilla y sin empresas custodiando claves. Esta página no se limita a describir cómo funciona. Te deja accionar la maquinaria tú mismo, aquí en tu navegador.",
+    "intro": {
+      "p1": "Cuando alguien financia una restauración de manglares o un censo de aves, el dinero llega a una pequeña bóveda en Ethereum. La bóveda no tiene operador ni mesa de ayuda. Obedece exactamente una cosa: firmas criptográficas de los teléfonos y computadoras de las personas que llevan el proyecto.",
+      "p2": "Tres ideas lo hacen posible. Una clave que crece dentro de tu dispositivo y nunca sale de él. Una dirección que puede calcularse antes de que la billetera exista. Y un contrato que verifica la firma de una huella con pura matemática. Construyamos cada una, en vivo."
+    },
+    "part1": {
+      "label": "Experimento en vivo",
+      "heading": "Una clave crece en tu teléfono",
+      "p1": "Detrás de cada aviso de Face ID hay una pieza antigua y hermosa de criptografía: un par de claves de curva elíptica sobre una curva llamada P-256. Tu dispositivo inventa un número aleatorio enorme, lo encierra en un chip seguro y entrega solo el punto público correspondiente: dos coordenadas, x e y.",
+      "p2": "Tu navegador puede hacer lo mismo en este segundo. Pulsa el botón de abajo y cultivará una clave nueva sobre esa curva exacta. La mitad privada nace con una regla estricta: puede firmar, y nunca puede exportarse. Ni siquiera esta página puede leerla.",
+      "p3": "Esas dos coordenadas son todo lo que una billetera llega a saber de ti. El contrato las guarda como un par de casillas de 32 bytes y, cuando el dinero debe moverse, exige una firma que solo la mitad encerrada puede producir. Acabas de ver a tu navegador pasar exactamente esa verificación."
+    },
+    "keyForge": {
+      "bench": "Experimento 1 · Cultiva una clave",
+      "invite": "Tu navegador creará un par de claves real sobre la curva de las llaves de acceso (P-256). Vive solo en esta página y desaparece cuando te vas.",
+      "growButton": "Cultivar una clave",
+      "unsupported": "Tu navegador no soporta WebCrypto aquí. El resto del ensayo funciona igual sin esto.",
+      "privateLabel": "Clave privada · chip seguro",
+      "privateNote": "Marcada como no exportable al nacer. Puede firmar, y eso es todo lo que hará jamás.",
+      "publicLabel": "Clave pública · lo que guarda la cadena",
+      "publicNote": "La x y la y de tu punto público, exactamente como las conserva la estructura Signer del contrato.",
+      "messageLabel": "Un pago por aprobar",
+      "sampleMessage": "pagar 20 USDC a Rio Claro",
+      "signButton": "Firmar con tu clave",
+      "verified": "La firma es válida",
+      "failed": "La verificación falló",
+      "verifyNote": "Tu clave firmó el hash del pago y tu navegador lo verificó contra el punto público. En Ethereum, la bóveda ejecuta esta misma comprobación P-256.",
+      "privacyNote": "No se guardó nada y no se envió nada a ninguna parte. Recarga la página y esta clave desaparece para siempre."
+    },
+    "part2": {
+      "label": "Experimento en vivo",
+      "heading": "Una dirección hecha de aritmética",
+      "p1": "Aquí está la propiedad más extraña de todo el sistema: la dirección de la billetera existe antes que la billetera. Sin transacción, sin despliegue, sin registro en ninguna parte. La dirección es simplemente la respuesta a un cálculo, y cualquiera que conozca los ingredientes obtiene la misma respuesta.",
+      "p2": "La receta tiene cuatro ingredientes: una casilla de dueño permanentemente vacía, la lista de claves firmantes, el umbral de aprobación y una sal derivada de la identidad de la organización. El contrato fábrica los mezcla con keccak256 y la regla CREATE2. Pruébalo abajo. Escribe un nombre y mira cómo reacciona cada dígito de la dirección.",
+      "p3": "Por eso nadie tiene que confiar en GainForest sobre qué dirección pertenece a qué organización. La organización publica sus ingredientes como registro público en su propia cuenta. ¿Dudas de una etiqueta? Repite la aritmética, como acabas de hacer, y compara."
+    },
+    "addressForge": {
+      "bench": "Experimento 2 · La forja de direcciones",
+      "liveTag": "matemática real de la fábrica, calculada mientras escribes",
+      "stepAccount": "Ingrediente: la identidad de la cuenta",
+      "nameAria": "Nombre de la organización",
+      "typeHint": "escribe lo que quieras",
+      "stepSigners": "Ingrediente: el conjunto de firmantes",
+      "yourKey": "tu clave del experimento 1",
+      "sampleKey": "clave de ejemplo",
+      "secondKey": "segundo dispositivo",
+      "addSecond": "añadir un segundo dispositivo",
+      "thresholdNote": "umbral 1 · cualquier clave listada puede firmar",
+      "stepSalt": "Un hash sobre todos los ingredientes",
+      "stepAddress": "La regla CREATE2 nombra la dirección",
+      "footnote": "La dirección de la fábrica y el hash del código proxy de arriba son los valores reales de la red principal de Ethereum, y esta derivación coincide con la propia función getAddress de la fábrica. Cada hash de este banco lo calcula tu navegador."
+    },
+    "part3": {
+      "label": "Leyendo la fuente",
+      "heading": "El contrato, anotado",
+      "p1": "La bóveda es una cuenta inteligente de Splits: de código abierto, auditada y construida sobre diseños de Coinbase y Daimo. No tienes que creerle nada a este ensayo. Aquí están los tres pasajes que cargan el peso, cada uno con una nota sobre lo que significa.",
+      "p2": "Del diseño se desprende una propiedad más. La fábrica despliega con CREATE2, así que los mismos ingredientes producen la misma dirección en cada cadena donde la fábrica existe. La dirección de una organización es portátil por todo el mundo EVM."
+    },
+    "contract": {
+      "signerNote": "Un firmante es solo dos casillas de 32 bytes. Para una llave de acceso guardan la x y la y que cultivaste en el experimento 1. La misma estructura también admite una dirección clásica de Ethereum, con la segunda casilla vacía.",
+      "saltNote": "La identidad completa de una billetera, condensada en una sal: quién la posee (en las billeteras de GainForest, nadie), qué claves pueden firmar y cuántas deben acordar. Cambia cualquier ingrediente y la dirección se mueve.",
+      "webauthnNote": "Así verifica la cadena una firma de Face ID: primero intenta un verificador integrado en la dirección 0x100 y, donde una cadena no lo tiene, verifica la ecuación de la curva paso a paso en una biblioteca."
+    },
+    "part4": {
+      "label": "Recorrido",
+      "heading": "La vida de una donación",
+      "p1": "Junta las piezas y aparece una secuencia curiosa. Un donante puede enviar dinero a la dirección desde el primer día, cuando la dirección todavía no es nada salvo la respuesta del experimento 2. A la cadena no le importa. Los saldos pertenecen a las direcciones, y esta dirección es tan real como cualquier otra.",
+      "p2": "La última entrada cierra el círculo. Antes del despliegue, la lista de firmantes aún puede cambiar, y el registro simplemente apunta a una dirección recién calculada. Después, el registro se congela y la bóveda toma el mando: añadir un dispositivo se vuelve una acción en cadena, aprobada por una clave que ya está en la lista."
+    },
+    "ledger": {
+      "bench": "Experimento 3 · El libro mayor de una billetera",
+      "replay": "Repetir",
+      "start": "Empezar",
+      "next": "Avanzar",
+      "empty": "Seis eventos, desde una billetera que no existe hasta una que paga trabajo real. Pulsa Empezar.",
+      "events": {
+        "record": {
+          "title": "Se publica una receta",
+          "body": "La organización escribe los ingredientes de su billetera en su propia cuenta. Fuera de la cadena, gratis y público."
+        },
+        "first": {
+          "title": "Llega la primera donación",
+          "body": "Enviada a la dirección calculada. Allí no hay ningún contrato. El dinero espera de todos modos."
+        },
+        "second": {
+          "title": "Otra persona dona",
+          "body": "La dirección sigue acumulando. Aún sin código, aún sin nada que mantener."
+        },
+        "deploy": {
+          "title": "Primer pago: la billetera se materializa",
+          "body": "El pago lleva initCode, así que la fábrica despliega la bóveda en la dirección que la matemática prometió. Después se ejecuta el pago."
+        },
+        "payout": {
+          "title": "El proyecto cobra",
+          "body": "Un firmante aprobó con su huella. La bóveda verificó la firma P-256 en la cadena."
+        },
+        "freeze": {
+          "title": "La receta se congela",
+          "body": "La dirección ya tiene código, así que la lista de ingredientes no puede cambiar en silencio nunca más. Desde aquí, la propia bóveda gestiona sus firmantes."
+        }
+      },
+      "balanceLabel": "Guardado en la dirección",
+      "codeLabel": "Código en la dirección",
+      "codeNone": "ninguno",
+      "codeDeployed": "bóveda ERC-1967",
+      "meterNoteBefore": "El dinero puede esperar en una dirección sin código. El único contrato que puede aparecer allí es la bóveda que describen los ingredientes.",
+      "meterNoteAfter": "La bóveda está viva. Cada pago saliente se comprueba ahora contra la lista de firmantes."
+    },
+    "epilogue": {
+      "heading": "Comprueba la etiqueta tú mismo",
+      "p1": "Cada afirmación de esta página es comprobable. La receta de la billetera está en la propia cuenta de la organización como registro público. La fábrica está en la misma dirección en Ethereum. Descarga el registro, ejecuta el experimento 2 con sus ingredientes exactos, y la dirección coincide o no coincide. Sin firmas, sin autoridad y sin confiar en este sitio.",
+      "p2": "Las advertencias honestas: si se pierden todas las claves de la lista, el dinero no puede moverse, así que conviene inscribir un segundo dispositivo pronto. Y hasta el primer pago, cambiar la lista de firmantes cambia la dirección, así que la lista debería asentarse antes de apuntar donaciones hacia ella.",
+      "contractLink": "Lee los contratos de la bóveda inteligente en GitHub",
+      "lexiconLink": "El esquema del registro de la billetera, y todos los demás",
+      "atprotoLink": "Cómo guarda el registro el Protocolo AT"
     }
   }
 }

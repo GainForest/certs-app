@@ -2588,170 +2588,6 @@
       "ethosLink": "Ethos atproto"
     }
   },
-  "walletService": {
-    "metaTitle": "Cara kerja dompet GainForest",
-    "metaDescription": "Panduan interaktif dompet berbasis kunci sandi: dompet donasi yang alamatnya dihitung dari akun Anda sendiri, diamankan dengan Face ID atau sidik jari, tanpa frasa benih dan tanpa perusahaan yang menyimpan kunci.",
-    "kicker": "Dompet GainForest",
-    "title": "Dompet yang dibuat dari akun Anda",
-    "lead": "Setiap akun dan organisasi di GainForest bisa memiliki dompet donasinya sendiri. Face ID, sidik jari, atau kunci keamanan menggantikan frasa benih. Alamat dompet dihitung dari identitas akun Anda, jadi siapa pun bisa memastikan alamat itu benar milik Anda. Tidak ada server yang menyimpan kunci.",
-    "facts": {
-      "noSeed": {
-        "title": "Tanpa frasa benih",
-        "text": "Kunci dompet Anda adalah kunci sandi. Perangkat Anda sendiri melindunginya dengan Face ID, sidik jari, atau kunci keamanan."
-      },
-      "fromAccount": {
-        "title": "Akun Anda adalah buktinya",
-        "text": "Alamat berasal dari rumus tetap atas identitas akun Anda. Siapa pun bisa mengulang perhitungannya dan memastikan kaitannya."
-      },
-      "noCustodian": {
-        "title": "Tidak ada yang menyimpan kunci untuk Anda",
-        "text": "Tidak ada server dompet. Hanya kunci sandi di daftar dompet yang bisa menyetujui pembayaran."
-      }
-    },
-    "what": {
-      "heading": "Apa itu dompet ini?",
-      "intro": "Akun pintar di Ethereum, sepenuhnya dikendalikan kunci sandi dan dijelaskan oleh satu catatan kecil di akun Anda sendiri.",
-      "p1": "Perorangan mendapat dompet donasi pribadi dan organisasi mendapat dompet bersama yang pembayarannya bisa disetujui beberapa anggota. Keduanya bekerja dengan cara yang sama. Dompet ini adalah akun pintar Splits, rancangan kontrak sumber terbuka yang menerima tanda tangan kunci sandi secara langsung.",
-      "p2": "Satu catatan publik kecil di akun Anda sendiri menjelaskan dompet: aturannya dan daftar kunci sandi yang boleh membelanjakannya. Alamat dompet dihitung persis dari data itu. Tidak ada server dompet, tidak ada frasa benih, dan tidak ada perusahaan yang menyimpan kunci untuk Anda.",
-      "p3": "Alamat berfungsi sejak detik pertama. Donasi bisa masuk sebelum apa pun ada di blockchain, karena rumusnya sudah memesan alamat itu untuk akun dan kunci sandi Anda yang persis. Kode dompet baru dipasang di blockchain saat pembayaran pertama keluar."
-    },
-    "enroll": {
-      "heading": "Cara mendapatkannya",
-      "intro": "Tekan putar atau pilih langkah. Membuat dompet hanya butuh satu konfirmasi kunci sandi dan menulis satu catatan. Blockchain belum terlibat.",
-      "play": "Putar",
-      "pause": "Jeda",
-      "back": "Kembali",
-      "next": "Lanjut",
-      "stepLabel": "Langkah {n} dari {total}",
-      "jumpTo": "Ke langkah {step}",
-      "nodes": {
-        "device": "Perangkat Anda",
-        "account": "Akun Anda",
-        "math": "Perhitungan alamat",
-        "wallet": "Dompet Anda"
-      },
-      "steps": {
-        "s1": {
-          "title": "Perangkat Anda membuat kunci sandi",
-          "text": "Ponsel atau komputer Anda membuat kunci sandi baru dan menjaganya dengan Face ID, sidik jari, atau kunci keamanan. Bagian privatnya tidak pernah meninggalkan perangkat. Tidak ada yang perlu dicatat."
-        },
-        "s2": {
-          "title": "Satu catatan disimpan di akun Anda",
-          "text": "Bagian publik kunci sandi masuk ke catatan kecil yang disimpan bersama data akun Anda sendiri. Catatan itu juga memuat aturan tetap dompet dan setiap kunci sandi yang boleh menyetujui pembayaran."
-        },
-        "s3": {
-          "title": "Rumus menghasilkan alamat",
-          "text": "Rumus tetap mengubah identitas akun Anda dan daftar kunci sandi menjadi satu alamat dompet. Jalankan di mana saja, berapa kali pun, dan masukan yang sama memberi jawaban yang sama."
-        },
-        "s4": {
-          "title": "Dompet siap dipakai",
-          "text": "Alamat langsung bisa menerima donasi. Belum ada apa pun di blockchain, dan memang belum perlu. Dompet tetap tidur sampai pembayaran pertama keluar."
-        }
-      }
-    },
-    "address": {
-      "heading": "Dari mana alamat berasal",
-      "intro": "Tiga masukan publik masuk ke satu rumus tetap. Ganti daftar kunci sandi dan lihat jawabannya bergerak mengikuti masukan.",
-      "one": {
-        "tab": "Satu kunci sandi",
-        "title": "Masukan sama, alamat sama, selamanya",
-        "text": "Siapa pun bisa menjalankan rumus ini tahun depan di komputer mana pun dan mendapatkan jawaban yang identik. Karena itu catatan di akun Anda sudah cukup sebagai bukti bahwa alamat itu milik Anda. Tidak perlu tanda tangan."
-      },
-      "two": {
-        "tab": "Dua kunci sandi",
-        "title": "Kunci sandi berbeda, alamat berbeda",
-        "text": "Ubah daftar kunci sandi dan rumusnya menunjuk ke tempat lain. Tidak ada yang bisa menghasilkan alamat Anda tanpa akun Anda yang persis dan kunci sandi Anda yang persis."
-      },
-      "account": {
-        "title": "Identitas akun Anda",
-        "text": "Pengenal permanen di balik akun GainForest Anda."
-      },
-      "passkeys": {
-        "title": "Daftar kunci sandi",
-        "text": "Bagian publik dari setiap kunci sandi yang boleh membelanjakan."
-      },
-      "rules": {
-        "title": "Aturan tetap",
-        "text": "Rancangan kontrak dan pengaturan yang sama untuk semua dompet."
-      },
-      "passkeyOne": "Ponsel Anda",
-      "passkeyTwo": "Laptop Anda",
-      "mathLabel": "Satu rumus tetap",
-      "addressLabel": "Alamat dompet"
-    },
-    "gate": {
-      "heading": "Siapa yang bisa membelanjakan",
-      "intro": "Coba keduanya. Dompet hanya menerima tanda tangan dari kunci sandi di daftarnya, dan kunci itu hidup di perangkat nyata milik orang nyata.",
-      "otherAttempt": "Server atau orang asing",
-      "passkeyAttempt": "Kunci sandi Anda",
-      "otherNode": "Tanpa kunci sama sekali",
-      "passkeyNode": "Face ID / sidik jari",
-      "walletNode": "Dompet Anda",
-      "approved": "Pembayaran disetujui",
-      "denied": "Tidak ada yang bisa dicuri",
-      "approvedDesc": "Perangkat Anda meminta Face ID, sidik jari, atau kunci keamanan Anda, lalu menandatangani pembayaran secara lokal. Dompet mencocokkan tanda tangan dengan daftar kunci sandinya dan meloloskan pembayaran.",
-      "deniedDesc": "Catatan di akun Anda bersifat publik dan hanya berisi kunci publik. Tidak ada rahasia di server mana pun yang bisa dicuri, bocor, atau disalahgunakan. GainForest tidak bisa memindahkan uang Anda, begitu juga siapa pun yang membaca catatan itu."
-    },
-    "lifecycle": {
-      "heading": "Tidur dulu, lalu aktif",
-      "intro": "Dompet punya dua kehidupan. Beralihlah di antara keduanya untuk melihat apa yang bisa berubah di masing-masing.",
-      "receives": "Bisa menerima donasi",
-      "signersLabel": "Siapa yang dapat menyetujui pembayaran",
-      "signerOne": "Ponsel Anda",
-      "signerTwo": "Laptop Anda",
-      "dormant": {
-        "tab": "Sebelum pembayaran pertama",
-        "badge": "Tidur",
-        "editHint": "Tambah atau hapus",
-        "title": "Menerima donasi berjalan sejak hari pertama",
-        "text": "Dompet yang tidur hanyalah alamat plus catatan, dan itu cukup untuk menerima donasi. Daftar kunci sandi masih bisa berubah: tambahkan perangkat kedua Anda atau undang rekan tim. Rumus menghitung ulang alamat setiap kali daftar berubah, jadi sebaiknya tetapkan daftarnya sejak awal."
-      },
-      "active": {
-        "tab": "Setelah pembayaran pertama",
-        "badge": "Aktif",
-        "editHint": "Terkunci",
-        "title": "Pembayaran pertama membawanya ke blockchain",
-        "text": "Pembayaran keluar pertama memasang kode dompet di alamat itu. Sejak saat itu catatannya beku. Menambah atau menghapus kunci sandi kini terjadi di blockchain itu sendiri dan butuh persetujuan dari kunci sandi yang sudah ada di daftar."
-      }
-    },
-    "proof": {
-      "heading": "Cara siapa pun memeriksa kaitannya",
-      "intro": "Catatan dan rumusnya sama-sama publik, jadi memverifikasi dompet tidak butuh kepercayaan pada GainForest.",
-      "cardLabel": "Bukti matematis",
-      "text": "Hanya Anda yang bisa menulis catatan ke akun Anda sendiri, dan catatan dompet memuat masukan persis dari rumus alamat. Pemeriksa mengambil catatan itu, menjalankan rumusnya, dan membandingkan hasilnya dengan alamat yang tercatat. Jika cocok, dompet itu terbukti milik akun Anda. Tidak perlu tanda tangan, perantara, atau layanan khusus."
-    },
-    "limits": {
-      "heading": "Yang perlu diingat",
-      "intro": "Rancangan ini menyingkirkan server dan frasa benih dari gambaran. Beberapa batas yang jujur tetap ada.",
-      "passkeys": {
-        "title": "Kunci sandi hilang",
-        "text": "Jika semua kunci sandi di daftar hilang, tidak ada lagi yang bisa membelanjakan dari dompet. Tambahkan kunci sandi dari perangkat kedua sejak awal, atau undang orang yang Anda percaya."
-      },
-      "frozen": {
-        "title": "Beku setelah aktivasi",
-        "text": "Begitu dompet hidup di blockchain, catatannya tidak bisa berubah lagi. Perubahan kunci sandi lalu terjadi di blockchain dan butuh persetujuan dari kunci sandi yang sudah ada."
-      },
-      "fees": {
-        "title": "Biaya jaringan",
-        "text": "Pembayaran keluar pertama juga memasang kode dompet, jadi biaya jaringannya sedikit lebih tinggi daripada pembayaran berikutnya."
-      },
-      "single": {
-        "title": "Satu dompet per akun",
-        "text": "Setiap akun dan setiap organisasi punya satu catatan dompet kanonis. Catatan itu hanya bisa dihapus selama dompet masih tidur dan alamatnya tidak menyimpan dana."
-      }
-    },
-    "more": {
-      "heading": "Lanjutkan menjelajah",
-      "epdsTitle": "Cara kerja login ePDS",
-      "epdsDesc": "Lihat pintu masuk tanpa kata sandi dan layanan normal di sekitarnya.",
-      "lexiconsTitle": "Skema data",
-      "lexiconsDesc": "Jelajahi format catatan terbuka, termasuk catatan dompet itu sendiri.",
-      "atprotoTitle": "Cara kerja AT Protocol",
-      "atprotoDesc": "Tur interaktif jaringan terbuka tempat semua ini dibangun.",
-      "githubTitle": "Akun pintar di GitHub",
-      "githubDesc": "Baca kontrak akun pintar Splits yang bersumber terbuka dan menjalankan dompet-dompet ini."
-    }
-  },
   "identifications": {
     "meta": {
       "title": "Identifikasi",
@@ -2780,6 +2616,128 @@
       "insect": "Serangga",
       "other": "Lainnya",
       "note": "Catatan"
+    }
+  },
+  "walletExplainer": {
+    "metaTitle": "Anatomi dompet donasi: esai interaktif",
+    "metaDescription": "Tumbuhkan kunci nyata pada kurva kunci sandi di browser Anda, turunkan alamat brankas sungguhan dengan matematika pabriknya sendiri, dan mainkan perjalanan hidup sebuah donasi. Esai interaktif tentang dompet donasi GainForest.",
+    "kicker": "Esai interaktif",
+    "title": "Anatomi dompet donasi",
+    "standfirst": "Setiap organisasi di GainForest dapat menyimpan donasi di dompet tanpa kata sandi, tanpa frasa benih, dan tanpa perusahaan yang memegang kunci. Halaman ini tidak sekadar menjelaskan cara kerjanya. Halaman ini membiarkan Anda menjalankan mesinnya sendiri, langsung di browser Anda.",
+    "intro": {
+      "p1": "Saat seorang pendukung mendanai restorasi bakau atau survei burung, uangnya mendarat di brankas kecil di Ethereum. Brankas itu tidak punya operator dan tidak punya meja bantuan. Ia patuh pada tepat satu hal: tanda tangan kriptografis dari ponsel dan laptop orang-orang yang menjalankan proyek.",
+      "p2": "Tiga gagasan membuatnya mungkin. Kunci yang tumbuh di dalam perangkat Anda dan tidak pernah keluar darinya. Alamat yang bisa dihitung sebelum dompetnya ada. Dan kontrak yang memeriksa tanda tangan sidik jari dengan matematika murni. Mari kita bangun satu per satu, secara langsung."
+    },
+    "part1": {
+      "label": "Eksperimen langsung",
+      "heading": "Sebuah kunci tumbuh di ponsel Anda",
+      "p1": "Di balik setiap permintaan Face ID ada kriptografi tua yang indah: sepasang kunci kurva eliptik pada kurva bernama P-256. Perangkat Anda mengarang bilangan acak yang sangat besar, menguncinya di dalam chip aman, dan hanya menyerahkan titik publik pasangannya: dua koordinat, x dan y.",
+      "p2": "Browser Anda bisa melakukan hal yang sama detik ini juga. Tekan tombol di bawah dan ia akan menumbuhkan kunci baru pada kurva yang persis sama. Bagian privatnya lahir dengan aturan ketat: boleh menandatangani, dan tidak boleh diekspor. Halaman ini pun tidak bisa membacanya.",
+      "p3": "Dua koordinat itu adalah semua yang pernah diketahui dompet tentang Anda. Kontrak menyimpannya sebagai sepasang slot 32 byte dan, saat uang harus bergerak, menuntut tanda tangan yang hanya bisa dibuat oleh bagian yang terkunci. Anda baru saja melihat browser Anda lolos pemeriksaan yang persis sama."
+    },
+    "keyForge": {
+      "bench": "Eksperimen 1 · Tumbuhkan kunci",
+      "invite": "Browser Anda akan membuat pasangan kunci sungguhan pada kurva kunci sandi (P-256). Kunci ini hanya hidup di halaman ini dan lenyap saat Anda pergi.",
+      "growButton": "Tumbuhkan kunci",
+      "unsupported": "Browser Anda tidak mendukung WebCrypto di sini. Sisa esai tetap berfungsi tanpanya.",
+      "privateLabel": "Kunci privat · chip aman",
+      "privateNote": "Ditandai tidak dapat diekspor sejak lahir. Ia bisa menandatangani, dan hanya itu yang akan pernah dilakukannya.",
+      "publicLabel": "Kunci publik · yang disimpan rantai",
+      "publicNote": "X dan y titik publik Anda, persis seperti struct Signer kontrak menyimpannya.",
+      "messageLabel": "Pembayaran untuk disetujui",
+      "sampleMessage": "bayar 20 USDC ke Rio Claro",
+      "signButton": "Tandatangani dengan kunci Anda",
+      "verified": "Tanda tangan sah",
+      "failed": "Verifikasi gagal",
+      "verifyNote": "Kunci Anda menandatangani hash pembayaran dan browser Anda memverifikasinya terhadap titik publik. Di Ethereum, brankas menjalankan pemeriksaan P-256 yang sama.",
+      "privacyNote": "Tidak ada yang disimpan dan tidak ada yang dikirim ke mana pun. Muat ulang halaman dan kunci ini hilang selamanya."
+    },
+    "part2": {
+      "label": "Eksperimen langsung",
+      "heading": "Alamat yang terbuat dari aritmetika",
+      "p1": "Inilah sifat paling aneh dari seluruh sistem: alamat dompet ada sebelum dompetnya ada. Tanpa transaksi, tanpa pemasangan, tanpa pendaftaran di mana pun. Alamat hanyalah jawaban dari sebuah perhitungan, dan siapa pun yang tahu bahan-bahannya mendapat jawaban yang sama.",
+      "p2": "Resepnya punya empat bahan: slot pemilik yang selamanya kosong, daftar kunci penandatangan, ambang persetujuan, dan garam yang di-hash dari identitas organisasi. Kontrak pabrik mengaduknya dengan keccak256 dan aturan CREATE2. Coba di bawah. Ketik sebuah nama dan lihat setiap digit alamat bereaksi.",
+      "p3": "Karena itulah tidak ada yang harus memercayai GainForest soal alamat mana milik organisasi mana. Organisasi menerbitkan bahan-bahannya sebagai catatan publik di akunnya sendiri. Ragu pada sebuah label? Ulangi aritmetikanya, seperti yang baru Anda lakukan, lalu bandingkan."
+    },
+    "addressForge": {
+      "bench": "Eksperimen 2 · Tempa alamat",
+      "liveTag": "matematika pabrik sungguhan, dihitung saat Anda mengetik",
+      "stepAccount": "Bahan: identitas akun",
+      "nameAria": "Nama organisasi",
+      "typeHint": "ketik apa saja",
+      "stepSigners": "Bahan: himpunan penandatangan",
+      "yourKey": "kunci Anda dari eksperimen 1",
+      "sampleKey": "kunci contoh",
+      "secondKey": "perangkat kedua",
+      "addSecond": "tambah perangkat kedua",
+      "thresholdNote": "ambang 1 · kunci mana pun di daftar boleh menandatangani",
+      "stepSalt": "Satu hash atas semua bahan",
+      "stepAddress": "Aturan CREATE2 menamai alamat",
+      "footnote": "Alamat pabrik dan hash kode proxy di atas adalah nilai asli jaringan utama Ethereum, dan turunan ini cocok dengan fungsi getAddress milik pabrik itu sendiri. Setiap hash di bangku ini dihitung oleh browser Anda."
+    },
+    "part3": {
+      "label": "Membaca sumbernya",
+      "heading": "Kontraknya, beranotasi",
+      "p1": "Brankas ini adalah akun pintar Splits: sumber terbuka, teraudit, dan dibangun di atas rancangan Coinbase dan Daimo. Anda tidak perlu memercayai kata-kata esai ini. Berikut tiga bagian yang memikul bebannya, masing-masing dengan catatan tentang artinya.",
+      "p2": "Satu sifat lagi lahir dari rancangan ini. Pabrik memasang dengan CREATE2, jadi bahan yang sama menghasilkan alamat yang sama di setiap rantai tempat pabrik itu ada. Alamat sebuah organisasi portabel di seluruh dunia EVM."
+    },
+    "contract": {
+      "signerNote": "Penandatangan hanyalah dua slot 32 byte. Untuk kunci sandi, keduanya menyimpan x dan y yang Anda tumbuhkan di eksperimen 1. Struct yang sama juga muat alamat Ethereum klasik, dengan slot kedua dibiarkan kosong.",
+      "saltNote": "Seluruh identitas dompet, di-hash menjadi satu garam: siapa pemiliknya (untuk dompet GainForest, tidak ada), kunci mana yang boleh menandatangani, dan berapa yang harus setuju. Ubah bahan mana pun dan alamatnya berpindah.",
+      "webauthnNote": "Begini rantai memeriksa tanda tangan Face ID: ia mencoba dulu pemverifikasi bawaan di alamat 0x100 dan, di rantai yang tidak memilikinya, memverifikasi persamaan kurva langkah demi langkah lewat pustaka."
+    },
+    "part4": {
+      "label": "Alur main",
+      "heading": "Perjalanan hidup sebuah donasi",
+      "p1": "Satukan kepingannya dan muncul urutan yang menarik. Seorang pendukung bisa mengirim uang ke alamat itu sejak hari pertama, saat alamat itu masih bukan apa-apa kecuali jawaban eksperimen 2. Rantai tidak keberatan. Saldo milik alamat, dan alamat ini sama nyatanya dengan alamat mana pun.",
+      "p2": "Entri terakhir menutup lingkarannya. Sebelum pemasangan, daftar penandatangan masih bisa berubah, dan catatan tinggal menunjuk ke alamat yang baru dihitung. Sesudahnya catatan membeku dan brankas mengambil alih: menambah perangkat menjadi aksi di rantai, disetujui oleh kunci yang sudah ada di daftar."
+    },
+    "ledger": {
+      "bench": "Eksperimen 3 · Buku besar sebuah dompet",
+      "replay": "Ulangi",
+      "start": "Mulai",
+      "next": "Lanjut",
+      "empty": "Enam peristiwa, dari dompet yang belum ada sampai dompet yang membayar kerja nyata. Tekan Mulai.",
+      "events": {
+        "record": {
+          "title": "Sebuah resep diterbitkan",
+          "body": "Organisasi menulis bahan-bahan dompetnya di akunnya sendiri. Di luar rantai, gratis, dan publik."
+        },
+        "first": {
+          "title": "Donasi pertama tiba",
+          "body": "Dikirim ke alamat hasil perhitungan. Tidak ada kontrak di sana. Uangnya tetap menunggu."
+        },
+        "second": {
+          "title": "Pendukung lain memberi",
+          "body": "Alamat terus mengumpulkan. Masih tanpa kode, masih tanpa apa pun untuk dirawat."
+        },
+        "deploy": {
+          "title": "Pembayaran pertama: dompet mewujud",
+          "body": "Pembayaran membawa initCode, jadi pabrik memasang brankas di alamat yang dijanjikan matematika. Lalu pembayarannya dieksekusi."
+        },
+        "payout": {
+          "title": "Proyek menerima bayaran",
+          "body": "Seorang penandatangan menyetujui dengan sidik jari. Brankas memverifikasi tanda tangan P-256 di rantai."
+        },
+        "freeze": {
+          "title": "Resepnya membeku",
+          "body": "Alamat kini punya kode, jadi daftar bahan tidak akan pernah bisa berubah diam-diam lagi. Mulai sekarang, brankas sendiri yang mengelola penandatangannya."
+        }
+      },
+      "balanceLabel": "Tersimpan di alamat",
+      "codeLabel": "Kode di alamat",
+      "codeNone": "tidak ada",
+      "codeDeployed": "brankas ERC-1967",
+      "meterNoteBefore": "Uang bisa menunggu di alamat tanpa kode. Satu-satunya kontrak yang bisa muncul di sana adalah brankas yang digambarkan bahan-bahannya.",
+      "meterNoteAfter": "Brankas sudah hidup. Setiap pembayaran keluar kini diperiksa terhadap daftar penandatangan."
+    },
+    "epilogue": {
+      "heading": "Periksa labelnya sendiri",
+      "p1": "Setiap klaim di halaman ini bisa diperiksa. Resep dompet ada di akun organisasi sendiri sebagai catatan publik. Pabriknya ada di alamat yang sama di Ethereum. Ambil catatannya, jalankan eksperimen 2 dengan bahan persisnya, dan alamatnya cocok atau tidak cocok. Tanpa tanda tangan, tanpa otoritas, dan tanpa perlu memercayai situs ini.",
+      "p2": "Catatan jujurnya: jika semua kunci di daftar hilang, uangnya tidak bisa bergerak, jadi organisasi sebaiknya mendaftarkan perangkat kedua sejak awal. Dan sampai pembayaran pertama, mengubah daftar penandatangan mengubah alamat, jadi daftar itu sebaiknya mantap dulu sebelum donasi diarahkan ke sana.",
+      "contractLink": "Baca kontrak brankas pintar di GitHub",
+      "lexiconLink": "Skema catatan dompet, dan semua skema lainnya",
+      "atprotoLink": "Cara AT Protocol menyimpan catatannya"
     }
   }
 }

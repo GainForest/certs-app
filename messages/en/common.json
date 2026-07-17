@@ -2588,170 +2588,6 @@
       "ethosLink": "The atproto ethos"
     }
   },
-  "walletService": {
-    "metaTitle": "How GainForest wallets work",
-    "metaDescription": "An interactive guide to passkey wallets: a donation wallet whose address is computed from your own account, secured by Face ID or a fingerprint, with no seed phrase and no company holding keys.",
-    "kicker": "GainForest wallets",
-    "title": "A wallet made from your account",
-    "lead": "Every account and organization on GainForest can have its own donation wallet. Face ID, a fingerprint, or a security key takes the place of a seed phrase. The wallet address is computed from your account identity, so anyone can check that it really belongs to you. No server ever holds a key.",
-    "facts": {
-      "noSeed": {
-        "title": "No seed phrase",
-        "text": "Your wallet keys are passkeys. Your own device protects them with Face ID, a fingerprint, or a security key."
-      },
-      "fromAccount": {
-        "title": "Your account is the proof",
-        "text": "The address comes from a fixed formula over your account identity. Anyone can redo the math and confirm the link."
-      },
-      "noCustodian": {
-        "title": "Nobody holds keys for you",
-        "text": "There is no wallet server. Only the passkeys on the wallet's own list can approve a payment."
-      }
-    },
-    "what": {
-      "heading": "What is this wallet?",
-      "intro": "A smart account on Ethereum, controlled entirely by passkeys and described by one small record in your own account.",
-      "p1": "Individuals get a personal donation wallet, and organizations get a shared one that several members can approve payments from. Both work the same way. The wallet is a Splits smart account, an open-source contract design that accepts passkey signatures directly.",
-      "p2": "A small public record in your own account describes the wallet: its rules and the list of passkeys that may spend from it. The wallet address itself is computed from exactly those details. There is no wallet server, no seed phrase, and no company holding key material for you.",
-      "p3": "The address works from the first second. Donations can arrive before anything exists on the blockchain, because the formula already reserves the address for your exact account and passkeys. The wallet code is installed on-chain only when the first payment goes out."
-    },
-    "enroll": {
-      "heading": "How you get one",
-      "intro": "Press play or choose a step. Creating a wallet takes one passkey prompt and writes one record. The blockchain is not involved yet.",
-      "play": "Play",
-      "pause": "Pause",
-      "back": "Back",
-      "next": "Next",
-      "stepLabel": "Step {n} of {total}",
-      "jumpTo": "Go to step {step}",
-      "nodes": {
-        "device": "Your device",
-        "account": "Your account",
-        "math": "Address math",
-        "wallet": "Your wallet"
-      },
-      "steps": {
-        "s1": {
-          "title": "Your device creates a passkey",
-          "text": "Your phone or computer makes a fresh passkey and guards it with Face ID, a fingerprint, or a security key. The private part never leaves the device. There is nothing to write down."
-        },
-        "s2": {
-          "title": "A record is saved in your account",
-          "text": "The public half of the passkey goes into a small record stored with your own account data. The record also lists the wallet's fixed rules and every passkey allowed to approve payments."
-        },
-        "s3": {
-          "title": "The formula produces the address",
-          "text": "A fixed formula turns your account identity and the passkey list into one wallet address. Run it anywhere, any number of times, and the same inputs give the same answer."
-        },
-        "s4": {
-          "title": "The wallet is ready",
-          "text": "The address can receive donations right away. Nothing sits on the blockchain yet, and nothing has to. The wallet stays dormant until the first payment goes out."
-        }
-      }
-    },
-    "address": {
-      "heading": "Where the address comes from",
-      "intro": "Three public inputs go into one fixed formula. Switch the passkey list to watch the answer move with the inputs.",
-      "one": {
-        "tab": "One passkey",
-        "title": "Same inputs, same address, forever",
-        "text": "Anyone can run this formula next year on any computer and get the identical answer. That is why the record in your account is enough proof that the address is yours. No signature is needed."
-      },
-      "two": {
-        "tab": "Two passkeys",
-        "title": "Different passkeys, different address",
-        "text": "Change the passkey list and the formula points somewhere else. Nobody can produce your address without your exact account and your exact passkeys."
-      },
-      "account": {
-        "title": "Your account identity",
-        "text": "The permanent identifier behind your GainForest account."
-      },
-      "passkeys": {
-        "title": "The passkey list",
-        "text": "The public halves of every passkey allowed to spend."
-      },
-      "rules": {
-        "title": "Fixed rules",
-        "text": "The same contract design and settings for every wallet."
-      },
-      "passkeyOne": "Your phone",
-      "passkeyTwo": "Your laptop",
-      "mathLabel": "One fixed formula",
-      "addressLabel": "Wallet address"
-    },
-    "gate": {
-      "heading": "Who can spend",
-      "intro": "Try both. The wallet only accepts signatures from passkeys on its list, and those live on real devices held by real people.",
-      "otherAttempt": "A server or a stranger",
-      "passkeyAttempt": "Your passkey",
-      "otherNode": "No key at all",
-      "passkeyNode": "Face ID / fingerprint",
-      "walletNode": "Your wallet",
-      "approved": "Payment approved",
-      "denied": "Nothing to steal",
-      "approvedDesc": "Your device asks for Face ID, a fingerprint, or your security key, then signs the payment locally. The wallet checks the signature against its passkey list and lets the payment through.",
-      "deniedDesc": "The record in your account is public and contains public keys only. There is no secret on any server to steal, leak, or misuse. GainForest cannot move your money, and neither can anyone who reads the record."
-    },
-    "lifecycle": {
-      "heading": "Dormant first, then live",
-      "intro": "The wallet has two lives. Flip between them to see what can change in each one.",
-      "receives": "Can receive donations",
-      "signersLabel": "Who can approve payments",
-      "signerOne": "Your phone",
-      "signerTwo": "Your laptop",
-      "dormant": {
-        "tab": "Before the first payment",
-        "badge": "Dormant",
-        "editHint": "Add or remove",
-        "title": "Receiving works from day one",
-        "text": "A dormant wallet is just an address plus the record, and that is enough to receive donations. The passkey list can still change: add your second device or invite teammates. The formula recomputes the address whenever the list changes, so it is best to settle the list early."
-      },
-      "active": {
-        "tab": "After the first payment",
-        "badge": "Active",
-        "editHint": "Locked",
-        "title": "The first payment brings it on-chain",
-        "text": "The first outgoing payment installs the wallet code at the address. From that moment the record is frozen. Adding or removing passkeys now happens on the blockchain itself and needs approval from a passkey already on the list."
-      }
-    },
-    "proof": {
-      "heading": "How anyone can check the link",
-      "intro": "The record and the formula are both public, so verifying a wallet needs no trust in GainForest.",
-      "cardLabel": "Math-backed proof",
-      "text": "Only you can write records into your own account, and the wallet record lists the exact inputs of the address formula. A verifier fetches the record, runs the formula, and compares the result with the recorded address. A match proves the wallet belongs to your account. No signature, no middleman, and no special service are needed."
-    },
-    "limits": {
-      "heading": "What to keep in mind",
-      "intro": "The design removes servers and seed phrases from the picture. A few honest limits remain.",
-      "passkeys": {
-        "title": "Lost passkeys",
-        "text": "If every passkey on the list is lost, nobody can spend from the wallet anymore. Add a passkey from a second device early, or invite a person you trust."
-      },
-      "frozen": {
-        "title": "Frozen after activation",
-        "text": "Once the wallet is live on the blockchain, its record can no longer change. Passkey changes then happen on-chain and need approval from an existing passkey."
-      },
-      "fees": {
-        "title": "Network fees",
-        "text": "The first outgoing payment also installs the wallet code, so it costs a little more in network fees than later payments."
-      },
-      "single": {
-        "title": "One wallet per account",
-        "text": "Each account and each organization has one canonical wallet record. It can only be removed while the wallet is dormant and the address holds no funds."
-      }
-    },
-    "more": {
-      "heading": "Keep exploring",
-      "epdsTitle": "How ePDS login works",
-      "epdsDesc": "See the passwordless front door and the normal services around it.",
-      "lexiconsTitle": "Data schemas",
-      "lexiconsDesc": "Explore the open record formats, including the wallet record itself.",
-      "atprotoTitle": "How the AT Protocol works",
-      "atprotoDesc": "An interactive tour of the open network everything here is built on.",
-      "githubTitle": "Smart accounts on GitHub",
-      "githubDesc": "Read the open-source Splits smart account contracts these wallets run on."
-    }
-  },
   "identifications": {
     "meta": {
       "title": "Identifications",
@@ -2780,6 +2616,128 @@
       "insect": "Insect",
       "other": "Other",
       "note": "Note"
+    }
+  },
+  "walletExplainer": {
+    "metaTitle": "Anatomy of a donation wallet: an interactive essay",
+    "metaDescription": "Grow a real passkey-curve key in your browser, derive a real vault address with the factory's own math, and play through the life of a donation. An interactive essay on GainForest's donation wallets.",
+    "kicker": "An interactive essay",
+    "title": "Anatomy of a donation wallet",
+    "standfirst": "Every organization on GainForest can hold donations in a wallet with no password, no seed phrase, and no company keeping keys. This page does not just describe how that works. It lets you run the machinery yourself, right here in your browser.",
+    "intro": {
+      "p1": "When a supporter funds a mangrove restoration or a bird survey, the money lands in a small vault on Ethereum. The vault has no operator and no support desk. It obeys exactly one thing: cryptographic signatures from the phones and laptops of the people who run the project.",
+      "p2": "Three ideas make that possible. A key that grows inside your device and never leaves it. An address that can be computed before the wallet exists. And a contract that checks a fingerprint's signature with pure math. Let's build each one, live."
+    },
+    "part1": {
+      "label": "Live experiment",
+      "heading": "A key grows in your phone",
+      "p1": "Behind every Face ID prompt sits an old and beautiful piece of cryptography: an elliptic-curve key pair on a curve called P-256. Your device invents an enormous random number, locks it inside a secure chip, and hands out only the matching public point: two coordinates, x and y.",
+      "p2": "Your browser can do the same thing this second. Press the button below and it will grow a fresh key on that exact curve. The private half is created under a strict rule: it may sign, and it may never be exported. Not even this page can read it.",
+      "p3": "Those two coordinates are all a wallet ever learns about you. The contract stores them as a pair of 32-byte slots and, when money should move, demands a signature that only the locked-away half can produce. You just watched your browser pass that exact check."
+    },
+    "keyForge": {
+      "bench": "Experiment 1 · Grow a key",
+      "invite": "Your browser will create a real key pair on the passkey curve (P-256). It lives only on this page and disappears when you leave.",
+      "growButton": "Grow a key",
+      "unsupported": "Your browser does not support WebCrypto here. The rest of the essay works fine without it.",
+      "privateLabel": "Private key · secure chip",
+      "privateNote": "Marked non-exportable at birth. It can sign, and that is all it will ever do.",
+      "publicLabel": "Public key · what the chain stores",
+      "publicNote": "The x and y of your public point, exactly as the contract's Signer struct keeps them.",
+      "messageLabel": "A payment to approve",
+      "sampleMessage": "pay 20 USDC to Rio Claro",
+      "signButton": "Sign with your key",
+      "verified": "Signature checks out",
+      "failed": "Verification failed",
+      "verifyNote": "Your key signed the payment hash and your browser verified it against the public point. On Ethereum, the vault runs this same P-256 check.",
+      "privacyNote": "Nothing was saved and nothing was sent anywhere. Reload the page and this key is gone forever."
+    },
+    "part2": {
+      "label": "Live experiment",
+      "heading": "An address made of arithmetic",
+      "p1": "Here is the strangest property of the whole system: the wallet's address exists before the wallet does. No transaction, no deployment, no registration anywhere. The address is simply the answer to a calculation, and anyone who knows the ingredients gets the same answer.",
+      "p2": "The recipe has four ingredients: an owner slot that is permanently empty, the list of signer keys, the approval threshold, and a salt hashed out of the organization's identity. The factory contract mixes them with keccak256 and the CREATE2 rule. Try it below. Type a name and watch every digit of the address react.",
+      "p3": "This is why nobody has to trust GainForest about which address belongs to which organization. The organization publishes its ingredients as a public record in its own account. Doubt a label? Rerun the arithmetic, as you just did, and compare."
+    },
+    "addressForge": {
+      "bench": "Experiment 2 · The address forge",
+      "liveTag": "real factory math, computed as you type",
+      "stepAccount": "Ingredient: the account identity",
+      "nameAria": "Organization name",
+      "typeHint": "type anything",
+      "stepSigners": "Ingredient: the signer set",
+      "yourKey": "your key from experiment 1",
+      "sampleKey": "sample key",
+      "secondKey": "second device",
+      "addSecond": "add a second device",
+      "thresholdNote": "threshold 1 · any listed key may sign",
+      "stepSalt": "One hash over all ingredients",
+      "stepAddress": "The CREATE2 rule names the address",
+      "footnote": "The factory address and proxy code hash above are the real Ethereum mainnet values, and this derivation matches the factory's own getAddress function. Every hash on this bench is computed by your browser."
+    },
+    "part3": {
+      "label": "Reading the source",
+      "heading": "The contract, annotated",
+      "p1": "The vault is a Splits smart account: open source, audited, and built on designs by Coinbase and Daimo. You do not have to take this essay's word for anything. Here are the three passages that carry the weight, each with a note on what it means.",
+      "p2": "One more property falls out of the design. The factory deploys with CREATE2, so the same ingredients produce the same address on every chain where the factory exists. An organization's address is portable across the whole EVM world."
+    },
+    "contract": {
+      "signerNote": "A signer is just two 32-byte slots. For a passkey they hold the x and y you grew in experiment 1. The same struct also fits a classic Ethereum address, with the second slot left empty.",
+      "saltNote": "The whole identity of a wallet, hashed into one salt: who owns it (for GainForest wallets, nobody), which keys may sign, and how many must agree. Change any ingredient and the address moves.",
+      "webauthnNote": "How the chain checks a Face ID signature: it first tries a built-in verifier at address 0x100 and, where a chain lacks it, verifies the curve equation step by step in a library instead."
+    },
+    "part4": {
+      "label": "Playthrough",
+      "heading": "The life of a donation",
+      "p1": "Put the pieces together and a curious sequence appears. A supporter can send money to the address on day one, while the address is still nothing except the answer to experiment 2. The chain does not mind. Balances belong to addresses, and this address is as real as any other.",
+      "p2": "The final entry closes the loop. Before the deployment, the signer list may still change, and the record simply points to a freshly computed address. After it, the record freezes and the vault takes over: adding a device becomes an on-chain action, approved by a key that is already on the list."
+    },
+    "ledger": {
+      "bench": "Experiment 3 · A wallet's ledger",
+      "replay": "Replay",
+      "start": "Begin",
+      "next": "Advance",
+      "empty": "Six events, from a wallet that does not exist to one that pays for real work. Press Begin.",
+      "events": {
+        "record": {
+          "title": "A recipe is published",
+          "body": "The organization writes its wallet ingredients into its own account. Off-chain, free, and public."
+        },
+        "first": {
+          "title": "First donation arrives",
+          "body": "Sent to the computed address. There is no contract there. The money waits anyway."
+        },
+        "second": {
+          "title": "Another supporter gives",
+          "body": "The address keeps collecting. Still no code, still nothing to maintain."
+        },
+        "deploy": {
+          "title": "First payout: the wallet materializes",
+          "body": "The payment carries initCode, so the factory deploys the vault at the address the math promised. Then the payment executes."
+        },
+        "payout": {
+          "title": "The project gets paid",
+          "body": "A signer approved with a fingerprint. The vault verified the P-256 signature on-chain."
+        },
+        "freeze": {
+          "title": "The recipe freezes",
+          "body": "The address now has code, so the ingredient list can never quietly change again. From here on, the vault itself manages its signers."
+        }
+      },
+      "balanceLabel": "Held at the address",
+      "codeLabel": "Code at the address",
+      "codeNone": "none",
+      "codeDeployed": "ERC-1967 vault",
+      "meterNoteBefore": "Money can wait at an address with no code. The only contract that can ever appear there is the vault the ingredients describe.",
+      "meterNoteAfter": "The vault is live. Every outgoing payment is now checked against the signer list."
+    },
+    "epilogue": {
+      "heading": "Check the label yourself",
+      "p1": "Every claim on this page is checkable. The wallet recipe sits in the organization's own account as a public record. The factory sits at the same address on Ethereum. Fetch the record, run experiment 2 with its exact ingredients, and the address either matches or it does not. No signatures, no authority, and no trust in this website required.",
+      "p2": "The honest caveats: if every key on the list is lost, the money cannot move, so organizations should enroll a second device early. And until the first payout, changing the signer list changes the address, so the list should settle before donations are pointed at it.",
+      "contractLink": "Read the smart-vault contracts on GitHub",
+      "lexiconLink": "The wallet record's schema, and every other one",
+      "atprotoLink": "How the AT Protocol stores the record"
     }
   }
 }
