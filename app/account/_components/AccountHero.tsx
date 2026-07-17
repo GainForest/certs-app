@@ -204,7 +204,7 @@ export function AccountHero({
         {/* Actions — one row of same-height pills: follow, direct support,
             then the outbound links (globe view, website, socials). */}
         <div className="mt-6 flex flex-wrap items-center gap-2">
-          <FollowButton targetDid={account.did} name={account.displayName} />
+          <FollowButton targetDid={account.did} name={account.displayName} size="default" />
           <AccountWalletSupport
             did={account.did}
             name={account.displayName}
