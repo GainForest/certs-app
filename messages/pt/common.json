@@ -1215,24 +1215,31 @@
   "recognition": {
     "eyebrow": "Equipe da GainForest",
     "title": "Conceder selos de reconhecimento",
-    "description": "Dê a {name} um selo por um subsídio ou uma vitória no BioBlitz. Os selos concedidos aparecem no perfil público.",
+    "description": "Dê a {name} um selo por um subsídio. Os selos de vencedores do BioBlitz são concedidos por rodada na página do BioBlitz.",
     "award": "Conceder",
     "remove": "Remover",
     "genericError": "Algo deu errado. Tente novamente.",
-    "chipsAria": "Selos de reconhecimento",
     "badges": {
       "rewilding-grant": {
         "label": "Subsídio Rewilding",
         "description": "Recebeu um subsídio de Resselvagem da web."
       },
       "bioblitz-most-images": {
-        "label": "BioBlitz — mais imagens",
+        "label": "BioBlitz — mais observações",
+        "labelWithRound": "BioBlitz {roundName} — mais observações",
         "description": "Venceu uma rodada do BioBlitz por mais observações."
       },
       "bioblitz-best-picture": {
         "label": "BioBlitz — melhor foto",
+        "labelWithRound": "BioBlitz {roundName} — melhor foto",
         "description": "Venceu uma rodada do BioBlitz pela melhor foto."
       }
+    },
+    "awardsLabel": "Prêmios",
+    "aria": "Prêmios: {names}",
+    "roundName": {
+      "pilot": "Rodada piloto",
+      "numbered": "Rodada {round}"
     }
   },
   "steward": {

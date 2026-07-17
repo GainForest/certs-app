@@ -1215,24 +1215,31 @@
   "recognition": {
     "eyebrow": "Pengelola GainForest",
     "title": "Berikan lencana penghargaan",
-    "description": "Beri {name} lencana atas hibah atau kemenangan BioBlitz. Lencana yang diberikan tampil di profil publik mereka.",
+    "description": "Beri {name} lencana atas hibah. Lencana pemenang BioBlitz diberikan per ronde dari halaman BioBlitz.",
     "award": "Berikan",
     "remove": "Hapus",
     "genericError": "Terjadi kesalahan. Silakan coba lagi.",
-    "chipsAria": "Lencana penghargaan",
     "badges": {
       "rewilding-grant": {
         "label": "Hibah Rewilding",
         "description": "Menerima hibah Meliarkan Kembali Web."
       },
       "bioblitz-most-images": {
-        "label": "BioBlitz — gambar terbanyak",
+        "label": "BioBlitz — observasi terbanyak",
+        "labelWithRound": "BioBlitz {roundName} — observasi terbanyak",
         "description": "Memenangkan ronde BioBlitz untuk observasi terbanyak."
       },
       "bioblitz-best-picture": {
         "label": "BioBlitz — foto terbaik",
+        "labelWithRound": "BioBlitz {roundName} — foto terbaik",
         "description": "Memenangkan ronde BioBlitz untuk foto terbaik."
       }
+    },
+    "awardsLabel": "Penghargaan",
+    "aria": "Penghargaan: {names}",
+    "roundName": {
+      "pilot": "Ronde Perintis",
+      "numbered": "Ronde {round}"
     }
   },
   "steward": {

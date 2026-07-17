@@ -1215,24 +1215,31 @@
   "recognition": {
     "eyebrow": "GainForest steward",
     "title": "Award recognition badges",
-    "description": "Give {name} a badge for a grant or BioBlitz win. Awarded badges show on their public profile.",
+    "description": "Give {name} a badge for a grant. BioBlitz winner badges are awarded per round from the BioBlitz page.",
     "award": "Award",
     "remove": "Remove",
     "genericError": "Something went wrong. Please try again.",
-    "chipsAria": "Recognition badges",
     "badges": {
       "rewilding-grant": {
         "label": "Rewilding grant",
         "description": "Received a Rewilding the Web grant."
       },
       "bioblitz-most-images": {
-        "label": "BioBlitz — most images",
+        "label": "BioBlitz — most observations",
+        "labelWithRound": "BioBlitz {roundName} — most observations",
         "description": "Won a BioBlitz round for the most observations."
       },
       "bioblitz-best-picture": {
         "label": "BioBlitz — best picture",
+        "labelWithRound": "BioBlitz {roundName} — best picture",
         "description": "Won a BioBlitz round for the best picture."
       }
+    },
+    "awardsLabel": "Awards",
+    "aria": "Awards: {names}",
+    "roundName": {
+      "pilot": "Pilot Round",
+      "numbered": "Round {round}"
     }
   },
   "steward": {

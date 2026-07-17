@@ -13,7 +13,7 @@
  */
 
 import { cachedAsync } from "./async-cache";
-import { RECOGNITION_BADGE_KEYS } from "./recognition-badges";
+import { recognitionKeyFromTitle } from "./recognition-badges";
 import { PUBLIC_EXPLORE_CACHE_TTL_MS, publicExploreCache } from "./public-explore-cache";
 import { INDEXER_URL } from "./urls";
 import { countryCodeFromCertifiedLocation, fetchCertifiedLocationCountryCode, type CertifiedLocationLike } from "./country-location";
@@ -2013,14 +2013,14 @@ async function fetchRecognitionAwardIndexUncached(signal?: AbortSignal): Promise
     if (!afterDefinitions && !afterAwards) break;
   }
 
-  // Map every recognition badge definition uri -> its normalized key.
+  // Map every recognition badge definition uri -> its canonical key. Titles
+  // arrive either verbatim ("bioblitz-best-picture-round-2") or squashed by
+  // the shared alphanumeric normalisation; recognitionKeyFromTitle accepts both.
   const recognitionKeys = new Map<string, string>();
   for (const definition of definitions) {
     if (!definition.uri || !definition.title) continue;
-    const normalized = normalizeFeaturedBadgeTitle(definition.title);
-    if ((RECOGNITION_BADGE_KEYS as readonly string[]).includes(normalized)) {
-      recognitionKeys.set(definition.uri, normalized);
-    }
+    const key = recognitionKeyFromTitle(definition.title);
+    if (key) recognitionKeys.set(definition.uri, key);
   }
   if (recognitionKeys.size === 0) return new Map<string, Set<string>>();
 
@@ -2045,7 +2045,7 @@ async function fetchRecognitionAwardIndexUncached(signal?: AbortSignal): Promise
  */
 function fetchRecognitionAwardIndex(signal?: AbortSignal): Promise<Map<string, Set<string>>> {
   return cachedAsync(
-    "recognition-award-index:v1",
+    "recognition-award-index:v2",
     HIDDEN_ACCOUNTS_CACHE_MS,
     () => fetchRecognitionAwardIndexUncached().catch(() => new Map<string, Set<string>>()),
     signal,

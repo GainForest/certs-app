@@ -402,7 +402,13 @@
       "pending": "Akan diumumkan",
       "compact": "Terbaru",
       "mostSubmitted": "Kiriman terbanyak",
-      "mostLiked": "Paling disukai"
+      "mostLiked": "Paling disukai",
+      "award": {
+        "action": "Berikan lencana pemenang",
+        "actionMissing": "Berikan lencana yang tersisa",
+        "done": "Lencana pemenang telah diberikan",
+        "error": "Tidak dapat memberikan lencana. Coba lagi."
+      }
     },
     "map": {
       "title": "Observasi minggu ini",

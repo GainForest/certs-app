@@ -1215,24 +1215,31 @@
   "recognition": {
     "eyebrow": "Administración de GainForest",
     "title": "Otorgar insignias de reconocimiento",
-    "description": "Dale a {name} una insignia por una subvención o una victoria en BioBlitz. Las insignias otorgadas aparecen en su perfil público.",
+    "description": "Dale a {name} una insignia por una subvención. Las insignias de ganadores de BioBlitz se otorgan por ronda desde la página de BioBlitz.",
     "award": "Otorgar",
     "remove": "Quitar",
     "genericError": "Algo salió mal. Inténtalo de nuevo.",
-    "chipsAria": "Insignias de reconocimiento",
     "badges": {
       "rewilding-grant": {
         "label": "Subvención Rewilding",
         "description": "Recibió una subvención de Resilvestrar la web."
       },
       "bioblitz-most-images": {
-        "label": "BioBlitz — más imágenes",
+        "label": "BioBlitz — más observaciones",
+        "labelWithRound": "BioBlitz {roundName} — más observaciones",
         "description": "Ganó una ronda de BioBlitz por la mayor cantidad de observaciones."
       },
       "bioblitz-best-picture": {
         "label": "BioBlitz — mejor foto",
+        "labelWithRound": "BioBlitz {roundName} — mejor foto",
         "description": "Ganó una ronda de BioBlitz por la mejor foto."
       }
+    },
+    "awardsLabel": "Premios",
+    "aria": "Premios: {names}",
+    "roundName": {
+      "pilot": "Ronda piloto",
+      "numbered": "Ronda {round}"
     }
   },
   "steward": {

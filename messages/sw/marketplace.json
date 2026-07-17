@@ -402,7 +402,13 @@
       "pending": "Itatangazwa",
       "compact": "Karibuni",
       "mostSubmitted": "Zilizowasilishwa zaidi",
-      "mostLiked": "Zilizopendwa zaidi"
+      "mostLiked": "Zilizopendwa zaidi",
+      "award": {
+        "action": "Toa beji za washindi",
+        "actionMissing": "Toa beji zilizosalia",
+        "done": "Beji za washindi zimetolewa",
+        "error": "Imeshindikana kutoa beji. Jaribu tena."
+      }
     },
     "map": {
       "title": "Uchunguzi wa wiki",

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BioblitzGallery } from "./BioblitzGallery";
+import { RoundAwardControl, useBioblitzAwardState } from "./BioblitzAwardControls";
 import { BioblitzBestPicture } from "./BioblitzBestPicture";
 import { BioblitzObservationsMap } from "./BioblitzObservationsMap";
 import { RegisterButton } from "./BioblitzRegister";
@@ -543,6 +544,8 @@ function PastWinners({
   const boardT = useTranslations("marketplace.bioblitz.board");
   const bestT = useTranslations("marketplace.bioblitz.bestPicture");
   const locale = useLocale();
+  // Moderator-only round badge awarding; renders nothing for regular viewers.
+  const awardHook = useBioblitzAwardState();
   if (rounds.length === 0) return null;
   const rows = summaries ?? rounds.map((round) => ({ round, mostSubmitted: null, mostLiked: null }));
 
@@ -580,6 +583,11 @@ function PastWinners({
                   pending={summaries == null ? "…" : t("pending")}
                 />
               </div>
+              <RoundAwardControl
+                roundId={summary.round.id}
+                hook={awardHook}
+                hasWinners={Boolean(summary.mostSubmitted || summary.mostLiked)}
+              />
             </li>
           ))}
         </ul>

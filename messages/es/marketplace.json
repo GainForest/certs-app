@@ -402,7 +402,13 @@
       "pending": "Por anunciar",
       "compact": "Recientes",
       "mostSubmitted": "Más envíos",
-      "mostLiked": "Más me gusta"
+      "mostLiked": "Más me gusta",
+      "award": {
+        "action": "Otorgar insignias a los ganadores",
+        "actionMissing": "Otorgar insignias pendientes",
+        "done": "Insignias de ganadores otorgadas",
+        "error": "No se pudieron otorgar las insignias. Inténtalo de nuevo."
+      }
     },
     "map": {
       "title": "Observaciones de la semana",

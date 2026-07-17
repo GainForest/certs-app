@@ -402,7 +402,13 @@
       "pending": "A anunciar",
       "compact": "Recentes",
       "mostSubmitted": "Mais envios",
-      "mostLiked": "Mais curtidas"
+      "mostLiked": "Mais curtidas",
+      "award": {
+        "action": "Conceder selos aos vencedores",
+        "actionMissing": "Conceder selos pendentes",
+        "done": "Selos dos vencedores concedidos",
+        "error": "Não foi possível conceder os selos. Tente novamente."
+      }
     },
     "map": {
       "title": "Observações da semana",

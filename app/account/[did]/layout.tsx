@@ -6,7 +6,7 @@ import type { CgsRole } from "@/app/(manage)/manage/_lib/cgs";
 import { EditableAccountHeader } from "@/app/(manage)/manage/_components/EditableAccountHeader";
 import { fetchHiddenAccountDids, fetchRecognitionBadgesForDid } from "@/app/_lib/indexer";
 import { fetchEndorsementsGivenCount } from "@/app/_lib/endorsements-given";
-import { RECOGNITION_BADGE_KEYS, type RecognitionBadgeKey } from "@/app/_lib/recognition-badges";
+import { compareRecognitionBadgeKeys, isManualRecognitionBadgeKey, isRecognitionBadgeKey } from "@/app/_lib/recognition-badges";
 import { getGainForestModeratorAccess } from "@/app/internal/badges/_lib/access";
 import { localizedAlternates } from "@/app/_lib/seo-metadata";
 import { getRequestOrigin } from "@/app/_lib/request-origin";
@@ -153,8 +153,9 @@ export default async function AccountLayout({
     : null;
   // Steward-awarded recognition badges shown publicly on the profile (and used
   // as the moderator control's initial state). One cached index read per view.
-  const awardedRecognition: RecognitionBadgeKey[] = await fetchRecognitionBadgesForDid(account.did)
-    .then((keys) => RECOGNITION_BADGE_KEYS.filter((key) => keys.has(key)))
+  // A profile can hold several BioBlitz wins across rounds, so this is a list.
+  const awardedRecognition: string[] = await fetchRecognitionBadgesForDid(account.did)
+    .then((keys) => [...keys].filter(isRecognitionBadgeKey).sort(compareRecognitionBadgeKeys))
     .catch(() => []);
   // The "Endorsements given" tab appears only for organizations that have
   // signed at least one Organization Endorsement badge award. Cached per org.
@@ -182,7 +183,7 @@ export default async function AccountLayout({
                 did={account.did}
                 accountName={account.displayName}
                 initialTestFlagged={testAccountFlagged}
-                initialAwarded={awardedRecognition}
+                initialAwarded={awardedRecognition.filter(isManualRecognitionBadgeKey)}
               />
             ) : null}
             {canEditProfile && target ? (
