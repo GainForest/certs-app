@@ -75,6 +75,20 @@ interface TourState {
   index: number;
 }
 
+// How many projects a manage endpoint reports. `null` means "unknown"
+// (signed out, no access, or a transport error) — callers must not treat
+// that as zero.
+async function fetchManagedProjectCount(url: string): Promise<number | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = (await res.json()) as unknown;
+    return Array.isArray(data) ? data.length : null;
+  } catch {
+    return null;
+  }
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(value, max));
 }
@@ -356,10 +370,39 @@ export function FloatingTainaGuide() {
     if (getTainaGuide(view.guideId)?.requiresProject) {
       (async () => {
         try {
-          const res = await fetch("/api/manage/projects");
-          if (!res.ok) return; // signed out or error — leave it unknown
-          const data = (await res.json()) as unknown;
-          if (!cancelled && Array.isArray(data)) setHasProjects(data.length > 0);
+          // A project can live in the user's personal profile OR in one of
+          // their organizations (donation wallets are organization-owned, so
+          // org projects absolutely count). Check the personal repo first,
+          // then every organization the user belongs to.
+          const personal = await fetchManagedProjectCount("/api/manage/projects");
+          if (cancelled) return;
+          if (personal === null) return; // signed out or error — leave it unknown
+          if (personal > 0) {
+            setHasProjects(true);
+            return;
+          }
+          const groupsRes = await fetch("/api/cgs/groups");
+          if (!groupsRes.ok) {
+            if (!cancelled) setHasProjects(false);
+            return;
+          }
+          const groupsData = (await groupsRes.json()) as { groups?: Array<{ groupDid?: unknown }> };
+          const groupDids = (Array.isArray(groupsData.groups) ? groupsData.groups : [])
+            .map((group) => (typeof group?.groupDid === "string" ? group.groupDid : null))
+            .filter((did): did is string => Boolean(did?.startsWith("did:")));
+          if (groupDids.length === 0) {
+            if (!cancelled) setHasProjects(false);
+            return;
+          }
+          const counts = await Promise.all(
+            groupDids.map((did) => fetchManagedProjectCount(`/api/manage/projects?repo=${encodeURIComponent(did)}`)),
+          );
+          if (cancelled) return;
+          // Unknown answers (null) for some orgs must not produce a false
+          // "you have no project" — only conclude that when every org
+          // answered and none had projects.
+          if (counts.some((count) => (count ?? 0) > 0)) setHasProjects(true);
+          else if (counts.every((count) => count !== null)) setHasProjects(false);
         } catch {
           // leave it unknown
         }
