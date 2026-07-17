@@ -630,6 +630,11 @@
     "signerLabelPlaceholder": "Nombra esta llave (p. ej., Mi teléfono)",
     "signersHint": "Añade una llave de acceso desde otro dispositivo o de una persona de confianza: cualquiera de ellas puede aprobar pagos.",
     "deleteButton": "Eliminar billetera",
+    "deleteConfirmTitle": "¿Eliminar esta billetera?",
+    "deleteConfirmBody": "Esta acción no se puede deshacer. Si más adelante creas una nueva billetera con otra llave de acceso, tendrá una dirección diferente.",
+    "deleteConfirmFunds": "Esta billetera ya tiene fondos, así que no se puede eliminar.",
+    "deleteConfirmCancel": "Cancelar",
+    "deleteConfirmButton": "Sí, eliminar billetera",
     "viewOnExplorer": "Ver esta dirección en Etherscan",
     "explorer": "Etherscan"
   },

@@ -630,6 +630,11 @@
     "signerLabelPlaceholder": "Name this passkey (e.g. My phone)",
     "signersHint": "Add a passkey from another device or a person you trust — any of them can approve payments.",
     "deleteButton": "Remove wallet",
+    "deleteConfirmTitle": "Remove this wallet?",
+    "deleteConfirmBody": "This can't be undone. If you create a new wallet later with a new passkey, it will have a different address.",
+    "deleteConfirmFunds": "This wallet already holds funds, so it can't be removed.",
+    "deleteConfirmCancel": "Cancel",
+    "deleteConfirmButton": "Yes, remove wallet",
     "viewOnExplorer": "View this address on Etherscan",
     "explorer": "Etherscan"
   },

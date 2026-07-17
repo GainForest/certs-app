@@ -43,6 +43,7 @@ type WalletState = {
   record?: SplitsVaultRecord;
   uri?: string;
   deployed?: boolean;
+  holdsFunds?: boolean;
 };
 
 type OrganizationWalletContext = {
@@ -90,6 +91,7 @@ export function WalletTabClient({ organization }: { organization?: OrganizationW
   const [actionError, setActionError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [newSignerLabel, setNewSignerLabel] = useState("");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,8 +216,8 @@ export function WalletTabClient({ organization }: { organization?: OrganizationW
       t("removeSignerError"),
     );
 
-  const handleDelete = () =>
-    runAction(
+  const handleDelete = async () => {
+    await runAction(
       () => fetch(organization ? "/api/org-wallet" : "/api/wallet", {
         method: "DELETE",
         headers: organization ? { "content-type": "application/json" } : undefined,
@@ -223,6 +225,8 @@ export function WalletTabClient({ organization }: { organization?: OrganizationW
       }),
       t("deleteError"),
     );
+    setConfirmingDelete(false);
+  };
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
@@ -366,15 +370,42 @@ export function WalletTabClient({ organization }: { organization?: OrganizationW
           {actionError ? <p className="px-1 text-sm text-destructive">{actionError}</p> : null}
 
           {!deployed && canManageWallet ? (
-            <Button
-              variant="ghost"
-              className="w-full text-muted-foreground hover:text-destructive"
-              onClick={() => void handleDelete()}
-              disabled={isBusy}
-            >
-              <Trash2Icon className="size-3.5" />
-              {t("deleteButton")}
-            </Button>
+            confirmingDelete ? (
+              <Card className="border-destructive/40">
+                <div className="space-y-3">
+                  <h2 className="text-sm font-semibold text-foreground">{t("deleteConfirmTitle")}</h2>
+                  <p className="text-sm text-muted-foreground">{t("deleteConfirmBody")}</p>
+                  {state?.holdsFunds ? (
+                    <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                      {t("deleteConfirmFunds")}
+                    </p>
+                  ) : null}
+                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                    <Button variant="outline" onClick={() => setConfirmingDelete(false)} disabled={isBusy}>
+                      {t("deleteConfirmCancel")}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => void handleDelete()}
+                      disabled={isBusy || state?.holdsFunds === true}
+                    >
+                      {isBusy ? <Loader2Icon className="size-3.5 animate-spin" /> : <Trash2Icon className="size-3.5" />}
+                      {t("deleteConfirmButton")}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ) : (
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground hover:text-destructive"
+                onClick={() => setConfirmingDelete(true)}
+                disabled={isBusy}
+              >
+                <Trash2Icon className="size-3.5" />
+                {t("deleteButton")}
+              </Button>
+            )
           ) : null}
         </>
       )}

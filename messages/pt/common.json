@@ -630,6 +630,11 @@
     "signerLabelPlaceholder": "Dê um nome a esta chave (ex.: Meu celular)",
     "signersHint": "Adicione uma chave de acesso de outro dispositivo ou de uma pessoa de confiança — qualquer uma delas pode aprovar pagamentos.",
     "deleteButton": "Remover carteira",
+    "deleteConfirmTitle": "Remover esta carteira?",
+    "deleteConfirmBody": "Esta ação não pode ser desfeita. Se você criar uma nova carteira mais tarde com outra chave de acesso, ela terá um endereço diferente.",
+    "deleteConfirmFunds": "Esta carteira já possui fundos, portanto não pode ser removida.",
+    "deleteConfirmCancel": "Cancelar",
+    "deleteConfirmButton": "Sim, remover carteira",
     "viewOnExplorer": "Ver este endereço no Etherscan",
     "explorer": "Etherscan"
   },

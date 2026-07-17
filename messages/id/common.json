@@ -630,6 +630,11 @@
     "signerLabelPlaceholder": "Beri nama kunci ini (mis. Ponsel saya)",
     "signersHint": "Tambahkan kunci sandi dari perangkat lain atau orang yang Anda percaya — semuanya dapat menyetujui pembayaran.",
     "deleteButton": "Hapus dompet",
+    "deleteConfirmTitle": "Hapus dompet ini?",
+    "deleteConfirmBody": "Tindakan ini tidak dapat dibatalkan. Jika nanti Anda membuat dompet baru dengan kunci sandi baru, alamatnya akan berbeda.",
+    "deleteConfirmFunds": "Dompet ini sudah berisi dana, jadi tidak dapat dihapus.",
+    "deleteConfirmCancel": "Batal",
+    "deleteConfirmButton": "Ya, hapus dompet",
     "viewOnExplorer": "Lihat alamat ini di Etherscan",
     "explorer": "Etherscan"
   },

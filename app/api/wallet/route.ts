@@ -122,8 +122,11 @@ export async function GET() {
 
   const record = await fetchSplitsVaultRecord(did);
   if (!record) return NextResponse.json({ exists: false });
-  const deployed = await isVaultDeployed(record.address).catch(() => false);
-  return NextResponse.json({ exists: true, record, uri: splitsVaultUri(did), deployed });
+  const [deployed, holdsFunds] = await Promise.all([
+    isVaultDeployed(record.address).catch(() => false),
+    vaultHoldsFunds(record.address).catch(() => false),
+  ]);
+  return NextResponse.json({ exists: true, record, uri: splitsVaultUri(did), deployed, holdsFunds });
 }
 
 // ── POST — create the wallet with the owner's passkey ────────────────────────

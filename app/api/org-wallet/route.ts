@@ -131,13 +131,17 @@ export async function GET(request: NextRequest) {
   if (!record) {
     return NextResponse.json({ exists: false, viewerRole: role });
   }
-  const deployed = await isVaultDeployed(record.address).catch(() => false);
+  const [deployed, holdsFunds] = await Promise.all([
+    isVaultDeployed(record.address).catch(() => false),
+    vaultHoldsFunds(record.address).catch(() => false),
+  ]);
   return NextResponse.json({
     exists: true,
     viewerRole: role,
     record,
     uri: splitsVaultUri(repo),
     deployed,
+    holdsFunds,
   });
 }
 

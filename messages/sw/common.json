@@ -630,6 +630,11 @@
     "signerLabelPlaceholder": "Ipe jina ufunguo huu (mf. Simu yangu)",
     "signersHint": "Ongeza ufunguo wa siri kutoka kifaa kingine au mtu unayemwamini — yeyote kati yao anaweza kuidhinisha malipo.",
     "deleteButton": "Ondoa pochi",
+    "deleteConfirmTitle": "Ondoa pochi hii?",
+    "deleteConfirmBody": "Hatua hii haiwezi kutenduliwa. Ukiunda pochi mpya baadaye kwa ufunguo mpya wa siri, itakuwa na anwani tofauti.",
+    "deleteConfirmFunds": "Pochi hii tayari ina fedha, hivyo haiwezi kuondolewa.",
+    "deleteConfirmCancel": "Ghairi",
+    "deleteConfirmButton": "Ndiyo, ondoa pochi",
     "viewOnExplorer": "Tazama anwani hii kwenye Etherscan",
     "explorer": "Etherscan"
   },
