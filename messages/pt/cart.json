@@ -39,7 +39,7 @@
     "encouragement": "Que bom! Sua doação apoia a conservação liderada pelas comunidades.",
     "donorTitle": "Como sua doação aparece",
     "anonymousLabel": "Doar anonimamente",
-    "anonymousHint": "Deixe desativado para mostrar estas doações no seu perfil GainForest.",
+    "anonymousHint": "Doações anônimas nunca aparecem publicamente com o seu nome — você ainda pode vê-las no seu próprio perfil.",
     "signedOutNote": "Você não está conectado, então suas doações aparecerão como anônimas.",
     "walletTitle": "Carteira de pagamento",
     "walletHint": "As doações são pagas em USDC na Ethereum. Conecte sua carteira para continuar — as taxas de rede são cobertas para você.",

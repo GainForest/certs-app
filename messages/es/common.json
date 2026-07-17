@@ -636,7 +636,8 @@
   "accountDonations": {
     "emptyHeroDescription": "Apoya un proyecto y tus contribuciones aparecerán aquí, cada una enlazada al proyecto que apoyaste.",
     "emptyHeroCta": "Explorar proyectos",
-    "anonymousNote": "Las donaciones hechas con «Donar de forma anónima» marcado nunca se vinculan a tu perfil, por eso no aparecen aquí. Déjalo sin marcar al pagar para ver tus futuras donaciones en esta página."
+    "anonymousNote": "Las donaciones anónimas también aparecen aquí, pero solo tú puedes verlas — nunca se muestran públicamente con tu nombre. Algunas donaciones anónimas antiguas no se pueden mostrar.",
+    "anonymousBadge": "Solo visible para ti"
   },
   "accountProjects": {
     "emptyEyebrow": "Sin proyectos",

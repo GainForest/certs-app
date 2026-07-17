@@ -19,6 +19,7 @@ import { AccountContentColumns, AccountSidebar } from "./AccountSidebar";
 import { ShareProfileButton } from "./ShareProfileButton";
 import { DonationHistory } from "./DonationHistory";
 import { fetchReceipts } from "../../_lib/dashboard";
+import { fetchOwnAnonymousReceipts } from "../../_lib/anonymous-donations";
 import { fetchPublicDataCouncilMembers, type PublicDataCouncilMember } from "../../_lib/data-council";
 import { fetchEndorsementsGiven } from "../../_lib/endorsements-given";
 import type { AuthSession } from "../../_lib/auth";
@@ -402,15 +403,22 @@ export async function AccountDonationsTabContent({ account, did }: { account: Ac
   const receipts = await fetchReceipts().catch(() => []);
   const userDonations = receipts.filter((receipt) => receipt.from?.type === "did" && receipt.from.id === did);
 
-  // Anonymous donations are recorded with the wallet only — never the
-  // profile — so they can't be listed here. Tell the owner that, otherwise
-  // a donor who checked "Donate anonymously" thinks their donation is lost.
+  // Anonymous donations carry no public profile link — but the owner can
+  // still see their own, matched server-side via their donor hash. This
+  // merge must ONLY happen for the owner's session.
   const session = await fetchAuthSession().catch(() => ({ isLoggedIn: false }) as AuthSession);
   const viewerIsOwner = session.isLoggedIn && session.did === did;
+  const anonymousDonations = viewerIsOwner ? await fetchOwnAnonymousReceipts(did).catch(() => []) : [];
+
+  const merged = [...userDonations, ...anonymousDonations].sort((a, b) => {
+    const dateA = Date.parse(a.occurredAt ?? a.createdAt ?? "") || 0;
+    const dateB = Date.parse(b.occurredAt ?? b.createdAt ?? "") || 0;
+    return dateB - dateA;
+  });
 
   return (
     <section className="py-6">
-      <DonationHistory receipts={userDonations} showAnonymousNote={viewerIsOwner} />
+      <DonationHistory receipts={merged} showAnonymousNote={viewerIsOwner} />
     </section>
   );
 }

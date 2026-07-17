@@ -2,7 +2,8 @@ import { formatUsdcAmount, normalizeUsdcAmountString, parseUsdcAmount } from "@/
 import { parsePaymentSignature } from "@/lib/facilitator/eip3009";
 import { executeTransferWithAuthorization, SettlementTimeoutError } from "@/lib/facilitator";
 import { getTipWalletAddress, TIP_ENS_NAME } from "@/lib/facilitator/tip";
-import { isDidIdentifier, writeTipReceipt, type DidIdentifier } from "@/lib/facilitator/receipts";
+import { computeDonorHash, isDidIdentifier, writeTipReceipt, type DidIdentifier } from "@/lib/facilitator/receipts";
+import { fetchAuthSession } from "@/app/_lib/auth-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -87,9 +88,18 @@ export async function POST(request: Request) {
       ? ({ $type: "app.certified.defs#did", did: donorDid } as const)
       : ({ $type: "org.hypercerts.funding.receipt#text", value: authorization.from } as const);
 
+  // Anonymous tips stay unattributed publicly but carry an opaque owner hash
+  // (derived from the SESSION, never the request body) so the donor can still
+  // see them on their own donations page.
+  let donorHash: string | null = null;
+  if (anonymous) {
+    const session = await fetchAuthSession();
+    if (session.isLoggedIn) donorHash = computeDonorHash(session.did, transactionHash);
+  }
+
   let receiptUri: string | null = null;
   try {
-    receiptUri = await writeTipReceipt({ from, toWallet: tipWallet, amount, transactionHash, ensName: TIP_ENS_NAME });
+    receiptUri = await writeTipReceipt({ from, toWallet: tipWallet, amount, transactionHash, ensName: TIP_ENS_NAME, donorHash });
   } catch (error) {
     // The tip has already settled on-chain — log receipt failures only.
     console.error("[tip] Failed to write tip receipt:", error);

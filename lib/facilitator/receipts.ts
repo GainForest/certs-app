@@ -4,6 +4,7 @@
  * batched /api/checkout settlement.
  */
 
+import { createHmac } from "node:crypto";
 import { FACILITATOR_DID } from "@/app/_lib/urls";
 import { PAYMENT_NETWORK, PAYMENT_RAIL } from "./usdc";
 
@@ -17,6 +18,26 @@ export type ReceiptText = { $type: "org.hypercerts.funding.receipt#text"; value:
 
 export function isDidIdentifier(value: string): value is DidIdentifier {
   return /^did:[a-z0-9]+:.+$/i.test(value);
+}
+
+/**
+ * Opaque owner tag for anonymous donations. Receipts are PUBLIC records, so
+ * an anonymous donation must never carry the donor's profile. Instead we
+ * store an HMAC of the donor DID keyed by a server-only secret and salted
+ * with the transaction hash:
+ *
+ *  - the public cannot reverse it to a profile (secret is server-only), and
+ *  - the SAME donor gets a DIFFERENT hash on every receipt (tx salt), so
+ *    their anonymous donations cannot even be correlated with each other.
+ *
+ * The donor's own donations page recomputes the HMAC server-side from their
+ * session DID and matches — only they ever see the link. Returns null when
+ * the secret is unset (feature off).
+ */
+export function computeDonorHash(donorDid: string, transactionId: string): string | null {
+  const secret = process.env.RECEIPT_DONOR_HASH_SECRET?.trim();
+  if (!secret) return null;
+  return createHmac("sha256", secret).update(`${donorDid}\n${transactionId}`).digest("hex");
 }
 
 function getFacilitatorServiceHost(): string {
@@ -68,7 +89,10 @@ export async function writeFundingReceipt(params: {
   currency: "USDC";
   transactionHash: string;
   receiptSubject?: { uri: string; cid: string };
+  /** Owner-only tag for anonymous donations — see computeDonorHash. */
+  donorHash?: string | null;
 }): Promise<string | null> {
+  const now = new Date().toISOString();
   return createReceiptRecord({
     $type: "org.hypercerts.funding.receipt",
     from: params.from,
@@ -80,7 +104,12 @@ export async function writeFundingReceipt(params: {
     transactionId: params.transactionHash,
     for: params.receiptSubject,
     notes: `${params.from.$type === "app.certified.defs#did" ? params.from.did : params.from.value} paid ${params.amount}${params.currency} using wallet`,
-    occurredAt: new Date().toISOString(),
+    occurredAt: now,
+    // Required by the org.hypercerts.funding.receipt lexicon. Receipts
+    // without it sort last on every createdAt-ordered feed (indexer
+    // dashboards, admin stats), making new donations look missing.
+    createdAt: now,
+    ...(params.donorHash ? { donorHash: params.donorHash } : {}),
   });
 }
 
@@ -90,8 +119,11 @@ export async function writeTipReceipt(params: {
   amount: string;
   transactionHash: string;
   ensName: string;
+  /** Owner-only tag for anonymous donations — see computeDonorHash. */
+  donorHash?: string | null;
 }): Promise<string | null> {
   const fromLabel = params.from.$type === "app.certified.defs#did" ? params.from.did : params.from.value;
+  const now = new Date().toISOString();
   return createReceiptRecord({
     $type: "org.hypercerts.funding.receipt",
     from: params.from,
@@ -102,6 +134,9 @@ export async function writeTipReceipt(params: {
     paymentNetwork: PAYMENT_NETWORK,
     transactionId: params.transactionHash,
     notes: `${fromLabel} tipped ${params.amount}USDC to GainForest (${params.ensName})`,
-    occurredAt: new Date().toISOString(),
+    occurredAt: now,
+    // Required by the org.hypercerts.funding.receipt lexicon (see above).
+    createdAt: now,
+    ...(params.donorHash ? { donorHash: params.donorHash } : {}),
   });
 }

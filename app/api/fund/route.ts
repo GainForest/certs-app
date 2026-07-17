@@ -3,12 +3,14 @@ import { parsePaymentSignature } from "@/lib/facilitator/eip3009";
 import { executeTransferWithAuthorization, SettlementTimeoutError } from "@/lib/facilitator";
 import { fetchActivityCid, fetchVerifiedRecipientAddress } from "@/lib/facilitator/recipient";
 import {
+  computeDonorHash,
   isDidIdentifier,
   writeFundingReceipt,
   type DidIdentifier,
   type ReceiptSender,
   type ReceiptText,
 } from "@/lib/facilitator/receipts";
+import { fetchAuthSession } from "@/app/_lib/auth-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -157,6 +159,15 @@ export async function POST(request: Request) {
     return Response.json({ error: "Payment could not be completed. Please try again later." }, { status: 500 });
   }
 
+  // Anonymous donations stay unattributed in the public record, but carry an
+  // opaque owner hash (derived from the SESSION, never the request body) so
+  // the donor can still see them on their own donations page.
+  let donorHash: string | null = null;
+  if (body.anonymous) {
+    const session = await fetchAuthSession();
+    if (session.isLoggedIn) donorHash = computeDonorHash(session.did, transactionHash);
+  }
+
   const donorRecordedAs = body.anonymous ? "wallet" : "did";
   const receiptSender: ReceiptSender = body.anonymous
     ? { $type: "org.hypercerts.funding.receipt#text", value: authorization.from }
@@ -178,6 +189,7 @@ export async function POST(request: Request) {
       currency: "USDC",
       transactionHash,
       receiptSubject,
+      donorHash,
     });
   } catch (error) {
     // The payment has already settled on-chain. Surface success and log receipt failures.

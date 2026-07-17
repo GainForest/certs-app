@@ -39,7 +39,7 @@
     "encouragement": "Nice! Your donation supports community-led conservation.",
     "donorTitle": "How your donation appears",
     "anonymousLabel": "Donate anonymously",
-    "anonymousHint": "Leave this off to show these donations on your GainForest profile.",
+    "anonymousHint": "Anonymous donations never appear publicly under your name — you can still see them on your own profile.",
     "signedOutNote": "You are not signed in, so your donations will appear as anonymous.",
     "walletTitle": "Payment wallet",
     "walletHint": "Donations are paid in USDC on Ethereum. Connect your wallet to continue — network fees are covered for you.",

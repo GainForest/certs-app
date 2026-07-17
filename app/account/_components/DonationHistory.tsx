@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { HeartIcon, ExternalLinkIcon } from "lucide-react";
+import { HeartIcon, ExternalLinkIcon, EyeOffIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { FundingReceipt } from "../../_lib/dashboard";
 import { formatCompactUsd } from "../../_lib/format";
@@ -43,9 +43,11 @@ function formatDistanceToNowLabel(value: string | null): string | null {
 function DonationCard({
   item,
   index,
+  anonymousBadge,
 }: {
   item: FundingReceipt;
   index: number;
+  anonymousBadge: string;
 }) {
   const amount = item.amount;
   const txId = item.txHash;
@@ -92,9 +94,17 @@ function DonationCard({
             </span>
           )}
         </div>
-        {relativeTime && (
-          <p className="text-xs text-muted-foreground">{relativeTime}</p>
-        )}
+        <div className="flex items-center gap-2">
+          {relativeTime && (
+            <p className="text-xs text-muted-foreground">{relativeTime}</p>
+          )}
+          {item.isAnonymous && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <EyeOffIcon className="h-2.5 w-2.5" aria-hidden />
+              {anonymousBadge}
+            </span>
+          )}
+        </div>
       </div>
 
       {explorerUrl && (
@@ -164,7 +174,7 @@ export function DonationHistory({ receipts, showAnonymousNote = false }: Donatio
         <div className="rounded-lg border border-border bg-card p-3">
           <div className="divide-y divide-border">
             {receipts.map((item, index) => (
-              <DonationCard key={item.uri ?? index} item={item} index={index} />
+              <DonationCard key={item.uri ?? index} item={item} index={index} anonymousBadge={t("anonymousBadge")} />
             ))}
           </div>
         </div>

@@ -4,12 +4,14 @@ import { executeTransferWithAuthorization, executeUsdcTransfer, getFacilitatorAd
 import { fetchActivityCid, fetchVerifiedRecipientAddress } from "@/lib/facilitator/recipient";
 import { getTipWalletAddress, TIP_ENS_NAME } from "@/lib/facilitator/tip";
 import {
+  computeDonorHash,
   isDidIdentifier,
   writeFundingReceipt,
   writeTipReceipt,
   type DidIdentifier,
   type ReceiptSender,
 } from "@/lib/facilitator/receipts";
+import { fetchAuthSession } from "@/app/_lib/auth-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -195,6 +197,15 @@ export async function POST(request: Request) {
     ? { $type: "org.hypercerts.funding.receipt#text", value: authorization.from }
     : { $type: "app.certified.defs#did", did: donorDid! };
 
+  // Anonymous donations stay unattributed in the public records, but carry an
+  // opaque owner hash (derived from the SESSION, never the request body) so
+  // the donor can still see them on their own donations page.
+  let sessionDid: string | null = null;
+  if (body.anonymous) {
+    const session = await fetchAuthSession();
+    if (session.isLoggedIn) sessionDid = session.did;
+  }
+
   // Fan out. A failed transfer here is reported per line; the pulled funds
   // stay in the facilitator wallet for manual follow-up.
   const lineResults: LineResult[] = [];
@@ -223,6 +234,7 @@ export async function POST(request: Request) {
         currency: "USDC",
         transactionHash: result.transactionHash,
         receiptSubject,
+        donorHash: sessionDid ? computeDonorHash(sessionDid, result.transactionHash) : null,
       });
     } catch (error) {
       // The transfer settled; only the public note failed.
@@ -242,6 +254,7 @@ export async function POST(request: Request) {
         amount: tipResult.amount,
         transactionHash: tipResult.transactionHash,
         ensName: TIP_ENS_NAME,
+        donorHash: sessionDid ? computeDonorHash(sessionDid, tipResult.transactionHash) : null,
       }).catch((error) => {
         console.error("[checkout] Failed to write tip receipt:", error);
         return null;
