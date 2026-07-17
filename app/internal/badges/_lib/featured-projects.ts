@@ -14,7 +14,7 @@ import { cgsMutate } from "./test-accounts";
 export const FEATURED_PROJECTS_CACHE_TAG = "featured-projects";
 const FEATURED_PROJECT_BADGE_TITLE = "featured-project";
 const FEATURED_PROJECT_BADGE_DESCRIPTION = "Marks a project for the featured projects shelf on GainForest.";
-const FEATURED_PROJECT_AWARD_NOTE = "Featured in the GainForest projects marketplace.";
+const FEATURED_PROJECT_AWARD_NOTE = "Selected for the featured projects section on GainForest.";
 export const MAX_FEATURED_PROJECTS = 3;
 
 export class FeaturedProjectMutationError extends Error {

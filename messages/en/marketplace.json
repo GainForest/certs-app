@@ -939,7 +939,7 @@
       "description": "Support projects that are actively welcoming contributions from their community."
     },
     "catalog": {
-      "eyebrow": "Project marketplace",
+      "eyebrow": "Explore projects",
       "title": "Explore all projects",
       "description": "Browse projects in this category.",
       "count": "{count, plural, one {# project to explore} other {# projects to explore}}"

@@ -939,7 +939,7 @@
       "description": "Dukung proyek yang sedang menerima kontribusi dari komunitas mereka."
     },
     "catalog": {
-      "eyebrow": "Pasar proyek",
+      "eyebrow": "Jelajahi proyek",
       "title": "Jelajahi semua proyek",
       "description": "Jelajahi proyek dalam kategori ini.",
       "count": "{count, plural, other {# proyek untuk dijelajahi}}"

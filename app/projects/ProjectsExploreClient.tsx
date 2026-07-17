@@ -60,8 +60,8 @@ const BADGE_FILTER_KEYS: BumicertBadgeFilter[] = ["gainforest", "maearth"];
 const SORT_MODES: ExplorerSortMode[] = ["newest", "oldest", "az", "za"];
 type ViewMode = "cards" | "list" | "map";
 const VIEW_MODES: ViewMode[] = ["cards", "list", "map"];
-type MarketplaceCategory = "all" | "forests" | "biodiversity" | "foodWater" | "communities" | "climate";
-const CATEGORY_KEYS: MarketplaceCategory[] = ["all", "forests", "biodiversity", "foodWater", "communities", "climate"];
+type ProjectCategory = "all" | "forests" | "biodiversity" | "foodWater" | "communities" | "climate";
+const CATEGORY_KEYS: ProjectCategory[] = ["all", "forests", "biodiversity", "foodWater", "communities", "climate"];
 const CATEGORY_OPTIONS = [
   { key: "all", Icon: LeafIcon },
   { key: "forests", Icon: TreePineIcon },
@@ -70,7 +70,7 @@ const CATEGORY_OPTIONS = [
   { key: "communities", Icon: UsersRoundIcon },
   { key: "climate", Icon: CloudSunIcon },
 ] as const;
-const CATEGORY_TERMS: Record<Exclude<MarketplaceCategory, "all">, string[]> = {
+const CATEGORY_TERMS: Record<Exclude<ProjectCategory, "all">, string[]> = {
   forests: ["forest", "tree", "reforestation", "agroforestry", "mangrove", "nursery"],
   biodiversity: ["biodiversity", "species", "wildlife", "habitat", "pollinator", "conservation", "monitoring"],
   foodWater: ["food", "farm", "agriculture", "agroecology", "water", "watershed", "soil", "wetland"],
@@ -196,7 +196,7 @@ export function ProjectsExploreClient({
   const badgeFilters = useMemo(() => parseBadgeFilterParam(badgesParam), [badgesParam]);
   const [category, setCategory] = useQueryState(
     "category",
-    parseAsStringEnum<MarketplaceCategory>(CATEGORY_KEYS).withDefault("all").withOptions(QUERY_STATE_OPTIONS),
+    parseAsStringEnum<ProjectCategory>(CATEGORY_KEYS).withDefault("all").withOptions(QUERY_STATE_OPTIONS),
   );
   const { ownerDid, setOwnerDid } = useOwnerFilter();
   const activeFilterCount = filters.length + badgeFilters.length + (category === "all" ? 0 : 1);
@@ -312,10 +312,10 @@ export function ProjectsExploreClient({
   const visibleRecords = useMemo(() => {
     return records
       .filter((record) => filters.every((key) => filterChips.find((chip) => chip.key === key)?.predicate(record)))
-      .filter((record) => matchesMarketplaceCategory(record, category))
+      .filter((record) => matchesProjectCategory(record, category))
       .toSorted((a, b) => compareProjects(a, b, sort));
   }, [records, filters, category, sort, filterChips]);
-  const showMarketplaceHome = view === "cards"
+  const showExploreHome = view === "cards"
     && !deferredQuery.trim()
     && filters.length === 0
     && badgeFilters.length === 0
@@ -563,11 +563,11 @@ export function ProjectsExploreClient({
             </div>
           </section>
 
-          {showMarketplaceHome && featuredRecords.length > 0 ? (
+          {showExploreHome && featuredRecords.length > 0 ? (
             <FeaturedProjects records={featuredRecords} onOpen={openRecord} />
           ) : null}
 
-          {showMarketplaceHome && supportRecords.length > 0 ? (
+          {showExploreHome && supportRecords.length > 0 ? (
             <SupportShelf records={supportRecords} onOpen={openRecord} donationSummaries={donationSummaries} />
           ) : null}
 
@@ -1049,7 +1049,7 @@ function BadgeFilterButton({ badge, selected, onClick }: { badge: BadgeFilterOpt
   );
 }
 
-function matchesMarketplaceCategory(record: ProjectRecord, category: MarketplaceCategory): boolean {
+function matchesProjectCategory(record: ProjectRecord, category: ProjectCategory): boolean {
   if (category === "all") return true;
   const searchable = [record.title, record.shortDescription, ...(record.scopeTags ?? [])]
     .filter(Boolean)

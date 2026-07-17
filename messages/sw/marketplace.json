@@ -939,7 +939,7 @@
       "description": "Saidia miradi inayokaribisha michango kutoka kwa jamii zao."
     },
     "catalog": {
-      "eyebrow": "Soko la miradi",
+      "eyebrow": "Gundua miradi",
       "title": "Gundua miradi yote",
       "description": "Gundua miradi katika aina hii.",
       "count": "{count, plural, one {Mradi # wa kugundua} other {Miradi # ya kugundua}}"
