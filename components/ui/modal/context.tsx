@@ -132,7 +132,11 @@ const ModalStack = ({
             }
           }}
         >
-          <AnimateChangeInHeight className="relative">
+          {/* min-w-0 keeps the dialog's grid track at the dialog width: without
+              it, content whose intrinsic width exceeds the dialog (e.g. a row of
+              non-wrapping buttons) widens the track and gets clipped at the
+              dialog's right edge instead of shrinking. */}
+          <AnimateChangeInHeight className="relative min-w-0">
             {children}
           </AnimateChangeInHeight>
         </DialogPlaceholder>

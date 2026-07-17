@@ -43,6 +43,10 @@
         "addWallet": {
           "title": "Crea la billetera de la organización",
           "body": "En la ventana de Configuración de donaciones, haz clic en Crear billetera con llave de acceso y confirma con Face ID, huella digital o una llave de seguridad. Después, otros miembros de la organización pueden añadir sus propias llaves de acceso."
+        },
+        "passkeys": {
+          "title": "Tu billetera está lista",
+          "body": "Tu proyecto puede aceptar donaciones en cuanto existe la billetera. La ventana de la billetera muestra la dirección y a todas las personas que pueden aprobar pagos. Otros miembros de tu organización pueden abrirla y añadir también su propia llave de acceso."
         }
       },
       "tour": {

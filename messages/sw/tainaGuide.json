@@ -43,6 +43,10 @@
         "addWallet": {
           "title": "Unda pochi ya shirika",
           "body": "Katika dirisha la Mipangilio ya Michango, bofya Unda pochi kwa ufunguo wa siri kisha uthibitishe kwa Face ID, alama ya kidole, au ufunguo wa usalama. Baadaye, wanachama wengine wa shirika wanaweza kuongeza funguo zao za siri."
+        },
+        "passkeys": {
+          "title": "Pochi yako iko tayari",
+          "body": "Mradi wako unaweza kupokea michango mara tu pochi inapoundwa. Dirisha la pochi linaonyesha anwani na kila mtu anayeweza kuidhinisha malipo. Wanachama wengine wa shirika lako wanaweza kulifungua na kuongeza ufunguo wao wa siri pia."
         }
       },
       "tour": {

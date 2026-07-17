@@ -43,6 +43,10 @@
         "addWallet": {
           "title": "Buat dompet organisasi",
           "body": "Di jendela Pengaturan Donasi, klik Buat dompet dengan kunci sandi lalu konfirmasi dengan Face ID, sidik jari, atau kunci keamanan. Setelah itu, anggota organisasi lain dapat menambahkan kunci sandi mereka sendiri."
+        },
+        "passkeys": {
+          "title": "Dompet Anda siap",
+          "body": "Proyek Anda bisa menerima donasi begitu dompet dibuat. Jendela dompet menampilkan alamat dan semua orang yang dapat menyetujui pembayaran. Anggota lain organisasi Anda juga dapat membukanya dan menambahkan kunci sandi mereka sendiri."
         }
       },
       "tour": {

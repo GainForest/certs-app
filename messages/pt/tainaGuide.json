@@ -43,6 +43,10 @@
         "addWallet": {
           "title": "Crie a carteira da organização",
           "body": "Na janela de Configurações de doação, clique em Criar carteira com chave de acesso e confirme com Face ID, impressão digital ou uma chave de segurança. Depois, outros membros da organização podem adicionar suas próprias chaves de acesso."
+        },
+        "passkeys": {
+          "title": "Sua carteira está pronta",
+          "body": "Seu projeto pode aceitar doações assim que a carteira existe. A janela da carteira mostra o endereço e todas as pessoas que podem aprovar pagamentos. Outros membros da sua organização podem abri-la e adicionar a própria chave de acesso também."
         }
       },
       "tour": {

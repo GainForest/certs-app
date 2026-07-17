@@ -43,6 +43,10 @@
         "addWallet": {
           "title": "Create the organization wallet",
           "body": "In the Donation Settings window, click Create wallet with passkey and confirm with Face ID, fingerprint, or a security key. Other members of the organization can add their own passkeys afterwards."
+        },
+        "passkeys": {
+          "title": "Your wallet is ready",
+          "body": "Your project can accept donations as soon as the wallet exists. The wallet window shows the address and everyone who can approve payments. Other members of your organization can open it and add their own passkey too."
         }
       },
       "tour": {
