@@ -1,8 +1,11 @@
-"use client";
-
 /**
  * Feed engagement read layer — like + comment aggregates from the hyperindex,
  * keyed by the AT-URI of the record being engaged with.
+ *
+ * Shared module (no "use client"): it is a pure fetch layer with no browser
+ * APIs, imported both by client components (feed cards, the BioBlitz page)
+ * and by server code (the BioBlitz winner-badge route recomputes the round's
+ * most-liked photo with it).
  *
  * Likes are `app.gainforest.feed.like` records (subject strongRef); comments are
  * `app.gainforest.feed.post` records carrying a `reply` (a reply-post, the

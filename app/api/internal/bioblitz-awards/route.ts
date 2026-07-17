@@ -60,7 +60,8 @@ export async function GET() {
     const rounds = endedRounds();
     const data = await fetchInternalBadgeData(loaded.repoDid, { includeAwards: true });
     return Response.json({ rounds: awardStateFor(data, rounds) }, { headers: { "cache-control": "no-store" } });
-  } catch {
+  } catch (error) {
+    console.error("[bioblitz-awards] GET failed:", error);
     return Response.json({ error: "Could not load the badge state." }, { status: 502 });
   }
 }
@@ -115,6 +116,7 @@ export async function POST(request: Request) {
     const state = awardStateFor(data, [round])[0]!;
     return Response.json(state, { headers: { "cache-control": "no-store" } });
   } catch (error) {
+    console.error("[bioblitz-awards] POST failed:", error);
     const status = error instanceof RecognitionMutationError ? error.status : 500;
     const message = error instanceof Error ? error.message : "Could not award the badges.";
     return Response.json({ error: message }, { status });
