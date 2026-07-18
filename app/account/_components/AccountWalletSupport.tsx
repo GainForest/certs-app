@@ -14,7 +14,7 @@ export function AccountWalletSupport({
   did,
   name,
   image,
-  walletAddress: initialWalletAddress = null,
+  walletAddress: controlledWalletAddress,
   className,
 }: {
   did: string;
@@ -25,15 +25,16 @@ export function AccountWalletSupport({
 }) {
   const t = useTranslations("common.accountSupport");
   const { pushModal, show } = useModal();
-  const [walletAddress, setWalletAddress] = useState(initialWalletAddress);
+  const [walletAddress, setWalletAddress] = useState(controlledWalletAddress ?? null);
 
   useEffect(() => {
+    if (controlledWalletAddress !== undefined) {
+      setWalletAddress(controlledWalletAddress);
+      return;
+    }
+
     let cancelled = false;
     const loadWallet = () => {
-      if (initialWalletAddress) {
-        setWalletAddress(initialWalletAddress);
-        return;
-      }
       fetch(`/api/verify-recipient?did=${encodeURIComponent(did)}`)
         .then((response) => response.ok ? response.json() : null)
         .then((result: { hasAttestation?: boolean; address?: string } | null) => {
@@ -47,7 +48,7 @@ export function AccountWalletSupport({
       cancelled = true;
       window.removeEventListener("gainforest:wallet-changed", loadWallet);
     };
-  }, [did, initialWalletAddress]);
+  }, [did, controlledWalletAddress]);
 
   if (!walletAddress) return null;
 

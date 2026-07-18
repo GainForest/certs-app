@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -9,6 +9,8 @@ import {
   Building2Icon,
   CalendarIcon,
   CheckIcon,
+  ChevronDownIcon,
+  CopyIcon,
   EarthIcon,
   GlobeIcon,
   PencilIcon,
@@ -68,6 +70,9 @@ export function AccountHero({
   memberships?: AccountOrganization[];
 }) {
   const [copied, setCopied] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [copiedIdentifier, setCopiedIdentifier] = useState<"did" | "wallet" | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const heroT = useTranslations("upload.dashboardClient.hero");
   const actionsT = useTranslations("upload.actions");
   const globeT = useTranslations("marketplace.globe");
@@ -78,11 +83,39 @@ export function AccountHero({
   const orgType = account.kind === "organization" ? account.orgType ?? account.summary.certOrgType : null;
   const hasFacts = Boolean(sinceDate.state === "valid" || country || orgType);
 
+  useEffect(() => {
+    let cancelled = false;
+    const loadWallet = () => {
+      fetch(`/api/verify-recipient?did=${encodeURIComponent(account.did)}`)
+        .then((response) => response.ok ? response.json() : null)
+        .then((result: { hasAttestation?: boolean; address?: string } | null) => {
+          if (!cancelled) setWalletAddress(result?.hasAttestation && result.address ? result.address : null);
+        })
+        .catch(() => {
+          if (!cancelled) setWalletAddress(null);
+        });
+    };
+
+    loadWallet();
+    window.addEventListener("gainforest:wallet-changed", loadWallet);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("gainforest:wallet-changed", loadWallet);
+    };
+  }, [account.did]);
+
   function handleShare() {
     const publicUrl = `${window.location.origin}/account/${encodeURIComponent(account.urlIdentifier)}`;
     navigator.clipboard.writeText(publicUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function copyIdentifier(kind: "did" | "wallet", value: string) {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopiedIdentifier(kind);
+      setTimeout(() => setCopiedIdentifier((current) => current === kind ? null : current), 2000);
     });
   }
 
@@ -99,7 +132,7 @@ export function AccountHero({
           {account.coverUrl ? (
             <Image
               src={account.coverUrl}
-              alt={`Cover image for ${account.displayName}`}
+              alt={heroT("coverImageAlt", { name: account.displayName })}
               fill
               priority
               unoptimized
@@ -118,36 +151,89 @@ export function AccountHero({
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-linear-to-t from-card to-transparent" />
         </motion.div>
 
-        <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={handleShare} aria-label="Copy link">
-            <AnimatePresence mode="wait" initial={false}>
-              {copied ? (
-                <motion.span
-                  key="copied"
-                  initial={{ opacity: 0, scale: 0.7 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.7 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex items-center gap-1.5"
+        <div className="absolute right-3 top-3 z-20 flex items-start gap-2">
+          <div className="relative flex flex-col items-end gap-1.5">
+            <Button type="button" variant="outline" size="sm" onClick={handleShare} aria-label={heroT("copyProfileLink")}>
+              <AnimatePresence mode="wait" initial={false}>
+                {copied ? (
+                  <motion.span
+                    key="copied"
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.7 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <CheckIcon className="size-3.5 text-primary" />
+                    <span className="hidden sm:inline">{heroT("copied")}</span>
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="share"
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.7 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Share2Icon className="size-3.5" />
+                    <span className="hidden sm:inline">{heroT("share")}</span>
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setDetailsOpen((open) => !open)}
+              aria-expanded={detailsOpen}
+              aria-label={detailsOpen ? heroT("hideAccountDetails") : heroT("showAccountDetails")}
+              className="inline-flex h-6 items-center gap-1 px-1 text-[10px] font-medium text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {heroT("accountDetails")}
+              <ChevronDownIcon
+                aria-hidden
+                className={`size-3 transition-transform duration-200 ${detailsOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            <AnimatePresence>
+              {detailsOpen ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
+                  className="absolute right-0 top-full mt-1 flex w-[calc(100vw-9.5rem)] max-w-[19rem] flex-col items-end gap-1"
                 >
-                  <CheckIcon className="size-3.5 text-primary" />
-                  <span className="hidden sm:inline">Copied</span>
-                </motion.span>
-              ) : (
-                <motion.span
-                  key="share"
-                  initial={{ opacity: 0, scale: 0.7 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.7 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex items-center gap-1.5"
-                >
-                  <Share2Icon className="size-3.5" />
-                  <span className="hidden sm:inline">Share</span>
-                </motion.span>
-              )}
+                  <button
+                    type="button"
+                    onClick={() => copyIdentifier("did", account.did)}
+                    aria-label={heroT("copyDid")}
+                    title={heroT("copyDid")}
+                    className="group flex w-full items-center gap-1.5 text-[11px] text-muted-foreground/75 transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="shrink-0 text-[9px] font-medium uppercase tracking-[0.12em] text-muted-foreground/55">{heroT("did")}</span>
+                    <span className="min-w-0 flex-1 truncate text-right font-mono">{account.did}</span>
+                    {copiedIdentifier === "did" ? <CheckIcon className="size-3 text-primary" aria-hidden /> : <CopyIcon className="size-3 shrink-0 opacity-30 transition-opacity group-hover:opacity-70 group-focus-visible:opacity-70" aria-hidden />}
+                  </button>
+                  {walletAddress ? (
+                    <button
+                      type="button"
+                      onClick={() => copyIdentifier("wallet", walletAddress)}
+                      aria-label={heroT("copyWallet")}
+                      title={heroT("copyWallet")}
+                      className="group flex w-full items-center gap-1.5 text-[11px] text-muted-foreground/75 transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <span className="shrink-0 text-[9px] font-medium uppercase tracking-[0.12em] text-muted-foreground/55">{heroT("wallet")}</span>
+                      <span className="min-w-0 flex-1 truncate text-right font-mono">{walletAddress}</span>
+                      {copiedIdentifier === "wallet" ? <CheckIcon className="size-3 text-primary" aria-hidden /> : <CopyIcon className="size-3 shrink-0 opacity-30 transition-opacity group-hover:opacity-70 group-focus-visible:opacity-70" aria-hidden />}
+                    </button>
+                  ) : null}
+                </motion.div>
+              ) : null}
             </AnimatePresence>
-          </Button>
+          </div>
           {editHref ? (
             <Button asChild size="sm">
               <Link href={editHref}>
@@ -215,6 +301,7 @@ export function AccountHero({
             did={account.did}
             name={account.displayName}
             image={account.avatarUrl}
+            walletAddress={walletAddress}
           />
           {account.kind === "organization" ? (
             <Button asChild variant="outline">

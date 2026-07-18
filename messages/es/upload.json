@@ -1094,7 +1094,18 @@
       "addWebsite": "Añadir sitio web",
       "addSocialLinks": "Añadir enlaces sociales",
       "openSocialLink": "Abrir {link}",
-      "viewPublicPage": "Ver página pública"
+      "viewPublicPage": "Ver página pública",
+      "coverImageAlt": "Imagen de portada de {name}",
+      "share": "Compartir",
+      "copied": "Copiado",
+      "copyProfileLink": "Copiar enlace del perfil",
+      "accountDetails": "Datos de la cuenta",
+      "showAccountDetails": "Mostrar datos de la cuenta",
+      "hideAccountDetails": "Ocultar datos de la cuenta",
+      "did": "DID",
+      "wallet": "Billetera EVM",
+      "copyDid": "Copiar DID",
+      "copyWallet": "Copiar dirección de la billetera"
     },
     "errors": {
       "nameRequired": "Añade un nombre antes de guardar.",

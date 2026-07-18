@@ -1094,7 +1094,18 @@
       "addWebsite": "Ongeza tovuti",
       "addSocialLinks": "Ongeza viungo vya kijamii",
       "openSocialLink": "Fungua {link}",
-      "viewPublicPage": "Tazama ukurasa wa umma"
+      "viewPublicPage": "Tazama ukurasa wa umma",
+      "coverImageAlt": "Picha ya jalada ya {name}",
+      "share": "Shiriki",
+      "copied": "Imenakiliwa",
+      "copyProfileLink": "Nakili kiungo cha wasifu",
+      "accountDetails": "Maelezo ya akaunti",
+      "showAccountDetails": "Onyesha maelezo ya akaunti",
+      "hideAccountDetails": "Ficha maelezo ya akaunti",
+      "did": "DID",
+      "wallet": "Pochi ya EVM",
+      "copyDid": "Nakili DID",
+      "copyWallet": "Nakili anwani ya pochi"
     },
     "errors": {
       "nameRequired": "Ongeza jina kabla ya kuhifadhi.",

@@ -1094,7 +1094,18 @@
       "addWebsite": "Adicionar site",
       "addSocialLinks": "Adicionar links sociais",
       "openSocialLink": "Abrir {link}",
-      "viewPublicPage": "Ver página pública"
+      "viewPublicPage": "Ver página pública",
+      "coverImageAlt": "Imagem de capa de {name}",
+      "share": "Compartilhar",
+      "copied": "Copiado",
+      "copyProfileLink": "Copiar link do perfil",
+      "accountDetails": "Detalhes da conta",
+      "showAccountDetails": "Mostrar detalhes da conta",
+      "hideAccountDetails": "Ocultar detalhes da conta",
+      "did": "DID",
+      "wallet": "Carteira EVM",
+      "copyDid": "Copiar DID",
+      "copyWallet": "Copiar endereço da carteira"
     },
     "errors": {
       "nameRequired": "Adicione um nome antes de salvar.",

@@ -1094,7 +1094,18 @@
       "addWebsite": "Tambahkan situs web",
       "addSocialLinks": "Tambahkan tautan sosial",
       "openSocialLink": "Buka {link}",
-      "viewPublicPage": "Lihat halaman publik"
+      "viewPublicPage": "Lihat halaman publik",
+      "coverImageAlt": "Gambar sampul {name}",
+      "share": "Bagikan",
+      "copied": "Tersalin",
+      "copyProfileLink": "Salin tautan profil",
+      "accountDetails": "Detail akun",
+      "showAccountDetails": "Tampilkan detail akun",
+      "hideAccountDetails": "Sembunyikan detail akun",
+      "did": "DID",
+      "wallet": "Dompet EVM",
+      "copyDid": "Salin DID",
+      "copyWallet": "Salin alamat dompet"
     },
     "errors": {
       "nameRequired": "Tambahkan nama sebelum menyimpan.",
