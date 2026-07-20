@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
-import { BinocularsIcon, BotIcon, SendIcon, SproutIcon } from "lucide-react";
+import { BinocularsIcon, BotIcon, SendIcon } from "lucide-react";
 import { localizedAlternates, socialPreviewMetadata } from "@/app/_lib/seo-metadata";
 import { fetchAuthSession } from "../_lib/auth-server";
+import { PictureHero } from "../_components/PictureHero";
 import { TainaPageSkeleton } from "../_components/PageLoadingSkeletons";
 import { TainaSetupClient } from "./_components/TainaSetupClient";
 
@@ -55,27 +56,20 @@ async function TainaContent() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 pb-20 pt-8 md:pt-12">
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14">
+    <main className="-mt-14 bg-background pb-20">
+      <PictureHero
+        compact
+        lightSrc="/images/explore/explore-hero-light@2x.webp"
+        darkSrc="/images/explore/explore-hero-dark@2x.webp"
+        eyebrow={t("hero.eyebrow")}
+        title={t("hero.title")}
+        accent={t("hero.accent")}
+        lede={t("hero.description")}
+      />
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14">
         {/* Intro + how it works */}
         <section className="max-w-xl">
-          <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-full border border-primary/15 bg-primary/[0.08] text-primary shadow-inner">
-              <SproutIcon className="size-4.5" />
-            </span>
-            <span className="font-instrument text-[13px] uppercase tracking-[0.22em] text-foreground/55">
-              {t("hero.eyebrow")}
-            </span>
-          </div>
-
-          <h1 className="mt-5 font-garamond text-4xl font-normal leading-[1.06] tracking-[-0.015em] text-foreground sm:text-5xl">
-            {t("hero.title")}
-          </h1>
-          <p className="mt-4 max-w-lg text-base leading-7 text-foreground/80 md:text-lg md:leading-8">
-            {t("hero.description")}
-          </p>
-
-          <div className="mt-5 max-w-lg rounded-2xl bg-muted px-4 py-3 text-sm leading-6 text-muted-foreground">
+          <div className="max-w-lg rounded-2xl bg-muted px-4 py-3 text-sm leading-6 text-muted-foreground">
             {t("hero.storageNote")}
           </div>
 
@@ -98,7 +92,7 @@ async function TainaContent() {
         </section>
 
         {/* Setup card */}
-        <section className="lg:pt-2">
+        <section>
           <TainaSetupClient
             signedIn={session.isLoggedIn}
             handle={session.isLoggedIn ? session.handle : null}

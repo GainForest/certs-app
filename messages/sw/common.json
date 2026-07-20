@@ -1408,7 +1408,8 @@
     },
     "hero": {
       "eyebrow": "Msaidizi wa uwandani wa AI",
-      "title": "Mfahamu Tainá",
+      "title": "Mfahamu",
+      "accent": "Tainá",
       "description": "Tainá ni mwenzako wa uwandani kwenye Telegram. Mtumie picha au maelezo kuhusu mmea, mnyama au kuvu — atatambua spishi na kurekodi uchunguzi kwenye akaunti yako ya GainForest.",
       "step1Title": "Unganisha boti yako mwenyewe",
       "step1Description": "Tengeneza boti binafsi ya Telegram kwa @BotFather kisha uiunganishe hapa. Ni wewe pekee unayeweza kuzungumza nayo.",

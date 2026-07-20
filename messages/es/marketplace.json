@@ -1579,6 +1579,10 @@
       "title": "Etiquetador de observaciones",
       "description": "Revisa avistamientos recientes y sugiere identificaciones de especies."
     },
+    "hero": {
+      "title": "Identifica",
+      "accent": "especies"
+    },
     "eyebrow": "Revisión ecológica",
     "title": "Etiquetador de observaciones",
     "description": "Explora avistamientos recientes y sin identificar, revisa sus datos de campo y propón un nombre de especie concreto.",

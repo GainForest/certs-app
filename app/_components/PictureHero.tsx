@@ -5,7 +5,7 @@ type PictureHeroProps = {
   lightSrc: string;
   darkSrc: string;
   imageAlt?: string;
-  eyebrow: string;
+  eyebrow?: string;
   icon?: ReactNode;
   title: string;
   accent?: string;

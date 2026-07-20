@@ -1408,7 +1408,8 @@
     },
     "hero": {
       "eyebrow": "Asisten lapangan AI",
-      "title": "Kenali Tainá",
+      "title": "Kenali",
+      "accent": "Tainá",
       "description": "Tainá adalah teman lapangan Anda di Telegram. Kirim foto atau catatan tentang tumbuhan, hewan, atau jamur — Tainá mengenali spesiesnya dan mencatat observasi di akun GainForest Anda.",
       "step1Title": "Hubungkan bot Anda sendiri",
       "step1Description": "Buat bot Telegram pribadi dengan @BotFather lalu tautkan di sini. Hanya Anda yang bisa berbicara dengannya.",

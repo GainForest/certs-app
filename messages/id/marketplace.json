@@ -1579,6 +1579,10 @@
       "title": "Pelabel pengamatan",
       "description": "Tinjau pengamatan alam terbaru dan sarankan identifikasi spesies."
     },
+    "hero": {
+      "title": "Identifikasi",
+      "accent": "spesies"
+    },
     "eyebrow": "Tinjauan ekologi",
     "title": "Pelabel pengamatan",
     "description": "Jelajahi pengamatan terbaru dan yang belum teridentifikasi, periksa data lapangannya, lalu usulkan nama spesies yang konkret.",

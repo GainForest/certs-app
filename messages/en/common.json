@@ -1408,7 +1408,8 @@
     },
     "hero": {
       "eyebrow": "AI field assistant",
-      "title": "Meet Tainá",
+      "title": "Meet",
+      "accent": "Tainá",
       "description": "Tainá is your Telegram field companion. Send her a photo or a note about a plant, animal, or fungus — she identifies the species and records the observation under your GainForest account.",
       "step1Title": "Connect your own bot",
       "step1Description": "Create a private Telegram bot with @BotFather and link it here. Only you can talk to it.",

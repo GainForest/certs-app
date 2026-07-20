@@ -1579,6 +1579,10 @@
       "title": "Kiweka lebo cha uchunguzi",
       "description": "Kagua uchunguzi wa hivi karibuni na upendekeze utambulisho wa spishi."
     },
+    "hero": {
+      "title": "Tambua",
+      "accent": "spishi"
+    },
     "eyebrow": "Ukaguzi wa ikolojia",
     "title": "Kiweka lebo cha uchunguzi",
     "description": "Chunguza uchunguzi wa hivi karibuni na usiotambulika, kagua data za uga, na upendekeze jina mahususi la spishi.",

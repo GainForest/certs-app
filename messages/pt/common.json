@@ -1408,7 +1408,8 @@
     },
     "hero": {
       "eyebrow": "Assistente de campo com IA",
-      "title": "Conheça a Tainá",
+      "title": "Conheça a",
+      "accent": "Tainá",
       "description": "A Tainá é a sua companheira de campo no Telegram. Envie uma foto ou uma nota sobre uma planta, um animal ou um fungo — ela identifica a espécie e registra a observação na sua conta GainForest.",
       "step1Title": "Conecte o seu próprio bot",
       "step1Description": "Crie um bot privado do Telegram com o @BotFather e vincule-o aqui. Só você pode falar com ele.",

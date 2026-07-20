@@ -17,6 +17,7 @@ import {
   SearchIcon,
 } from "lucide-react";
 import { AuthModal } from "@/app/_components/AuthFlow";
+import { PictureHero } from "@/app/_components/PictureHero";
 import { createSpeciesIdentification } from "@/app/(manage)/manage/_lib/mutations";
 import { formatDate } from "@/app/_lib/format";
 import {
@@ -149,21 +150,19 @@ export function LabelerClient({
   }
 
   return (
-    <main className="min-h-full bg-background pb-16">
-      <section className="border-b border-border-soft bg-[radial-gradient(circle_at_top_left,color-mix(in_srgb,var(--primary)_12%,transparent),transparent_48%)]">
-        <div className="mx-auto max-w-[1480px] px-5 py-9 sm:px-7 lg:px-10">
-          <div className="flex items-start gap-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
-              <MicroscopeIcon className="size-5" aria-hidden />
-            </span>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">{t("eyebrow")}</p>
-              <h1 className="mt-1 font-instrument text-4xl italic tracking-tight text-foreground sm:text-5xl">{t("title")}</h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{t("description")}</p>
-            </div>
-          </div>
-
-          <div className="mt-7 grid gap-3 rounded-2xl border border-border-soft bg-background/80 p-3 shadow-sm backdrop-blur md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(220px,1fr)_repeat(5,150px)]">
+    <main className="-mt-14 min-h-full bg-background pb-16">
+      <PictureHero
+        compact
+        lightSrc="/images/explore/explore-hero-light@2x.webp"
+        darkSrc="/images/explore/explore-hero-dark@2x.webp"
+        eyebrow={t("eyebrow")}
+        title={t("hero.title")}
+        accent={t("hero.accent")}
+        lede={t("description")}
+      />
+      <section className="border-b border-border-soft">
+        <div className="mx-auto max-w-[1480px] px-5 pb-8 sm:px-7 lg:px-10">
+          <div className="grid gap-3 rounded-2xl border border-border-soft bg-background/80 p-3 shadow-sm backdrop-blur md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(220px,1fr)_repeat(5,150px)]">
             <label className="relative">
               <span className="sr-only">{t("filters.searchLabel")}</span>
               <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />

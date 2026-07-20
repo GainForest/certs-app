@@ -1579,6 +1579,10 @@
       "title": "Observation labeler",
       "description": "Review recent nature sightings and suggest species identifications."
     },
+    "hero": {
+      "title": "Identify",
+      "accent": "species"
+    },
     "eyebrow": "Ecological review",
     "title": "Observation labeler",
     "description": "Explore recent and unidentified sightings, inspect their field data, and propose a concrete species name for the observer to review.",
