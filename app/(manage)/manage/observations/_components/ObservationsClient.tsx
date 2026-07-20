@@ -48,6 +48,8 @@ import {
   createObservationOccurrence,
   createObservationPhoto,
   formatObservationMutationError,
+  getObservationImageUpdateContext,
+  rollbackObservationOccurrence,
   setObservationPrimaryImage,
   type ObservationBlobRef,
 } from "./observation-mutations";
@@ -2052,14 +2054,13 @@ function ObservationBulkAddPanel({
 
     const uploadIds = new Set(uploadItems.map((item) => item.id));
     const data = occurrenceAnalysisForUpload(uploadItems);
+    let createdOccurrenceRkey: string | null = null;
+    let occurrenceContext: { rkey: string; cid: string; record: Record<string, unknown> } | null = null;
     setBulkError(null);
     try {
       setItems((current) => current.map((candidate) => uploadIds.has(candidate.id) ? { ...candidate, status: "uploading", progress: 15, error: null } : candidate));
       const existingOccurrenceUri = snapshot.find((item) => item.groupId === groupId && item.uploadedUri)?.uploadedUri ?? null;
       let occurrenceUri = existingOccurrenceUri;
-      // Only fresh occurrences carry the record/cid we need to set imageEvidence
-      // and to build an optimistic listing entry.
-      let occurrenceContext: { rkey: string; cid: string; record: Record<string, unknown> } | null = null;
       if (!occurrenceUri) {
         const occurrence = await createObservationOccurrence({
           basisOfRecord: "HumanObservation",
@@ -2079,7 +2080,10 @@ function ObservationBulkAddPanel({
           ...(selectedProject?.locationUri ? { siteRef: selectedProject.locationUri } : {}),
         });
         occurrenceUri = occurrence.uri;
+        createdOccurrenceRkey = occurrence.rkey;
         occurrenceContext = { rkey: occurrence.rkey, cid: occurrence.cid, record: occurrence.record ?? {} };
+      } else {
+        occurrenceContext = await getObservationImageUpdateContext(occurrenceUri);
       }
       if (!occurrenceUri) throw new Error(t("analysisFailed"));
 
@@ -2101,17 +2105,16 @@ function ObservationBulkAddPanel({
         ));
       }
 
-      // The explorer surfaces a photo through the occurrence's own imageEvidence,
-      // so copy the first uploaded blob there. Non-fatal: the photos are already
-      // saved as ac.multimedia records either way.
-      if (occurrenceContext && primaryBlobRef) {
-        await setObservationPrimaryImage({
-          rkey: occurrenceContext.rkey,
-          record: occurrenceContext.record,
-          swapCid: occurrenceContext.cid,
-          blobRef: primaryBlobRef,
-        }).catch(() => {});
-      }
+      // A photo observation is not complete until the occurrence itself points
+      // at stored image evidence. Treat this final link as part of the upload,
+      // not as a best-effort enhancement.
+      if (!primaryBlobRef) throw new Error(t("photoUploadFailed"));
+      await setObservationPrimaryImage({
+        rkey: occurrenceContext.rkey,
+        record: occurrenceContext.record,
+        swapCid: occurrenceContext.cid,
+        blobRef: primaryBlobRef,
+      });
 
       if (occurrenceContext) {
         return await buildOptimisticOccurrence({
@@ -2126,12 +2129,25 @@ function ObservationBulkAddPanel({
       }
       return null;
     } catch (error) {
-      const message = formatObservationMutationError(error, { photoTooLarge: t("photoTooLarge") });
-      setItems((current) => current.map((candidate) =>
-        uploadIds.has(candidate.id) && candidate.status === "uploading"
-          ? { ...candidate, status: "uploadError", progress: 0, error: message }
-          : candidate,
-      ));
+      if (createdOccurrenceRkey) {
+        await rollbackObservationOccurrence(createdOccurrenceRkey).catch((cleanupError) => {
+          console.error("Could not roll back incomplete observation", cleanupError);
+        });
+      }
+      const message = formatObservationMutationError(error, {
+        photoTooLarge: t("photoTooLarge"),
+        photoUploadFailed: t("photoUploadFailed"),
+      });
+      setItems((current) => current.map((candidate) => {
+        if (!uploadIds.has(candidate.id)) return candidate;
+        return {
+          ...candidate,
+          status: "uploadError",
+          progress: 0,
+          ...(createdOccurrenceRkey ? { uploadedUri: null } : {}),
+          error: message,
+        };
+      }));
       return null;
     }
   }

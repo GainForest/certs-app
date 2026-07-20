@@ -17,7 +17,7 @@ import {
   SearchIcon,
 } from "lucide-react";
 import { AuthModal } from "@/app/_components/AuthFlow";
-import { createFeedComment } from "@/app/(manage)/manage/_lib/mutations";
+import { createSpeciesIdentification } from "@/app/(manage)/manage/_lib/mutations";
 import { formatDate } from "@/app/_lib/format";
 import {
   walkOccurrences,
@@ -33,6 +33,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useModal } from "@/components/ui/modal/context";
 import { cn } from "@/lib/utils";
+import { hasLabelEvidence } from "../_lib/evidence";
 
 type QueueMode = "unidentified" | "recent";
 type MediaMode = "all" | "image" | "audio";
@@ -63,26 +64,46 @@ export function LabelerClient({
   const [media, setMedia] = useState<MediaMode>("all");
   const [taxon, setTaxon] = useState("all");
   const [genus, setGenus] = useState("all");
+  const [country, setCountry] = useState("all");
+  const [region, setRegion] = useState("all");
   const [query, setQuery] = useState("");
   const [selectedUri, setSelectedUri] = useState(initialPage.records[0]?.atUri ?? null);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const reviewableRecords = useMemo(() => records.filter(hasLabelEvidence), [records]);
   const taxa = useMemo(
-    () => [...new Set(records.map((record) => record.kingdom).filter((value): value is string => Boolean(value)))].sort(),
-    [records],
+    () => [...new Set(reviewableRecords.map((record) => record.kingdom).filter((value): value is string => Boolean(value)))].sort(),
+    [reviewableRecords],
   );
   const genera = useMemo(
-    () => [...new Set(records.map((record) => record.genus).filter((value): value is string => Boolean(value)))].sort(),
-    [records],
+    () => [...new Set(reviewableRecords.map((record) => record.genus).filter((value): value is string => Boolean(value)))].sort(),
+    [reviewableRecords],
   );
+  const countries = useMemo(
+    () => [...new Set(reviewableRecords.map((record) => record.country).filter((value): value is string => Boolean(value)))].sort(),
+    [reviewableRecords],
+  );
+  const regions = useMemo(
+    () => [...new Set(reviewableRecords
+      .filter((record) => country === "all" || record.country === country)
+      .map((record) => record.stateProvince)
+      .filter((value): value is string => Boolean(value)))].sort(),
+    [reviewableRecords, country],
+  );
+
+  useEffect(() => {
+    if (region !== "all" && !regions.includes(region)) setRegion("all");
+  }, [region, regions]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
-    return records.filter((record) => {
+    return reviewableRecords.filter((record) => {
       if (mode === "unidentified" && !isUnidentified(record)) return false;
       if (media !== "all" && !record.media.includes(media)) return false;
       if (taxon !== "all" && record.kingdom !== taxon) return false;
       if (genus !== "all" && record.genus !== genus) return false;
+      if (country !== "all" && record.country !== country) return false;
+      if (region !== "all" && record.stateProvince !== region) return false;
       if (!needle) return true;
       return [
         record.scientificName,
@@ -95,7 +116,7 @@ export function LabelerClient({
         record.habitat,
       ].some((value) => value?.toLocaleLowerCase().includes(needle));
     });
-  }, [records, mode, media, taxon, genus, query]);
+  }, [reviewableRecords, mode, media, taxon, genus, country, region, query]);
 
   useEffect(() => {
     if (!filtered.some((record) => record.atUri === selectedUri)) {
@@ -142,7 +163,7 @@ export function LabelerClient({
             </div>
           </div>
 
-          <div className="mt-7 grid gap-3 rounded-2xl border border-border-soft bg-background/80 p-3 shadow-sm backdrop-blur md:grid-cols-[1fr_170px_170px_150px]">
+          <div className="mt-7 grid gap-3 rounded-2xl border border-border-soft bg-background/80 p-3 shadow-sm backdrop-blur md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(220px,1fr)_repeat(5,150px)]">
             <label className="relative">
               <span className="sr-only">{t("filters.searchLabel")}</span>
               <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
@@ -160,6 +181,14 @@ export function LabelerClient({
             <FilterSelect label={t("filters.genusLabel")} value={genus} onChange={setGenus}>
               <option value="all">{t("filters.allGenera")}</option>
               {genera.map((value) => <option key={value} value={value}>{value}</option>)}
+            </FilterSelect>
+            <FilterSelect label={t("filters.countryLabel")} value={country} onChange={setCountry}>
+              <option value="all">{t("filters.allCountries")}</option>
+              {countries.map((value) => <option key={value} value={value}>{value}</option>)}
+            </FilterSelect>
+            <FilterSelect label={t("filters.regionLabel")} value={region} onChange={setRegion}>
+              <option value="all">{t("filters.allRegions")}</option>
+              {regions.map((value) => <option key={value} value={value}>{value}</option>)}
             </FilterSelect>
             <FilterSelect label={t("filters.mediaLabel")} value={media} onChange={(value) => setMedia(value as MediaMode)}>
               <option value="all">{t("filters.allMedia")}</option>
@@ -459,7 +488,13 @@ function IdentificationForm({ record, viewerDid }: { record: OccurrenceRecord; v
           note: t("noteLabel"),
         },
       );
-      await createFeedComment({ text, subjectUri: record.atUri });
+      await createSpeciesIdentification({
+        subjectUri: record.atUri,
+        scientificName: scientific,
+        ...(commonName.trim() ? { vernacularName: commonName.trim() } : {}),
+        ...(note.trim() ? { identificationRemarks: note.trim() } : {}),
+        notificationText: text,
+      });
       setSubmitted(scientific);
       setScientificName("");
       setCommonName("");

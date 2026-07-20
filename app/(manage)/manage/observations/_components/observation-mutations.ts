@@ -1,6 +1,14 @@
 "use client";
 
-import { createMultimediaFromFile, createRecord, putRecord, uploadBlob } from "../../_lib/mutations";
+import {
+  createMultimediaFromFile,
+  createRecord,
+  deleteOccurrenceCascade,
+  deleteRecord,
+  getRecord,
+  putRecord,
+  uploadBlob,
+} from "../../_lib/mutations";
 import { resolveStrongRef } from "@/app/_lib/pds";
 
 type MutationResult = { uri: string; cid: string; rkey: string; record?: Record<string, unknown> };
@@ -66,20 +74,44 @@ function occurrenceRecord(data: Record<string, unknown>) {
  *  serverless payload cap (e.g. "Request Entity Too Large
  *  FUNCTION_PAYLOAD_TOO_LARGE fra1::…") — gibberish to end users. */
 const PAYLOAD_TOO_LARGE_PATTERN = /FUNCTION_PAYLOAD_TOO_LARGE|Request Entity Too Large|\b413\b/i;
+const RETRYABLE_PHOTO_UPLOAD_PATTERN = /\b(?:408|409|425|429|500|502|503|504)\b|timed? out|timeout|network|failed to fetch|fetch failed|temporar/i;
+const MISSING_PHOTO_BLOB_ERROR = "photo_blob_missing";
+const PHOTO_UPLOAD_ATTEMPTS = 3;
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+function shouldRetryPhotoUpload(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return !PAYLOAD_TOO_LARGE_PATTERN.test(message) &&
+    (message === MISSING_PHOTO_BLOB_ERROR || RETRYABLE_PHOTO_UPLOAD_PATTERN.test(message));
+}
 
 export function formatObservationMutationError(
   error: unknown,
-  copy?: { photoTooLarge?: string },
+  copy?: { photoTooLarge?: string; photoUploadFailed?: string },
 ): string {
   const message = error instanceof Error ? error.message : "";
   if (copy?.photoTooLarge && PAYLOAD_TOO_LARGE_PATTERN.test(message)) return copy.photoTooLarge;
-  return message || "Could not upload this observation.";
+  if (copy?.photoUploadFailed && message === MISSING_PHOTO_BLOB_ERROR) return copy.photoUploadFailed;
+  return message || copy?.photoUploadFailed || "Could not upload this observation.";
 }
 
 export async function createObservationOccurrence(data: Record<string, unknown>): Promise<MutationResult> {
   const record = occurrenceRecord(data);
   const result = await createRecord(OCCURRENCE_COLLECTION, record, undefined, mutationOptions());
   return { ...result, rkey: rkeyFromUri(result.uri), record };
+}
+
+export async function getObservationImageUpdateContext(uri: string): Promise<{
+  rkey: string;
+  cid: string;
+  record: Record<string, unknown>;
+}> {
+  const rkey = rkeyFromUri(uri);
+  const current = await getRecord(OCCURRENCE_COLLECTION, rkey, mutationOptions());
+  return { rkey, cid: current.cid, record: current.record };
 }
 
 /** A single observer-entered measurement (Darwin Core MeasurementOrFact row). */
@@ -179,17 +211,47 @@ export async function createObservationPhoto(input: {
   caption?: string;
   siteRef?: string;
 }): Promise<ObservationPhotoResult> {
-  const result = await createMultimediaFromFile(
-    {
-      imageFile: input.imageFile,
-      occurrenceRef: input.occurrenceRef,
-      subjectPart: input.subjectPart,
-      caption: input.caption,
-      siteRef: input.siteRef,
-    },
-    mutationOptions(),
-  );
-  return { ...result, blobRef: extractBlobRef(result.record) };
+  let lastError: unknown;
+  for (let attempt = 0; attempt < PHOTO_UPLOAD_ATTEMPTS; attempt += 1) {
+    try {
+      const result = await createMultimediaFromFile(
+        {
+          imageFile: input.imageFile,
+          occurrenceRef: input.occurrenceRef,
+          subjectPart: input.subjectPart,
+          caption: input.caption,
+          siteRef: input.siteRef,
+        },
+        mutationOptions(),
+      );
+      const blobRef = extractBlobRef(result.record);
+      if (!blobRef) throw new Error(MISSING_PHOTO_BLOB_ERROR);
+      return { ...result, blobRef };
+    } catch (error) {
+      lastError = error;
+      if (attempt === PHOTO_UPLOAD_ATTEMPTS - 1 || !shouldRetryPhotoUpload(error)) throw error;
+      await wait(500 * 2 ** attempt);
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * Remove a newly-created occurrence when its evidence could not be stored.
+ * Cascade deletion removes linked media and measurements. If linked-record
+ * enumeration itself fails, delete the occurrence directly so a note-only
+ * shell cannot leak into public observation and labeler listings.
+ */
+export async function rollbackObservationOccurrence(rkey: string): Promise<void> {
+  try {
+    await deleteOccurrenceCascade(rkey, mutationOptions());
+  } catch (cascadeError) {
+    try {
+      await deleteRecord(OCCURRENCE_COLLECTION, rkey, mutationOptions());
+    } catch {
+      throw cascadeError;
+    }
+  }
 }
 
 /**
@@ -204,12 +266,36 @@ export async function setObservationPrimaryImage(input: {
   swapCid: string;
   blobRef: ObservationBlobRef;
 }): Promise<void> {
-  const nextRecord = {
-    ...input.record,
-    imageEvidence: { $type: IMAGE_DEF_TYPE, file: input.blobRef },
-  };
-  await putRecord(OCCURRENCE_COLLECTION, input.rkey, nextRecord, {
-    ...mutationOptions(),
-    swapRecord: input.swapCid,
-  });
+  let currentRecord = input.record;
+  let swapCid = input.swapCid;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < PHOTO_UPLOAD_ATTEMPTS; attempt += 1) {
+    const nextRecord = {
+      ...currentRecord,
+      imageEvidence: { $type: IMAGE_DEF_TYPE, file: input.blobRef },
+    };
+    try {
+      await putRecord(OCCURRENCE_COLLECTION, input.rkey, nextRecord, {
+        ...mutationOptions(),
+        swapRecord: swapCid,
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt === PHOTO_UPLOAD_ATTEMPTS - 1 || !shouldRetryPhotoUpload(error)) throw error;
+      await wait(500 * 2 ** attempt);
+      // A timed-out request may still have committed. Re-read before retrying:
+      // if the target blob is already attached, the operation succeeded;
+      // otherwise use the latest CID so a stale swap cannot strand the upload.
+      const latest = await getRecord(OCCURRENCE_COLLECTION, input.rkey, mutationOptions()).catch(() => null);
+      if (latest) {
+        const evidence = latest.record.imageEvidence as { file?: { ref?: unknown } } | undefined;
+        if (JSON.stringify(evidence?.file?.ref) === JSON.stringify(input.blobRef.ref)) return;
+        currentRecord = latest.record;
+        swapCid = latest.cid;
+      }
+    }
+  }
+  throw lastError;
 }

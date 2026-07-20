@@ -1590,6 +1590,10 @@
       "allTaxa": "All taxa",
       "genusLabel": "Genus",
       "allGenera": "All genera",
+      "countryLabel": "Country",
+      "allCountries": "All countries",
+      "regionLabel": "Region",
+      "allRegions": "All regions",
       "mediaLabel": "Evidence type",
       "allMedia": "All evidence",
       "photos": "Photos",
@@ -1605,7 +1609,7 @@
     },
     "empty": {
       "title": "No matching sightings",
-      "description": "Try another taxon, genus or search."
+      "description": "Try another taxon, genus, country, region or search."
     },
     "review": {
       "selectPrompt": "Select a sighting to inspect its evidence and field data.",

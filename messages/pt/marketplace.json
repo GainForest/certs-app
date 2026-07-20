@@ -1590,6 +1590,10 @@
       "allTaxa": "Todos os táxons",
       "genusLabel": "Gênero",
       "allGenera": "Todos os gêneros",
+      "countryLabel": "País",
+      "allCountries": "Todos os países",
+      "regionLabel": "Região",
+      "allRegions": "Todas as regiões",
       "mediaLabel": "Tipo de evidência",
       "allMedia": "Todas as evidências",
       "photos": "Fotos",
@@ -1605,7 +1609,7 @@
     },
     "empty": {
       "title": "Nenhum avistamento correspondente",
-      "description": "Tente outro táxon, gênero ou pesquisa."
+      "description": "Tente outro táxon, gênero, país, região ou pesquisa."
     },
     "review": {
       "selectPrompt": "Selecione um avistamento para examinar as evidências e os dados de campo.",

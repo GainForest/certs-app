@@ -6,6 +6,10 @@ import { MicroscopeIcon, UserIcon } from "lucide-react";
 import { fetchComments, type FeedComment } from "@/app/_lib/feed-engagement";
 import { formatDate } from "@/app/_lib/format";
 import { parseSpeciesSuggestion, type SpeciesSuggestion } from "@/app/_lib/species-suggestions";
+import {
+  fetchSpeciesIdentification,
+  identificationRkeyFromTags,
+} from "@/app/_lib/species-identifications";
 import { ResolvedAvatar } from "@/app/feed/ResolvedAvatar";
 
 type SuggestionItem = {
@@ -20,13 +24,29 @@ export function SpeciesSuggestions({ subjectUri }: { subjectUri: string }) {
   useEffect(() => {
     const controller = new AbortController();
     fetchComments(subjectUri, controller.signal)
-      .then((comments) => {
-        setItems(
-          comments.flatMap((comment) => {
-            const suggestion = parseSpeciesSuggestion(comment.text);
-            return suggestion ? [{ comment, suggestion }] : [];
-          }),
-        );
+      .then(async (comments) => {
+        const resolved = await Promise.all(comments.map(async (comment): Promise<SuggestionItem | null> => {
+          const identificationRkey = identificationRkeyFromTags(comment.tags);
+          if (identificationRkey) {
+            const record = await fetchSpeciesIdentification(comment.did, identificationRkey, controller.signal);
+            if (record?.subjectUri === subjectUri) {
+              return {
+                comment,
+                suggestion: {
+                  scientificName: record.scientificName,
+                  vernacularName: record.vernacularName,
+                  note: record.identificationRemarks,
+                },
+              };
+            }
+          }
+          // Backward compatibility for suggestions created before the
+          // identification lexicon was introduced, and a resilient fallback if
+          // the author's PDS is temporarily unavailable.
+          const suggestion = parseSpeciesSuggestion(comment.text);
+          return suggestion ? { comment, suggestion } : null;
+        }));
+        setItems(resolved.filter((item): item is SuggestionItem => item !== null));
       })
       .catch((error) => {
         if ((error as Error).name !== "AbortError") setItems([]);

@@ -1590,6 +1590,10 @@
       "allTaxa": "Taksoni zote",
       "genusLabel": "Jenasi",
       "allGenera": "Jenasi zote",
+      "countryLabel": "Nchi",
+      "allCountries": "Nchi zote",
+      "regionLabel": "Eneo",
+      "allRegions": "Maeneo yote",
       "mediaLabel": "Aina ya ushahidi",
       "allMedia": "Ushahidi wote",
       "photos": "Picha",
@@ -1605,7 +1609,7 @@
     },
     "empty": {
       "title": "Hakuna uchunguzi unaolingana",
-      "description": "Jaribu taksoni, jenasi au utafutaji mwingine."
+      "description": "Jaribu taksoni, jenasi, nchi, eneo au utafutaji mwingine."
     },
     "review": {
       "selectPrompt": "Chagua uchunguzi ili kukagua ushahidi na data zake za uga.",

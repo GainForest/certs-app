@@ -1590,6 +1590,10 @@
       "allTaxa": "Todos los taxones",
       "genusLabel": "Género",
       "allGenera": "Todos los géneros",
+      "countryLabel": "País",
+      "allCountries": "Todos los países",
+      "regionLabel": "Región",
+      "allRegions": "Todas las regiones",
       "mediaLabel": "Tipo de evidencia",
       "allMedia": "Toda la evidencia",
       "photos": "Fotos",
@@ -1605,7 +1609,7 @@
     },
     "empty": {
       "title": "No hay avistamientos coincidentes",
-      "description": "Prueba otro taxón, género o búsqueda."
+      "description": "Prueba otro taxón, género, país, región o búsqueda."
     },
     "review": {
       "selectPrompt": "Selecciona un avistamiento para revisar su evidencia y datos de campo.",

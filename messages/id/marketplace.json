@@ -1590,6 +1590,10 @@
       "allTaxa": "Semua takson",
       "genusLabel": "Genus",
       "allGenera": "Semua genus",
+      "countryLabel": "Negara",
+      "allCountries": "Semua negara",
+      "regionLabel": "Wilayah",
+      "allRegions": "Semua wilayah",
       "mediaLabel": "Jenis bukti",
       "allMedia": "Semua bukti",
       "photos": "Foto",
@@ -1605,7 +1609,7 @@
     },
     "empty": {
       "title": "Tidak ada pengamatan yang cocok",
-      "description": "Coba takson, genus, atau pencarian lain."
+      "description": "Coba takson, genus, negara, wilayah, atau pencarian lain."
     },
     "review": {
       "selectPrompt": "Pilih pengamatan untuk memeriksa bukti dan data lapangannya.",
