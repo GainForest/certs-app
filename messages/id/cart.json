@@ -89,7 +89,38 @@
     "copyShareText": "Salin teks berbagi",
     "exploreMore": "Jelajahi proyek lainnya",
     "emptyTitle": "Keranjang Anda kosong",
-    "singleApprovalNote": "Dompet Anda akan meminta satu persetujuan untuk seluruh total. GainForest kemudian meneruskan setiap donasi kepada penerimanya."
+    "singleApprovalNote": "Dompet Anda akan meminta satu persetujuan untuk seluruh total. GainForest kemudian meneruskan setiap donasi kepada penerimanya.",
+    "reward": {
+      "eyebrow": "Koleksi terbuka",
+      "guardianOf": "Penjaga",
+      "contributed": "Disumbangkan",
+      "moreProjects": "{count, plural, other {# proyek lainnya}}",
+      "mint": "Nomor {mint}",
+      "verified": "Terverifikasi on-chain",
+      "tiltHint": "Gerakkan kursor di atas kartu untuk menangkap cahaya",
+      "tiers": {
+        "seedling": {
+          "name": "Tunas",
+          "rarity": "Umum"
+        },
+        "sapling": {
+          "name": "Semai",
+          "rarity": "Tidak umum"
+        },
+        "grove": {
+          "name": "Rumpun",
+          "rarity": "Langka"
+        },
+        "canopy": {
+          "name": "Kanopi",
+          "rarity": "Epik"
+        },
+        "oldGrowth": {
+          "name": "Hutan Tua",
+          "rarity": "Legendaris"
+        }
+      }
+    }
   },
   "testRegistry": {
     "eyebrow": "Pengalaman UI",

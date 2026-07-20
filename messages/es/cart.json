@@ -89,7 +89,38 @@
     "copyShareText": "Copiar texto para compartir",
     "exploreMore": "Explorar más proyectos",
     "emptyTitle": "Tu carrito está vacío",
-    "singleApprovalNote": "Tu billetera pedirá una sola aprobación por el total. Después, GainForest envía cada donación a su destinatario."
+    "singleApprovalNote": "Tu billetera pedirá una sola aprobación por el total. Después, GainForest envía cada donación a su destinatario.",
+    "reward": {
+      "eyebrow": "Coleccionable desbloqueado",
+      "guardianOf": "Guardián de",
+      "contributed": "Contribuido",
+      "moreProjects": "{count, plural, one {# proyecto más} other {# proyectos más}}",
+      "mint": "N.º {mint}",
+      "verified": "Verificado en la cadena",
+      "tiltHint": "Mueve el cursor sobre la carta para captar la luz",
+      "tiers": {
+        "seedling": {
+          "name": "Brote",
+          "rarity": "Común"
+        },
+        "sapling": {
+          "name": "Retoño",
+          "rarity": "Poco común"
+        },
+        "grove": {
+          "name": "Arboleda",
+          "rarity": "Raro"
+        },
+        "canopy": {
+          "name": "Dosel",
+          "rarity": "Épico"
+        },
+        "oldGrowth": {
+          "name": "Bosque antiguo",
+          "rarity": "Legendario"
+        }
+      }
+    }
   },
   "testRegistry": {
     "eyebrow": "Experiencias de UI",

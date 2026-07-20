@@ -89,7 +89,38 @@
     "copyShareText": "Nakili maandishi ya kushiriki",
     "exploreMore": "Chunguza miradi zaidi",
     "emptyTitle": "Kikapu chako ni tupu",
-    "singleApprovalNote": "Pochi yako itaomba idhini moja tu kwa jumla yote. Kisha GainForest hupeleka kila mchango kwa mpokeaji wake."
+    "singleApprovalNote": "Pochi yako itaomba idhini moja tu kwa jumla yote. Kisha GainForest hupeleka kila mchango kwa mpokeaji wake.",
+    "reward": {
+      "eyebrow": "Mkusanyiko umefunguliwa",
+      "guardianOf": "Mlinzi wa",
+      "contributed": "Umechangia",
+      "moreProjects": "{count, plural, one {mradi # zaidi} other {miradi # zaidi}}",
+      "mint": "Na. {mint}",
+      "verified": "Imethibitishwa mtandaoni",
+      "tiltHint": "Sogeza kishale juu ya kadi ili kunasa mwanga",
+      "tiers": {
+        "seedling": {
+          "name": "Mche",
+          "rarity": "Kawaida"
+        },
+        "sapling": {
+          "name": "Mmea",
+          "rarity": "Si kawaida"
+        },
+        "grove": {
+          "name": "Kichaka",
+          "rarity": "Nadra"
+        },
+        "canopy": {
+          "name": "Dari",
+          "rarity": "Adhimu"
+        },
+        "oldGrowth": {
+          "name": "Msitu wa Kale",
+          "rarity": "Hadithi"
+        }
+      }
+    }
   },
   "testRegistry": {
     "eyebrow": "Majaribio ya kiolesura",

@@ -89,7 +89,38 @@
     "copyShareText": "Copy share text",
     "exploreMore": "Explore more projects",
     "emptyTitle": "Your cart is empty",
-    "singleApprovalNote": "Your wallet will ask for a single approval covering the whole total. GainForest then forwards each donation to its recipient."
+    "singleApprovalNote": "Your wallet will ask for a single approval covering the whole total. GainForest then forwards each donation to its recipient.",
+    "reward": {
+      "eyebrow": "Collectible unlocked",
+      "guardianOf": "Guardian of",
+      "contributed": "Contributed",
+      "moreProjects": "{count, plural, one {# more project} other {# more projects}}",
+      "mint": "No. {mint}",
+      "verified": "Verified on-chain",
+      "tiltHint": "Move over the card to catch the light",
+      "tiers": {
+        "seedling": {
+          "name": "Seedling",
+          "rarity": "Common"
+        },
+        "sapling": {
+          "name": "Sapling",
+          "rarity": "Uncommon"
+        },
+        "grove": {
+          "name": "Grove",
+          "rarity": "Rare"
+        },
+        "canopy": {
+          "name": "Canopy",
+          "rarity": "Epic"
+        },
+        "oldGrowth": {
+          "name": "Old-Growth",
+          "rarity": "Legendary"
+        }
+      }
+    }
   },
   "testRegistry": {
     "eyebrow": "UI experiences",

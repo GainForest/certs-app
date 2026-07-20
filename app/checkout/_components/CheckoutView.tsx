@@ -40,6 +40,7 @@ import {
   type CartItem,
 } from "@/app/_components/cart/CartProvider";
 import { itemAmountValid } from "@/app/cart/_components/CartView";
+import { DonationRewardCard } from "./DonationRewardCard";
 import {
   createNonce,
   createPaymentSignatureHeader,
@@ -76,6 +77,8 @@ type CompletedLine = {
   orgName: string;
   amountUsd: number;
   txHash: string;
+  /** Project cover art, surfaced on the reward card. */
+  image?: string | null;
 };
 
 export type CheckoutSideEffects = "live" | "mock";
@@ -434,6 +437,7 @@ export function CheckoutView({
           orgName: item.orgName,
           amountUsd: item.amountUsd,
           txHash,
+          image: item.image,
         };
       });
       if (includeTip) {
@@ -506,7 +510,7 @@ export function CheckoutView({
             );
             if (lineResult?.transactionHash) {
               setLine(key, { phase: "done", txHash: lineResult.transactionHash });
-              results.push({ kind: "donation", title: item.title, orgName: item.orgName, amountUsd: item.amountUsd, txHash: lineResult.transactionHash });
+              results.push({ kind: "donation", title: item.title, orgName: item.orgName, amountUsd: item.amountUsd, txHash: lineResult.transactionHash, image: item.image });
               removeItem(item.orgDid, item.rkey);
             } else {
               anyFailed = true;
@@ -573,7 +577,7 @@ export function CheckoutView({
         });
         if ("txHash" in outcome) {
           setLine(key, { phase: "done", txHash: outcome.txHash });
-          results.push({ kind: "donation", title: item.title, orgName: item.orgName, amountUsd: item.amountUsd, txHash: outcome.txHash });
+          results.push({ kind: "donation", title: item.title, orgName: item.orgName, amountUsd: item.amountUsd, txHash: outcome.txHash, image: item.image });
           removeItem(item.orgDid, item.rkey);
         } else {
           anyFailed = true;
@@ -658,11 +662,8 @@ export function CheckoutView({
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-10">
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="relative flex items-center justify-center">
-            <div className="absolute inset-0 animate-pulse rounded-full bg-primary blur-xl" />
-            <BadgeCheckIcon className="relative size-12 text-primary" />
-          </div>
-          <p className="font-instrument text-4xl font-medium italic text-primary">{t("thankYou")}</p>
+          <DonationRewardCard lines={completed} totalUsd={donatedTotal} />
+          <p className="mt-2 font-instrument text-4xl font-medium italic text-primary">{t("thankYou")}</p>
           <p className="text-pretty font-medium text-muted-foreground">
             {t("successSummary", { amount: `$${donatedTotal.toFixed(2)}` })}
           </p>
