@@ -291,7 +291,189 @@
       "registered": "Umesajiliwa",
       "registeredNote": "Tutafuatilia michango yako na kukutumia zawadi ukishinda.",
       "error": "Imeshindikana kusajili sasa. Tafadhali jaribu tena.",
-      "postText": "Najiunga na Changamoto ya BioBlitz ya Wiki — {label}! Naenda nje kupiga picha za maumbile kwa ajili ya bayoanuwai. 🌿🔭 #BioBlitz"
+      "postText": "Najiunga na Changamoto ya BioBlitz ya Wiki — {label}! Naenda nje kupiga picha za maumbile kwa ajili ya bayoanuwai. 🌿🔭 #BioBlitz",
+      "legalConsent": "Kwa kujisajili, unakubali <terms>Masharti ya BioBlitz</terms> na unatambua <privacy>Notisi ya Faragha</privacy>."
+    },
+    "legal": {
+      "programLabel": "Changamoto ya BioBlitz",
+      "back": "Rudi BioBlitz",
+      "links": {
+        "terms": "Masharti ya BioBlitz",
+        "privacy": "Notisi ya Faragha ya BioBlitz",
+        "generalPrivacy": "Sera ya Faragha ya GainForest"
+      },
+      "terms": {
+        "metadata": {
+          "title": "Masharti ya BioBlitz",
+          "description": "Ustahiki, ushiriki, mawasilisho, zawadi na sheria nyingine za Changamoto ya BioBlitz ya GainForest."
+        },
+        "title": "Masharti ya BioBlitz",
+        "effectiveDate": "Yanaanza kutumika tarehe 18 Julai 2026",
+        "intro": {
+          "p1": "Masharti haya yanaongoza ushiriki katika Changamoto ya BioBlitz ya GainForest. Kwa kujisajili katika raundi, unakubali masharti haya.",
+          "p2": "GainForest e.V., shirika lisilo la faida la Uswisi, linaendesha changamoto. Hakuna ununuzi au malipo yanayohitajika ili kushiriki."
+        },
+        "sections": {
+          "eligibility": {
+            "title": "1. Ustahiki na nchi zinazokubaliwa",
+            "paragraphs": {
+              "p1": "BioBlitz iko wazi kwa watu wenye umri wa miaka 18 au zaidi duniani kote ambako ushiriki na kupokea zawadi kunaruhusiwa na sheria za eneo. Watu wenye miaka 16 au 17 wanaweza kushiriki tu kwa idhini ya mzazi au mlezi wa kisheria. Changamoto hii haijaelekezwa kwa watoto walio chini ya miaka 16.",
+              "p2": "Nchi au eneo linakubaliwa pale GainForest na watoa huduma wake wa malipo wanaweza kisheria kutoa changamoto na kupeleka zawadi huko. Hustahiki kupokea zawadi ikiwa unaishi au kwa kawaida unaishi katika nchi au eneo lililo chini ya vikwazo vya jumla au marufuku kulingana na hatua husika za Uswisi, Umoja wa Mataifa au Umoja wa Ulaya, au ambako ushiriki au upelekaji wa zawadi umepigwa marufuku na sheria au kanuni za mtoa huduma wa malipo.",
+              "p3": "Jina lako halipaswi kuwa kwenye orodha husika ya vikwazo, watu waliozuiliwa au wahusika waliokataliwa. Kwa kuwa sheria hizi hubadilika, GainForest inaweza kuthibitisha ustahiki kabla ya kutuma zawadi na inaweza kuzuia au kufuta zawadi inapohitajika kisheria."
+            }
+          },
+          "participation": {
+            "title": "2. Jinsi ya kushiriki",
+            "paragraphs": {
+              "p1": "Unahitaji akaunti ya GainForest na lazima ujisajili kwa kila raundi. Uchunguzi unaostahiki lazima uongezwe ndani ya tarehe zilizoonyeshwa kwa raundi hiyo na uwe na ushahidi halisi wa kiumbe hai.",
+              "p2": "Kila mtu anaweza kutumia akaunti moja. Mawasilisho ya kiotomatiki, yaliyorudiwa, yaliyobadilishwa, yaliyopewa tarehe ya nyuma, yanayopotosha au ya udanganyifu yanaweza kuondolewa kwenye changamoto."
+            }
+          },
+          "submissions": {
+            "title": "3. Mawasilisho yako",
+            "paragraphs": {
+              "p1": "Lazima umiliki picha na maudhui mengine unayowasilisha, au uwe na ruhusa ya kuyatumia na kuyachapisha. Unaendelea kumiliki maudhui yako.",
+              "p2": "Unaipa GainForest ruhusa ya kuonyesha, kuorodhesha, kukagua na kushiriki mawasilisho yako kwa ajili ya kuendesha na kutangaza BioBlitz na dhamira ya mazingira ya GainForest, pamoja na kutaja chanzo pale inapowezekana.",
+              "p3": "Usisumbue wanyamapori, kuharibu makazi, kuingia bila ruhusa au kumweka mtu yeyote hatarini ili kufanya wasilisho. Epuka kuchapisha maeneo sahihi ya spishi zilizo hatarini, mifumo nyeti ya ikolojia au maeneo ambako ufichuzi unaweza kusababisha madhara."
+            }
+          },
+          "winners": {
+            "title": "4. Uchaguzi wa washindi",
+            "paragraphs": {
+              "p1": "Zawadi ya Uchunguzi Mwingi Zaidi inategemea idadi kubwa zaidi ya uchunguzi halali katika raundi. Zawadi ya Picha Bora inachaguliwa kwa vigezo vilivyoelezwa kwenye ukurasa wa BioBlitz, ikiwemo ubora wa picha, mada na ushiriki wa jamii inapofaa.",
+              "p2": "GainForest inaweza kukagua mawasilisho, kutatua sare, kurekebisha makosa ya kuhesabu na kuondoa mawasilisho yasiyo halali. Maamuzi ni ya mwisho kwa kiwango kinachoruhusiwa na sheria."
+            }
+          },
+          "prizes": {
+            "title": "5. Zawadi",
+            "paragraphs": {
+              "p1": "Thamani za zawadi zinaonyeshwa kwenye ukurasa wa BioBlitz. Mshindi lazima ajibu GainForest na kutoa taarifa zinazohitajika kwa kiasi kinachofaa ili kuthibitisha ustahiki na kupeleka zawadi. Ikiwa mshindi hatajibu ndani ya siku 14, hastahiki au hawezi kisheria kupokea zawadi, GainForest inaweza kuchagua mshindi mwingine.",
+              "p2": "Washindi wanawajibika kwa kodi, ada na wajibu wa kuripoti unaowahusu. Zawadi haziwezi kuhamishwa, na fedha taslimu au njia ya malipo inaweza kubadilishwa inapohitajika kwa sababu inayofaa."
+            }
+          },
+          "conduct": {
+            "title": "6. Ushiriki wa haki",
+            "paragraphs": {
+              "p1": "GainForest inaweza kuondoa mawasilisho au akaunti zinazohusisha udanganyifu, unyanyasaji, maudhui hatari, ukiukaji wa haki, kuingilia huduma au tabia inayoharibu changamoto ya haki na salama."
+            }
+          },
+          "publicContent": {
+            "title": "7. Maudhui ya umma na faragha",
+            "paragraphs": {
+              "p1": "Usajili unatengeneza chapisho la umma la BioBlitz kwenye akaunti yako ya GainForest. Uchunguzi unaochapisha unaweza kujumuisha jina la wasifu, picha, taarifa za spishi, tarehe na data ya eneo, na unaweza kupatikana hadharani kupitia mtandao wa Itifaki ya AT.",
+              "p2": "Notisi ya Faragha ya BioBlitz inaeleza jinsi data ya changamoto inavyotumiwa. Sera ya jumla ya Faragha ya GainForest pia inatumika."
+            }
+          },
+          "changes": {
+            "title": "8. Mabadiliko, kusimamishwa au kufutwa",
+            "paragraphs": {
+              "p1": "GainForest inaweza kubadilisha, kusimamisha au kufuta raundi ikiwa hitilafu za kiufundi, masuala ya usalama, matakwa ya kisheria, udanganyifu au hali zilizo nje ya udhibiti wetu wa kawaida zinazuia uendeshaji wa haki. Tutatangaza mabadiliko muhimu kwenye ukurasa wa BioBlitz inapowezekana."
+            }
+          },
+          "liability": {
+            "title": "9. Wajibu",
+            "paragraphs": {
+              "p1": "Unashiriki kwa hiari na unawajibika kufuata sheria za eneo na kufanya maamuzi salama uwandani. Kwa kiwango kinachoruhusiwa na sheria, GainForest haiwajibiki kwa jeraha, hasara au uharibifu unaosababishwa na shughuli zisizo salama uwandani, huduma za wahusika wengine au matukio yaliyo nje ya udhibiti wetu wa kawaida. Masharti haya hayaondoi wajibu ambao hauwezi kuondolewa kisheria."
+            }
+          },
+          "law": {
+            "title": "10. Sheria inayotumika",
+            "paragraphs": {
+              "p1": "Masharti haya yanaongozwa na sheria ya Uswisi. Mahakama za Zurich, Uswisi zina mamlaka, kwa kuzingatia haki za lazima za watumiaji au ulinzi wa eneo unaokuhusu."
+            }
+          },
+          "contact": {
+            "title": "11. Mawasiliano",
+            "paragraphs": {
+              "p1": "Maswali kuhusu masharti haya au ustahiki wa zawadi yanaweza kutumwa kwa team@gainforest.net."
+            }
+          }
+        }
+      },
+      "privacy": {
+        "metadata": {
+          "title": "Notisi ya Faragha ya BioBlitz",
+          "description": "Jinsi GainForest inavyoshughulikia usajili, uchunguzi, taarifa za washindi na taarifa nyingine za Changamoto ya BioBlitz."
+        },
+        "title": "Notisi ya Faragha ya BioBlitz",
+        "effectiveDate": "Inaanza kutumika tarehe 18 Julai 2026",
+        "intro": {
+          "p1": "Notisi hii inaeleza jinsi GainForest inavyotumia taarifa binafsi kwa Changamoto ya BioBlitz. Inaongezea Sera ya jumla ya Faragha ya GainForest.",
+          "p2": "GainForest e.V. inawajibika kuendesha changamoto. Wasiliana na team@gainforest.net kwa maswali au maombi ya faragha."
+        },
+        "sections": {
+          "data": {
+            "title": "1. Taarifa zinazotumiwa kwa changamoto",
+            "paragraphs": {
+              "p1": "Tunatumia kitambulisho cha akaunti yako, jina na picha ya wasifu, lugha na chapisho la umma la usajili wa BioBlitz kuthibitisha kuwa umejiunga na raundi.",
+              "p2": "Tunatumia uchunguzi uliowasilishwa wakati wa raundi, ikiwemo picha au vyombo vingine, taarifa za spishi, muda, data ya eneo, maelezo na ushiriki unaohusiana kama vipendwa, kuendesha ubao na kuchagua washindi.",
+              "p3": "Ukishinda, tunaweza kuomba jina lako, mawasiliano, nchi unakoishi, uthibitisho wa umri au mlezi, taarifa za ukaguzi wa vikwazo inapohitajika kisheria na maelezo ya malipo yanayohitajika kupeleka zawadi."
+            }
+          },
+          "use": {
+            "title": "2. Kwa nini tunazitumia",
+            "paragraphs": {
+              "p1": "Tunatumia taarifa hizi kusajili washiriki, kuthibitisha mawasilisho, kuendesha mbao, kuchagua na kuwasiliana na washindi, kupeleka zawadi, kuzuia udanganyifu, kuweka changamoto salama, kujibu maswali na kushiriki matokeo na vivutio vya BioBlitz."
+            }
+          },
+          "public": {
+            "title": "3. Taarifa za umma",
+            "paragraphs": {
+              "p1": "Chapisho lako la usajili, wasifu na uchunguzi uliochapishwa ni wa umma. Unaweza kuonekana kwenye kurasa, ramani, maghala, mbao na matangazo ya washindi ya GainForest.",
+              "p2": "GainForest inatumia Itifaki ya AT iliyo wazi na iliyosambazwa. Rekodi za umma zinaweza kunakiliwa au kuorodheshwa na huduma huru ambazo GainForest haidhibiti. Kufuta rekodi chanzo kunaziashiria huduma zinazofuata kanuni kuiondoa, lakini kuondolewa kwa kila nakala ya wahusika wengine hakuwezi kuhakikishwa."
+            }
+          },
+          "location": {
+            "title": "4. Eneo na data nyeti ya asili",
+            "paragraphs": {
+              "p1": "Maeneo ya uchunguzi yanaweza kuonyeshwa hadharani. Tumia vidhibiti vya eneo la kukadiria inapohitajika na usichapishe maeneo sahihi ya spishi zilizo hatarini, makazi nyeti au jamii bila ruhusa inayofaa."
+            }
+          },
+          "prizes": {
+            "title": "5. Washindi na watoa huduma",
+            "paragraphs": {
+              "p1": "Tunaweza kushiriki taarifa za kiwango cha chini kinachohitajika na watoa huduma za malipo, utambulisho, uzingatiaji wa sheria, uhifadhi na mawasiliano wanaotusaidia kuendesha changamoto na kupeleka zawadi.",
+              "p2": "Tunaweza kuchapisha jina na picha ya wasifu wa mshindi, maudhui yaliyoshinda, aina ya zawadi na idadi ya uchunguzi. Tutaomba ruhusa kabla ya kutumia taarifa nyingine binafsi za maisha."
+            }
+          },
+          "legalBases": {
+            "title": "6. Misingi ya kisheria",
+            "paragraphs": {
+              "p1": "Tunachakata taarifa za changamoto kutekeleza makubaliano yetu nawe, kwa idhini yako inapohitajika, kwa maslahi yetu halali ya kuendesha changamoto ya uhifadhi yenye haki na kutimiza wajibu wa kisheria. Unaweza kuondoa idhini pale uchakataji unapoitegemea bila kuathiri uchakataji halali wa awali."
+            }
+          },
+          "retention": {
+            "title": "7. Uhifadhi",
+            "paragraphs": {
+              "p1": "Tunahifadhi rekodi binafsi za uwasilishaji na ustahiki wa zawadi kwa muda unaohitajika tu kwa malipo, uhasibu, kuzuia udanganyifu na wajibu wa kisheria. Uchunguzi na machapisho ya usajili ya umma yanabaki kwenye akaunti yako hadi uyafute, kwa kuzingatia mipaka ya mtandao uliosambazwa."
+            }
+          },
+          "rights": {
+            "title": "8. Chaguo na haki zako",
+            "paragraphs": {
+              "p1": "Kulingana na unakoishi, unaweza kuomba kufikia, kusahihisha, kufuta, kuzuia au kupinga matumizi ya taarifa zako binafsi, kuomba zihamishwe au kuondoa idhini. Wasiliana na team@gainforest.net. Unaweza kusimamia au kufuta rekodi za umma kutoka akaunti yako ya GainForest."
+            }
+          },
+          "children": {
+            "title": "9. Washiriki wenye umri mdogo",
+            "paragraphs": {
+              "p1": "Changamoto haijaelekezwa kwa watoto walio chini ya miaka 16. Washiriki wenye miaka 16 au 17 wanahitaji idhini ya mzazi au mlezi wa kisheria. Tukigundua kuwa taarifa iliwasilishwa na mtoto bila idhini inayofaa, tutachukua hatua zinazofaa kuiondoa."
+            }
+          },
+          "changes": {
+            "title": "10. Mabadiliko ya notisi hii",
+            "paragraphs": {
+              "p1": "Tunaweza kusasisha notisi hii na tutaweka tarehe iliyorekebishwa hapa. Tutatoa taarifa inayoonekana zaidi mabadiliko yanapowaathiri washiriki kwa kiasi kikubwa."
+            }
+          },
+          "contact": {
+            "title": "11. Mawasiliano",
+            "paragraphs": {
+              "p1": "Maswali na maombi ya faragha yanaweza kutumwa kwa team@gainforest.net au GainForest e.V., Schwandenacker 35, 8052 Zurich, Uswisi."
+            }
+          }
+        }
+      }
     },
     "help": {
       "prompt": "Una maswali?",

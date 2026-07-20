@@ -14,6 +14,7 @@
  * itself stays a cacheable static shell.
  */
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Confetti } from "../_components/Confetti";
@@ -139,6 +140,7 @@ export function RegisterButton({ round, status }: { round: BioblitzRound; status
         type="button"
         onClick={() => void register()}
         disabled={busy || session.status === "loading"}
+        aria-describedby={`bioblitz-registration-note-${round.id}`}
         data-taina="bioblitz-register"
         className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-dark disabled:opacity-70"
       >
@@ -149,9 +151,26 @@ export function RegisterButton({ round, status }: { round: BioblitzRound; status
         )}
         {busy ? t("registering") : t("button")}
       </button>
-      <span className="max-w-xs text-[11px] leading-snug text-muted-foreground md:text-right">
-        {error ? <span className="text-destructive">{t("error")}</span> : t("note")}
-      </span>
+      <div
+        id={`bioblitz-registration-note-${round.id}`}
+        className="max-w-xs space-y-1 text-[11px] leading-snug text-muted-foreground md:text-right"
+      >
+        <p>{error ? <span className="text-destructive">{t("error")}</span> : t("note")}</p>
+        <p>
+          {t.rich("legalConsent", {
+            terms: (chunks) => (
+              <Link href="/bioblitz/terms" className="font-medium text-foreground underline underline-offset-2">
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link href="/bioblitz/privacy" className="font-medium text-foreground underline underline-offset-2">
+                {chunks}
+              </Link>
+            ),
+          })}
+        </p>
+      </div>
     </div>
   );
 }
