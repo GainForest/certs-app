@@ -24,7 +24,20 @@
     "restoreLabel": "Buka Tainá",
     "signInFirst": "Untuk yang ini kamu perlu masuk dulu — gunakan tombol Masuk di bagian atas halaman, lalu kembali ke sini dan aku akan memandumu.",
     "needProjectFirst": "Donasi diatur pada sebuah proyek, dan kamu belum punya proyek — buat proyek pertamamu dulu, lalu kembali ke sini.",
-    "createProjectFirst": "Tunjukkan cara membuat proyek"
+    "createProjectFirst": "Tunjukkan cara membuat proyek",
+    "didYouKnow": "Tahukah kamu?",
+    "dismissTip": "Tutup tips",
+    "tips": {
+      "wallet": "Kamu bisa menerima donasi dan tip! Buat dompetmu di tab Dompet pada akunmu.",
+      "createProject": "Kamu bisa memamerkan karyamu dengan membuat proyek — hanya butuh beberapa menit.",
+      "observations": "Kamu bisa mengunggah hingga 50 foto alam sekaligus — spesiesnya dikenali secara otomatis.",
+      "bioblitz": "Ada tantangan BioBlitz setiap minggu — potret makhluk hidup apa pun dan menangkan hadiah!",
+      "ask": "Kamu bisa bertanya apa saja tentang GainForest dalam bahasamu — cukup klik aku!"
+    },
+    "haveQuestion": "Aku punya pertanyaan",
+    "helpTitle": "Bisa bantu?",
+    "helpBody": "Seseorang memotret ini, tapi belum ada yang tahu spesiesnya. Kamu mengenalinya?",
+    "helpCta": "Sepertinya aku tahu!"
   },
   "guides": {
     "wallet": {
@@ -53,6 +66,28 @@
         "open": "Buka proyek yang ingin menerima donasi.",
         "enable": "Klik Enable Donations di kartu dukungan.",
         "addWallet": "Klik Buat dompet dengan kunci sandi lalu konfirmasi dengan kunci sandi Anda — selesai!"
+      }
+    },
+    "accountWallet": {
+      "question": "Bagaimana cara menerima donasi dan tip secara pribadi?",
+      "title": "Buat dompet pribadimu",
+      "intro": "Kamu bisa menerima donasi dan tip secara langsung — tanpa perlu proyek. Dompetmu ada di profilmu sendiri dan dibuat dalam hitungan detik dengan passkey (Face ID atau sidik jari). Tidak perlu pengalaman kripto.",
+      "steps": {
+        "open": {
+          "title": "Buka halaman Dompetmu",
+          "body": "Buka www.gainforest.app/account/wallet — langsung membawamu ke tab Dompet akunmu sendiri."
+        },
+        "create": {
+          "title": "Buat dompetmu",
+          "body": "Klik Buat dompet dan konfirmasi dengan Face ID, sidik jari, atau kunci keamanan. Itu saja — tanpa seed phrase yang harus dicatat."
+        },
+        "share": {
+          "title": "Siap menerima dukungan",
+          "body": "Alamat dompetmu bisa langsung menerima donasi dan tip. Selagi dompet masih baru, kamu bisa menambahkan passkey lain — perangkat lain atau orang yang kamu percaya."
+        }
+      },
+      "tour": {
+        "create": "Klik Buat dompet dan konfirmasi dengan passkey-mu — selesai! (Kalau sudah pernah membuatnya, kamu akan melihatnya di sini.)"
       }
     },
     "createProject": {

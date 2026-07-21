@@ -24,7 +24,20 @@
     "restoreLabel": "Open Tainá",
     "signInFirst": "You'll need to sign in for this one — use the Sign in button at the top of the page, then come back and I'll walk you through it.",
     "needProjectFirst": "Donations are set up on a project, and you don't have one yet — create your first project, then come back here.",
-    "createProjectFirst": "Show me how to create a project"
+    "createProjectFirst": "Show me how to create a project",
+    "didYouKnow": "Did you know?",
+    "dismissTip": "Dismiss tip",
+    "tips": {
+      "wallet": "You can receive donations and tips! Create your wallet on the Wallet tab of your account.",
+      "createProject": "You can showcase your work by creating a project — it only takes a few minutes.",
+      "observations": "You can upload up to 50 nature photos at once — the species get identified automatically.",
+      "bioblitz": "There's a BioBlitz challenge every week — photograph any living thing and win prizes!",
+      "ask": "You can ask me anything about GainForest, in your own language — just click me!"
+    },
+    "haveQuestion": "I have a question",
+    "helpTitle": "Can you help?",
+    "helpBody": "Someone photographed this, but no one knows what species it is yet. Do you recognize it?",
+    "helpCta": "I think I know!"
   },
   "guides": {
     "wallet": {
@@ -53,6 +66,28 @@
         "open": "Open the project you want to receive donations for.",
         "enable": "Click Enable Donations in the Support card.",
         "addWallet": "Click Create wallet with passkey and confirm with your passkey — that's it!"
+      }
+    },
+    "accountWallet": {
+      "question": "How do I receive donations and tips personally?",
+      "title": "Create your personal wallet",
+      "intro": "You can receive donations and tips directly — no project needed. Your wallet lives on your own profile and is created in seconds with a passkey (Face ID or fingerprint). No crypto experience needed.",
+      "steps": {
+        "open": {
+          "title": "Open your Wallet page",
+          "body": "Go to www.gainforest.app/account/wallet — it takes you straight to the Wallet tab of your own account."
+        },
+        "create": {
+          "title": "Create your wallet",
+          "body": "Click Create wallet and confirm with Face ID, fingerprint, or a security key. That's all — no seed phrases to write down."
+        },
+        "share": {
+          "title": "Ready to receive support",
+          "body": "Your wallet address can receive donations and tips right away. While the wallet is new you can add more passkeys — another device, or someone you trust."
+        }
+      },
+      "tour": {
+        "create": "Click Create wallet and confirm with your passkey — that's it! (If you already created one, you'll see it here.)"
       }
     },
     "createProject": {

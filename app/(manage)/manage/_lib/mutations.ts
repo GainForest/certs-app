@@ -9,6 +9,10 @@
 
 import { formatCgsErrorMessage } from "@/app/_lib/cgs-errors";
 import { resolveStrongRef, type StrongRef } from "@/app/_lib/pds";
+import {
+  SPECIES_IDENTIFICATION_COLLECTION,
+  speciesIdentificationTags,
+} from "@/app/_lib/species-identifications";
 import type {
   AppendExistingDatasetResponse,
   AppendExistingDatasetRowInput,
@@ -439,6 +443,64 @@ type FeedWriteResult = { uri: string; cid: string; rkey: string };
 
 function rkeyOf(uri: string): string {
   return uri.split("/").pop() ?? "";
+}
+
+/**
+ * Publish a structured Darwin Core identification and a tagged reply-post that
+ * makes it discoverable in the existing observation thread and notification
+ * pipeline. The identification is the source of truth; the reply is only its
+ * human-readable notification mirror. Roll the identification back if that
+ * mirror cannot be written so the observer is never silently missed.
+ */
+export async function createSpeciesIdentification(
+  input: {
+    subjectUri: string;
+    scientificName: string;
+    vernacularName?: string;
+    taxonID?: string;
+    taxonRank?: string;
+    confidence?: number;
+    identificationRemarks?: string;
+    notificationText: string;
+  },
+  options?: { repo?: string },
+): Promise<{ identification: FeedWriteResult; notification: FeedWriteResult }> {
+  const subject = await resolveStrongRef(input.subjectUri);
+  const createdAt = new Date().toISOString();
+  const record: Record<string, unknown> = {
+    $type: SPECIES_IDENTIFICATION_COLLECTION,
+    subject,
+    scientificName: input.scientificName.trim(),
+    createdAt,
+  };
+  if (input.vernacularName?.trim()) record.vernacularName = input.vernacularName.trim();
+  if (input.taxonID?.trim()) record.taxonID = input.taxonID.trim();
+  if (input.taxonRank?.trim()) record.taxonRank = input.taxonRank.trim();
+  const confidence = input.confidence;
+  if (typeof confidence === "number" && Number.isInteger(confidence)) {
+    record.confidence = Math.min(100, Math.max(0, confidence));
+  }
+  if (input.identificationRemarks?.trim()) record.identificationRemarks = input.identificationRemarks.trim();
+
+  const created = await createRecord(SPECIES_IDENTIFICATION_COLLECTION, record, undefined, options);
+  const identification = { ...created, rkey: rkeyOf(created.uri) };
+  try {
+    const notificationRecord = {
+      $type: FEED_POST_COLLECTION,
+      text: input.notificationText.trim(),
+      reply: { root: subject, parent: subject },
+      tags: speciesIdentificationTags(identification.rkey),
+      createdAt,
+    };
+    const notificationCreated = await createRecord(FEED_POST_COLLECTION, notificationRecord, undefined, options);
+    return {
+      identification,
+      notification: { ...notificationCreated, rkey: rkeyOf(notificationCreated.uri) },
+    };
+  } catch (error) {
+    await deleteRecord(SPECIES_IDENTIFICATION_COLLECTION, identification.rkey, options).catch(() => {});
+    throw error;
+  }
 }
 
 /** Publish a top-level narrative post to the feed (app.gainforest.feed.post).

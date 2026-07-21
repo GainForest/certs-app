@@ -48,6 +48,8 @@ export type FeedComment = {
   /** Accounts @-mentioned in the text (from the record's facets), for
    *  linkified rendering and for seeding the edit composer. */
   mentions: MentionCandidate[];
+  /** Machine-readable discovery tags carried by the reply-post. */
+  tags?: string[];
 };
 
 /** A comment plus its nested replies, built from a flat thread by parent link. */
@@ -199,7 +201,7 @@ const COMMENTS_FOR_SUBJECT_QUERY = `
     appGainforestFeedPost(first: 200, where: { reply: { root: { uri: { eq: $uri } } } }) {
       edges {
         node {
-          uri did text createdAt
+          uri did text tags createdAt
           reply { parent { uri } }
           ${FACET_FIELDS}
           ${CERTIFIED_PROFILE_DATA_FIELDS}
@@ -213,6 +215,7 @@ type CommentNode = {
   uri?: string | null;
   did?: string | null;
   text?: string | null;
+  tags?: string[] | null;
   createdAt?: string | null;
   reply?: { parent?: { uri?: string | null } | null } | null;
   facets?: RawIndexedFacet[] | null;
@@ -284,6 +287,7 @@ export async function fetchComments(uri: string, signal?: AbortSignal): Promise<
       authorAvatarRef: normaliseRef(node.certifiedProfileData?.avatar?.image?.ref),
       parentUri: node.reply?.parent?.uri ?? null,
       mentions: mentionCandidatesFromFacets(node.text, node.facets),
+      tags: node.tags?.filter((tag): tag is string => typeof tag === "string") ?? [],
     });
   }
   comments.sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));

@@ -65,6 +65,7 @@ import {
   createObservationOccurrence,
   createObservationPhoto,
   formatObservationMutationError,
+  rollbackObservationOccurrence,
   setObservationPrimaryImage,
   type ObservationBlobRef,
 } from "./observation-mutations";
@@ -815,38 +816,44 @@ export function AddObservationsModal({
       ...(effectiveProjectUri ? { projectRef: effectiveProjectUri } : {}),
       ...(effectiveSiteUri ? { siteRef: effectiveSiteUri } : {}),
     });
-    // Store the observer's optional measurements as one linked record. Only
-    // complete rows (both what was measured and a value) are kept.
-    const measurementEntries = fields.measurements
-      .map((entry) => ({
-        measurementType: entry.type.trim(),
-        measurementValue: entry.value.trim(),
-        ...(entry.unit.trim() ? { measurementUnit: entry.unit.trim() } : {}),
-      }))
-      .filter((entry) => entry.measurementType && entry.measurementValue);
-    if (measurementEntries.length > 0) {
-      await createObservationMeasurements({ occurrenceRef: occurrence.uri, entries: measurementEntries });
-    }
-    let primaryBlobRef: ObservationBlobRef | null = null;
-    for (const item of group.items) {
-      const photo = await createObservationPhoto({
-        imageFile: item.file,
-        occurrenceRef: occurrence.uri,
-        subjectPart: "wholeOrganism",
-        caption: item.caption.trim() || undefined,
-        siteRef: effectiveSiteUri ?? undefined,
-      });
-      if (!primaryBlobRef && photo.blobRef) primaryBlobRef = photo.blobRef;
-    }
-    if (primaryBlobRef) {
+    try {
+      // Store the observer's optional measurements as one linked record. Only
+      // complete rows (both what was measured and a value) are kept.
+      const measurementEntries = fields.measurements
+        .map((entry) => ({
+          measurementType: entry.type.trim(),
+          measurementValue: entry.value.trim(),
+          ...(entry.unit.trim() ? { measurementUnit: entry.unit.trim() } : {}),
+        }))
+        .filter((entry) => entry.measurementType && entry.measurementValue);
+      if (measurementEntries.length > 0) {
+        await createObservationMeasurements({ occurrenceRef: occurrence.uri, entries: measurementEntries });
+      }
+      let primaryBlobRef: ObservationBlobRef | null = null;
+      for (const item of group.items) {
+        const photo = await createObservationPhoto({
+          imageFile: item.file,
+          occurrenceRef: occurrence.uri,
+          subjectPart: "wholeOrganism",
+          caption: item.caption.trim() || undefined,
+          siteRef: effectiveSiteUri ?? undefined,
+        });
+        if (!primaryBlobRef && photo.blobRef) primaryBlobRef = photo.blobRef;
+      }
+      if (!primaryBlobRef) throw new Error(t("photoUploadFailed"));
       await setObservationPrimaryImage({
         rkey: occurrence.rkey,
         record: occurrence.record ?? {},
         swapCid: occurrence.cid,
         blobRef: primaryBlobRef,
-      }).catch(() => {});
+      });
+      return true;
+    } catch (error) {
+      await rollbackObservationOccurrence(occurrence.rkey).catch((cleanupError) => {
+        console.error("Could not roll back incomplete observation", cleanupError);
+      });
+      throw error;
     }
-    return true;
   }
 
   async function submit() {
@@ -889,7 +896,10 @@ export function AddObservationsModal({
               return current.filter((item) => !ids.has(item.id));
             });
           } catch (uploadError) {
-            const message = formatObservationMutationError(uploadError, { photoTooLarge: t("photoTooLarge") });
+            const message = formatObservationMutationError(uploadError, {
+              photoTooLarge: t("photoTooLarge"),
+              photoUploadFailed: t("photoUploadFailed"),
+            });
             setItems((current) =>
               current.map((item) => (ids.has(item.id) ? { ...item, status: "error", error: message } : item)),
             );

@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminOnlyIndicator } from "@/app/_components/AdminOnlyIndicator";
+import { PictureHero } from "@/app/_components/PictureHero";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -825,19 +826,15 @@ export function AudioMothClient({
   ];
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <span className="flex size-9 items-center justify-center rounded-full border border-primary/15 bg-primary/[0.08] text-primary shadow-inner">
-            <AudioLinesIcon className="size-4.5" />
-          </span>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        </div>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          {mainTab === "label" ? t("label.subtitle") : mainTab === "identifications" ? identificationsT("subtitle") : t("subtitle")}
-        </p>
-      </header>
-
+    <div>
+      <PictureHero
+        compact
+        lightSrc="/images/explore/explore-hero-light@2x.webp"
+        darkSrc="/images/explore/explore-hero-dark@2x.webp"
+        title={t("title")}
+        lede={mainTab === "label" ? t("label.subtitle") : mainTab === "identifications" ? identificationsT("subtitle") : t("subtitle")}
+      />
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6">
       {/* Setup (this device over USB) vs Deployment (field events) */}
       <nav className="flex w-full gap-1 self-start rounded-full border border-border bg-card/70 p-1 sm:w-auto" aria-label={t("title")}>
         {mainTabs.map(({ id, label, Icon, adminOnly }) => (
@@ -938,6 +935,7 @@ export function AudioMothClient({
           </AnimatePresence>
         </>
       )}
+      </div>
     </div>
   );
 }

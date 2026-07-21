@@ -291,7 +291,189 @@
       "registered": "You're registered",
       "registeredNote": "We'll track your entries and send your prize if you win.",
       "error": "Could not register just now. Please try again.",
-      "postText": "I'm joining the Weekly BioBlitz Challenge — {label}! Heading outside to photograph nature for biodiversity. 🌿🔭 #BioBlitz"
+      "postText": "I'm joining the Weekly BioBlitz Challenge — {label}! Heading outside to photograph nature for biodiversity. 🌿🔭 #BioBlitz",
+      "legalConsent": "By registering, you agree to the <terms>BioBlitz Terms</terms> and acknowledge the <privacy>Privacy Notice</privacy>."
+    },
+    "legal": {
+      "programLabel": "BioBlitz Challenge",
+      "back": "Back to BioBlitz",
+      "links": {
+        "terms": "BioBlitz Terms",
+        "privacy": "BioBlitz Privacy Notice",
+        "generalPrivacy": "GainForest Privacy Policy"
+      },
+      "terms": {
+        "metadata": {
+          "title": "BioBlitz Terms",
+          "description": "Eligibility, participation, submissions, prizes, and other rules for the GainForest BioBlitz Challenge."
+        },
+        "title": "BioBlitz Terms",
+        "effectiveDate": "Effective July 18, 2026",
+        "intro": {
+          "p1": "These terms govern participation in the GainForest BioBlitz Challenge. By registering for a round, you agree to these terms.",
+          "p2": "GainForest e.V., a Swiss non-profit association, organizes the challenge. No purchase or payment is required to enter."
+        },
+        "sections": {
+          "eligibility": {
+            "title": "1. Eligibility and supported countries",
+            "paragraphs": {
+              "p1": "The BioBlitz is open to people aged 18 or older worldwide wherever participation and receipt of a prize are permitted by local law. People aged 16 or 17 may participate only with consent from a parent or legal guardian. The challenge is not directed to children under 16.",
+              "p2": "A country or territory is supported when GainForest and its payment providers can lawfully offer the challenge and deliver a prize there. You are not eligible to receive a prize if you live in or are ordinarily resident in a country or territory subject to comprehensive sanctions or embargoes under applicable Swiss, United Nations, or European Union measures, or where participation or prize delivery is prohibited by applicable law or payment-provider rules.",
+              "p3": "You must not be named on an applicable sanctions, restricted-person, or denied-party list. Because these rules change, GainForest may verify eligibility before sending a prize and may withhold or cancel a prize where required by law."
+            }
+          },
+          "participation": {
+            "title": "2. How to participate",
+            "paragraphs": {
+              "p1": "You need a GainForest account and must register for each round. Eligible observations must be added during the dates shown for that round and include genuine evidence of a living organism.",
+              "p2": "Each person may use one account. Automated, duplicate, manipulated, backdated, misleading, or otherwise fraudulent entries may be removed from the challenge."
+            }
+          },
+          "submissions": {
+            "title": "3. Your submissions",
+            "paragraphs": {
+              "p1": "You must own the photos and other content you submit, or have permission to use and publish them. You remain the owner of your content.",
+              "p2": "You give GainForest permission to display, index, review, and share your challenge submissions for operating and promoting the BioBlitz and GainForest's environmental mission, with attribution where reasonably possible.",
+              "p3": "Do not disturb wildlife, damage habitats, trespass, or put yourself or anyone else at risk to make a submission. Avoid publishing precise locations for vulnerable species, sensitive ecosystems, or places where disclosure could cause harm."
+            }
+          },
+          "winners": {
+            "title": "4. Winner selection",
+            "paragraphs": {
+              "p1": "The Most Observations prize is based on the highest number of valid observations during the round. The Best Picture prize is selected using the criteria described on the BioBlitz page, including image quality, subject, and community engagement where relevant.",
+              "p2": "GainForest may review entries, resolve ties, correct counting errors, and disqualify invalid entries. Decisions are final to the extent permitted by law."
+            }
+          },
+          "prizes": {
+            "title": "5. Prizes",
+            "paragraphs": {
+              "p1": "Prize values are shown on the BioBlitz page. A winner must respond to GainForest and provide any information reasonably needed to confirm eligibility and deliver the prize. If a winner does not respond within 14 days, is ineligible, or cannot lawfully receive the prize, GainForest may select another winner.",
+              "p2": "Winners are responsible for taxes, fees, and reporting obligations that apply to them. Prizes cannot be transferred, and a cash or payment method may be substituted when reasonably necessary."
+            }
+          },
+          "conduct": {
+            "title": "6. Fair participation",
+            "paragraphs": {
+              "p1": "GainForest may remove entries or accounts that involve fraud, harassment, harmful content, rights violations, interference with the service, or conduct that undermines a fair and safe challenge."
+            }
+          },
+          "publicContent": {
+            "title": "7. Public content and privacy",
+            "paragraphs": {
+              "p1": "Registration creates a public BioBlitz post on your GainForest account. Observations you publish may include your profile name, photographs, species information, dates, and location data and may be publicly accessible through the AT Protocol network.",
+              "p2": "The BioBlitz Privacy Notice explains how challenge data is used. The general GainForest Privacy Policy also applies."
+            }
+          },
+          "changes": {
+            "title": "8. Changes, suspension, or cancellation",
+            "paragraphs": {
+              "p1": "GainForest may change, suspend, or cancel a round when technical failures, safety concerns, legal requirements, fraud, or circumstances outside our reasonable control prevent fair operation. We will communicate material changes on the BioBlitz page where practical."
+            }
+          },
+          "liability": {
+            "title": "9. Responsibility",
+            "paragraphs": {
+              "p1": "You participate voluntarily and are responsible for following local laws and making safe choices in the field. To the extent permitted by law, GainForest is not responsible for injury, loss, or damage caused by unsafe field activity, third-party services, or events outside our reasonable control. Nothing in these terms excludes liability that cannot legally be excluded."
+            }
+          },
+          "law": {
+            "title": "10. Governing law",
+            "paragraphs": {
+              "p1": "These terms are governed by Swiss law. Courts in Zurich, Switzerland have jurisdiction, subject to any mandatory consumer rights or local protections that apply to you."
+            }
+          },
+          "contact": {
+            "title": "11. Contact",
+            "paragraphs": {
+              "p1": "Questions about these terms or prize eligibility can be sent to team@gainforest.net."
+            }
+          }
+        }
+      },
+      "privacy": {
+        "metadata": {
+          "title": "BioBlitz Privacy Notice",
+          "description": "How GainForest handles registration, observations, winner details, and other information for the BioBlitz Challenge."
+        },
+        "title": "BioBlitz Privacy Notice",
+        "effectiveDate": "Effective July 18, 2026",
+        "intro": {
+          "p1": "This notice explains how GainForest uses personal information for the BioBlitz Challenge. It supplements the general GainForest Privacy Policy.",
+          "p2": "GainForest e.V. is responsible for operating the challenge. Contact team@gainforest.net with privacy questions or requests."
+        },
+        "sections": {
+          "data": {
+            "title": "1. Information used for the challenge",
+            "paragraphs": {
+              "p1": "We use your account identifier, profile name, profile image, language, and public BioBlitz registration post to confirm that you joined a round.",
+              "p2": "We use observations submitted during the round, including photographs or other media, species information, timestamps, location data, notes, and related engagement such as likes, to operate the leaderboard and select winners.",
+              "p3": "If you win, we may ask for your name, contact details, country of residence, age or guardian confirmation, sanctions-screening information where legally required, and the payment details needed to deliver your prize."
+            }
+          },
+          "use": {
+            "title": "2. Why we use it",
+            "paragraphs": {
+              "p1": "We use this information to register participants, validate entries, run leaderboards, select and contact winners, deliver prizes, prevent fraud, keep the challenge safe, answer questions, and share BioBlitz results and highlights."
+            }
+          },
+          "public": {
+            "title": "3. What is public",
+            "paragraphs": {
+              "p1": "Your registration post, profile, and published observations are public. They may appear on GainForest pages, maps, galleries, leaderboards, and winner announcements.",
+              "p2": "GainForest uses the open and federated AT Protocol. Public records can be copied or indexed by independent services that GainForest does not control. Deleting a source record signals compliant services to remove it, but removal of every third-party copy cannot be guaranteed."
+            }
+          },
+          "location": {
+            "title": "4. Location and sensitive nature data",
+            "paragraphs": {
+              "p1": "Observation locations may be shown publicly. Use approximate-location controls when needed and do not publish precise locations for vulnerable species, sensitive habitats, or communities without appropriate permission."
+            }
+          },
+          "prizes": {
+            "title": "5. Winners and service providers",
+            "paragraphs": {
+              "p1": "We may share the minimum information needed with payment, identity, compliance, hosting, and communications providers that help us operate the challenge and deliver prizes.",
+              "p2": "We may publish a winner's profile name, profile image, winning content, prize category, and observation count. We will ask before using additional private biographical details."
+            }
+          },
+          "legalBases": {
+            "title": "6. Legal bases",
+            "paragraphs": {
+              "p1": "We process challenge information to perform our agreement with you, based on your consent where required, for our legitimate interests in running a fair conservation challenge, and to comply with legal obligations. You may withdraw consent where processing depends on it, without affecting earlier lawful processing."
+            }
+          },
+          "retention": {
+            "title": "7. Retention",
+            "paragraphs": {
+              "p1": "We keep private prize-delivery and eligibility records only as long as needed for payment, accounting, fraud prevention, and legal obligations. Public observations and registration posts remain in your account until you delete them, subject to the limits of a federated network."
+            }
+          },
+          "rights": {
+            "title": "8. Your choices and rights",
+            "paragraphs": {
+              "p1": "Depending on where you live, you may ask to access, correct, delete, restrict, or object to our use of your personal information, request portability, or withdraw consent. Contact team@gainforest.net. You can manage or delete public records from your GainForest account."
+            }
+          },
+          "children": {
+            "title": "9. Younger participants",
+            "paragraphs": {
+              "p1": "The challenge is not directed to children under 16. Participants aged 16 or 17 need consent from a parent or legal guardian. If we learn that information was submitted by a child without appropriate consent, we will take reasonable steps to remove it."
+            }
+          },
+          "changes": {
+            "title": "10. Changes to this notice",
+            "paragraphs": {
+              "p1": "We may update this notice and will post the revised date here. We will provide a more prominent notice when a change materially affects participants."
+            }
+          },
+          "contact": {
+            "title": "11. Contact",
+            "paragraphs": {
+              "p1": "Privacy questions and requests can be sent to team@gainforest.net or to GainForest e.V., Schwandenacker 35, 8052 Zurich, Switzerland."
+            }
+          }
+        }
+      }
     },
     "help": {
       "prompt": "Questions?",
@@ -1384,7 +1566,84 @@
     "metaTitle": "{name} — Nature sighting",
     "metaFallback": "A nature sighting shared on GainForest.",
     "natureSound": "Nature sound recording",
-    "unidentified": "Unidentified sighting"
+    "unidentified": "Unidentified sighting",
+    "suggestions": {
+      "title": "Species suggestions",
+      "description": "Identification proposals from ecological experts. The observer can review them before changing this sighting.",
+      "expertFallback": "Community expert",
+      "status": "Awaiting review"
+    }
+  },
+  "labeler": {
+    "meta": {
+      "title": "Observation labeler",
+      "description": "Review recent nature sightings and suggest species identifications."
+    },
+    "hero": {
+      "title": "Identify",
+      "accent": "species"
+    },
+    "eyebrow": "Ecological review",
+    "title": "Observation labeler",
+    "description": "Explore recent and unidentified sightings, inspect their field data, and propose a concrete species name for the observer to review.",
+    "unidentified": "Unidentified",
+    "filters": {
+      "searchLabel": "Search observations",
+      "searchPlaceholder": "Search species, genus, family or place…",
+      "taxonLabel": "Taxon",
+      "allTaxa": "All taxa",
+      "genusLabel": "Genus",
+      "allGenera": "All genera",
+      "countryLabel": "Country",
+      "allCountries": "All countries",
+      "regionLabel": "Region",
+      "allRegions": "All regions",
+      "mediaLabel": "Evidence type",
+      "allMedia": "All evidence",
+      "photos": "Photos",
+      "audio": "Audio"
+    },
+    "queue": {
+      "unidentified": "Needs identification",
+      "recent": "Recent sightings",
+      "count": "{count, plural, =0 {No observations} =1 {1 observation} other {# observations}}",
+      "ariaLabel": "Observations to review",
+      "loadMore": "Load more observations",
+      "loading": "Loading observations…"
+    },
+    "empty": {
+      "title": "No matching sightings",
+      "description": "Try another taxon, genus, country, region or search."
+    },
+    "review": {
+      "selectPrompt": "Select a sighting to inspect its evidence and field data.",
+      "currentIdentification": "Current identification",
+      "openObservation": "Open observation page",
+      "family": "Family",
+      "genus": "Genus",
+      "observer": "Observer",
+      "communityObserver": "Community observer",
+      "observed": "Observed"
+    },
+    "proposal": {
+      "title": "Suggest an identification",
+      "description": "Your suggestion will appear on the sighting and notify its observer. It will not replace the current name automatically.",
+      "scientificName": "Scientific name",
+      "scientificPlaceholder": "e.g. Panthera onca",
+      "commonNameOptional": "Common name (optional)",
+      "commonPlaceholder": "e.g. Jaguar",
+      "noteOptional": "Evidence note (optional)",
+      "notePlaceholder": "Explain the visible traits or context supporting this identification.",
+      "recordSuggestion": "Species suggestion",
+      "commonName": "Common name",
+      "noteLabel": "Evidence note",
+      "submit": "Send suggestion",
+      "submitting": "Sending suggestion…",
+      "success": "Suggested {name}. The observer will be notified.",
+      "error": "The suggestion could not be sent. Please try again.",
+      "signInDescription": "Sign in to submit suggestions from your account. Anyone can still explore the review queue.",
+      "signIn": "Sign in to suggest"
+    }
   },
   "manageProjects": {
     "hero": {

@@ -291,7 +291,189 @@
       "registered": "Kamu sudah terdaftar",
       "registeredNote": "Kami akan mencatat kontribusimu dan mengirim hadiah jika kamu menang.",
       "error": "Gagal mendaftar sekarang. Silakan coba lagi.",
-      "postText": "Aku ikut Tantangan BioBlitz Mingguan — {label}! Aku akan keluar memotret alam demi keanekaragaman hayati. 🌿🔭 #BioBlitz"
+      "postText": "Aku ikut Tantangan BioBlitz Mingguan — {label}! Aku akan keluar memotret alam demi keanekaragaman hayati. 🌿🔭 #BioBlitz",
+      "legalConsent": "Dengan mendaftar, kamu menyetujui <terms>Ketentuan BioBlitz</terms> dan memahami <privacy>Pemberitahuan Privasi</privacy>."
+    },
+    "legal": {
+      "programLabel": "Tantangan BioBlitz",
+      "back": "Kembali ke BioBlitz",
+      "links": {
+        "terms": "Ketentuan BioBlitz",
+        "privacy": "Pemberitahuan Privasi BioBlitz",
+        "generalPrivacy": "Kebijakan Privasi GainForest"
+      },
+      "terms": {
+        "metadata": {
+          "title": "Ketentuan BioBlitz",
+          "description": "Kelayakan, partisipasi, kiriman, hadiah, dan aturan lain untuk Tantangan BioBlitz GainForest."
+        },
+        "title": "Ketentuan BioBlitz",
+        "effectiveDate": "Berlaku mulai 18 Juli 2026",
+        "intro": {
+          "p1": "Ketentuan ini mengatur partisipasi dalam Tantangan BioBlitz GainForest. Dengan mendaftar untuk suatu ronde, kamu menyetujui ketentuan ini.",
+          "p2": "GainForest e.V., organisasi nirlaba Swiss, menyelenggarakan tantangan ini. Tidak diperlukan pembelian atau pembayaran untuk ikut serta."
+        },
+        "sections": {
+          "eligibility": {
+            "title": "1. Kelayakan dan negara yang didukung",
+            "paragraphs": {
+              "p1": "BioBlitz terbuka bagi orang berusia 18 tahun atau lebih di seluruh dunia selama partisipasi dan penerimaan hadiah diizinkan oleh hukum setempat. Peserta berusia 16 atau 17 tahun hanya dapat ikut dengan persetujuan orang tua atau wali hukum. Tantangan ini tidak ditujukan bagi anak di bawah 16 tahun.",
+              "p2": "Suatu negara atau wilayah didukung ketika GainForest dan penyedia pembayarannya dapat secara sah menawarkan tantangan dan mengirim hadiah ke sana. Kamu tidak berhak menerima hadiah jika tinggal atau biasanya menetap di negara atau wilayah yang dikenai sanksi menyeluruh atau embargo berdasarkan tindakan Swiss, Perserikatan Bangsa-Bangsa, atau Uni Eropa yang berlaku, atau jika partisipasi maupun pengiriman hadiah dilarang oleh hukum atau aturan penyedia pembayaran.",
+              "p3": "Namamu tidak boleh tercantum dalam daftar sanksi, orang yang dibatasi, atau pihak yang ditolak yang berlaku. Karena aturan ini dapat berubah, GainForest dapat memeriksa kelayakan sebelum mengirim hadiah dan dapat menahan atau membatalkan hadiah jika diwajibkan oleh hukum."
+            }
+          },
+          "participation": {
+            "title": "2. Cara berpartisipasi",
+            "paragraphs": {
+              "p1": "Kamu memerlukan akun GainForest dan harus mendaftar untuk setiap ronde. Pengamatan yang memenuhi syarat harus ditambahkan selama tanggal yang ditampilkan untuk ronde tersebut dan menyertakan bukti asli tentang organisme hidup.",
+              "p2": "Setiap orang hanya boleh menggunakan satu akun. Kiriman otomatis, duplikat, dimanipulasi, diberi tanggal mundur, menyesatkan, atau curang dapat dihapus dari tantangan."
+            }
+          },
+          "submissions": {
+            "title": "3. Kirimanmu",
+            "paragraphs": {
+              "p1": "Kamu harus memiliki foto dan konten lain yang dikirim, atau memiliki izin untuk menggunakan dan menerbitkannya. Kepemilikan konten tetap berada padamu.",
+              "p2": "Kamu memberi GainForest izin untuk menampilkan, mengindeks, meninjau, dan membagikan kiriman tantanganmu guna menjalankan dan mempromosikan BioBlitz serta misi lingkungan GainForest, dengan mencantumkan atribusi jika memungkinkan secara wajar.",
+              "p3": "Jangan mengganggu satwa liar, merusak habitat, memasuki tempat tanpa izin, atau membahayakan siapa pun demi membuat kiriman. Hindari menerbitkan lokasi tepat spesies rentan, ekosistem sensitif, atau tempat yang dapat terdampak oleh pengungkapan."
+            }
+          },
+          "winners": {
+            "title": "4. Pemilihan pemenang",
+            "paragraphs": {
+              "p1": "Hadiah Pengamatan Terbanyak didasarkan pada jumlah pengamatan valid tertinggi selama ronde. Hadiah Foto Terbaik dipilih berdasarkan kriteria di halaman BioBlitz, termasuk kualitas gambar, subjek, dan keterlibatan komunitas jika relevan.",
+              "p2": "GainForest dapat meninjau kiriman, menyelesaikan hasil seri, memperbaiki kesalahan hitung, dan mendiskualifikasi kiriman yang tidak valid. Keputusan bersifat final sejauh diizinkan oleh hukum."
+            }
+          },
+          "prizes": {
+            "title": "5. Hadiah",
+            "paragraphs": {
+              "p1": "Nilai hadiah ditampilkan di halaman BioBlitz. Pemenang harus menanggapi GainForest dan memberikan informasi yang secara wajar diperlukan untuk memastikan kelayakan dan mengirim hadiah. Jika pemenang tidak merespons dalam 14 hari, tidak memenuhi syarat, atau tidak dapat menerima hadiah secara sah, GainForest dapat memilih pemenang lain.",
+              "p2": "Pemenang bertanggung jawab atas pajak, biaya, dan kewajiban pelaporan yang berlaku. Hadiah tidak dapat dipindahtangankan, dan uang tunai atau metode pembayaran dapat diganti jika diperlukan secara wajar."
+            }
+          },
+          "conduct": {
+            "title": "6. Partisipasi yang adil",
+            "paragraphs": {
+              "p1": "GainForest dapat menghapus kiriman atau akun yang melibatkan penipuan, pelecehan, konten berbahaya, pelanggaran hak, gangguan layanan, atau perilaku yang merusak tantangan yang adil dan aman."
+            }
+          },
+          "publicContent": {
+            "title": "7. Konten publik dan privasi",
+            "paragraphs": {
+              "p1": "Pendaftaran membuat kiriman BioBlitz publik di akun GainForest milikmu. Pengamatan yang kamu terbitkan dapat mencakup nama profil, foto, informasi spesies, tanggal, dan data lokasi serta dapat diakses publik melalui jaringan Protokol AT.",
+              "p2": "Pemberitahuan Privasi BioBlitz menjelaskan cara data tantangan digunakan. Kebijakan Privasi GainForest secara umum juga berlaku."
+            }
+          },
+          "changes": {
+            "title": "8. Perubahan, penangguhan, atau pembatalan",
+            "paragraphs": {
+              "p1": "GainForest dapat mengubah, menangguhkan, atau membatalkan ronde jika kegagalan teknis, masalah keselamatan, persyaratan hukum, penipuan, atau keadaan di luar kendali wajar kami menghalangi pelaksanaan yang adil. Kami akan mengumumkan perubahan penting di halaman BioBlitz jika memungkinkan."
+            }
+          },
+          "liability": {
+            "title": "9. Tanggung jawab",
+            "paragraphs": {
+              "p1": "Kamu berpartisipasi secara sukarela dan bertanggung jawab untuk mematuhi hukum setempat serta mengambil keputusan aman di lapangan. Sejauh diizinkan hukum, GainForest tidak bertanggung jawab atas cedera, kerugian, atau kerusakan akibat kegiatan lapangan yang tidak aman, layanan pihak ketiga, atau peristiwa di luar kendali wajar kami. Ketentuan ini tidak mengecualikan tanggung jawab yang secara hukum tidak dapat dikecualikan."
+            }
+          },
+          "law": {
+            "title": "10. Hukum yang berlaku",
+            "paragraphs": {
+              "p1": "Ketentuan ini diatur oleh hukum Swiss. Pengadilan di Zurich, Swiss, memiliki yurisdiksi, dengan tetap menghormati hak konsumen wajib atau perlindungan setempat yang berlaku bagimu."
+            }
+          },
+          "contact": {
+            "title": "11. Kontak",
+            "paragraphs": {
+              "p1": "Pertanyaan tentang ketentuan ini atau kelayakan hadiah dapat dikirim ke team@gainforest.net."
+            }
+          }
+        }
+      },
+      "privacy": {
+        "metadata": {
+          "title": "Pemberitahuan Privasi BioBlitz",
+          "description": "Cara GainForest menangani pendaftaran, pengamatan, data pemenang, dan informasi lain untuk Tantangan BioBlitz."
+        },
+        "title": "Pemberitahuan Privasi BioBlitz",
+        "effectiveDate": "Berlaku mulai 18 Juli 2026",
+        "intro": {
+          "p1": "Pemberitahuan ini menjelaskan cara GainForest menggunakan informasi pribadi untuk Tantangan BioBlitz. Pemberitahuan ini melengkapi Kebijakan Privasi GainForest secara umum.",
+          "p2": "GainForest e.V. bertanggung jawab menjalankan tantangan. Hubungi team@gainforest.net untuk pertanyaan atau permintaan privasi."
+        },
+        "sections": {
+          "data": {
+            "title": "1. Informasi yang digunakan untuk tantangan",
+            "paragraphs": {
+              "p1": "Kami menggunakan pengenal akun, nama dan gambar profil, bahasa, serta kiriman pendaftaran BioBlitz publik untuk memastikan bahwa kamu mengikuti suatu ronde.",
+              "p2": "Kami menggunakan pengamatan yang dikirim selama ronde, termasuk foto atau media lain, informasi spesies, waktu, data lokasi, catatan, dan keterlibatan terkait seperti suka, untuk menjalankan papan peringkat dan memilih pemenang.",
+              "p3": "Jika menang, kami dapat meminta nama, detail kontak, negara tempat tinggal, konfirmasi usia atau wali, informasi pemeriksaan sanksi jika diwajibkan hukum, dan detail pembayaran yang diperlukan untuk mengirim hadiah."
+            }
+          },
+          "use": {
+            "title": "2. Mengapa kami menggunakannya",
+            "paragraphs": {
+              "p1": "Kami menggunakan informasi ini untuk mendaftarkan peserta, memvalidasi kiriman, menjalankan papan peringkat, memilih dan menghubungi pemenang, mengirim hadiah, mencegah penipuan, menjaga keamanan tantangan, menjawab pertanyaan, serta membagikan hasil dan sorotan BioBlitz."
+            }
+          },
+          "public": {
+            "title": "3. Informasi yang bersifat publik",
+            "paragraphs": {
+              "p1": "Kiriman pendaftaran, profil, dan pengamatan yang diterbitkan bersifat publik. Semuanya dapat muncul di halaman, peta, galeri, papan peringkat, dan pengumuman pemenang GainForest.",
+              "p2": "GainForest menggunakan Protokol AT yang terbuka dan terfederasi. Catatan publik dapat disalin atau diindeks oleh layanan independen yang tidak dikendalikan GainForest. Menghapus catatan sumber memberi sinyal kepada layanan yang patuh untuk menghapusnya, tetapi penghapusan setiap salinan pihak ketiga tidak dapat dijamin."
+            }
+          },
+          "location": {
+            "title": "4. Lokasi dan data alam sensitif",
+            "paragraphs": {
+              "p1": "Lokasi pengamatan dapat ditampilkan secara publik. Gunakan kontrol lokasi perkiraan jika diperlukan dan jangan menerbitkan lokasi tepat spesies rentan, habitat sensitif, atau komunitas tanpa izin yang sesuai."
+            }
+          },
+          "prizes": {
+            "title": "5. Pemenang dan penyedia layanan",
+            "paragraphs": {
+              "p1": "Kami dapat membagikan informasi minimum yang diperlukan kepada penyedia pembayaran, identitas, kepatuhan, hosting, dan komunikasi yang membantu menjalankan tantangan serta mengirim hadiah.",
+              "p2": "Kami dapat menerbitkan nama dan gambar profil pemenang, konten pemenang, kategori hadiah, dan jumlah pengamatan. Kami akan meminta izin sebelum menggunakan detail biografi pribadi lainnya."
+            }
+          },
+          "legalBases": {
+            "title": "6. Dasar hukum",
+            "paragraphs": {
+              "p1": "Kami memproses informasi tantangan untuk menjalankan perjanjian denganmu, berdasarkan persetujuan jika diperlukan, untuk kepentingan sah kami dalam menjalankan tantangan konservasi yang adil, dan untuk memenuhi kewajiban hukum. Kamu dapat menarik persetujuan jika pemrosesan bergantung padanya tanpa memengaruhi pemrosesan sah sebelumnya."
+            }
+          },
+          "retention": {
+            "title": "7. Penyimpanan",
+            "paragraphs": {
+              "p1": "Kami menyimpan catatan pribadi pengiriman dan kelayakan hadiah hanya selama diperlukan untuk pembayaran, pembukuan, pencegahan penipuan, dan kewajiban hukum. Pengamatan dan kiriman pendaftaran publik tetap ada di akunmu sampai kamu menghapusnya, dengan tunduk pada batasan jaringan terfederasi."
+            }
+          },
+          "rights": {
+            "title": "8. Pilihan dan hakmu",
+            "paragraphs": {
+              "p1": "Tergantung tempat tinggalmu, kamu dapat meminta akses, koreksi, penghapusan, pembatasan, atau keberatan atas penggunaan informasi pribadi, meminta portabilitas, atau menarik persetujuan. Hubungi team@gainforest.net. Kamu dapat mengelola atau menghapus catatan publik dari akun GainForest."
+            }
+          },
+          "children": {
+            "title": "9. Peserta muda",
+            "paragraphs": {
+              "p1": "Tantangan ini tidak ditujukan bagi anak di bawah 16 tahun. Peserta berusia 16 atau 17 tahun memerlukan persetujuan orang tua atau wali hukum. Jika kami mengetahui informasi dikirim oleh anak tanpa persetujuan yang sesuai, kami akan mengambil langkah wajar untuk menghapusnya."
+            }
+          },
+          "changes": {
+            "title": "10. Perubahan pada pemberitahuan ini",
+            "paragraphs": {
+              "p1": "Kami dapat memperbarui pemberitahuan ini dan akan mencantumkan tanggal revisi di sini. Kami akan memberikan pemberitahuan yang lebih jelas jika perubahan berdampak besar pada peserta."
+            }
+          },
+          "contact": {
+            "title": "11. Kontak",
+            "paragraphs": {
+              "p1": "Pertanyaan dan permintaan privasi dapat dikirim ke team@gainforest.net atau GainForest e.V., Schwandenacker 35, 8052 Zurich, Swiss."
+            }
+          }
+        }
+      }
     },
     "help": {
       "prompt": "Ada pertanyaan?",
@@ -1384,7 +1566,84 @@
     "metaTitle": "{name} — Pengamatan alam",
     "metaFallback": "Pengamatan alam yang dibagikan di GainForest.",
     "natureSound": "Rekaman suara alam",
-    "unidentified": "Pengamatan tidak teridentifikasi"
+    "unidentified": "Pengamatan tidak teridentifikasi",
+    "suggestions": {
+      "title": "Saran spesies",
+      "description": "Usulan identifikasi dari pakar ekologi. Pengamat dapat meninjaunya sebelum mengubah pengamatan ini.",
+      "expertFallback": "Pakar komunitas",
+      "status": "Menunggu tinjauan"
+    }
+  },
+  "labeler": {
+    "meta": {
+      "title": "Pelabel pengamatan",
+      "description": "Tinjau pengamatan alam terbaru dan sarankan identifikasi spesies."
+    },
+    "hero": {
+      "title": "Identifikasi",
+      "accent": "spesies"
+    },
+    "eyebrow": "Tinjauan ekologi",
+    "title": "Pelabel pengamatan",
+    "description": "Jelajahi pengamatan terbaru dan yang belum teridentifikasi, periksa data lapangannya, lalu usulkan nama spesies yang konkret.",
+    "unidentified": "Belum teridentifikasi",
+    "filters": {
+      "searchLabel": "Cari pengamatan",
+      "searchPlaceholder": "Cari spesies, genus, famili, atau tempat…",
+      "taxonLabel": "Takson",
+      "allTaxa": "Semua takson",
+      "genusLabel": "Genus",
+      "allGenera": "Semua genus",
+      "countryLabel": "Negara",
+      "allCountries": "Semua negara",
+      "regionLabel": "Wilayah",
+      "allRegions": "Semua wilayah",
+      "mediaLabel": "Jenis bukti",
+      "allMedia": "Semua bukti",
+      "photos": "Foto",
+      "audio": "Audio"
+    },
+    "queue": {
+      "unidentified": "Perlu identifikasi",
+      "recent": "Pengamatan terbaru",
+      "count": "{count, plural, =0 {Tidak ada pengamatan} =1 {1 pengamatan} other {# pengamatan}}",
+      "ariaLabel": "Pengamatan untuk ditinjau",
+      "loadMore": "Muat pengamatan lainnya",
+      "loading": "Memuat pengamatan…"
+    },
+    "empty": {
+      "title": "Tidak ada pengamatan yang cocok",
+      "description": "Coba takson, genus, negara, wilayah, atau pencarian lain."
+    },
+    "review": {
+      "selectPrompt": "Pilih pengamatan untuk memeriksa bukti dan data lapangannya.",
+      "currentIdentification": "Identifikasi saat ini",
+      "openObservation": "Buka halaman pengamatan",
+      "family": "Famili",
+      "genus": "Genus",
+      "observer": "Pengamat",
+      "communityObserver": "Pengamat komunitas",
+      "observed": "Diamati"
+    },
+    "proposal": {
+      "title": "Sarankan identifikasi",
+      "description": "Saran Anda akan tampil pada pengamatan dan memberi tahu pengamatnya. Nama saat ini tidak akan diganti secara otomatis.",
+      "scientificName": "Nama ilmiah",
+      "scientificPlaceholder": "mis. Panthera onca",
+      "commonNameOptional": "Nama umum (opsional)",
+      "commonPlaceholder": "mis. Jaguar",
+      "noteOptional": "Catatan bukti (opsional)",
+      "notePlaceholder": "Jelaskan ciri yang terlihat atau konteks yang mendukung identifikasi ini.",
+      "recordSuggestion": "Saran spesies",
+      "commonName": "Nama umum",
+      "noteLabel": "Catatan bukti",
+      "submit": "Kirim saran",
+      "submitting": "Mengirim saran…",
+      "success": "Menyarankan {name}. Pengamat akan diberi tahu.",
+      "error": "Saran tidak dapat dikirim. Silakan coba lagi.",
+      "signInDescription": "Masuk untuk mengirim saran dari akun Anda. Semua orang tetap dapat menjelajahi antrean tinjauan.",
+      "signIn": "Masuk untuk menyarankan"
+    }
   },
   "manageProjects": {
     "hero": {

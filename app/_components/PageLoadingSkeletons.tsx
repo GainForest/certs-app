@@ -126,20 +126,19 @@ export function DonationsHubSkeleton() {
 
 export function TainaPageSkeleton() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 pb-20 pt-8 md:pt-12" aria-busy="true" aria-live="polite">
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14">
+    <main className="-mt-14 bg-background pb-20" aria-busy="true" aria-live="polite">
+      <div className="relative isolate min-h-[240px] overflow-hidden bg-card">
+        <div className="mx-auto flex max-w-6xl flex-col px-8 pb-8 pt-[64px] sm:px-10 lg:px-9">
+          <Skeleton className="h-12 w-full max-w-md" />
+          <div className="mt-4 space-y-2">
+            <Skeleton className="h-5 w-full max-w-2xl rounded-full" />
+            <Skeleton className="h-5 w-2/3 max-w-xl rounded-full" />
+          </div>
+        </div>
+      </div>
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14">
         <section className="max-w-xl">
-          <div className="flex items-center gap-3">
-            <Skeleton className="size-9 rounded-full" />
-            <Skeleton className="h-4 w-40 rounded-full" />
-          </div>
-          <Skeleton className="mt-5 h-14 w-full max-w-lg" />
-          <Skeleton className="mt-3 h-12 w-4/5" />
-          <div className="mt-5 space-y-2">
-            <Skeleton className="h-5 w-full rounded-full" />
-            <Skeleton className="h-5 w-5/6 rounded-full" />
-          </div>
-          <Skeleton className="mt-5 h-20 max-w-lg rounded-2xl" />
+          <Skeleton className="h-20 max-w-lg rounded-2xl" />
           <div className="mt-8 space-y-5">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="flex items-start gap-4">
@@ -153,7 +152,7 @@ export function TainaPageSkeleton() {
             ))}
           </div>
         </section>
-        <section className="lg:pt-2">
+        <section>
           <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-sm">
             <Skeleton className="h-6 w-40" />
             <Skeleton className="mt-4 h-4 w-full rounded-full" />

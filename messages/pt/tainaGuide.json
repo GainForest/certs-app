@@ -24,7 +24,20 @@
     "restoreLabel": "Abrir a Tainá",
     "signInFirst": "Para isso você precisa entrar na sua conta — use o botão Entrar no topo da página e depois volte aqui, que eu te mostro o caminho.",
     "needProjectFirst": "As doações são configuradas em um projeto e você ainda não tem nenhum — crie seu primeiro projeto e depois volte aqui.",
-    "createProjectFirst": "Mostre-me como criar um projeto"
+    "createProjectFirst": "Mostre-me como criar um projeto",
+    "didYouKnow": "Você sabia?",
+    "dismissTip": "Dispensar dica",
+    "tips": {
+      "wallet": "Você pode receber doações e gorjetas! Crie sua carteira na aba Carteira da sua conta.",
+      "createProject": "Você pode mostrar seu trabalho criando um projeto — leva só alguns minutos.",
+      "observations": "Você pode enviar até 50 fotos da natureza de uma vez — as espécies são identificadas automaticamente.",
+      "bioblitz": "Há um desafio BioBlitz toda semana — fotografe qualquer ser vivo e ganhe prêmios!",
+      "ask": "Você pode me perguntar qualquer coisa sobre a GainForest, no seu idioma — é só clicar em mim!"
+    },
+    "haveQuestion": "Tenho uma pergunta",
+    "helpTitle": "Pode ajudar?",
+    "helpBody": "Alguém fotografou isto, mas ninguém sabe ainda que espécie é. Você reconhece?",
+    "helpCta": "Acho que sei!"
   },
   "guides": {
     "wallet": {
@@ -53,6 +66,28 @@
         "open": "Abra o projeto que deve receber doações.",
         "enable": "Clique em Enable Donations no cartão de apoio.",
         "addWallet": "Clique em Criar carteira com chave de acesso e confirme com sua chave de acesso — pronto!"
+      }
+    },
+    "accountWallet": {
+      "question": "Como recebo doações e gorjetas pessoalmente?",
+      "title": "Crie sua carteira pessoal",
+      "intro": "Você pode receber doações e gorjetas diretamente — sem precisar de um projeto. Sua carteira fica no seu próprio perfil e é criada em segundos com uma chave de acesso (Face ID ou impressão digital). Não é preciso experiência com cripto.",
+      "steps": {
+        "open": {
+          "title": "Abra sua página de Carteira",
+          "body": "Acesse www.gainforest.app/account/wallet — leva você direto à aba Carteira da sua própria conta."
+        },
+        "create": {
+          "title": "Crie sua carteira",
+          "body": "Clique em Criar carteira e confirme com Face ID, impressão digital ou uma chave de segurança. É só isso — sem frases-semente para anotar."
+        },
+        "share": {
+          "title": "Pronta para receber apoio",
+          "body": "O endereço da sua carteira pode receber doações e gorjetas imediatamente. Enquanto a carteira é nova, você pode adicionar mais chaves de acesso — outro dispositivo ou alguém de confiança."
+        }
+      },
+      "tour": {
+        "create": "Clique em Criar carteira e confirme com sua chave de acesso — pronto! (Se já criou uma, você a verá aqui.)"
       }
     },
     "createProject": {

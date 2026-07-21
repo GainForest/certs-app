@@ -13,8 +13,10 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { ACTIVE_MANAGE_CONTEXT_KEY, accountManageBasePath } from "@/lib/links";
+import { hasLabelEvidence, isUnidentifiedRecord } from "@/app/labeler/_lib/evidence";
+import { resolveBlobUrl } from "@/app/_lib/pds";
 import { renderPetAnimated, type CodexPetState } from "../_lib/codex-pet";
-import { TAINA_GUIDES, getTainaGuide, type TainaGuide } from "../_lib/taina-guides";
+import { TAINA_GUIDES, TAINA_TIPS, getTainaGuide, type TainaGuide } from "../_lib/taina-guides";
 import { TAINA_SIM } from "../_lib/taina-sim";
 
 // FloatingTainaGuide — Tainá as a site-wide tutorial companion.
@@ -51,6 +53,66 @@ const MINIMIZED_STORAGE_KEY = "gainforest.floatingTaina.minimized.v1";
 const TOUR_STORAGE_KEY = "gainforest.floatingTaina.tour.v1";
 const OPEN_WAVE_MS = 1600;
 const TOUR_BUBBLE_W = 300;
+// "Did you know?" tips — deliberately low-pressure. All pacing state is
+// persisted so page navigations don't restart the timers and spam people:
+//   - which tip comes next (localStorage, rotation keeps moving forward),
+//   - when the last tip was shown (localStorage, enforces a real cooldown),
+//   - how many tips this browser session has seen (sessionStorage, hard cap),
+//   - dismissing a tip with × snoozes all tips for a day (localStorage).
+const TIP_INDEX_STORAGE_KEY = "gainforest.floatingTaina.tipIndex.v1";
+const TIP_LAST_SHOWN_STORAGE_KEY = "gainforest.floatingTaina.tipLastShown.v1";
+const TIP_SESSION_COUNT_STORAGE_KEY = "gainforest.floatingTaina.tipSessionCount.v1";
+const TIP_SNOOZE_STORAGE_KEY = "gainforest.floatingTaina.tipSnoozeUntil.v1";
+const TIP_SEEN_STORAGE_KEY = "gainforest.floatingTaina.tipsSeen.v1";
+const TIP_FIRST_DELAY_MS = 15000;
+const TIP_CHECK_INTERVAL_MS = 10000;
+const TIP_COOLDOWN_MS = 5 * 60 * 1000;
+const TIP_VISIBLE_MS = 18000;
+const TIP_SNOOZE_MS = 24 * 60 * 60 * 1000;
+const TIP_SESSION_CAP = 2;
+const TIP_BUBBLE_W = 250;
+// Roughly one in three tip slots becomes a "can you help identify this?"
+// card instead — an unidentified observation photo from the labeler queue.
+// Same cooldown / session-cap / snooze bookkeeping as regular tips.
+const HELP_OBS_PROBABILITY = 0.35;
+
+function readStoredNumber(storage: Storage, key: string): number {
+  try {
+    const raw = storage.getItem(key);
+    const parsed = raw === null ? 0 : Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// Which tips this browser has already been told — either as a scheduled
+// bubble or inside the panel after a sprite click. Used so Tainá always
+// leads with something new.
+function readSeenTipIds(): Set<string> {
+  try {
+    const raw = window.localStorage.getItem(TIP_SEEN_STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+    return new Set(Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function markTipSeen(id: string): void {
+  try {
+    const seen = readSeenTipIds();
+    seen.add(id);
+    window.localStorage.setItem(TIP_SEEN_STORAGE_KEY, JSON.stringify([...seen]));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function pickUnseenTipId(): string | null {
+  const seen = readSeenTipIds();
+  return TAINA_TIPS.find((tip) => !seen.has(tip.id))?.id ?? null;
+}
 const TOUR_FIND_TIMEOUT_MS = 8000;
 const Z_SPOTLIGHT = 68;
 const Z_SPRITE = 70;
@@ -70,10 +132,19 @@ interface Rect {
   w: number;
   h: number;
 }
-type PanelView = { kind: "home" } | { kind: "guide"; guideId: string };
+type PanelView =
+  | { kind: "home" }
+  | { kind: "guide"; guideId: string }
+  // Tainá opening with a tip the visitor hasn't seen yet (sprite click).
+  | { kind: "tip"; tipId: string };
 interface TourState {
   guideId: string;
   index: number;
+}
+// An unidentified observation Tainá asks for help with.
+interface HelpObservation {
+  atUri: string;
+  imageUrl: string;
 }
 
 // How many projects a manage endpoint reports. `null` means "unknown"
@@ -230,6 +301,15 @@ export function FloatingTainaGuide() {
   // up staring at a sign-in wall while Tainá says "I can't find it". Instead
   // we tell them to sign in first.
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
+
+  // ── "Did you know?" tips ───────────────────────────────────
+  // Index into TAINA_TIPS of the tip currently showing, or null.
+  const [activeTip, setActiveTip] = useState<number | null>(null);
+  // The unidentified-observation help card currently showing, or null.
+  const [helpObs, setHelpObs] = useState<HelpObservation | null>(null);
+  // One fetch attempt at a time; when the queue turns out empty (or the
+  // indexer errors), don't hammer it again this page load.
+  const helpObsFetchRef = useRef<"idle" | "fetching" | "unavailable">("idle");
 
   // ── Live tour state ─────────────────────────────────────────────────
   const [tour, setTour] = useState<TourState | null>(() => {
@@ -440,6 +520,174 @@ export function FloatingTainaGuide() {
     };
   }, [view]);
 
+  // ── "Did you know?" tip scheduler ──────────────────────────────
+  // While Tainá is idle (visible, chat closed, no tour), occasionally pop a
+  // short tip in her speech bubble, rotating through TAINA_TIPS. Kept
+  // deliberately unobtrusive: a real cooldown between tips that survives
+  // navigation, at most TIP_SESSION_CAP tips per browser session, and a
+  // 24h snooze when the visitor dismisses one.
+  useEffect(() => {
+    if (!mounted || open || tour || minimized) {
+      setActiveTip(null);
+      setHelpObs(null);
+      return;
+    }
+    const mountedAt = Date.now();
+    let cancelled = false;
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    // Shared pacing bookkeeping for both tip kinds (text tip + help card).
+    const recordShown = (now: number) => {
+      try {
+        window.localStorage.setItem(TIP_LAST_SHOWN_STORAGE_KEY, String(now));
+        window.sessionStorage.setItem(
+          TIP_SESSION_COUNT_STORAGE_KEY,
+          String(readStoredNumber(window.sessionStorage, TIP_SESSION_COUNT_STORAGE_KEY) + 1),
+        );
+      } catch {
+        // ignore storage errors
+      }
+    };
+    const maybeShowTip = () => {
+      const now = Date.now();
+      // Give people time to settle into the page first.
+      if (now - mountedAt < TIP_FIRST_DELAY_MS) return;
+      // Hard cap per browser session.
+      if (readStoredNumber(window.sessionStorage, TIP_SESSION_COUNT_STORAGE_KEY) >= TIP_SESSION_CAP) return;
+      // Dismissed a tip recently → stay quiet for a day.
+      if (readStoredNumber(window.localStorage, TIP_SNOOZE_STORAGE_KEY) > now) return;
+      // Cooldown between tips, across page loads.
+      if (now - readStoredNumber(window.localStorage, TIP_LAST_SHOWN_STORAGE_KEY) < TIP_COOLDOWN_MS) return;
+      // Sometimes this slot becomes a "can you help identify this?" card:
+      // an unidentified observation photo pulled from the labeler queue.
+      if (helpObsFetchRef.current === "idle" && Math.random() < HELP_OBS_PROBABILITY) {
+        helpObsFetchRef.current = "fetching";
+        // Consume the slot up front so the next interval tick can't race a
+        // text tip on top of the card while the fetch is in flight.
+        recordShown(now);
+        void (async () => {
+          try {
+            // Deferred import — the indexer module is heavy and this widget
+            // mounts on every page.
+            const { walkOccurrences } = await import("@/app/_lib/indexer");
+            const page = await walkOccurrences({ media: "image", target: 24, after: null, resolveMedia: false });
+            const candidates = page.records.filter(
+              (record) => isUnidentifiedRecord(record) && hasLabelEvidence(record) && (record.imageUrl || record.imageRef),
+            );
+            const pick = candidates[Math.floor(Math.random() * candidates.length)];
+            if (!pick) {
+              helpObsFetchRef.current = "unavailable";
+              return;
+            }
+            const imageUrl = pick.imageUrl ?? (pick.imageRef ? await resolveBlobUrl(pick.did, pick.imageRef) : null);
+            if (!imageUrl) {
+              helpObsFetchRef.current = "unavailable";
+              return;
+            }
+            helpObsFetchRef.current = "idle";
+            if (cancelled) return;
+            setHelpObs({ atUri: pick.atUri, imageUrl });
+            hideTimer = setTimeout(() => setHelpObs(null), TIP_VISIBLE_MS);
+          } catch {
+            helpObsFetchRef.current = "unavailable";
+          }
+        })();
+        return;
+      }
+      // Lead with a tip the visitor hasn't been told yet; once every tip
+      // has been seen, fall back to the rotation for occasional reminders.
+      const unseenId = pickUnseenTipId();
+      const unseenIndex = unseenId ? TAINA_TIPS.findIndex((tip) => tip.id === unseenId) : -1;
+      const index =
+        unseenIndex >= 0 ? unseenIndex : readStoredNumber(window.localStorage, TIP_INDEX_STORAGE_KEY) % TAINA_TIPS.length;
+      setActiveTip(index);
+      markTipSeen(TAINA_TIPS[index]!.id);
+      recordShown(now);
+      try {
+        window.localStorage.setItem(TIP_INDEX_STORAGE_KEY, String((index + 1) % TAINA_TIPS.length));
+      } catch {
+        // ignore storage errors
+      }
+      hideTimer = setTimeout(() => setActiveTip(null), TIP_VISIBLE_MS);
+    };
+    const checkTimer = setInterval(maybeShowTip, TIP_CHECK_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(checkTimer);
+      if (hideTimer) clearTimeout(hideTimer);
+    };
+  }, [mounted, open, tour, minimized]);
+
+  // Dragging her around dismisses the tip — it would trail the sprite.
+  useEffect(() => {
+    if (dragging) {
+      setActiveTip(null);
+      setHelpObs(null);
+    }
+  }, [dragging]);
+
+  const dismissTip = useCallback(() => {
+    setActiveTip(null);
+    setHelpObs(null);
+    // An explicit × is a clear "not now" — stay quiet for a day.
+    try {
+      window.localStorage.setItem(TIP_SNOOZE_STORAGE_KEY, String(Date.now() + TIP_SNOOZE_MS));
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
+  // "I think I know!" on the help card — jump straight to the labeler with
+  // exactly that observation preselected.
+  const goIdentifyHelpObs = useCallback(() => {
+    if (!helpObs) return;
+    setHelpObs(null);
+    router.push(`${localePrefix}/labeler?uri=${encodeURIComponent(helpObs.atUri)}`);
+  }, [helpObs, router, localePrefix]);
+
+  const openTip = useCallback((guideId?: string) => {
+    setActiveTip(null);
+    setView(guideId && getTainaGuide(guideId) ? { kind: "guide", guideId } : { kind: "home" });
+    setOpen(true);
+    setWaveActive(true);
+  }, []);
+
+  // "Show me step by step" on a tip: open the guide panel (so the sign-in /
+  // has-a-project checks run and can explain themselves) and auto-start the
+  // live tour as soon as those checks conclusively pass.
+  const [pendingTourGuideId, setPendingTourGuideId] = useState<string | null>(null);
+  const openTipTour = useCallback((guideId: string) => {
+    setActiveTip(null);
+    if (!getTainaGuide(guideId)) return;
+    setView({ kind: "guide", guideId });
+    setOpen(true);
+    setPendingTourGuideId(guideId);
+  }, []);
+
+  // Clicking the sprite toggles the panel. When it opens, Tainá leads with
+  // a tip: the one currently in her speech bubble, or the next one the
+  // visitor hasn't seen yet. Once every tip has been told, she opens on the
+  // regular home view (questions + chat).
+  const togglePanelFromSprite = useCallback(() => {
+    setOpen((v) => {
+      const next = !v;
+      if (next) {
+        setWaveActive(true);
+        setHelpObs(null);
+        const bubbleTipId = activeTip !== null ? TAINA_TIPS[activeTip]?.id : undefined;
+        const tipId = bubbleTipId ?? pickUnseenTipId();
+        if (tipId) {
+          markTipSeen(tipId);
+          setActiveTip(null);
+          setView({ kind: "tip", tipId });
+        } else if (view.kind === "tip") {
+          // All tips told — don't reopen on a stale tip, go home instead.
+          setView({ kind: "home" });
+        }
+      }
+      return next;
+    });
+  }, [activeTip, view]);
+
   // ── Drag handling ───────────────────────────────────────────────────
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -492,15 +740,9 @@ export function FloatingTainaGuide() {
       } catch {
         // ignore
       }
-      if (!wasDrag && !tour) {
-        setOpen((v) => {
-          const next = !v;
-          if (next) setWaveActive(true);
-          return next;
-        });
-      }
+      if (!wasDrag && !tour) togglePanelFromSprite();
     },
-    [tour],
+    [tour, togglePanelFromSprite],
   );
   const onPointerCancel = useCallback(() => {
     dragRef.current = null;
@@ -514,9 +756,9 @@ export function FloatingTainaGuide() {
     }
     if (streaming) return "review";
     if (tour) return spotRect ? "waving" : "waiting";
-    if (waveActive) return "waving";
+    if (waveActive || activeTip !== null || helpObs) return "waving";
     return "idle";
-  }, [dragging, dragDirection, streaming, waveActive, tour, spotRect, tourMoving]);
+  }, [dragging, dragDirection, streaming, waveActive, tour, spotRect, tourMoving, activeTip, helpObs]);
 
   const markFirstFrame = useCallback(() => setFirstFramePainted(true), []);
 
@@ -567,6 +809,27 @@ export function FloatingTainaGuide() {
     },
     [],
   );
+
+  // Auto-start a tour requested from a tip bubble once the guide checks
+  // conclusively pass; when they conclusively fail, the open guide panel
+  // already explains what to do (sign in / create a project) — just drop
+  // the pending request.
+  useEffect(() => {
+    if (!pendingTourGuideId) return;
+    if (!open || view.kind !== "guide" || view.guideId !== pendingTourGuideId) {
+      setPendingTourGuideId(null);
+      return;
+    }
+    const guide = getTainaGuide(pendingTourGuideId);
+    if (!guide || guide.tour.length === 0 || signedIn === false || (guide.requiresProject && hasProjects === false)) {
+      setPendingTourGuideId(null);
+      return;
+    }
+    if (signedIn === true && (!guide.requiresProject || hasProjects === true)) {
+      setPendingTourGuideId(null);
+      startTour(pendingTourGuideId);
+    }
+  }, [pendingTourGuideId, open, view, signedIn, hasProjects, startTour]);
 
   const advanceTour = useCallback(
     (delta: number) => {
@@ -942,7 +1205,7 @@ export function FloatingTainaGuide() {
                   ? guidesT(`${guideView.id}.title`)
                   : TAINA_SIM.name}
               </div>
-              {view.kind === "home" ? (
+              {view.kind === "home" || view.kind === "tip" ? (
                 <div className="truncate text-[11px] text-foreground/55">{t("role")}</div>
               ) : null}
             </div>
@@ -970,7 +1233,39 @@ export function FloatingTainaGuide() {
 
           {/* body */}
           <div ref={panelBodyRef} className="flex-1 space-y-3 overflow-y-auto px-3 py-3 text-[13px] leading-relaxed">
-            {view.kind === "home" ? (
+            {view.kind === "tip" ? (
+              (() => {
+                const tip = TAINA_TIPS.find((entry) => entry.id === view.tipId);
+                const tipGuide = tip?.guideId ? getTainaGuide(tip.guideId) : undefined;
+                if (!tip) return null;
+                return (
+                  <>
+                    <div className="rounded-2xl bg-foreground/5 px-3 py-2.5">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-primary">
+                        💡 {t("didYouKnow")}
+                      </div>
+                      <p className="mt-1.5 text-foreground">{t(`tips.${tip.id}`)}</p>
+                    </div>
+                    {tipGuide && tipGuide.tour.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => openTipTour(tipGuide.id)}
+                        className="w-full rounded-xl bg-primary px-3 py-2 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                      >
+                        ✨ {t("showMe")}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => setView({ kind: "home" })}
+                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-[13px] text-foreground transition-colors hover:border-primary/50 hover:bg-primary/5"
+                    >
+                      ❓ {t("haveQuestion")}
+                    </button>
+                  </>
+                );
+              })()
+            ) : view.kind === "home" ? (
               <>
                 {messages.length === 0 ? (
                   <div className="rounded-2xl bg-foreground/5 px-3 py-2 text-foreground/70">
@@ -1131,7 +1426,7 @@ export function FloatingTainaGuide() {
           if ((e.target as HTMLElement).closest("[data-no-drag]")) return;
           if ((e.key === "Enter" || e.key === " ") && !tour) {
             e.preventDefault();
-            setOpen((v) => !v);
+            togglePanelFromSprite();
           }
         }}
         className={`group fixed select-none ${tour ? "transition-all duration-500 ease-out" : ""} ${
@@ -1193,7 +1488,128 @@ export function FloatingTainaGuide() {
             –
           </button>
         ) : null}
-        {!open && !tour ? (
+        {/* "Can you help?" — an occasional speech bubble asking for help with
+            an unidentified observation. "I think I know!" jumps to the labeler
+            with exactly that observation preselected. */}
+        {!open && !tour && !dragging && helpObs ? (
+          <div
+            data-no-drag
+            role="status"
+            className={`absolute z-10 rounded-2xl border border-border bg-background/95 p-3 shadow-[0_4px_16px_-4px_rgba(40,50,30,0.3)] backdrop-blur-sm ${
+              position.y < 300 ? "top-full mt-2" : "bottom-full mb-2"
+            }`}
+            style={{
+              width: TIP_BUBBLE_W,
+              ...(typeof window !== "undefined" && position.x + SPRITE_W / 2 > window.innerWidth / 2
+                ? { right: 0 }
+                : { left: 0 }),
+            }}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-[11px] font-medium uppercase tracking-wide text-primary">
+                🔍 {t("helpTitle")}
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dismissTip();
+                }}
+                aria-label={t("dismissTip")}
+                title={t("dismissTip")}
+                className="-mr-1 -mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[12px] leading-none text-foreground/50 hover:bg-foreground/5 hover:text-foreground"
+              >
+                ×
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                goIdentifyHelpObs();
+              }}
+              className="mt-1.5 block w-full overflow-hidden rounded-lg border border-border transition-opacity hover:opacity-90"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={helpObs.imageUrl} alt="" className="h-32 w-full object-cover" draggable={false} />
+            </button>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-foreground">{t("helpBody")}</p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                goIdentifyHelpObs();
+              }}
+              className="mt-2 w-full rounded-xl bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              🌱 {t("helpCta")}
+            </button>
+          </div>
+        ) : null}
+        {/* "Did you know?" tip — an occasional speech bubble with a feature
+            discovery. Clicking it opens the chat (on the linked guide when the
+            tip has one). */}
+        {!open && !tour && !dragging && !helpObs && activeTip !== null && TAINA_TIPS[activeTip] ? (
+          <div
+            data-no-drag
+            role="status"
+            className={`absolute z-10 rounded-2xl border border-border bg-background/95 p-3 shadow-[0_4px_16px_-4px_rgba(40,50,30,0.3)] backdrop-blur-sm ${
+              position.y < 220 ? "top-full mt-2" : "bottom-full mb-2"
+            }`}
+            style={{
+              width: TIP_BUBBLE_W,
+              ...(typeof window !== "undefined" && position.x + SPRITE_W / 2 > window.innerWidth / 2
+                ? { right: 0 }
+                : { left: 0 }),
+            }}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-[11px] font-medium uppercase tracking-wide text-primary">
+                💡 {t("didYouKnow")}
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dismissTip();
+                }}
+                aria-label={t("dismissTip")}
+                title={t("dismissTip")}
+                className="-mr-1 -mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[12px] leading-none text-foreground/50 hover:bg-foreground/5 hover:text-foreground"
+              >
+                ×
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openTip(TAINA_TIPS[activeTip]?.guideId);
+              }}
+              className="mt-1 block w-full text-left text-[12px] leading-relaxed text-foreground hover:text-primary"
+            >
+              {t(`tips.${TAINA_TIPS[activeTip].id}`)}
+            </button>
+            {(() => {
+              const tipGuideId = TAINA_TIPS[activeTip]?.guideId;
+              const tipGuide = tipGuideId ? getTainaGuide(tipGuideId) : undefined;
+              if (!tipGuideId || !tipGuide || tipGuide.tour.length === 0) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openTipTour(tipGuideId);
+                  }}
+                  className="mt-2 w-full rounded-xl bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  ✨ {t("showMe")}
+                </button>
+              );
+            })()}
+          </div>
+        ) : null}
+        {!open && !tour && activeTip === null && !helpObs ? (
           <div
             aria-hidden
             className={

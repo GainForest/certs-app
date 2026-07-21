@@ -34,6 +34,8 @@ import { indexerQuery } from "./indexer";
 import { mentionDidsOfFacets, type RawIndexedFacet } from "./mentions";
 import { localBumicertHref, localObservationHref } from "./urls";
 import { normaliseRef, parseAtUri, resolvePdsHost } from "./pds";
+import { parseSpeciesSuggestion } from "./species-suggestions";
+import { identificationRkeyFromTags } from "./species-identifications";
 
 /** Singleton record (rkey "self") holding the viewer's last-seen timestamp. */
 export const NOTIFICATION_SEEN_COLLECTION = "app.gainforest.notification.seen";
@@ -41,7 +43,7 @@ export const NOTIFICATION_SEEN_COLLECTION = "app.gainforest.notification.seen";
 /** Recent likes/comments scanned per source before client-side filtering. */
 const SCAN_LIMIT = 500;
 
-type NotificationKind = "like" | "comment" | "mention";
+type NotificationKind = "like" | "comment" | "mention" | "identification";
 
 /** Plain-language category of the liked/commented record, for display + links. */
 type NotificationSubjectKind = "observation" | "project" | "post" | "recording" | "record";
@@ -97,7 +99,7 @@ const COMMENTS_QUERY = `
     ) {
       edges {
         node {
-          uri did text createdAt
+          uri did text tags createdAt
           reply { parent { uri } }
           ${CERTIFIED_PROFILE_DATA_FIELDS}
         }
@@ -123,6 +125,7 @@ type CommentNode = {
   uri?: string | null;
   did?: string | null;
   text?: string | null;
+  tags?: string[] | null;
   createdAt?: string | null;
   reply?: { parent?: { uri?: string | null } | null } | null;
   certifiedProfileData?: CertifiedProfileData;
@@ -274,9 +277,11 @@ export async function fetchNotificationsForDid(
     if (node.did === did) continue;
     notifiedPostUris.add(node.uri);
     const subjectKind = subjectKindForCollection(parts.collection);
+    const identification = parseSpeciesSuggestion(node.text);
+    const isStructuredIdentification = Boolean(identificationRkeyFromTags(node.tags));
     items.push({
       id: node.uri,
-      kind: "comment",
+      kind: isStructuredIdentification || identification ? "identification" : "comment",
       createdAt: node.createdAt || new Date(0).toISOString(),
       actorDid: node.did,
       actorName: actorName(node.certifiedProfileData),
@@ -284,7 +289,7 @@ export async function fetchNotificationsForDid(
       subjectUri,
       subjectKind,
       subjectHref: subjectHrefFor(subjectKind, parts.did, parts.rkey),
-      text: node.text?.trim() || null,
+      text: identification?.scientificName ?? node.text?.trim() ?? null,
     });
   }
 

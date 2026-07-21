@@ -24,7 +24,20 @@
     "restoreLabel": "Abrir Tainá",
     "signInFirst": "Para esto necesitas iniciar sesión: usa el botón Iniciar sesión en la parte superior de la página y luego vuelve, que yo te guío paso a paso.",
     "needProjectFirst": "Las donaciones se configuran en un proyecto y todavía no tienes ninguno: crea primero tu proyecto y luego vuelve aquí.",
-    "createProjectFirst": "Muéstrame cómo crear un proyecto"
+    "createProjectFirst": "Muéstrame cómo crear un proyecto",
+    "didYouKnow": "¿Sabías que…?",
+    "dismissTip": "Cerrar consejo",
+    "tips": {
+      "wallet": "¡Puedes recibir donaciones y propinas! Crea tu billetera en la pestaña Billetera de tu cuenta.",
+      "createProject": "Puedes mostrar tu trabajo creando un proyecto — solo toma unos minutos.",
+      "observations": "Puedes subir hasta 50 fotos de naturaleza a la vez — las especies se identifican automáticamente.",
+      "bioblitz": "Hay un desafío BioBlitz cada semana — ¡fotografía cualquier ser vivo y gana premios!",
+      "ask": "Puedes preguntarme lo que quieras sobre GainForest, en tu idioma — ¡solo haz clic en mí!"
+    },
+    "haveQuestion": "Tengo una pregunta",
+    "helpTitle": "¿Puedes ayudar?",
+    "helpBody": "Alguien fotografió esto, pero nadie sabe todavía qué especie es. ¿La reconoces?",
+    "helpCta": "¡Creo que lo sé!"
   },
   "guides": {
     "wallet": {
@@ -53,6 +66,28 @@
         "open": "Abre el proyecto para el que quieres recibir donaciones.",
         "enable": "Haz clic en Enable Donations en la tarjeta de apoyo.",
         "addWallet": "Haz clic en Crear billetera con llave de acceso y confirma con tu llave de acceso. ¡Eso es todo!"
+      }
+    },
+    "accountWallet": {
+      "question": "¿Cómo recibo donaciones y propinas personalmente?",
+      "title": "Crea tu billetera personal",
+      "intro": "Puedes recibir donaciones y propinas directamente — sin necesidad de un proyecto. Tu billetera vive en tu propio perfil y se crea en segundos con una llave de acceso (Face ID o huella). No necesitas experiencia con cripto.",
+      "steps": {
+        "open": {
+          "title": "Abre tu página de Billetera",
+          "body": "Ve a www.gainforest.app/account/wallet — te lleva directo a la pestaña Billetera de tu propia cuenta."
+        },
+        "create": {
+          "title": "Crea tu billetera",
+          "body": "Haz clic en Crear billetera y confirma con Face ID, huella o una llave de seguridad. Eso es todo — sin frases semilla que anotar."
+        },
+        "share": {
+          "title": "Lista para recibir apoyo",
+          "body": "La dirección de tu billetera puede recibir donaciones y propinas de inmediato. Mientras la billetera es nueva puedes añadir más llaves de acceso — otro dispositivo o alguien de confianza."
+        }
+      },
+      "tour": {
+        "create": "Haz clic en Crear billetera y confirma con tu llave de acceso — ¡eso es todo! (Si ya creaste una, la verás aquí.)"
       }
     },
     "createProject": {
