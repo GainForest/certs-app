@@ -3,8 +3,8 @@
 /**
  * The hand of collectibles a donor receives the moment their checkout settles:
  * one card per project they backed, plus an overall card for multi-project
- * gifts. The cards revolve in as a 3D circular carousel, the donor flicks
- * between them, then "collects" — one card or all of them.
+ * gifts. The cards fan into a layered 3D carousel, the donor flicks between
+ * them, then "collects" — one card or all of them.
  *
  * Collecting flies each card on a smooth upward-U arc into the account button
  * in the header (which has morphed into a rounded pocket). The card stays
@@ -32,11 +32,11 @@ import type { RewardCard } from "./reward-model";
 
 type Flight = { card: RewardCard; rect: DOMRect; delay: number };
 
-/** Degrees between adjacent cards around the carousel cylinder. */
-const ANGLE = 46;
-/** Cylinder radius. The stage is pushed back by the same amount so the front
- *  card sits at z=0 (its natural size) rather than magnified toward the viewer. */
-const RADIUS = 240;
+/** Horizontal fan distance and inward tilt for cards behind the active card.
+ * Each card lives in its own flat stacking layer: unlike a shared 3D cylinder,
+ * the planes can overlap visually but can never pass through one another. */
+const CARD_SPREAD = 180;
+const CARD_TILT = 14;
 /** Scale a card shrinks to by the time it *reaches* the pocket. Kept fairly
  *  large so the genie warp is performed on a still-visible card rather than a
  *  speck; the final shrink-into-the-mouth is the genie step itself. */
@@ -373,7 +373,7 @@ export function RewardDeck({
     <div className="flex w-full flex-col items-center">
       {/* Stage — an invisible front card reserves height; the 3D carousel is
           layered over it so cards can swing out to the sides freely. */}
-      <div className="relative flex w-full justify-center" style={{ perspective: 1400 }}>
+      <div className="relative isolate flex w-full justify-center" style={{ perspective: 1400 }}>
         <div className="invisible" aria-hidden>
           {activeCard ? (
             <DonationRewardCard lines={activeCard.lines} totalUsd={activeCard.totalUsd} animateEntrance={false} interactive={false} overall={activeCard.variant === "total"} />
@@ -382,9 +382,8 @@ export function RewardDeck({
 
         <motion.div
           className="absolute inset-0"
-          style={{ transformStyle: "preserve-3d" }}
-          initial={reduceMotion ? false : { rotateY: -150, opacity: 0 }}
-          animate={{ rotateY: 0, opacity: 1 }}
+          initial={reduceMotion ? false : { scale: 0.82, y: 24, opacity: 0 }}
+          animate={{ scale: 1, y: 0, opacity: 1 }}
           transition={reduceMotion ? { duration: 0 } : ENTRANCE}
           drag={multiple && !busy ? "x" : false}
           dragSnapToOrigin
@@ -395,56 +394,50 @@ export function RewardDeck({
             else if (info.offset.x > 50 || info.velocity.x > 400) goPrev();
           }}
         >
-          {/* Push the whole cylinder back by RADIUS so the front card lands at
-              z=0 (natural size) instead of being magnified toward the camera. */}
-          <div className="absolute inset-0" style={{ transformStyle: "preserve-3d", transform: `translateZ(${-RADIUS}px)` }}>
-            {remaining.map((card, i) => {
-              const offset = i - index;
-              const depth = depthFor(offset);
-              const hidden = collectingIds.has(card.id);
-              const isActive = offset === 0 && !busy;
-              return (
-                <div
-                  key={card.id}
-                  className={cn("absolute inset-0 flex items-center justify-center", !busy && "cursor-pointer")}
-                  style={{ transformStyle: "preserve-3d", zIndex: depth.zIndex }}
+          {remaining.map((card, i) => {
+            const offset = i - index;
+            const depth = depthFor(offset);
+            const hidden = collectingIds.has(card.id);
+            const isActive = offset === 0 && !busy;
+            return (
+              <div
+                key={card.id}
+                className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                style={{ zIndex: depth.zIndex }}
+              >
+                <motion.div
+                  ref={(el) => {
+                    if (el) cardEls.current.set(card.id, el);
+                    else cardEls.current.delete(card.id);
+                  }}
+                  animate={{
+                    x: offset * CARD_SPREAD,
+                    rotateY: offset * -CARD_TILT,
+                    scale: depth.scale,
+                    opacity: hidden ? 0 : depth.opacity,
+                    filter: `blur(${depth.blur}px)`,
+                  }}
+                  transition={reduceMotion ? { duration: 0 } : entered ? SNAP : ENTRANCE}
+                  className={cn(
+                    "pointer-events-auto",
+                    !isActive && !busy && "cursor-pointer",
+                  )}
+                  aria-hidden={!isActive}
                   onClick={() => {
                     if (!isActive && !busy) goTo(i);
                   }}
                 >
-                  <motion.div
-                    style={{ transformStyle: "preserve-3d" }}
-                    animate={{ rotateY: offset * ANGLE }}
-                    transition={reduceMotion ? { duration: 0 } : entered ? SNAP : ENTRANCE}
-                  >
-                    <div style={{ transform: `translateZ(${RADIUS}px)`, transformStyle: "preserve-3d" }}>
-                      <motion.div
-                        ref={(el) => {
-                          if (el) cardEls.current.set(card.id, el);
-                          else cardEls.current.delete(card.id);
-                        }}
-                        animate={{
-                          scale: depth.scale,
-                          opacity: hidden ? 0 : depth.opacity,
-                          filter: `blur(${depth.blur}px)`,
-                        }}
-                        transition={reduceMotion ? { duration: 0 } : entered ? SNAP : ENTRANCE}
-                        className={cn(offset !== 0 && "pointer-events-none")}
-                      >
-                        <DonationRewardCard
-                          lines={card.lines}
-                          totalUsd={card.totalUsd}
-                          animateEntrance={false}
-                          interactive={isActive}
-                          overall={card.variant === "total"}
-                        />
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                </div>
-              );
-            })}
-          </div>
+                  <DonationRewardCard
+                    lines={card.lines}
+                    totalUsd={card.totalUsd}
+                    animateEntrance={false}
+                    interactive={isActive}
+                    overall={card.variant === "total"}
+                  />
+                </motion.div>
+              </div>
+            );
+          })}
         </motion.div>
       </div>
 
