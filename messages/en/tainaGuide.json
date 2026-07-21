@@ -73,13 +73,9 @@
       "title": "Create your personal wallet",
       "intro": "You can receive donations and tips directly — no project needed. Your wallet lives on your own profile and is created in seconds with a passkey (Face ID or fingerprint). No crypto experience needed.",
       "steps": {
-        "profile": {
-          "title": "Open your profile",
-          "body": "Go to your own profile page and look at the tab bar — open the More menu at the end of it."
-        },
-        "walletTab": {
-          "title": "Open the Wallet tab",
-          "body": "In the More menu, choose Wallet. This tab is private — only you can see it."
+        "open": {
+          "title": "Open your Wallet page",
+          "body": "Go to www.gainforest.app/account/wallet — it takes you straight to the Wallet tab of your own account."
         },
         "create": {
           "title": "Create your wallet",
@@ -91,8 +87,6 @@
         }
       },
       "tour": {
-        "profile": "Open the More menu on your profile's tab bar.",
-        "walletTab": "Choose Wallet — your private wallet tab.",
         "create": "Click Create wallet and confirm with your passkey — that's it! (If you already created one, you'll see it here.)"
       }
     },

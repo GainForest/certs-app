@@ -73,13 +73,9 @@
       "title": "Crea tu billetera personal",
       "intro": "Puedes recibir donaciones y propinas directamente — sin necesidad de un proyecto. Tu billetera vive en tu propio perfil y se crea en segundos con una llave de acceso (Face ID o huella). No necesitas experiencia con cripto.",
       "steps": {
-        "profile": {
-          "title": "Abre tu perfil",
-          "body": "Ve a tu página de perfil y mira la barra de pestañas — abre el menú Más al final."
-        },
-        "walletTab": {
-          "title": "Abre la pestaña Billetera",
-          "body": "En el menú Más, elige Billetera. Esta pestaña es privada — solo tú puedes verla."
+        "open": {
+          "title": "Abre tu página de Billetera",
+          "body": "Ve a www.gainforest.app/account/wallet — te lleva directo a la pestaña Billetera de tu propia cuenta."
         },
         "create": {
           "title": "Crea tu billetera",
@@ -91,8 +87,6 @@
         }
       },
       "tour": {
-        "profile": "Abre el menú Más en la barra de pestañas de tu perfil.",
-        "walletTab": "Elige Billetera — tu pestaña privada de billetera.",
         "create": "Haz clic en Crear billetera y confirma con tu llave de acceso — ¡eso es todo! (Si ya creaste una, la verás aquí.)"
       }
     },

@@ -314,7 +314,6 @@ export function AccountTabBar({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  data-taina="profile-more"
                   className={cn(
                     "relative flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-sm font-medium transition-colors duration-150 select-none",
                     moreActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
@@ -332,11 +331,7 @@ export function AccountTabBar({
                   const Icon = tab.icon;
                   return (
                     <DropdownMenuItem key={tab.href} asChild>
-                      <Link
-                        href={tab.href}
-                        data-taina={tab.labelKey === "wallet" ? "wallet-tab" : undefined}
-                        className={cn("flex items-center gap-2", active && "bg-accent font-medium text-accent-foreground")}
-                      >
+                      <Link href={tab.href} className={cn("flex items-center gap-2", active && "bg-accent font-medium text-accent-foreground")}>
                         <Icon className="size-4 text-muted-foreground" />
                         {t(tab.labelKey)}
                       </Link>

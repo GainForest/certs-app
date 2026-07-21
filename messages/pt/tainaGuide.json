@@ -73,13 +73,9 @@
       "title": "Crie sua carteira pessoal",
       "intro": "Você pode receber doações e gorjetas diretamente — sem precisar de um projeto. Sua carteira fica no seu próprio perfil e é criada em segundos com uma chave de acesso (Face ID ou impressão digital). Não é preciso experiência com cripto.",
       "steps": {
-        "profile": {
-          "title": "Abra seu perfil",
-          "body": "Vá até a sua página de perfil e olhe a barra de abas — abra o menu Mais no final dela."
-        },
-        "walletTab": {
-          "title": "Abra a aba Carteira",
-          "body": "No menu Mais, escolha Carteira. Essa aba é privada — só você pode vê-la."
+        "open": {
+          "title": "Abra sua página de Carteira",
+          "body": "Acesse www.gainforest.app/account/wallet — leva você direto à aba Carteira da sua própria conta."
         },
         "create": {
           "title": "Crie sua carteira",
@@ -91,8 +87,6 @@
         }
       },
       "tour": {
-        "profile": "Abra o menu Mais na barra de abas do seu perfil.",
-        "walletTab": "Escolha Carteira — sua aba privada de carteira.",
         "create": "Clique em Criar carteira e confirme com sua chave de acesso — pronto! (Se já criou uma, você a verá aqui.)"
       }
     },

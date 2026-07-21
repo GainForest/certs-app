@@ -73,13 +73,9 @@
       "title": "Buat dompet pribadimu",
       "intro": "Kamu bisa menerima donasi dan tip secara langsung — tanpa perlu proyek. Dompetmu ada di profilmu sendiri dan dibuat dalam hitungan detik dengan passkey (Face ID atau sidik jari). Tidak perlu pengalaman kripto.",
       "steps": {
-        "profile": {
-          "title": "Buka profilmu",
-          "body": "Buka halaman profilmu dan lihat bilah tab — buka menu Lainnya di ujungnya."
-        },
-        "walletTab": {
-          "title": "Buka tab Dompet",
-          "body": "Di menu Lainnya, pilih Dompet. Tab ini privat — hanya kamu yang bisa melihatnya."
+        "open": {
+          "title": "Buka halaman Dompetmu",
+          "body": "Buka www.gainforest.app/account/wallet — langsung membawamu ke tab Dompet akunmu sendiri."
         },
         "create": {
           "title": "Buat dompetmu",
@@ -91,8 +87,6 @@
         }
       },
       "tour": {
-        "profile": "Buka menu Lainnya di bilah tab profilmu.",
-        "walletTab": "Pilih Dompet — tab dompet privatmu.",
         "create": "Klik Buat dompet dan konfirmasi dengan passkey-mu — selesai! (Kalau sudah pernah membuatnya, kamu akan melihatnya di sini.)"
       }
     },
