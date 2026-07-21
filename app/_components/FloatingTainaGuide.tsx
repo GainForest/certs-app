@@ -14,7 +14,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { stripLocaleFromPathname } from "@/lib/i18n/routing";
 import { ACTIVE_MANAGE_CONTEXT_KEY, accountManageBasePath } from "@/lib/links";
 import { renderPetAnimated, type CodexPetState } from "../_lib/codex-pet";
-import { TAINA_GUIDES, getTainaGuide, type TainaGuide } from "../_lib/taina-guides";
+import { TAINA_GUIDES, TAINA_TIPS, getTainaGuide, type TainaGuide } from "../_lib/taina-guides";
 import { TAINA_SIM } from "../_lib/taina-sim";
 
 // FloatingTainaGuide — Tainá as a site-wide tutorial companion.
@@ -51,6 +51,13 @@ const MINIMIZED_STORAGE_KEY = "gainforest.floatingTaina.minimized.v1";
 const TOUR_STORAGE_KEY = "gainforest.floatingTaina.tour.v1";
 const OPEN_WAVE_MS = 1600;
 const TOUR_BUBBLE_W = 300;
+// "Did you know?" tips: which tip comes next survives page loads so the
+// rotation keeps moving forward instead of always re-showing the first tip.
+const TIP_INDEX_STORAGE_KEY = "gainforest.floatingTaina.tipIndex.v1";
+const TIP_FIRST_DELAY_MS = 15000;
+const TIP_INTERVAL_MS = 150000;
+const TIP_VISIBLE_MS = 15000;
+const TIP_BUBBLE_W = 250;
 const TOUR_FIND_TIMEOUT_MS = 8000;
 const Z_SPOTLIGHT = 68;
 const Z_SPRITE = 70;
@@ -230,6 +237,10 @@ export function FloatingTainaGuide() {
   // up staring at a sign-in wall while Tainá says "I can't find it". Instead
   // we tell them to sign in first.
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
+
+  // ── "Did you know?" tips ───────────────────────────────────
+  // Index into TAINA_TIPS of the tip currently showing, or null.
+  const [activeTip, setActiveTip] = useState<number | null>(null);
 
   // ── Live tour state ─────────────────────────────────────────────────
   const [tour, setTour] = useState<TourState | null>(() => {
@@ -440,6 +451,55 @@ export function FloatingTainaGuide() {
     };
   }, [view]);
 
+  // ── "Did you know?" tip scheduler ──────────────────────────────
+  // While Tainá is idle (visible, chat closed, no tour), occasionally pop a
+  // short tip in her speech bubble, rotating through TAINA_TIPS. The next
+  // tip's index persists in localStorage so the rotation advances across
+  // visits instead of restarting at the first tip every page load.
+  useEffect(() => {
+    if (!mounted || open || tour || minimized) {
+      setActiveTip(null);
+      return;
+    }
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    const showNextTip = () => {
+      let index = 0;
+      try {
+        const raw = window.localStorage.getItem(TIP_INDEX_STORAGE_KEY);
+        const parsed = raw === null ? 0 : Number.parseInt(raw, 10);
+        if (Number.isFinite(parsed) && parsed >= 0) index = parsed % TAINA_TIPS.length;
+      } catch {
+        // ignore storage errors
+      }
+      setActiveTip(index);
+      try {
+        window.localStorage.setItem(TIP_INDEX_STORAGE_KEY, String((index + 1) % TAINA_TIPS.length));
+      } catch {
+        // ignore storage errors
+      }
+      hideTimer = setTimeout(() => setActiveTip(null), TIP_VISIBLE_MS);
+    };
+    const firstTimer = setTimeout(showNextTip, TIP_FIRST_DELAY_MS);
+    const cycleTimer = setInterval(showNextTip, TIP_INTERVAL_MS);
+    return () => {
+      clearTimeout(firstTimer);
+      clearInterval(cycleTimer);
+      if (hideTimer) clearTimeout(hideTimer);
+    };
+  }, [mounted, open, tour, minimized]);
+
+  // Dragging her around dismisses the tip — it would trail the sprite.
+  useEffect(() => {
+    if (dragging) setActiveTip(null);
+  }, [dragging]);
+
+  const openTip = useCallback((guideId?: string) => {
+    setActiveTip(null);
+    setView(guideId && getTainaGuide(guideId) ? { kind: "guide", guideId } : { kind: "home" });
+    setOpen(true);
+    setWaveActive(true);
+  }, []);
+
   // ── Drag handling ───────────────────────────────────────────────────
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -514,9 +574,9 @@ export function FloatingTainaGuide() {
     }
     if (streaming) return "review";
     if (tour) return spotRect ? "waving" : "waiting";
-    if (waveActive) return "waving";
+    if (waveActive || activeTip !== null) return "waving";
     return "idle";
-  }, [dragging, dragDirection, streaming, waveActive, tour, spotRect, tourMoving]);
+  }, [dragging, dragDirection, streaming, waveActive, tour, spotRect, tourMoving, activeTip]);
 
   const markFirstFrame = useCallback(() => setFirstFramePainted(true), []);
 
@@ -1193,7 +1253,53 @@ export function FloatingTainaGuide() {
             –
           </button>
         ) : null}
-        {!open && !tour ? (
+        {/* "Did you know?" tip — an occasional speech bubble with a feature
+            discovery. Clicking it opens the chat (on the linked guide when the
+            tip has one). */}
+        {!open && !tour && !dragging && activeTip !== null && TAINA_TIPS[activeTip] ? (
+          <div
+            data-no-drag
+            role="status"
+            className={`absolute z-10 rounded-2xl border border-border bg-background/95 p-3 shadow-[0_4px_16px_-4px_rgba(40,50,30,0.3)] backdrop-blur-sm ${
+              position.y < 220 ? "top-full mt-2" : "bottom-full mb-2"
+            }`}
+            style={{
+              width: TIP_BUBBLE_W,
+              ...(typeof window !== "undefined" && position.x + SPRITE_W / 2 > window.innerWidth / 2
+                ? { right: 0 }
+                : { left: 0 }),
+            }}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-[11px] font-medium uppercase tracking-wide text-primary">
+                💡 {t("didYouKnow")}
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveTip(null);
+                }}
+                aria-label={t("dismissTip")}
+                title={t("dismissTip")}
+                className="-mr-1 -mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[12px] leading-none text-foreground/50 hover:bg-foreground/5 hover:text-foreground"
+              >
+                ×
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openTip(TAINA_TIPS[activeTip]?.guideId);
+              }}
+              className="mt-1 block w-full text-left text-[12px] leading-relaxed text-foreground hover:text-primary"
+            >
+              {t(`tips.${TAINA_TIPS[activeTip].id}`)}
+            </button>
+          </div>
+        ) : null}
+        {!open && !tour && activeTip === null ? (
           <div
             aria-hidden
             className={

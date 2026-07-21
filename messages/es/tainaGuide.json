@@ -24,7 +24,16 @@
     "restoreLabel": "Abrir Tainá",
     "signInFirst": "Para esto necesitas iniciar sesión: usa el botón Iniciar sesión en la parte superior de la página y luego vuelve, que yo te guío paso a paso.",
     "needProjectFirst": "Las donaciones se configuran en un proyecto y todavía no tienes ninguno: crea primero tu proyecto y luego vuelve aquí.",
-    "createProjectFirst": "Muéstrame cómo crear un proyecto"
+    "createProjectFirst": "Muéstrame cómo crear un proyecto",
+    "didYouKnow": "¿Sabías que…?",
+    "dismissTip": "Cerrar consejo",
+    "tips": {
+      "wallet": "¡Puedes recibir donaciones y propinas! Crea tu billetera en la pestaña Billetera de tu cuenta.",
+      "createProject": "Puedes mostrar tu trabajo creando un proyecto — solo toma unos minutos.",
+      "observations": "Puedes subir hasta 50 fotos de naturaleza a la vez — las especies se identifican automáticamente.",
+      "bioblitz": "Hay un desafío BioBlitz cada semana — ¡fotografía cualquier ser vivo y gana premios!",
+      "ask": "Puedes preguntarme lo que quieras sobre GainForest, en tu idioma — ¡solo haz clic en mí!"
+    }
   },
   "guides": {
     "wallet": {

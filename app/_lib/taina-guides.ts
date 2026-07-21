@@ -149,6 +149,29 @@ export function getTainaGuide(id: string): TainaGuide | undefined {
   return TAINA_GUIDES.find((guide) => guide.id === id);
 }
 
+// ── "Did you know?" tips ──────────────────────────────────────────────
+//
+// Short feature discoveries Tainá occasionally surfaces in a small speech
+// bubble next to her sprite. Structure only — the copy lives under
+// tainaGuide.widget.tips.<id> in every locale. Clicking a tip opens the
+// chat panel, on the linked guide when `guideId` is set.
+
+export interface TainaTip {
+  /** i18n key suffix under tainaGuide.widget.tips.<id> */
+  id: string;
+  /** Guide to open in the panel when the tip is clicked. */
+  guideId?: string;
+}
+
+export const TAINA_TIPS: TainaTip[] = [
+  // First tip by design: receiving donations & tips via the account wallet.
+  { id: "wallet" },
+  { id: "createProject", guideId: "createProject" },
+  { id: "observations", guideId: "observations" },
+  { id: "bioblitz", guideId: "bioblitz" },
+  { id: "ask" },
+];
+
 // Compact English cheat-sheet of every guide, injected into Tainá's chat
 // system prompt so her free-form answers match the visual guides (she still
 // replies in the visitor's language; this is reference material only).

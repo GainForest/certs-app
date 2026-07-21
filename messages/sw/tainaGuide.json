@@ -24,7 +24,16 @@
     "restoreLabel": "Fungua Tainá",
     "signInFirst": "Kwa hili unahitaji kuingia kwenye akaunti yako — tumia kitufe cha Ingia juu ya ukurasa, kisha urudi hapa nikuongoze hatua kwa hatua.",
     "needProjectFirst": "Michango huwekwa kwenye mradi, na bado huna mradi — anza kwa kuunda mradi wako wa kwanza, kisha urudi hapa.",
-    "createProjectFirst": "Nionyeshe jinsi ya kuunda mradi"
+    "createProjectFirst": "Nionyeshe jinsi ya kuunda mradi",
+    "didYouKnow": "Je, unajua?",
+    "dismissTip": "Funga kidokezo",
+    "tips": {
+      "wallet": "Unaweza kupokea michango na zawadi! Tengeneza pochi yako kwenye kichupo cha Pochi katika akaunti yako.",
+      "createProject": "Unaweza kuonyesha kazi yako kwa kuunda mradi — inachukua dakika chache tu.",
+      "observations": "Unaweza kupakia hadi picha 50 za asili kwa mara moja — spishi zinatambuliwa kiotomatiki.",
+      "bioblitz": "Kuna changamoto ya BioBlitz kila wiki — piga picha ya kiumbe chochote hai na ushinde zawadi!",
+      "ask": "Unaweza kuniuliza chochote kuhusu GainForest kwa lugha yako — nibofye tu!"
+    }
   },
   "guides": {
     "wallet": {
