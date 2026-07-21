@@ -51,13 +51,33 @@ const MINIMIZED_STORAGE_KEY = "gainforest.floatingTaina.minimized.v1";
 const TOUR_STORAGE_KEY = "gainforest.floatingTaina.tour.v1";
 const OPEN_WAVE_MS = 1600;
 const TOUR_BUBBLE_W = 300;
-// "Did you know?" tips: which tip comes next survives page loads so the
-// rotation keeps moving forward instead of always re-showing the first tip.
+// "Did you know?" tips — deliberately low-pressure. All pacing state is
+// persisted so page navigations don't restart the timers and spam people:
+//   - which tip comes next (localStorage, rotation keeps moving forward),
+//   - when the last tip was shown (localStorage, enforces a real cooldown),
+//   - how many tips this browser session has seen (sessionStorage, hard cap),
+//   - dismissing a tip with × snoozes all tips for a day (localStorage).
 const TIP_INDEX_STORAGE_KEY = "gainforest.floatingTaina.tipIndex.v1";
-const TIP_FIRST_DELAY_MS = 15000;
-const TIP_INTERVAL_MS = 150000;
-const TIP_VISIBLE_MS = 15000;
+const TIP_LAST_SHOWN_STORAGE_KEY = "gainforest.floatingTaina.tipLastShown.v1";
+const TIP_SESSION_COUNT_STORAGE_KEY = "gainforest.floatingTaina.tipSessionCount.v1";
+const TIP_SNOOZE_STORAGE_KEY = "gainforest.floatingTaina.tipSnoozeUntil.v1";
+const TIP_FIRST_DELAY_MS = 45000;
+const TIP_CHECK_INTERVAL_MS = 10000;
+const TIP_COOLDOWN_MS = 5 * 60 * 1000;
+const TIP_VISIBLE_MS = 18000;
+const TIP_SNOOZE_MS = 24 * 60 * 60 * 1000;
+const TIP_SESSION_CAP = 2;
 const TIP_BUBBLE_W = 250;
+
+function readStoredNumber(storage: Storage, key: string): number {
+  try {
+    const raw = storage.getItem(key);
+    const parsed = raw === null ? 0 : Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
 const TOUR_FIND_TIMEOUT_MS = 8000;
 const Z_SPOTLIGHT = 68;
 const Z_SPRITE = 70;
@@ -453,37 +473,44 @@ export function FloatingTainaGuide() {
 
   // ── "Did you know?" tip scheduler ──────────────────────────────
   // While Tainá is idle (visible, chat closed, no tour), occasionally pop a
-  // short tip in her speech bubble, rotating through TAINA_TIPS. The next
-  // tip's index persists in localStorage so the rotation advances across
-  // visits instead of restarting at the first tip every page load.
+  // short tip in her speech bubble, rotating through TAINA_TIPS. Kept
+  // deliberately unobtrusive: a real cooldown between tips that survives
+  // navigation, at most TIP_SESSION_CAP tips per browser session, and a
+  // 24h snooze when the visitor dismisses one.
   useEffect(() => {
     if (!mounted || open || tour || minimized) {
       setActiveTip(null);
       return;
     }
+    const mountedAt = Date.now();
     let hideTimer: ReturnType<typeof setTimeout> | null = null;
-    const showNextTip = () => {
-      let index = 0;
-      try {
-        const raw = window.localStorage.getItem(TIP_INDEX_STORAGE_KEY);
-        const parsed = raw === null ? 0 : Number.parseInt(raw, 10);
-        if (Number.isFinite(parsed) && parsed >= 0) index = parsed % TAINA_TIPS.length;
-      } catch {
-        // ignore storage errors
-      }
+    const maybeShowTip = () => {
+      const now = Date.now();
+      // Give people time to settle into the page first.
+      if (now - mountedAt < TIP_FIRST_DELAY_MS) return;
+      // Hard cap per browser session.
+      if (readStoredNumber(window.sessionStorage, TIP_SESSION_COUNT_STORAGE_KEY) >= TIP_SESSION_CAP) return;
+      // Dismissed a tip recently → stay quiet for a day.
+      if (readStoredNumber(window.localStorage, TIP_SNOOZE_STORAGE_KEY) > now) return;
+      // Cooldown between tips, across page loads.
+      if (now - readStoredNumber(window.localStorage, TIP_LAST_SHOWN_STORAGE_KEY) < TIP_COOLDOWN_MS) return;
+      const index = readStoredNumber(window.localStorage, TIP_INDEX_STORAGE_KEY) % TAINA_TIPS.length;
       setActiveTip(index);
       try {
         window.localStorage.setItem(TIP_INDEX_STORAGE_KEY, String((index + 1) % TAINA_TIPS.length));
+        window.localStorage.setItem(TIP_LAST_SHOWN_STORAGE_KEY, String(now));
+        window.sessionStorage.setItem(
+          TIP_SESSION_COUNT_STORAGE_KEY,
+          String(readStoredNumber(window.sessionStorage, TIP_SESSION_COUNT_STORAGE_KEY) + 1),
+        );
       } catch {
         // ignore storage errors
       }
       hideTimer = setTimeout(() => setActiveTip(null), TIP_VISIBLE_MS);
     };
-    const firstTimer = setTimeout(showNextTip, TIP_FIRST_DELAY_MS);
-    const cycleTimer = setInterval(showNextTip, TIP_INTERVAL_MS);
+    const checkTimer = setInterval(maybeShowTip, TIP_CHECK_INTERVAL_MS);
     return () => {
-      clearTimeout(firstTimer);
-      clearInterval(cycleTimer);
+      clearInterval(checkTimer);
       if (hideTimer) clearTimeout(hideTimer);
     };
   }, [mounted, open, tour, minimized]);
@@ -493,11 +520,33 @@ export function FloatingTainaGuide() {
     if (dragging) setActiveTip(null);
   }, [dragging]);
 
+  const dismissTip = useCallback(() => {
+    setActiveTip(null);
+    // An explicit × is a clear "not now" — stay quiet for a day.
+    try {
+      window.localStorage.setItem(TIP_SNOOZE_STORAGE_KEY, String(Date.now() + TIP_SNOOZE_MS));
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
   const openTip = useCallback((guideId?: string) => {
     setActiveTip(null);
     setView(guideId && getTainaGuide(guideId) ? { kind: "guide", guideId } : { kind: "home" });
     setOpen(true);
     setWaveActive(true);
+  }, []);
+
+  // "Show me step by step" on a tip: open the guide panel (so the sign-in /
+  // has-a-project checks run and can explain themselves) and auto-start the
+  // live tour as soon as those checks conclusively pass.
+  const [pendingTourGuideId, setPendingTourGuideId] = useState<string | null>(null);
+  const openTipTour = useCallback((guideId: string) => {
+    setActiveTip(null);
+    if (!getTainaGuide(guideId)) return;
+    setView({ kind: "guide", guideId });
+    setOpen(true);
+    setPendingTourGuideId(guideId);
   }, []);
 
   // ── Drag handling ───────────────────────────────────────────────────
@@ -627,6 +676,27 @@ export function FloatingTainaGuide() {
     },
     [],
   );
+
+  // Auto-start a tour requested from a tip bubble once the guide checks
+  // conclusively pass; when they conclusively fail, the open guide panel
+  // already explains what to do (sign in / create a project) — just drop
+  // the pending request.
+  useEffect(() => {
+    if (!pendingTourGuideId) return;
+    if (!open || view.kind !== "guide" || view.guideId !== pendingTourGuideId) {
+      setPendingTourGuideId(null);
+      return;
+    }
+    const guide = getTainaGuide(pendingTourGuideId);
+    if (!guide || guide.tour.length === 0 || signedIn === false || (guide.requiresProject && hasProjects === false)) {
+      setPendingTourGuideId(null);
+      return;
+    }
+    if (signedIn === true && (!guide.requiresProject || hasProjects === true)) {
+      setPendingTourGuideId(null);
+      startTour(pendingTourGuideId);
+    }
+  }, [pendingTourGuideId, open, view, signedIn, hasProjects, startTour]);
 
   const advanceTour = useCallback(
     (delta: number) => {
@@ -1278,7 +1348,7 @@ export function FloatingTainaGuide() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setActiveTip(null);
+                  dismissTip();
                 }}
                 aria-label={t("dismissTip")}
                 title={t("dismissTip")}
@@ -1297,6 +1367,23 @@ export function FloatingTainaGuide() {
             >
               {t(`tips.${TAINA_TIPS[activeTip].id}`)}
             </button>
+            {(() => {
+              const tipGuideId = TAINA_TIPS[activeTip]?.guideId;
+              const tipGuide = tipGuideId ? getTainaGuide(tipGuideId) : undefined;
+              if (!tipGuideId || !tipGuide || tipGuide.tour.length === 0) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openTipTour(tipGuideId);
+                  }}
+                  className="mt-2 w-full rounded-xl bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  ✨ {t("showMe")}
+                </button>
+              );
+            })()}
           </div>
         ) : null}
         {!open && !tour && activeTip === null ? (

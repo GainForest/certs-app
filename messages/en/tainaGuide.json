@@ -64,6 +64,34 @@
         "addWallet": "Click Create wallet with passkey and confirm with your passkey — that's it!"
       }
     },
+    "accountWallet": {
+      "question": "How do I receive donations and tips personally?",
+      "title": "Create your personal wallet",
+      "intro": "You can receive donations and tips directly — no project needed. Your wallet lives on your own profile and is created in seconds with a passkey (Face ID or fingerprint). No crypto experience needed.",
+      "steps": {
+        "profile": {
+          "title": "Open your profile",
+          "body": "Go to your own profile page and look at the tab bar — open the More menu at the end of it."
+        },
+        "walletTab": {
+          "title": "Open the Wallet tab",
+          "body": "In the More menu, choose Wallet. This tab is private — only you can see it."
+        },
+        "create": {
+          "title": "Create your wallet",
+          "body": "Click Create wallet and confirm with Face ID, fingerprint, or a security key. That's all — no seed phrases to write down."
+        },
+        "share": {
+          "title": "Ready to receive support",
+          "body": "Your wallet address can receive donations and tips right away. While the wallet is new you can add more passkeys — another device, or someone you trust."
+        }
+      },
+      "tour": {
+        "profile": "Open the More menu on your profile's tab bar.",
+        "walletTab": "Choose Wallet — your private wallet tab.",
+        "create": "Click Create wallet and confirm with your passkey — that's it! (If you already created one, you'll see it here.)"
+      }
+    },
     "createProject": {
       "question": "How do I set up a project?",
       "title": "Create your first project",

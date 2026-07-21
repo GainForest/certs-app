@@ -24,6 +24,9 @@
 //   add-donation-wallet  → "Add a donation wallet" in Donation Settings
 //   add-observations     → the sidebar "Add observations" button
 //   bioblitz-register    → "Register to take part" on /bioblitz
+//   profile-more         → the "More" menu on the profile tab bar
+//   wallet-tab           → the Wallet entry inside that More menu
+//   create-wallet        → "Create wallet" on the account Wallet tab
 
 export interface TainaGuideStep {
   /** i18n key suffix under tainaGuide.guides.<guideId>.steps.<id> */
@@ -72,6 +75,21 @@ export const TAINA_GUIDES: TainaGuide[] = [
       { id: "open", route: "/manage/projects", selector: '[data-taina="open-project"]', advanceOnClick: true },
       { id: "enable", selector: '[data-taina="enable-donations"]', advanceOnClick: true },
       { id: "addWallet", selector: '[data-taina="add-donation-wallet"]' },
+    ],
+  },
+  {
+    id: "accountWallet",
+    steps: [
+      { id: "profile" },
+      { id: "walletTab" },
+      { id: "create" },
+      { id: "share" },
+    ],
+    tour: [
+      // /account is a server redirect to the signed-in user's own profile.
+      { id: "profile", route: "/account", selector: '[data-taina="profile-more"]', advanceOnClick: true },
+      { id: "walletTab", selector: '[data-taina="wallet-tab"]', advanceOnClick: true },
+      { id: "create", selector: '[data-taina="create-wallet"]' },
     ],
   },
   {
@@ -165,7 +183,7 @@ export interface TainaTip {
 
 export const TAINA_TIPS: TainaTip[] = [
   // First tip by design: receiving donations & tips via the account wallet.
-  { id: "wallet" },
+  { id: "wallet", guideId: "accountWallet" },
   { id: "createProject", guideId: "createProject" },
   { id: "observations", guideId: "observations" },
   { id: "bioblitz", guideId: "bioblitz" },
@@ -177,7 +195,9 @@ export const TAINA_TIPS: TainaTip[] = [
 // replies in the visitor's language; this is reference material only).
 export function buildGuideKnowledge(): string {
   return [
-    "### Receive donations (set up a wallet)",
+    "### Receive donations & tips personally (account wallet)",
+    "Every signed-in user can receive donations and tips directly: open your own profile (the /account page), open the More menu on the tab bar, choose Wallet, and click Create wallet — confirmed with a passkey (Face ID, fingerprint, or security key), no crypto experience needed. The wallet address can receive support right away; more passkeys (another device, a trusted person) can be enrolled while the wallet hasn't been activated on-chain.",
+    "### Receive donations on a project (organization wallet)",
     "Donations are set up on a project, so the user needs at least one project first — if they don't have one yet, tell them to create a project before enabling donations. Donation wallets belong to organizations: the organization owner (or an admin) creates the shared wallet with a passkey (Face ID, fingerprint, or security key — no crypto experience needed), and other members can add their own passkeys so they can approve payments too. Then: My Projects → open your project → 'Enable Donations' in the Support card → 'Create wallet with passkey' → confirm with your passkey. When no donation settings existed yet, creating the wallet saves and opens donations in the same step — no extra Save press. The wallet address can receive donations right away; only the passkeys on its list can ever spend from it. Personal projects cannot add new wallets — the project must belong to an organization.",
     "### Create a project",
     "Sidebar 'Create a Project' (or My Projects → 'Add project') → wizard: name + one-line summary → focus areas → dates (ongoing is fine) → story → people & groups + places → photo → review → Create project.",

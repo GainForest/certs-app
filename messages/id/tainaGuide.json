@@ -64,6 +64,34 @@
         "addWallet": "Klik Buat dompet dengan kunci sandi lalu konfirmasi dengan kunci sandi Anda — selesai!"
       }
     },
+    "accountWallet": {
+      "question": "Bagaimana cara menerima donasi dan tip secara pribadi?",
+      "title": "Buat dompet pribadimu",
+      "intro": "Kamu bisa menerima donasi dan tip secara langsung — tanpa perlu proyek. Dompetmu ada di profilmu sendiri dan dibuat dalam hitungan detik dengan passkey (Face ID atau sidik jari). Tidak perlu pengalaman kripto.",
+      "steps": {
+        "profile": {
+          "title": "Buka profilmu",
+          "body": "Buka halaman profilmu dan lihat bilah tab — buka menu Lainnya di ujungnya."
+        },
+        "walletTab": {
+          "title": "Buka tab Dompet",
+          "body": "Di menu Lainnya, pilih Dompet. Tab ini privat — hanya kamu yang bisa melihatnya."
+        },
+        "create": {
+          "title": "Buat dompetmu",
+          "body": "Klik Buat dompet dan konfirmasi dengan Face ID, sidik jari, atau kunci keamanan. Itu saja — tanpa seed phrase yang harus dicatat."
+        },
+        "share": {
+          "title": "Siap menerima dukungan",
+          "body": "Alamat dompetmu bisa langsung menerima donasi dan tip. Selagi dompet masih baru, kamu bisa menambahkan passkey lain — perangkat lain atau orang yang kamu percaya."
+        }
+      },
+      "tour": {
+        "profile": "Buka menu Lainnya di bilah tab profilmu.",
+        "walletTab": "Pilih Dompet — tab dompet privatmu.",
+        "create": "Klik Buat dompet dan konfirmasi dengan passkey-mu — selesai! (Kalau sudah pernah membuatnya, kamu akan melihatnya di sini.)"
+      }
+    },
     "createProject": {
       "question": "Bagaimana cara membuat proyek?",
       "title": "Buat proyek pertama Anda",

@@ -64,6 +64,34 @@
         "addWallet": "Bofya Unda pochi kwa ufunguo wa siri kisha uthibitishe kwa ufunguo wako wa siri — ndivyo hivyo!"
       }
     },
+    "accountWallet": {
+      "question": "Ninawezaje kupokea michango na zawadi binafsi?",
+      "title": "Tengeneza pochi yako binafsi",
+      "intro": "Unaweza kupokea michango na zawadi moja kwa moja — bila kuhitaji mradi. Pochi yako iko kwenye wasifu wako mwenyewe na inatengenezwa kwa sekunde chache kwa kutumia ufunguo wa kuingia (Face ID au alama ya kidole). Huhitaji uzoefu wa sarafu za kidijitali.",
+      "steps": {
+        "profile": {
+          "title": "Fungua wasifu wako",
+          "body": "Nenda kwenye ukurasa wa wasifu wako na uangalie mwambaa wa vichupo — fungua menyu ya Zaidi mwishoni mwake."
+        },
+        "walletTab": {
+          "title": "Fungua kichupo cha Pochi",
+          "body": "Katika menyu ya Zaidi, chagua Pochi. Kichupo hiki ni cha faragha — ni wewe pekee unayeweza kukiona."
+        },
+        "create": {
+          "title": "Tengeneza pochi yako",
+          "body": "Bofya Tengeneza pochi na uthibitishe kwa Face ID, alama ya kidole, au ufunguo wa usalama. Ndivyo tu — hakuna maneno ya siri ya kuandika."
+        },
+        "share": {
+          "title": "Tayari kupokea msaada",
+          "body": "Anwani ya pochi yako inaweza kupokea michango na zawadi mara moja. Pochi ikiwa bado mpya, unaweza kuongeza funguo zaidi za kuingia — kifaa kingine au mtu unayemwamini."
+        }
+      },
+      "tour": {
+        "profile": "Fungua menyu ya Zaidi kwenye mwambaa wa vichupo wa wasifu wako.",
+        "walletTab": "Chagua Pochi — kichupo chako cha faragha cha pochi.",
+        "create": "Bofya Tengeneza pochi na uthibitishe kwa ufunguo wako wa kuingia — ndivyo tu! (Kama tayari umeitengeneza, utaiona hapa.)"
+      }
+    },
     "createProject": {
       "question": "Ninaundaje mradi?",
       "title": "Unda mradi wako wa kwanza",

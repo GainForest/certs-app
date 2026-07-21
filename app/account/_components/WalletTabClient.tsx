@@ -673,7 +673,7 @@ export function WalletTabClient({ organization }: { organization?: OrganizationW
             </div>
             {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
             {canManageWallet ? (
-              <Button className="w-full sm:w-auto" onClick={() => void handleCreate()} disabled={isBusy}>
+              <Button className="w-full sm:w-auto" data-taina="create-wallet" onClick={() => void handleCreate()} disabled={isBusy}>
                 {isBusy ? <Loader2Icon className="size-3.5 animate-spin" /> : <FingerprintIcon className="size-3.5" />}
                 {isBusy ? t("creating") : t("createButton")}
               </Button>

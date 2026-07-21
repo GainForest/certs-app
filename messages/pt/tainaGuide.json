@@ -64,6 +64,34 @@
         "addWallet": "Clique em Criar carteira com chave de acesso e confirme com sua chave de acesso — pronto!"
       }
     },
+    "accountWallet": {
+      "question": "Como recebo doações e gorjetas pessoalmente?",
+      "title": "Crie sua carteira pessoal",
+      "intro": "Você pode receber doações e gorjetas diretamente — sem precisar de um projeto. Sua carteira fica no seu próprio perfil e é criada em segundos com uma chave de acesso (Face ID ou impressão digital). Não é preciso experiência com cripto.",
+      "steps": {
+        "profile": {
+          "title": "Abra seu perfil",
+          "body": "Vá até a sua página de perfil e olhe a barra de abas — abra o menu Mais no final dela."
+        },
+        "walletTab": {
+          "title": "Abra a aba Carteira",
+          "body": "No menu Mais, escolha Carteira. Essa aba é privada — só você pode vê-la."
+        },
+        "create": {
+          "title": "Crie sua carteira",
+          "body": "Clique em Criar carteira e confirme com Face ID, impressão digital ou uma chave de segurança. É só isso — sem frases-semente para anotar."
+        },
+        "share": {
+          "title": "Pronta para receber apoio",
+          "body": "O endereço da sua carteira pode receber doações e gorjetas imediatamente. Enquanto a carteira é nova, você pode adicionar mais chaves de acesso — outro dispositivo ou alguém de confiança."
+        }
+      },
+      "tour": {
+        "profile": "Abra o menu Mais na barra de abas do seu perfil.",
+        "walletTab": "Escolha Carteira — sua aba privada de carteira.",
+        "create": "Clique em Criar carteira e confirme com sua chave de acesso — pronto! (Se já criou uma, você a verá aqui.)"
+      }
+    },
     "createProject": {
       "question": "Como crio um projeto?",
       "title": "Crie seu primeiro projeto",

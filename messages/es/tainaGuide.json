@@ -64,6 +64,34 @@
         "addWallet": "Haz clic en Crear billetera con llave de acceso y confirma con tu llave de acceso. ¡Eso es todo!"
       }
     },
+    "accountWallet": {
+      "question": "¿Cómo recibo donaciones y propinas personalmente?",
+      "title": "Crea tu billetera personal",
+      "intro": "Puedes recibir donaciones y propinas directamente — sin necesidad de un proyecto. Tu billetera vive en tu propio perfil y se crea en segundos con una llave de acceso (Face ID o huella). No necesitas experiencia con cripto.",
+      "steps": {
+        "profile": {
+          "title": "Abre tu perfil",
+          "body": "Ve a tu página de perfil y mira la barra de pestañas — abre el menú Más al final."
+        },
+        "walletTab": {
+          "title": "Abre la pestaña Billetera",
+          "body": "En el menú Más, elige Billetera. Esta pestaña es privada — solo tú puedes verla."
+        },
+        "create": {
+          "title": "Crea tu billetera",
+          "body": "Haz clic en Crear billetera y confirma con Face ID, huella o una llave de seguridad. Eso es todo — sin frases semilla que anotar."
+        },
+        "share": {
+          "title": "Lista para recibir apoyo",
+          "body": "La dirección de tu billetera puede recibir donaciones y propinas de inmediato. Mientras la billetera es nueva puedes añadir más llaves de acceso — otro dispositivo o alguien de confianza."
+        }
+      },
+      "tour": {
+        "profile": "Abre el menú Más en la barra de pestañas de tu perfil.",
+        "walletTab": "Elige Billetera — tu pestaña privada de billetera.",
+        "create": "Haz clic en Crear billetera y confirma con tu llave de acceso — ¡eso es todo! (Si ya creaste una, la verás aquí.)"
+      }
+    },
     "createProject": {
       "question": "¿Cómo creo un proyecto?",
       "title": "Crea tu primer proyecto",
