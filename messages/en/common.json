@@ -1059,7 +1059,9 @@
       "cancelEdit": "Cancel",
       "delete": "Delete",
       "confirmDelete": "Confirm delete",
-      "cancelDelete": "Cancel"
+      "cancelDelete": "Cancel",
+      "showMore": "Show more",
+      "showLess": "Show less"
     },
     "composer": {
       "placeholder": "Share an update with the community…",

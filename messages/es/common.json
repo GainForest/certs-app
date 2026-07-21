@@ -1059,7 +1059,9 @@
       "cancelEdit": "Cancelar",
       "delete": "Eliminar",
       "confirmDelete": "Confirmar eliminación",
-      "cancelDelete": "Cancelar"
+      "cancelDelete": "Cancelar",
+      "showMore": "Ver más",
+      "showLess": "Ver menos"
     },
     "composer": {
       "placeholder": "Comparte una novedad con la comunidad…",

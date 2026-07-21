@@ -1059,7 +1059,9 @@
       "cancelEdit": "Batal",
       "delete": "Hapus",
       "confirmDelete": "Konfirmasi hapus",
-      "cancelDelete": "Batal"
+      "cancelDelete": "Batal",
+      "showMore": "Selengkapnya",
+      "showLess": "Lebih sedikit"
     },
     "composer": {
       "placeholder": "Bagikan kabar terbaru dengan komunitas…",

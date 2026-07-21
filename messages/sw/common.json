@@ -1059,7 +1059,9 @@
       "cancelEdit": "Ghairi",
       "delete": "Futa",
       "confirmDelete": "Thibitisha kufuta",
-      "cancelDelete": "Ghairi"
+      "cancelDelete": "Ghairi",
+      "showMore": "Onyesha zaidi",
+      "showLess": "Onyesha kidogo"
     },
     "composer": {
       "placeholder": "Shiriki taarifa mpya na jamii…",
