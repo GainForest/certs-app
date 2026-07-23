@@ -370,12 +370,6 @@ export function FeedClient({
           >
             {t("hero.title")} {t("hero.accent")}
           </h1>
-          {/* The description restates the title on small screens where vertical
-              space is scarce, so it's hidden there and the feed starts higher;
-              it returns from sm up. */}
-          <p className="mt-3 hidden max-w-xl text-base leading-7 text-muted-foreground sm:block">
-            {t("hero.description")}
-          </p>
         </div>
       </div>
 

@@ -1057,8 +1057,7 @@
     "eyebrow": "Atividade ao vivo",
     "hero": {
       "title": "O que está acontecendo no",
-      "accent": "GainForest",
-      "description": "Uma transmissão ao vivo dos projetos, avistamentos de natureza, organizações e atualizações comunitárias mais recentes — tudo em um só lugar."
+      "accent": "GainForest"
     },
     "filters": {
       "all": "Tudo",

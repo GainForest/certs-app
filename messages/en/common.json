@@ -1057,8 +1057,7 @@
     "eyebrow": "Live activity",
     "hero": {
       "title": "What's happening on",
-      "accent": "GainForest",
-      "description": "A live stream of the newest projects, nature sightings, organizations, and community updates — all in one place."
+      "accent": "GainForest"
     },
     "filters": {
       "all": "All",
